@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Passo 1.3 — Carregamento do flow + permissões | Detalhamento</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #F1F5F9;
+    color: #0F172A;
+    margin: 0;
+    padding: 32px 24px 80px;
+    line-height: 1.4;
+  }
+  .container { max-width: 1500px; margin: 0 auto; }
+
+  /* Top nav / breadcrumb */
+  .page-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    flex-wrap: wrap;
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #64748B;
+  }
+  .breadcrumb a {
+    color: #3B82F6;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #CBD5E1; }
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #0F172A;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 12.5px;
+    font-weight: 600;
+    transition: background 0.15s, transform 0.15s;
+  }
+  .back-btn:hover {
+    background: #3B82F6;
+    transform: translateY(-1px);
+  }
+
+  /* Page header */
+  .page-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 8px;
+  }
+  .page-header .icon { font-size: 32px; }
+  .page-header h1 {
+    margin: 0;
+    font-size: 26px;
+    color: #0F172A;
+    letter-spacing: -0.4px;
+  }
+  .page-sub {
+    color: #64748B;
+    font-size: 13px;
+    margin-bottom: 24px;
+    padding-left: 46px;
+  }
+  .page-sub code {
+    background: #E2E8F0;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 12px;
+    color: #334155;
+  }
+
+  /* Overview chain */
+  .overview-mini {
+    background: white;
+    padding: 16px 18px;
+    border-radius: 10px;
+    margin-bottom: 28px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .overview-mini-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 12px;
+  }
+  .overview-chain {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .overview-chip {
+    background: #F8FAFC;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border-left: 3px solid #3B82F6;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #0F172A;
+    text-decoration: none;
+    display: inline-block;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    transition: transform 0.15s;
+  }
+  .overview-chip:hover { transform: translateY(-1px); }
+  .overview-chip .lbl {
+    display: block;
+    font-size: 9.5px;
+    color: #64748B;
+    font-weight: 500;
+    margin-bottom: 2px;
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .overview-sep { color: #94A3B8; font-size: 18px; font-weight: bold; }
+
+  /* Boxes (shared) */
+  .box {
+    background: white;
+    border-radius: 8px;
+    padding: 9px 13px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border-left: 4px solid #94A3B8;
+    width: 100%;
+    max-width: 100%;
+  }
+  .box.backend    { border-left-color: #3B82F6; }
+  .box.worker     { border-left-color: #10B981; }
+  .box.db         { border-left-color: #F59E0B; }
+  .box.redis      { border-left-color: #EF4444; }
+  .box.s3         { border-left-color: #8B5CF6; }
+  .box.external   { border-left-color: #64748B; }
+  .box.decision { border-left-color: #EAB308; background: #FEFCE8; }
+
+  .box-title {
+    font-weight: 600;
+    font-size: 12.5px;
+    color: #0F172A;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .box-desc { font-size: 11.5px; color: #475569; }
+  .box-file {
+    font-size: 10px;
+    color: #94A3B8;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    margin-top: 3px;
+    word-break: break-all;
+  }
+  .box code {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    background: #F1F5F9;
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: #334155;
+    word-break: break-word;
+  }
+  .box-desc code { word-break: break-word; }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .badge.migrated { background: #D1FAE5; color: #065F46; }
+  .badge.legacy   { background: #FEE2E2; color: #991B1B; }
+  .badge.mixed    { background: #FEF3C7; color: #92400E; }
+  .badge.step     { background: #E0E7FF; color: #3730A3; font-size: 10px; }
+
+  /* Arrows */
+  .arrow {
+    color: #64748B;
+    font-size: 22px;
+    line-height: 1;
+    margin: 1px 0;
+    text-align: center;
+  }
+  .converge { text-align: center; color: #64748B; font-size: 22px; margin: 6px 0; }
+
+  /* Branch (SIM/NÃO) */
+  .branch {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  /* Function card */
+  .fn-card {
+    margin-top: 28px;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .fn-card-header {
+    background: linear-gradient(to right, #0F172A, #1E293B);
+    color: white;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .fn-card-header .fn-title {
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .fn-card-header .fn-title code {
+    background: rgba(255,255,255,0.15);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 13px;
+  }
+  .fn-card-header .fn-loc {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #CBD5E1;
+  }
+  .fn-card-body { padding: 20px; }
+
+  .fn-signature {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    background: #F1F5F9;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: #334155;
+    margin-bottom: 16px;
+    overflow-x: auto;
+  }
+  .fn-purpose {
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    background: #EFF6FF;
+    border-left: 3px solid #3B82F6;
+    border-radius: 6px;
+  }
+  .fn-friendly {
+    font-size: 13px;
+    color: #334155;
+    margin-bottom: 20px;
+    padding: 12px 14px 12px 44px;
+    background: #F0FDF4;
+    border-left: 3px solid #10B981;
+    border-radius: 6px;
+    position: relative;
+    line-height: 1.55;
+  }
+  .fn-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 14px;
+    top: 10px;
+    font-size: 18px;
+  }
+  .fn-friendly strong {
+    color: #065F46;
+  }
+
+  .fn-body-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 900px) {
+    .fn-body-cols { grid-template-columns: 1fr; }
+  }
+  .fn-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .fn-asides {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Aside panels */
+  .aside {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 11.5px;
+    color: #78350F;
+  }
+  .aside.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .aside.warn { background: #FEE2E2; border-left-color: #EF4444; color: #991B1B; }
+  .aside.helper { background: #F3E8FF; border-left-color: #A855F7; color: #6B21A8; }
+  .aside-title {
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .aside code {
+    background: rgba(255,255,255,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    word-break: break-word;
+  }
+
+  /* Cascade (chain of if/else) */
+  .cascade {
+    background: #FEFCE8;
+    border: 1px dashed #EAB308;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 6px 0;
+  }
+  .cascade-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #713F12;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .cascade-step {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 8px;
+    background: white;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    font-size: 11.5px;
+  }
+  .cascade-step .cond {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #334155;
+  }
+  .cascade-step .result {
+    font-weight: 700;
+    font-size: 10.5px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .cascade-step .result.pass  { background: #D1FAE5; color: #065F46; }
+  .cascade-step .result.deny  { background: #FEE2E2; color: #991B1B; }
+  .cascade-step .result.next  { background: #E0E7FF; color: #3730A3; }
+  .cascade-step .result.call  { background: #FEF3C7; color: #78350F; }
+  .cascade-num {
+    background: #EAB308;
+    color: white;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* Nested sub-flow */
+  .nested-flow {
+    margin: 6px 0;
+    padding: 12px;
+    background: #F0FDF4;
+    border: 1px dashed #10B981;
+    border-radius: 8px;
+  }
+  .nested-flow-title {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #065F46;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* Notes */
+  .note {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    color: #78350F;
+    margin: 20px 0;
+  }
+  .note.info {
+    background: #EFF6FF;
+    border-left-color: #3B82F6;
+    color: #1E3A8A;
+  }
+  .note strong { color: inherit; }
+  .note code {
+    background: rgba(255,255,255,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+  }
+
+  /* Footer nav */
+  .page-footer-nav {
+    margin-top: 48px;
+    padding: 16px;
+    background: white;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- TOP NAV -->
+  <div class="page-nav">
+    <div class="breadcrumb">
+      <a href="index.html">📋 Execução de Agente</a>
+      <span class="sep">›</span>
+      <span>Passo 1.3 — Detalhamento</span>
+    </div>
+    <a href="index.html#step-1-3" class="back-btn">← Voltar ao diagrama</a>
+  </div>
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <span class="icon">🔍</span>
+    <h1>Passo 1.3 — Carregamento do flow + permissões</h1>
+  </div>
+  <div class="page-sub">
+    4 chamadas sequenciais em <code>flux.service.ts:2338-2367</code>. Cada uma é destrinchada abaixo com seu próprio sub-fluxo e services auxiliares.
+  </div>
+
+  <!-- Overview mini-chain -->
+  <div class="overview-mini">
+    <div class="overview-mini-title">Cadeia de chamadas em 1.3</div>
+    <div class="overview-chain">
+      <a href="#fn-a" class="overview-chip"><span class="lbl">A</span>flowService.getFlowWithNodesAndEdges()</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>flowService.resolveExecutionHistoryId()</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>productService.checkIfUserCanRunFlow()</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-d" class="overview-chip"><span class="lbl">D · condicional</span>productService.assertOwnerCanRunFlow()</a>
+    </div>
+    <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
+      Nota: (B) é chamada implicitamente <strong>de dentro</strong> de (A) — o call-site em <code>apiV2()</code> chama (B) uma <em>segunda vez</em> com <code>versionId</code> para persistir <code>flowVersionHistoryId</code> no contexto de execução.
+      (D) só executa se <code>!isNestedRunLog</code> (top-level, não sub-flow de fluxBox/libraryNode).
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION A: getFlowWithNodesAndEdges -->
+  <!-- ============================================================ -->
+  <div class="fn-card" id="fn-a">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#10B981;color:white">A</span>
+        <code>flowService.getFlowWithNodesAndEdges()</code>
+      </div>
+      <div class="fn-loc">src/app-api/folw/flow.service.ts:37-74</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        async getFlowWithNodesAndEdges(flowId: string, relations?: string[], requestedHistoryId?: string, requestedVersionId?: string): Promise&lt;Flow&gt;
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Carrega o flow e reconstrói <code>.nodes</code>/<code>.edges</code> a partir das tabelas normalizadas (<code>flows_nodes</code>, <code>flows_nodes_edges</code>) no formato flat que o React Flow espera. Escolhe entre snapshot versionado ou live.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> imagine que alguém clicou em "rodar agente". Essa função é a que <em>monta o agente inteiro</em> pra execução usar. Ela confere se o ID é válido, vai no banco buscar o flow com todas as relações importantes (dono, pasta, empresa, biblioteca), decide se deve carregar a versão "congelada" (deployada/histórico) ou a que está sendo editada agora, puxa a lista de nós e conexões desse snapshot e devolve tudo já traduzido no formato que o React Flow entende. No final, o resto do pipeline recebe um objeto <code>Flow</code> completinho, pronto pra ser executado ou desenhado na tela.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box decision">
+            <div class="box-title"><span class="badge step">A1</span> flowId é UUID válido?</div>
+            <div class="box-desc">
+              <code>if (!flowId || !isUuid(flowId))</code> → <strong>throw NotFoundException('Flow not found')</strong>
+            </div>
+            <div class="box-file">linha 43-45</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box db">
+            <div class="box-title"><span class="badge step">A2</span> SELECT flow com relations</div>
+            <div class="box-desc">
+              <code>flowRepository.findOne({ where: { id: flowId }, relations })</code>
+              <br>Se <code>!flow</code> → <strong>throw NotFoundException</strong>
+            </div>
+            <div class="box-file">linha 47-52</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="nested-flow">
+            <div class="nested-flow-title">↳ Chama internamente</div>
+            <div class="box backend">
+              <div class="box-title"><span class="badge step">A3</span> this.resolveExecutionHistoryId(flow, versionId, historyId) <a href="#fn-b" style="font-size:10px;color:#3B82F6;text-decoration:none;">[ver B ↓]</a></div>
+              <div class="box-desc">Decide qual snapshot dos nós/arestas ler → retorna <code>historyId</code> ou <code>null</code></div>
+              <div class="box-file">linha 54-58</div>
+            </div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box decision">
+            <div class="box-title"><span class="badge step">A4</span> historyId != null?</div>
+            <div class="box-desc">Dispatch entre snapshot versionado ou "working copy" (live)</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="branch">
+            <div class="box db">
+              <div class="box-title">SIM (versionado)</div>
+              <div class="box-desc">
+                <code>Promise.all([</code><br>
+                &nbsp;&nbsp;<code>flowNodeService.findByHistoryId(historyId),</code><br>
+                &nbsp;&nbsp;<code>flowEdgeService.findByHistoryId(historyId)</code><br>
+                <code>])</code>
+                <br>WHERE <code>flow_version_history_id = historyId</code>
+              </div>
+              <div class="box-file">linha 60-64</div>
+            </div>
+            <div class="box db">
+              <div class="box-title">NÃO (live)</div>
+              <div class="box-desc">
+                <code>Promise.all([</code><br>
+                &nbsp;&nbsp;<code>flowNodeService.findByFlowIdNonVersioned(flowId),</code><br>
+                &nbsp;&nbsp;<code>flowEdgeService.findByFlowIdNonVersioned(flowId)</code><br>
+                <code>])</code>
+                <br>WHERE <code>flow_id = flowId AND flow_version_history_id IS NULL</code>
+              </div>
+              <div class="box-file">linha 65-68</div>
+            </div>
+          </div>
+          <div class="converge">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">A5</span> Converte entities → DTOs React Flow</div>
+            <div class="box-desc">
+              <code>flow.nodes = nodeEntities.map(toNodeDto)</code><br>
+              <code>flow.edges = edgeEntities.map(toEdgeDto)</code>
+            </div>
+            <div class="box-file">linha 70-71</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">A6</span> return flow</div>
+            <div class="box-desc">Flow com <code>.nodes</code> e <code>.edges</code> populados no formato React Flow</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">📎 Relations carregadas no findOne</div>
+            O call-site passa esta lista:
+            <br>• <code>user</code>
+            <br>• <code>folder</code>
+            <br>• <code>folder.spaces</code>
+            <br>• <code>folder.spaces.company</code>
+            <br>• <code>folder.companyUser</code>
+            <br>• <code>folder.companyUser.company</code>
+            <br>• <code>library</code>
+            <br><br>São essas relações que dão o <em>spaceOwnerId</em>, <em>company</em>, <em>ownership</em> e <em>library type</em> usados nos passos seguintes (permissões, RunLogCollector, etc).
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 findByHistoryId vs findByFlowIdNonVersioned</div>
+            Duas queries triviais no repo:
+            <br><br>
+            <strong>findByHistoryId</strong> — <code>flow-node.service.ts:360</code>
+            <br><code>repo.find({ where: { flowVersionHistory: { id: historyId } } })</code>
+            <br><br>
+            <strong>findByFlowIdNonVersioned</strong> — <code>flow-node.service.ts:55</code>
+            <br><code>createQueryBuilder → WHERE flow_id = $1 AND flow_version_history_id IS NULL</code>
+            <br><br>Mesma coisa para <code>flowEdgeService</code> em <code>flow-edge.service.ts:23</code> e <code>:154</code>.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 toNodeDto / toEdgeDto</div>
+            Helpers puros (não são services, funções exportadas):
+            <br>• <code>flow-node.service.ts:731</code>
+            <br>• <code>flow-edge.service.ts:308</code>
+            <br><br>
+            Convertem entity normalizada (positionX/Y separados, extras JSONB) → formato flat React Flow (position: {x,y}, extras espalhados no top-level).
+          </div>
+
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Custo de I/O</div>
+            Esta função faz <strong>3 queries</strong> ao Postgres (flow + nodes + edges) por execução de agente. Em agentes grandes (100+ nós), os dois SELECTs de nodes/edges já vêm com o JSONB gordo de <code>flows_nodes.data</code> (o problema de perf).
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION B: resolveExecutionHistoryId -->
+  <!-- ============================================================ -->
+  <div class="fn-card" id="fn-b">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#10B981;color:white">B</span>
+        <code>flowService.resolveExecutionHistoryId()</code>
+      </div>
+      <div class="fn-loc">src/app-api/folw/flow.service.ts:82-100</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        async resolveExecutionHistoryId(flow: Flow, requestedVersionId?: string, requestedHistoryId?: string): Promise&lt;string | null&gt;
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Decide de qual "snapshot" de nós/arestas a execução vai ler — <code>flow_version_history_id</code> (versão congelada) ou <code>null</code> (working copy live). Chamada duas vezes: uma dentro de (A), outra explicitamente pelo <code>apiV2()</code> para gravar <code>flowVersionHistoryId</code> no contexto.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> pense nela como um "árbitro" que responde uma pergunta única: <em>"de qual foto do agente eu vou executar agora?"</em>. Ela vai testando alternativas em ordem — se o flow nem tem versionamento ligado, roda a versão de trabalho atual; se veio um histórico específico no request, usa esse; se veio um versionId, busca o histórico correspondente dele; se o flow tem uma versão marcada como "deployada" (a de produção), usa ela como fallback; caso contrário, roda também a versão live. É o que garante que uma execução seja <strong>reproduzível</strong>: mesmo que alguém edite o agente cinco minutos depois, quem estava executando continua vendo exatamente a foto que começou a rodar.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="cascade">
+            <div class="cascade-title">🪜 Cascata de decisão (early return)</div>
+            <div class="cascade-step">
+              <span class="cascade-num">1</span>
+              <span class="cond"><code>!flow.versionControlEnabled</code></span>
+              <span class="result deny">return null</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">2</span>
+              <span class="cond"><code>requestedHistoryId</code> presente</span>
+              <span class="result pass">return requestedHistoryId</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">3</span>
+              <span class="cond"><code>requestedVersionId</code> presente</span>
+              <span class="result call">→ chama flowVersionService.findById</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">4</span>
+              <span class="cond"><code>flow.deployedVersionId</code> presente</span>
+              <span class="result call">→ chama flowVersionService.findById</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">5</span>
+              <span class="cond">nenhum dos anteriores</span>
+              <span class="result deny">return null</span>
+            </div>
+          </div>
+
+          <div class="arrow">↓ (nos casos 3 e 4)</div>
+
+          <div class="nested-flow">
+            <div class="nested-flow-title">↳ Chama internamente</div>
+            <div class="box db">
+              <div class="box-title">flowVersionService.findById(versionId)</div>
+              <div class="box-desc">
+                <code>flow_version.findOne({ where: { id }, relations: ['flow'] })</code>
+                <br>Se não achou → <strong>throw NotFoundException</strong>
+                <br>Retorna a version → extrai <code>.currentHistoryId</code>
+              </div>
+              <div class="box-file">flow-version.service.ts:17-30</div>
+            </div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title">return version.currentHistoryId</div>
+            <div class="box-desc">É esse UUID que amarra os nós/arestas do snapshot congelado</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">💡 Semântica de null</div>
+            Retornar <code>null</code> significa "usa a working copy live" — os nós/arestas com <code>flow_version_history_id IS NULL</code>. É o modo padrão quando o flow não tem version control habilitado.
+          </div>
+
+          <div class="aside">
+            <div class="aside-title">🎯 3 fontes possíveis de historyId</div>
+            Ordem de precedência:
+            <br>1. <strong>historyId explícito</strong> (só usado internamente pela função A quando A é chamada com <code>requestedHistoryId</code> — em <code>apiV2</code> normalmente é undefined)
+            <br>2. <strong>versionId requisitado</strong> (query param na API)
+            <br>3. <strong>deployedVersionId</strong> do flow (fallback "produção")
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔗 Ligação com o resto do fluxo</div>
+            O <code>flowVersionHistoryId</code> resolvido aqui vira uma variável de contexto usada em:
+            <br>• Query de nodes/edges (A4)
+            <br>• Metadata da row de <code>node_executions</code> (T2)
+            <br>• Chave de workflow do Temporal (<code>buildNodeWorkflowId</code>)
+            <br>• Cache de <code>previewResponses</code> (3.2)
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION C: checkIfUserCanRunFlow -->
+  <!-- ============================================================ -->
+  <div class="fn-card" id="fn-c">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#10B981;color:white">C</span>
+        <code>productService.checkIfUserCanRunFlow()</code>
+      </div>
+      <div class="fn-loc">src/app-api/product/product.service.ts:298-328</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        async checkIfUserCanRunFlow(user: User, flow: Flow): Promise&lt;boolean&gt;
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Autorização — verifica se o usuário chamador tem permissão de executar este flow específico. Se retornar <code>false</code>, o call-site em <code>flux.service.ts:2361-2363</code> lança <code>ForbiddenException('You are not authorized to run this flow')</code>.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> essa função é o <em>porteiro</em> do agente — ela responde "esse usuário aí que apertou o botão pode mesmo rodar este agente específico?". Funciona como uma sequência de perguntas, e a primeira que der "sim" já libera: (1) é um dos agentes internos da própria plataforma? passa direto; (2) o usuário é o dono do flow? passa; (3) o flow é um template público (SYSTEM library)? passa; (4) o flow pertence a uma company (via space ou companyUser)? aí ela vai no banco confirmar se esse usuário é membro <strong>ativo</strong> dessa company. Se nenhuma das opções bater, retorna <code>false</code> e o backend cospe um HTTP 403 imediato, sem nem chegar na próxima etapa.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="cascade">
+            <div class="cascade-title">🪜 Cascata de permissão (primeiro match ganha)</div>
+            <div class="cascade-step">
+              <span class="cascade-num">1</span>
+              <span class="cond">flow.id ∈ { <code>ID_OF_AGENT_TO_BUILD_FORM</code>, <code>ID_OF_AGENT_TO_GENERATE_SUMMARY</code> }</span>
+              <span class="result pass">return true</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">2</span>
+              <span class="cond"><code>flow.user.id === user.id</code> (ownership direto)</span>
+              <span class="result pass">return true</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">3</span>
+              <span class="cond"><code>flow.library?.type === LibraryType.SYSTEM</code></span>
+              <span class="result pass">return true</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">4</span>
+              <span class="cond"><code>flow.folder.spaces?.id</code> presente (flow em space)</span>
+              <span class="result call">→ SELECT company_user</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">5</span>
+              <span class="cond"><code>flow.folder.companyUser?.id</code> presente (flow em companyUser)</span>
+              <span class="result call">→ SELECT company_user</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">6</span>
+              <span class="cond">nenhum dos anteriores</span>
+              <span class="result deny">return false</span>
+            </div>
+          </div>
+
+          <div class="arrow">↓ (nos casos 4 e 5)</div>
+
+          <div class="nested-flow">
+            <div class="nested-flow-title">↳ Chama internamente</div>
+            <div class="box db">
+              <div class="box-title">companyUserService.findOne({ user: user.id, company: X })</div>
+              <div class="box-desc">
+                Query TypeORM: SELECT company_user WHERE user_id = $1 AND company_id = $2
+                <br>Company vem de <code>flow.folder.spaces.company.id</code> (caso 4) ou <code>flow.folder.companyUser.company.id</code> (caso 5)
+              </div>
+              <div class="box-file">company_user.service.ts (herda findOne da BaseService)</div>
+            </div>
+            <div class="arrow">↓</div>
+            <div class="box decision">
+              <div class="box-title">companyUser?.status === CompanyUserStatus.ACTIVE?</div>
+              <div class="box-desc">Retorna <code>true</code> se for membro ATIVO da company, <code>false</code> se for banido/pendente/removido ou se não existir</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Se retornar false...</div>
+            O call-site imediatamente lança:
+            <br><code>throw new ForbiddenException('You are not authorized to run this flow')</code>
+            <br><br>Ou seja: <strong>quebra a execução com HTTP 403</strong> antes mesmo de chegar em <code>assertOwnerCanRunFlow</code>.
+            <div style="font-family:monospace;font-size:10px;margin-top:6px">flux.service.ts:2361-2363</div>
+          </div>
+
+          <div class="aside info">
+            <div class="aside-title">🎯 3 modos de autorização</div>
+            <strong>1. Bypass total</strong> — agents especiais de sistema (form builder, summary)
+            <br><strong>2. Owner direto</strong> — user é o dono do flow
+            <br><strong>3. System library</strong> — flow é public template
+            <br><strong>4. Membership de company</strong> — flow em space/companyUser exige status ACTIVE
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 Env vars usadas</div>
+            <code>process.env.ID_OF_AGENT_TO_BUILD_FORM</code>
+            <br><code>process.env.ID_OF_AGENT_TO_GENERATE_SUMMARY</code>
+            <br><br>Dois agents internos que a plataforma usa (gera formulários, gera summary de flow). Precisam rodar independente de quem chama.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION D: assertOwnerCanRunFlow -->
+  <!-- ============================================================ -->
+  <div class="fn-card" id="fn-d">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#EF4444;color:white">D</span>
+        <code>productService.assertOwnerCanRunFlow()</code>
+        <span class="badge mixed" style="font-size:9px">condicional</span>
+      </div>
+      <div class="fn-loc">src/app-api/product/product.service.ts:364-389</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        async assertOwnerCanRunFlow(flow: Flow): Promise&lt;void&gt;   <span style="color:#94A3B8">// throws se bloqueado</span>
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Billing gate — verifica se o <em>owner do flow</em> (não o caller) tem plano ativo que permite executar agentes. Bloqueia flows cujo dono está em plano Vault (read-only).
+        <br><strong>Chamada apenas se <code>!isNestedRunLog</code></strong> — não é aplicada a flows chamados via <code>fluxBox</code>/<code>libraryNode</code> internamente.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> se a (C) era o porteiro do <em>usuário</em>, essa aqui é a <em>régua de faturamento do dono do agente</em>. Ela responde: "beleza, o cara pode rodar, mas quem <em>paga a conta</em> desse flow tem plano ativo pra rodar agentes?". Ela descobre quem é o "admin cobrável" do flow (se estiver numa company, é o admin da company; senão, é o próprio criador), consulta o plano ativo desse admin e, se o plano for do tipo Vault (read-only, típico de assinatura expirada), <strong>bloqueia a execução com 403</strong> mesmo que o caller tenha permissão. Só roda no nível topo da execução — se este flow já é um sub-flow chamado por outro (via fluxBox/libraryNode), pula a checagem porque o billing do dono já foi validado lá em cima.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="cascade">
+            <div class="cascade-title">🪜 Cascata de billing</div>
+            <div class="cascade-step">
+              <span class="cascade-num">1</span>
+              <span class="cond">flow.id ∈ { agents especiais }</span>
+              <span class="result pass">return (bypass)</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">2</span>
+              <span class="cond"><code>flow.library?.type === SYSTEM</code></span>
+              <span class="result pass">return (bypass)</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">3</span>
+              <span class="cond">resolve owner</span>
+              <span class="result call">→ selectFlowAdmin(flow)</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">4</span>
+              <span class="cond"><code>!owner</code> (sem owner resolvido)</span>
+              <span class="result pass">return (não bloqueia)</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">5</span>
+              <span class="cond">busca plano ativo do owner</span>
+              <span class="result call">→ getActiveProductForOwner</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">6</span>
+              <span class="cond"><code>product.can_run_flows === false</code></span>
+              <span class="result deny">throw ForbiddenException</span>
+            </div>
+          </div>
+
+          <div class="arrow">↓</div>
+
+          <div class="nested-flow">
+            <div class="nested-flow-title">↳ selectFlowAdmin(flow) — product.service.ts:138-166</div>
+            <div class="cascade" style="background:white;border-color:#94A3B8">
+              <div class="cascade-step">
+                <span class="cascade-num">1</span>
+                <span class="cond"><code>flow.folder.spaces.company.id</code>?</span>
+                <span class="result call">→ companyUser (ADMIN, ACTIVE)</span>
+              </div>
+              <div class="cascade-step">
+                <span class="cascade-num">2</span>
+                <span class="cond"><code>flow.folder.companyUser.company.id</code>?</span>
+                <span class="result call">→ companyUser (ADMIN, ACTIVE)</span>
+              </div>
+              <div class="cascade-step">
+                <span class="cascade-num">3</span>
+                <span class="cond">nenhum</span>
+                <span class="result pass">return flow.user</span>
+              </div>
+            </div>
+            <div style="font-size:10.5px;color:#065F46;margin-top:4px">
+              Query: <code>companyUserService.findOne({ company: X, status: ACTIVE, role: ADMIN }, ['user'])</code>
+            </div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="nested-flow">
+            <div class="nested-flow-title">↳ getActiveProductForOwner(ownerId) — product.service.ts:330-336</div>
+            <div class="box db">
+              <div class="box-title">userProductService.findOne({ user: ownerId, active: true }, ['product'])</div>
+              <div class="box-desc">
+                Query: SELECT user_product JOIN product WHERE user_id = $1 AND active = true
+                <br>Retorna <code>userProduct?.product ?? null</code>
+              </div>
+            </div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box decision">
+            <div class="box-title">product.can_run_flows === false?</div>
+            <div class="box-desc">
+              Se true → <strong>throw ForbiddenException</strong>:
+              <br><em>"This account is on the Vault (read-only) plan. Running agents is disabled — upgrade to run again."</em>
+            </div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Diferença crítica vs (C)</div>
+            <strong>(C) checkIfUserCanRunFlow</strong> — verifica o <em>caller</em> (quem chamou a API)
+            <br><strong>(D) assertOwnerCanRunFlow</strong> — verifica o <em>owner do flow</em>
+            <br><br>Um usuário livre pode ser bloqueado se estiver rodando um flow cujo dono está em Vault.
+          </div>
+
+          <div class="aside info">
+            <div class="aside-title">🎯 Por que só se !isNestedRunLog?</div>
+            Se este flow foi chamado por outro flow (via fluxBox/libraryNode), a checagem de billing já foi feita no top-level. Chamar de novo em nested seria redundante e potencialmente confuso (mesmo owner, mesma resposta).
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 Vault plan</div>
+            Plano "read-only" onde:
+            <br>• <code>product.can_run_flows = false</code>
+            <br>• <code>product.can_create_items = false</code>
+            <br><br>Usado quando a assinatura expirou mas os dados devem permanecer acessíveis.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 Ordem de resolução do owner (selectFlowAdmin)</div>
+            1. Prioriza <strong>space company admin</strong> se flow está em space
+            <br>2. Fallback pra <strong>companyUser company admin</strong> se flow é de companyUser
+            <br>3. Senão retorna o <strong>user criador direto</strong> do flow
+            <br><br>Isso significa que a cobrança/billing recai sempre no admin da company, não no dono real do flow em ambientes multi-tenant.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="note info" style="margin-top:32px">
+    <strong>Resumo — o que sai de 1.3:</strong>
+    <br>• <code>getFlow</code> populado com <code>.nodes</code>, <code>.edges</code>, <code>.user</code>, <code>.folder</code>, <code>.folder.spaces</code>, <code>.folder.spaces.company</code>, <code>.folder.companyUser</code>, <code>.library</code>
+    <br>• <code>flowVersionHistoryId</code> (uuid ou null) — chave que amarra qual snapshot congelado usar
+    <br>• Garantia de que <strong>o caller pode rodar</strong> (checkIfUserCanRunFlow) e (se top-level) que <strong>o owner tem plano válido</strong> (assertOwnerCanRunFlow)
+    <br>• Estado pra alimentar os próximos passos: <code>spaceOwnerId</code>, <code>loggingEnabledForSpace</code>, <code>RunLogCollector.createRoot({ orgId: company?.id, ... })</code>
+  </div>
+
+  <div class="note">
+    <strong>Observações para migração:</strong>
+    <br>• As 3 queries de carregamento (flow + nodes + edges) são feitas no backend antes de qualquer decisão de dispatch. Se o worker for orquestrar, ele vai precisar dessa mesma tríade — ou receber tudo serializado no start do workflow, ou refazer as queries lá.
+    <br>• A camada de permissões (C+D) é 100% relacional (users, company_user, user_product, folder.spaces) — replicá-la no worker significa expor esses schemas ou manter o gate no backend antes de iniciar o workflow.
+    <br>• A cascata de <code>selectFlowAdmin</code> é sensível a mudanças de estrutura de company: qualquer refactor do multi-tenancy vai afetar o billing gate.
+  </div>
+
+  <!-- FOOTER NAV -->
+  <div class="page-footer-nav">
+    <a href="index.html#step-1-3" class="back-btn">← Voltar ao diagrama principal</a>
+  </div>
+
+</div>
+</body>
+</html>

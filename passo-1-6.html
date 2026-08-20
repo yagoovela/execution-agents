@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Passo 1.6 — Carregamento de contexto de chat | Detalhamento</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #F1F5F9;
+    color: #0F172A;
+    margin: 0;
+    padding: 32px 24px 80px;
+    line-height: 1.4;
+  }
+  .container { max-width: 1500px; margin: 0 auto; }
+
+  /* Top nav */
+  .page-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    flex-wrap: wrap;
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #64748B;
+  }
+  .breadcrumb a {
+    color: #3B82F6;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #CBD5E1; }
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #0F172A;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+
+  /* Page header */
+  .page-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 8px;
+  }
+  .page-header .icon { font-size: 32px; }
+  .page-header h1 {
+    margin: 0;
+    font-size: 26px;
+    color: #0F172A;
+    letter-spacing: -0.4px;
+  }
+  .page-sub {
+    color: #64748B;
+    font-size: 13px;
+    margin-bottom: 24px;
+    padding-left: 46px;
+  }
+  .page-sub code {
+    background: #E2E8F0;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 12px;
+    color: #334155;
+  }
+
+  /* Overview chain */
+  .overview-mini {
+    background: white;
+    padding: 16px 18px;
+    border-radius: 10px;
+    margin-bottom: 28px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .overview-mini-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 12px;
+  }
+  .overview-chain {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .overview-chip {
+    background: #F8FAFC;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border-left: 3px solid #3B82F6;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #0F172A;
+    text-decoration: none;
+    display: inline-block;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+  .overview-chip .lbl {
+    display: block;
+    font-size: 9.5px;
+    color: #64748B;
+    font-weight: 500;
+    margin-bottom: 2px;
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .overview-sep { color: #94A3B8; font-size: 18px; font-weight: bold; }
+
+  /* Boxes */
+  .box {
+    background: white;
+    border-radius: 8px;
+    padding: 9px 13px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border-left: 4px solid #94A3B8;
+    width: 100%;
+    max-width: 100%;
+  }
+  .box.backend    { border-left-color: #3B82F6; }
+  .box.worker     { border-left-color: #10B981; }
+  .box.db         { border-left-color: #F59E0B; }
+  .box.redis      { border-left-color: #EF4444; }
+  .box.s3         { border-left-color: #8B5CF6; }
+  .box.external   { border-left-color: #64748B; }
+  .box.decision { border-left-color: #EAB308; background: #FEFCE8; }
+  .box.cross { border-left-color: #A855F7; background: #FAF5FF; }
+
+  .box-title {
+    font-weight: 600;
+    font-size: 12.5px;
+    color: #0F172A;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .box-desc { font-size: 11.5px; color: #475569; }
+  .box-file {
+    font-size: 10px;
+    color: #94A3B8;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    margin-top: 3px;
+    word-break: break-all;
+  }
+  .box code {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    background: #F1F5F9;
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: #334155;
+    word-break: break-word;
+  }
+  .box-desc code { word-break: break-word; }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .badge.migrated { background: #D1FAE5; color: #065F46; }
+  .badge.legacy   { background: #FEE2E2; color: #991B1B; }
+  .badge.mixed    { background: #FEF3C7; color: #92400E; }
+  .badge.step     { background: #E0E7FF; color: #3730A3; font-size: 10px; }
+  .badge.cross    { background: #F3E8FF; color: #6B21A8; }
+  .badge.ess      { background: #DCFCE7; color: #14532D; font-size: 9px; }
+
+  /* Arrows */
+  .arrow {
+    color: #64748B;
+    font-size: 22px;
+    line-height: 1;
+    margin: 1px 0;
+    text-align: center;
+  }
+  .converge { text-align: center; color: #64748B; font-size: 22px; margin: 6px 0; }
+
+  /* Function card */
+  .fn-card {
+    margin-top: 28px;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .fn-card-header {
+    background: linear-gradient(to right, #0F172A, #1E293B);
+    color: white;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .fn-card-header .fn-title {
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .fn-card-header .fn-title code {
+    background: rgba(255,255,255,0.15);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 13px;
+  }
+  .fn-card-header .fn-loc {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #CBD5E1;
+  }
+  .fn-card-body { padding: 20px; }
+
+  .fn-signature {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    background: #F1F5F9;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: #334155;
+    margin-bottom: 16px;
+    overflow-x: auto;
+  }
+  .fn-purpose {
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    background: #EFF6FF;
+    border-left: 3px solid #3B82F6;
+    border-radius: 6px;
+  }
+  .fn-friendly {
+    font-size: 13px;
+    color: #334155;
+    margin-bottom: 20px;
+    padding: 12px 14px 12px 44px;
+    background: #F0FDF4;
+    border-left: 3px solid #10B981;
+    border-radius: 6px;
+    position: relative;
+    line-height: 1.55;
+  }
+  .fn-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 14px;
+    top: 10px;
+    font-size: 18px;
+  }
+  .fn-friendly strong {
+    color: #065F46;
+  }
+
+  .fn-body-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 900px) {
+    .fn-body-cols { grid-template-columns: 1fr; }
+  }
+  .fn-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .fn-asides {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Aside panels */
+  .aside {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 11.5px;
+    color: #78350F;
+  }
+  .aside.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .aside.warn { background: #FEE2E2; border-left-color: #EF4444; color: #991B1B; }
+  .aside.helper { background: #F3E8FF; border-left-color: #A855F7; color: #6B21A8; }
+  .aside-title {
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .aside code {
+    background: rgba(255,255,255,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    word-break: break-word;
+  }
+
+  /* Cascade */
+  .cascade {
+    background: #FEFCE8;
+    border: 1px dashed #EAB308;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 6px 0;
+  }
+  .cascade-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #713F12;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .cascade-step {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 8px;
+    background: white;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    font-size: 11.5px;
+  }
+  .cascade-step .cond {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #334155;
+  }
+  .cascade-step .result {
+    font-weight: 700;
+    font-size: 10.5px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .cascade-step .result.pass  { background: #D1FAE5; color: #065F46; }
+  .cascade-step .result.deny  { background: #FEE2E2; color: #991B1B; }
+  .cascade-step .result.next  { background: #E0E7FF; color: #3730A3; }
+  .cascade-step .result.call  { background: #FEF3C7; color: #78350F; }
+  .cascade-num {
+    background: #EAB308;
+    color: white;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* Nested sub-flow */
+  .nested-flow {
+    margin: 6px 0;
+    padding: 12px;
+    background: #F0FDF4;
+    border: 1px dashed #10B981;
+    border-radius: 8px;
+  }
+  .nested-flow-title {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #065F46;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  /* Code block */
+  .code-block {
+    background: #0F172A;
+    color: #E2E8F0;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 6px 0;
+  }
+  .code-block .k { color: #93C5FD; }
+  .code-block .s { color: #86EFAC; }
+  .code-block .c { color: #64748B; font-style: italic; }
+  .code-block .t { color: #FDE68A; }
+
+  /* Notes */
+  .note {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    color: #78350F;
+    margin: 20px 0;
+  }
+  .note.info {
+    background: #EFF6FF;
+    border-left-color: #3B82F6;
+    color: #1E3A8A;
+  }
+  .note code {
+    background: rgba(255,255,255,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+  }
+
+  .page-footer-nav {
+    margin-top: 48px;
+    padding: 16px;
+    background: white;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .field-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin: 8px 0;
+  }
+  .field-table th {
+    text-align: left;
+    padding: 6px 8px;
+    background: #F1F5F9;
+    color: #334155;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    font-size: 10px;
+    border-bottom: 1px solid #CBD5E1;
+  }
+  .field-table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid #F1F5F9;
+    vertical-align: top;
+  }
+  .field-table td:first-child {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    color: #0F172A;
+    font-weight: 600;
+    white-space: nowrap;
+    font-size: 10.5px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- TOP NAV -->
+  <div class="page-nav">
+    <div class="breadcrumb">
+      <a href="index.html">📋 Execução de Agente</a>
+      <span class="sep">›</span>
+      <span>Passo 1.6 — Detalhamento</span>
+    </div>
+    <a href="index.html#step-1-6" class="back-btn">← Voltar ao diagrama</a>
+  </div>
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <span class="icon">💬</span>
+    <h1>Passo 1.6 — Carregamento de contexto de chat</h1>
+  </div>
+  <div class="page-sub">
+    Bloco em <code>flux.service.ts:2485-2618</code>. Determina a <strong>sessão de chat ativa</strong>, carrega o <em>histórico</em> daquela sessão pra cada <code>fluxObject</code> em modo chat, e injeta essas entries + o <code>selectedSession</code> no <code>node.data</code> em memória dos <code>fluxObject</code> e <code>nodesBox</code>. Só executa se houver sessionId (do request ou fallback pra <code>'default'</code>).
+  </div>
+
+  <div class="note info">
+    <strong>Contexto:</strong> desde uma migração recente, <code>chat history</code> e <code>object sessions</code> não vivem mais em JSONB mutável (<code>flows_nodes.data.userSessionsChat</code>, <code>flow_objects.sessions</code>) — passaram pra tabela <code>session_state_entries</code>, append-only, isolada por <code>ownerUserId</code>. Este passo é o <strong>hidratador</strong>: lê essas rows e reconstrói o shape antigo dentro do <code>updatedFlows</code> em memória, pra que os handlers do loop principal (Fase 3) continuem funcionando sem reescrita.
+  </div>
+
+  <!-- Overview chain -->
+  <div class="overview-mini">
+    <div class="overview-mini-title">Cadeia de operações em 1.6</div>
+    <div class="overview-chain">
+      <a href="#fn-a" class="overview-chip"><span class="lbl">A</span>sessionIdForChat + gate</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>Loop 1: readContents por node</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>Loop 2: merge fluxObject</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>Loop 2: merge nodesBox</a>
+    </div>
+    <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
+      Resultado final: <code>updatedFlows</code> (array de nós em memória) fica com <code>entries</code>, <code>userSessionsChat</code>, <code>selectedChat</code>, <code>selectedSession</code> e <code>sessions[]</code> preenchidos nos <code>fluxObject</code>/<code>nodesBox</code> corretos, prontos pro loop de execução.
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION A: sessionIdForChat + gate -->
+  <!-- ============================================================ -->
+  <div class="fn-card" id="fn-a">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#EAB308;color:white">A</span>
+        <code>Resolução de sessionIdForChat + gate</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:2485-2495</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        const sessionIdForChat = sessionId || (hasFluxObjectChat ? 'default' : '');
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Decidir se o run tem uma sessão de chat associada. Se veio <code>sessionId</code> no request, usa; senão, se algum <code>fluxObject</code> declara <code>chat=true</code>, cai no fallback <code>'default'</code>. String vazia = pula todo o bloco (nenhum chat).
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> pense nessa etapa como o <em>vigia da porta do chat</em> — antes de gastar qualquer query, ele decide se este run tem conversa em andamento ou não. Ele responde três perguntas em ordem: <em>"o request trouxe um sessionId?"</em> — se sim, usa esse; <em>"não? então esse flow tem algum nó marcado como chat interativo?"</em> — se sim, entra na sessão <code>'default'</code>; <em>"nada disso?"</em> — então devolve string vazia e o bloco inteiro (queries de histórico, merges nos nós) é <strong>pulado</strong>. Também já anota qual é o primeiro <code>fluxObject</code> com <code>chat=true</code>, porque mais adiante só <strong>um</strong> nó pode ficar como "o cara do chat" — os demais viram só storage silencioso.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">A1</span> Detecta se o flow tem chat</div>
+            <div class="box-desc">
+              <code>hasFluxObjectChat = updatedFlows.some(n =&gt; n.type === 'fluxObject' &amp;&amp; n.data?.chat === true)</code>
+              <br><br>Checa <strong>apenas</strong> <code>chat === true</code>, ignorando <code>sessionEnabled</code>.
+            </div>
+            <div class="box-file">flux.service.ts:2485-2487</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="cascade">
+            <div class="cascade-title">🪜 Cascata do sessionIdForChat</div>
+            <div class="cascade-step">
+              <span class="cascade-num">1</span>
+              <span class="cond"><code>sessionId</code> veio no request?</span>
+              <span class="result pass">usa <code>sessionId</code></span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">2</span>
+              <span class="cond">senão, <code>hasFluxObjectChat</code>?</span>
+              <span class="result pass"><code>'default'</code></span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">3</span>
+              <span class="cond">nenhum</span>
+              <span class="result deny"><code>''</code> → skip do bloco</span>
+            </div>
+          </div>
+
+          <div class="arrow">↓</div>
+
+          <div class="box decision">
+            <div class="box-title"><span class="badge step">A2</span> Gate: <code>if (sessionIdForChat) { ... }</code></div>
+            <div class="box-desc">
+              String vazia é falsy → pula todo o bloco 2491-2618 e vai direto pro 1.7 (Google OAuth). Nada é hidratado; nenhuma query é feita.
+            </div>
+            <div class="box-file">flux.service.ts:2491</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">A3</span> Localiza <code>firstFluxObjectWithChat</code></div>
+            <div class="box-desc">
+              <code>updatedFlows.find(n =&gt; n.type === 'fluxObject' &amp;&amp; n.data?.chat === true)</code>
+              <br><br>Usado depois em (C) pra decidir qual é o <em>único</em> nó que fica com <code>chat=true</code> após o merge.
+            </div>
+            <div class="box-file">flux.service.ts:2492-2494</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Por que <code>'default'</code>?</div>
+            É o <code>DEFAULT_SESSION_KEY</code> exposto em <code>session-state.service.ts:32</code>. Se o flow tem chat mas o cliente não passou <code>sessionId</code>, todas as runs compartilham a sessão <code>'default'</code> (histórico único global daquele nó, isolado por <code>ownerUserId</code>).
+          </div>
+
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Colisão em <code>'default'</code></div>
+            Dois runs concorrentes do mesmo user sem <code>sessionId</code> vão ambos ler/escrever a sessão <code>'default'</code>. Como <code>appendEntries</code> é append-only, o histórico vira uma <strong>concatenação intercalada</strong> das duas conversas — sem corromper (append é seguro), mas semanticamente confuso.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 <code>chat</code> vs <code>sessionEnabled</code></div>
+            No <code>fluxObject</code> existem 2 flags:
+            <br>• <code>chat === true</code> → interpreta como chat interativo (mensagens user/assistant)
+            <br>• <code>sessionEnabled === true</code> → só quer persistir turno-a-turno, sem UI de chat
+            <br><br>A detecção do gate (<code>hasFluxObjectChat</code>) considera <strong>apenas</strong> <code>chat === true</code>. Se todos os <code>fluxObject</code> só tiverem <code>sessionEnabled</code>, o gate não abre com <code>'default'</code> — precisa vir <code>sessionId</code> explícito.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION B: Loop 1 - fetch chatEntriesByNodeId -->
+  <!-- ============================================================ -->
+  <div class="fn-card" id="fn-b">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#3B82F6;color:white">B</span>
+        <code>Loop 1: fetch de chatEntriesByNodeId</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:2496-2515</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        for (const chatNode of updatedFlows) { if (fluxObject && (chat || sessionEnabled)) chatEntriesByNodeId.set(id, await readContents(...)) }
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Para cada <code>fluxObject</code> em modo chat ou session, buscar todas as entries persistidas em <code>session_state_entries</code> pra aquela combinação <em>(flowId, nodeId, sessionKey, ownerUserId)</em>. Preenche um <code>Map&lt;nodeId, content[]&gt;</code> pra ser consumido no loop de merge (C).
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> aqui o backend faz o papel de <em>carteiro</em> — para cada <code>fluxObject</code> que participa de chat ou sessão, ele vai até a tabela nova <code>session_state_entries</code>, entrega o "endereço" (<code>flowId + nodeId + sessionKey + ownerUserId</code>) e recolhe todas as mensagens antigas ordenadas por <code>seq</code>. O resultado vai parar num <code>Map</code> local (chave = id do nó, valor = array de mensagens) que serve só como <em>rascunho</em> pro próximo passo — depois do merge, esse map é jogado fora. Detalhe importante: é um loop <strong>sequencial</strong> (um <code>await</code> por vez), então flows com muitos nós de chat somam SELECTs em série no início da execução.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B1</span> Cria <code>Map&lt;nodeId, content[]&gt;</code></div>
+            <div class="box-desc">
+              <code>const chatEntriesByNodeId = new Map&lt;string, Record&lt;string, any&gt;[]&gt;()</code>
+              <br><br>Acumulador local — jogado fora depois do merge.
+            </div>
+            <div class="box-file">flux.service.ts:2496</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box decision">
+            <div class="box-title"><span class="badge step">B2</span> Filtro por node</div>
+            <div class="box-desc">
+              <code>chatNode.type === 'fluxObject' &amp;&amp; (data.chat === true || data.sessionEnabled === true)</code>
+              <br><br>Só <code>fluxObject</code> entra no loop. Nesse <code>chatModeNode</code>, ambas as flags disparam a leitura (diferente do gate em A1).
+            </div>
+            <div class="box-file">flux.service.ts:2497-2501</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="nested-flow">
+            <div class="nested-flow-title">↳ sessionStateService.readContents(scope) — session-state.service.ts:90-95</div>
+            <div class="box backend">
+              <div class="box-title"><span class="badge step">B3a</span> Monta scope</div>
+              <div class="code-block">
+{
+  <span class="k">scopeType</span>: <span class="s">'chat'</span>,
+  <span class="k">scopeId</span>: buildNodeScopeId(flowId, chatNode.id),  <span class="c">// `${flowId}:${nodeId}`</span>
+  <span class="k">sessionKey</span>: sessionIdForChat,
+  <span class="k">ownerUserId</span>: user?.id,
+}
+              </div>
+              <div class="box-file">flux.service.ts:2504-2512 · buildNodeScopeId: session-state.service.ts:41-43</div>
+            </div>
+            <div class="arrow">↓</div>
+            <div class="box db">
+              <div class="box-title"><span class="badge step">B3b</span> readEntries → SELECT em <code>session_state_entries</code></div>
+              <div class="box-desc">
+                <code>find({ where: { scopeType, scopeId, sessionKey, ownerUserId? }, order: { seq: 'ASC' } })</code>
+                <br><br>Usa o índice <code>IDX_SSE_SCOPE_SESSION</code> (scopeType, scopeId, sessionKey, ownerUserId, seq).
+              </div>
+              <div class="box-file">session-state.service.ts:75-88</div>
+            </div>
+            <div class="arrow">↓</div>
+            <div class="box backend">
+              <div class="box-title"><span class="badge step">B3c</span> Projeta <code>row.content</code></div>
+              <div class="box-desc">
+                <code>rows.map(r =&gt; r.content).filter(Boolean)</code> — retorna array de payloads JSON (não a row inteira).
+              </div>
+              <div class="box-file">session-state.service.ts:93-95</div>
+            </div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B4</span> <code>chatEntriesByNodeId.set(chatNode.id, entries)</code></div>
+            <div class="box-desc">
+              Uma entry no map por node. Se um node não tem histórico, ainda assim tem uma entrada no map com <code>[]</code>.
+            </div>
+            <div class="box-file">flux.service.ts:2502-2513</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside warn">
+            <div class="aside-title">⚠️ N+1 sequencial (não Promise.all)</div>
+            É um <code>for...of</code> com <code>await</code> dentro — cada <code>readContents</code> aguarda a anterior. Um flow com 5 <code>fluxObject</code> em chat = 5 SELECTs sequenciais no início de cada run.
+            <br><br>Impacto real é baixo (query é indexada e cada uma retorna poucas rows), mas trivial de virar <code>Promise.all(...)</code> se apertar.
+          </div>
+
+          <div class="aside info">
+            <div class="aside-title">📊 Tabela <code>session_state_entries</code></div>
+            Append-only, uma row por turno/entry:
+            <table class="field-table">
+              <tr><th>Campo</th><th>Descrição</th></tr>
+              <tr><td>scopeType</td><td>'chat' | 'object' | 'memory' | 'counter'</td></tr>
+              <tr><td>scopeId</td><td>chat/memory: <code>${flowId}:${nodeId}</code></td></tr>
+              <tr><td>sessionKey</td><td>selectedChat / sessionId / 'default'</td></tr>
+              <tr><td>ownerUserId</td><td>Isolação — user autenticado</td></tr>
+              <tr><td>seq</td><td>bigint auto-increment (ordem global)</td></tr>
+              <tr><td>role</td><td>'user' | 'assistant' (chat) ou 'counter'</td></tr>
+              <tr><td>content</td><td>JSONB — payload do turno</td></tr>
+              <tr><td>execId</td><td>UUID do run que gerou (rastreabilidade)</td></tr>
+            </table>
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 <code>buildNodeScopeId</code></div>
+            Puro string concat: <code>`${flowId}:${nodeId}`</code>. O <code>ownerUserId</code> <strong>não</strong> entra no scopeId — vai no <code>WHERE</code> separado, permitindo indexar por (flow,node) e filtrar por dono depois.
+            <br><br>Consequência: se <code>ownerUserId</code> for undefined (bug em <code>user?.id</code>), a query traz <strong>todas as entries daquele scope de todos os usuários</strong> — porque o WHERE nem inclui a coluna. Footgun a monitorar.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION C: Loop 2 - fluxObject merge -->
+  <!-- ============================================================ -->
+  <div class="fn-card" id="fn-c">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#10B981;color:white">C</span>
+        <code>Loop 2: merge no fluxObject</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:2517-2578</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        updatedFlows = updatedFlows.map(node =&gt; { if (fluxObject && isChatMode) return { ...node, data: { ...data, entries, userSessionsChat, ... } } })
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Injetar as entries lidas de <code>session_state_entries</code> dentro do <code>node.data</code> em memória de cada <code>fluxObject</code>, reconstruindo o shape antigo (<code>entries</code>, <code>userSessionsChat</code>, <code>selectedChat</code>). Só <strong>um</strong> nó por run acaba com <code>chat=true</code> — os demais fluxObject com <code>chat=true</code> ficam com <code>chat=false</code>.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> aqui rola o papel de <em>tradutor</em> — o histórico que acabou de vir da tabela nova precisa ser encaixado dentro do <code>node.data</code> no formato antigo que os handlers do loop já sabem ler (<code>entries</code>, <code>userSessionsChat</code>, <code>selectedChat</code>). Para cada <code>fluxObject</code> em modo chat/session, o merge decide: se aquela sessão já existia no array antigo, ele substitui as entries pelas da tabela nova (com um <em>fallback esquisito</em> para o JSONB antigo se o storage novo estiver vazio); se não existia, cria uma nova entrada. Também elege <strong>um único "porta-voz"</strong> — o primeiro nó com <code>chat=true</code> continua sendo o dono do chat interativo, e os outros são rebaixados a "só storage" pra não brigarem pelo input do usuário. Tudo feito por spread imutável, sem alterar o objeto original do <code>getFlow</code>.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box decision">
+            <div class="box-title"><span class="badge step">C1</span> Filtro: <code>fluxObject &amp;&amp; (chat || sessionEnabled)</code></div>
+            <div class="box-desc">
+              Mesmo filtro que B2 — só fluxObject em modo chat/session entra na transformação. Outros nodes seguem no <code>map</code> pro branch (D).
+            </div>
+            <div class="box-file">flux.service.ts:2518-2520</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">C2</span> Computa flags de saída</div>
+            <div class="code-block">
+<span class="k">const</span> hasChat = node.data?.chat === <span class="k">true</span>;
+<span class="k">const</span> isFirstWithChat = node.id === firstFluxObjectWithChat?.id;
+<span class="k">const</span> chatValue = hasChat ? isFirstWithChat : <span class="k">false</span>;   <span class="c">// só 1 nó fica true</span>
+<span class="k">const</span> sessionEnabled = hasChat ? <span class="k">true</span> : node.data?.sessionEnabled;
+            </div>
+            <div class="box-file">flux.service.ts:2521-2525</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">C3</span> Busca a sessão no <code>userSessionsChat</code> antigo</div>
+            <div class="box-desc">
+              <code>userSessionsChat.find(s =&gt; s.id === sessionIdForChat)</code>
+              <br><br><code>userSessionsChat</code> é o array de sessões que já existia em <code>node.data</code> (JSONB do flow). Objetivo: decidir se substitui uma entry existente ou anexa uma nova.
+            </div>
+            <div class="box-file">flux.service.ts:2527-2531</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="cascade">
+            <div class="cascade-title">🪜 Merge da session</div>
+            <div class="cascade-step">
+              <span class="cascade-num">1</span>
+              <span class="cond">achou a session no array?</span>
+              <span class="result pass">substitui <code>entries</code></span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">1a</span>
+              <span class="cond"><code>storedEntries.length &gt; 0</code></span>
+              <span class="result pass">usa <code>storedEntries</code> (DB)</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">1b</span>
+              <span class="cond">storedEntries vazio</span>
+              <span class="result call">mantém <code>findUserSession.entries</code></span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">2</span>
+              <span class="cond">não achou</span>
+              <span class="result pass">cria nova entry (<code>storedEntries || []</code>)</span>
+            </div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">C4</span> Retorna novo node</div>
+            <div class="code-block">
+{
+  ...node,
+  <span class="k">data</span>: {
+    ...node.data,
+    <span class="k">chat</span>: chatValue,
+    <span class="k">sessionEnabled</span>: sessionEnabled,
+    <span class="k">selectedChat</span>: sessionIdForChat,
+    <span class="k">entries</span>: resolvedEntries,
+    <span class="k">userSessionsChat</span>: [ <span class="c">/* array atualizado */</span> ],
+  }
+}
+            </div>
+            <div class="box-file">flux.service.ts:2539-2577</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Por que só 1 fluxObject fica com <code>chat=true</code>?</div>
+            O chat interativo (com UI e roteamento de mensagens do socket) só faz sentido pra <strong>um</strong> nó. Os demais <code>fluxObject</code> com <code>chat=true</code> viram apenas storage de sessão (<code>sessionEnabled=true</code>, mas <code>chat=false</code>).
+            <br><br>Isso evita que 2 nós disputem o input do usuário.
+          </div>
+
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Fallback perigoso: usa entries do JSONB</div>
+            Se <code>storedEntries.length === 0</code> mas <code>findUserSession</code> existe, o merge <strong>mantém as entries antigas do JSONB</strong> (<code>findUserSession.entries</code>) — em vez de virar array vazio.
+            <br><br>Isso é rescaldo do modelo antigo (antes da migração pra <code>session_state_entries</code>). Um flow com dados residuais no <code>userSessionsChat</code> do JSONB continua enxergando esse histórico legado indefinidamente, até alguém escrever no novo storage.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 Shape do <code>userSessionsChat[i]</code></div>
+            <code>{ id: string, name: string, entries: Record&lt;string,any&gt;[] }</code>
+            <br><br>Novo item criado tem <code>name</code> = <code>'Primary'</code> se <code>sessionIdForChat === 'default'</code>, senão o próprio <code>sessionIdForChat</code>.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 Mutação imutável</div>
+            Tudo via spread (<code>...node</code>, <code>...data</code>, <code>[...userSessionsChat, novo]</code>) — <code>updatedFlows</code> vira nova referência a cada map, mas as sub-referências antigas não são tocadas. Nenhum risco de vazar mutação pro <code>getFlow.nodes</code> original.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION D: Loop 2 - nodesBox merge -->
+  <!-- ============================================================ -->
+  <div class="fn-card" id="fn-d">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#A855F7;color:white">D</span>
+        <code>Loop 2: merge no nodesBox</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:2580-2614</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        if (node.type === 'nodesBox') return { ...node, data: { ...data, selectedSession: sessionIdForChat, sessions: [...] } }
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Todo <code>nodesBox</code> recebe o <code>sessionIdForChat</code> como <code>selectedSession</code>, e faz upsert em <code>data.sessions[]</code>. Diferente do fluxObject, aqui não há leitura de <code>session_state_entries</code> — só o ponteiro <code>selectedSession</code> é ajustado.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> se o <code>fluxObject</code> teve tradutor, o <code>nodesBox</code> tem um <em>cadastrador de gaveta</em> muito mais simples. Para todo <code>nodesBox</code> do flow (sem filtrar por chat/session), ele aponta um "cursor" chamado <code>selectedSession</code> pro id da sessão atual e, se essa gaveta ainda não existir no array <code>data.sessions</code>, cria uma vazia (<code>content: []</code>). É <strong>só isso</strong> — nenhum SELECT, nenhuma leitura de tabela nova. O storage dos <code>nodesBox</code> continua vivendo dentro do JSONB gordo de <code>flows_nodes.data</code>, migração pra <code>session_state_entries</code> ainda pendente. E cuidado com a nomenclatura: aqui a lista se chama <code>content</code>, no fluxObject se chama <code>entries</code> — mesma ideia, schemas diferentes.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box decision">
+            <div class="box-title"><span class="badge step">D1</span> Filtro: <code>node.type === 'nodesBox'</code></div>
+            <div class="box-desc">
+              Roda pra <strong>todo</strong> nodesBox — sem checar chat/sessionEnabled. Se o run tem <code>sessionIdForChat</code>, todo nodesBox é reconfigurado.
+            </div>
+            <div class="box-file">flux.service.ts:2580</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">D2</span> Procura session existente</div>
+            <div class="box-desc">
+              <code>const findSession = sessions.find(s =&gt; s.id === sessionIdForChat)</code>
+              <br><br><code>sessions</code> aqui é o array embutido em <code>node.data.sessions</code> (JSONB legado do nodesBox — <em>não</em> a tabela session_state_entries).
+            </div>
+            <div class="box-file">flux.service.ts:2581-2584</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="cascade">
+            <div class="cascade-title">🪜 Upsert da session</div>
+            <div class="cascade-step">
+              <span class="cascade-num">1</span>
+              <span class="cond">session já existe no array?</span>
+              <span class="result pass">só seta <code>selectedSession</code></span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">2</span>
+              <span class="cond">não existe</span>
+              <span class="result call">cria <code>{ id, name, content: [] }</code></span>
+            </div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">D3</span> Retorna node</div>
+            <div class="code-block">
+{
+  ...node,
+  <span class="k">data</span>: {
+    ...node.data,
+    <span class="k">selectedSession</span>: sessionIdForChat,
+    <span class="k">sessions</span>: [
+      ...sessions,
+      { <span class="k">id</span>: sessionIdForChat, <span class="k">name</span>: <span class="c">/* 'Primary' ou id */</span>, <span class="k">content</span>: [] },
+    ],
+  },
+}
+            </div>
+            <div class="box-file">flux.service.ts:2594-2612</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Por que atualiza todo nodesBox?</div>
+            <code>nodesBox</code> é storage de objects (chave-valor + sessions) que pode ser lido/escrito por qualquer nó do flow. Ao mudar o <code>sessionIdForChat</code>, todo nodesBox precisa apontar pra mesma "sessão" pra que o storage escrito por um nó seja o storage lido por outro dentro do mesmo run.
+          </div>
+
+          <div class="aside warn">
+            <div class="aside-title">⚠️ <code>content: []</code>, não <code>entries: []</code></div>
+            O shape do <code>nodesBox.sessions[i]</code> tem <code>content</code>, enquanto <code>fluxObject.userSessionsChat[i]</code> tem <code>entries</code>. Não confunda — são schemas diferentes por design, mesmo que carreguem a mesma ideia de "lista de coisas gravadas nesta sessão".
+          </div>
+
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Não lê de <code>session_state_entries</code></div>
+            Diferente do fluxObject (que hidrata via <code>readContents</code>), o nodesBox <strong>não</strong> lê a tabela — usa só o array in-memory de <code>data.sessions</code>. Ou seja: o storage novo (session_state_entries) só cobre <code>fluxObject</code>. Se o handler do nodesBox depende do <code>content</code> antigo, ele lê JSONB. Migração incompleta.
+            <br><br>Ver <code>objects.service.ts</code> e handler em <code>flux.service.ts:3575</code> (nodesBox handler) pra confirmar como o handler faz o append.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 <code>selectedSession</code> = ponteiro</div>
+            Como se fosse um <em>cursor</em> no array: o handler do nodesBox lê <code>sessions.find(s =&gt; s.id === selectedSession)</code> pra saber onde gravar/ler nesse run.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="note info" style="margin-top:32px">
+    <strong>Resumo — o que sai de 1.6:</strong>
+    <br>• <code>sessionIdForChat</code> = string com a sessão de chat resolvida ('', <code>'default'</code>, ou <code>sessionId</code> do request)
+    <br>• <code>updatedFlows</code> = array de nodes com <code>fluxObject</code> hidratado (entries, userSessionsChat, selectedChat, chat, sessionEnabled) e <code>nodesBox</code> apontando pra <code>selectedSession</code> correto
+    <br>• Um <code>Map&lt;nodeId, content[]&gt;</code> local (<code>chatEntriesByNodeId</code>) que é descartado após o merge
+    <br>• I/O: 1 SELECT em <code>session_state_entries</code> por <code>fluxObject</code> em modo chat/session (sequencial)
+  </div>
+
+  <div class="note">
+    <strong>Observações para migração:</strong>
+    <br>• <strong>Essencial só se o flow tem chat/session</strong> — o gate em (A) permite pular todo o bloco. Flows batch/api sem chat não pagam custo nenhum.
+    <br>• Este passo já foi <strong>parcialmente migrado</strong>: <code>fluxObject.entries</code> agora vem de <code>session_state_entries</code>, mas <code>nodesBox.sessions[i].content</code> ainda vive no JSONB de <code>flows_nodes.data</code>. Migrar o nodesBox pra <code>session_state_entries</code> (scopeType <code>'object'</code>) é o próximo passo natural pra eliminar o "fat JSONB" ([[project_jsonb_fat_fields]]).
+    <br>• O worker <strong>não</strong> precisa fazer esse setup — pode receber o <code>updatedFlows</code> já hidratado nos start-args do workflow, ou receber apenas <code>sessionIdForChat</code> + <code>ownerUserId</code> e fazer o read remoto se realmente precisar do histórico dentro de um handler específico.
+    <br>• N+1 sequencial (B) é trivial de virar <code>Promise.all</code> — pode entrar num sprint de otimização qualquer, não bloqueia a migração.
+    <br>• Footgun crítico: se <code>ownerUserId</code> ficar <code>undefined</code>, o WHERE em <code>readEntries</code> omite a coluna → leaks entries de outros users. Blindar isso antes de qualquer refactor.
+    <br>• Fallback de entries antigas (C, aside warn) precisa ser removido em algum ponto — hoje mantém dados residuais do JSONB indefinidamente.
+  </div>
+
+  <!-- FOOTER NAV -->
+  <div class="page-footer-nav">
+    <a href="index.html#step-1-6" class="back-btn">← Voltar ao diagrama principal</a>
+  </div>
+
+</div>
+</body>
+</html>

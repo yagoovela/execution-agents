@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Passo 1.5 — Carregamento de objetos personalizados | Detalhamento</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #F1F5F9;
+    color: #0F172A;
+    margin: 0;
+    padding: 32px 24px 80px;
+    line-height: 1.4;
+  }
+  .container { max-width: 1500px; margin: 0 auto; }
+
+  /* Top nav */
+  .page-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    flex-wrap: wrap;
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #64748B;
+  }
+  .breadcrumb a {
+    color: #3B82F6;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #CBD5E1; }
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #0F172A;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+
+  /* Page header */
+  .page-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 8px;
+  }
+  .page-header .icon { font-size: 32px; }
+  .page-header h1 {
+    margin: 0;
+    font-size: 26px;
+    color: #0F172A;
+    letter-spacing: -0.4px;
+  }
+  .page-sub {
+    color: #64748B;
+    font-size: 13px;
+    margin-bottom: 24px;
+    padding-left: 46px;
+  }
+  .page-sub code {
+    background: #E2E8F0;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 12px;
+    color: #334155;
+  }
+
+  /* Overview chain */
+  .overview-mini {
+    background: white;
+    padding: 16px 18px;
+    border-radius: 10px;
+    margin-bottom: 28px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .overview-mini-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 12px;
+  }
+  .overview-chain {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .overview-chip {
+    background: #F8FAFC;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border-left: 3px solid #3B82F6;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #0F172A;
+    text-decoration: none;
+    display: inline-block;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+  .overview-chip .lbl {
+    display: block;
+    font-size: 9.5px;
+    color: #64748B;
+    font-weight: 500;
+    margin-bottom: 2px;
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .overview-sep { color: #94A3B8; font-size: 18px; font-weight: bold; }
+
+  /* Boxes */
+  .box {
+    background: white;
+    border-radius: 8px;
+    padding: 9px 13px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border-left: 4px solid #94A3B8;
+    width: 100%;
+    max-width: 100%;
+  }
+  .box.backend    { border-left-color: #3B82F6; }
+  .box.worker     { border-left-color: #10B981; }
+  .box.db         { border-left-color: #F59E0B; }
+  .box.redis      { border-left-color: #EF4444; }
+  .box.s3         { border-left-color: #8B5CF6; }
+  .box.external   { border-left-color: #64748B; }
+  .box.decision { border-left-color: #EAB308; background: #FEFCE8; }
+  .box.cross { border-left-color: #A855F7; background: #FAF5FF; }
+
+  .box-title {
+    font-weight: 600;
+    font-size: 12.5px;
+    color: #0F172A;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .box-desc { font-size: 11.5px; color: #475569; }
+  .box-file {
+    font-size: 10px;
+    color: #94A3B8;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    margin-top: 3px;
+    word-break: break-all;
+  }
+  .box code {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    background: #F1F5F9;
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: #334155;
+    word-break: break-word;
+  }
+  .box-desc code { word-break: break-word; }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .badge.migrated { background: #D1FAE5; color: #065F46; }
+  .badge.legacy   { background: #FEE2E2; color: #991B1B; }
+  .badge.mixed    { background: #FEF3C7; color: #92400E; }
+  .badge.step     { background: #E0E7FF; color: #3730A3; font-size: 10px; }
+  .badge.cross    { background: #F3E8FF; color: #6B21A8; }
+
+  /* Arrows */
+  .arrow {
+    color: #64748B;
+    font-size: 22px;
+    line-height: 1;
+    margin: 1px 0;
+    text-align: center;
+  }
+  .converge { text-align: center; color: #64748B; font-size: 22px; margin: 6px 0; }
+
+  /* Function card */
+  .fn-card {
+    margin-top: 28px;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .fn-card-header {
+    background: linear-gradient(to right, #0F172A, #1E293B);
+    color: white;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .fn-card-header .fn-title {
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .fn-card-header .fn-title code {
+    background: rgba(255,255,255,0.15);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 13px;
+  }
+  .fn-card-header .fn-loc {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #CBD5E1;
+  }
+  .fn-card-body { padding: 20px; }
+
+  .fn-signature {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    background: #F1F5F9;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: #334155;
+    margin-bottom: 16px;
+    overflow-x: auto;
+  }
+  .fn-purpose {
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    background: #EFF6FF;
+    border-left: 3px solid #3B82F6;
+    border-radius: 6px;
+  }
+  .fn-friendly {
+    font-size: 13px;
+    color: #334155;
+    margin-bottom: 20px;
+    padding: 12px 14px 12px 44px;
+    background: #F0FDF4;
+    border-left: 3px solid #10B981;
+    border-radius: 6px;
+    position: relative;
+    line-height: 1.55;
+  }
+  .fn-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 14px;
+    top: 10px;
+    font-size: 18px;
+  }
+  .fn-friendly strong {
+    color: #065F46;
+  }
+
+  .fn-body-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 900px) {
+    .fn-body-cols { grid-template-columns: 1fr; }
+  }
+  .fn-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .fn-asides {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Aside panels */
+  .aside {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 11.5px;
+    color: #78350F;
+  }
+  .aside.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .aside.warn { background: #FEE2E2; border-left-color: #EF4444; color: #991B1B; }
+  .aside.helper { background: #F3E8FF; border-left-color: #A855F7; color: #6B21A8; }
+  .aside-title {
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .aside code {
+    background: rgba(255,255,255,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    word-break: break-word;
+  }
+
+  /* Cascade */
+  .cascade {
+    background: #FEFCE8;
+    border: 1px dashed #EAB308;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 6px 0;
+  }
+  .cascade-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #713F12;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .cascade-step {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 8px;
+    background: white;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    font-size: 11.5px;
+  }
+  .cascade-step .cond {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #334155;
+  }
+  .cascade-step .result {
+    font-weight: 700;
+    font-size: 10.5px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .cascade-step .result.pass  { background: #D1FAE5; color: #065F46; }
+  .cascade-step .result.deny  { background: #FEE2E2; color: #991B1B; }
+  .cascade-step .result.next  { background: #E0E7FF; color: #3730A3; }
+  .cascade-step .result.call  { background: #FEF3C7; color: #78350F; }
+  .cascade-num {
+    background: #EAB308;
+    color: white;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* Nested sub-flow */
+  .nested-flow {
+    margin: 6px 0;
+    padding: 12px;
+    background: #F0FDF4;
+    border: 1px dashed #10B981;
+    border-radius: 8px;
+  }
+  .nested-flow-title {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #065F46;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  /* Code block */
+  .code-block {
+    background: #0F172A;
+    color: #E2E8F0;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 6px 0;
+  }
+  .code-block .k { color: #93C5FD; }
+  .code-block .s { color: #86EFAC; }
+  .code-block .c { color: #64748B; font-style: italic; }
+  .code-block .t { color: #FDE68A; }
+
+  /* Notes */
+  .note {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    color: #78350F;
+    margin: 20px 0;
+  }
+  .note.info {
+    background: #EFF6FF;
+    border-left-color: #3B82F6;
+    color: #1E3A8A;
+  }
+  .note code {
+    background: rgba(255,255,255,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+  }
+
+  .page-footer-nav {
+    margin-top: 48px;
+    padding: 16px;
+    background: white;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .field-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin: 8px 0;
+  }
+  .field-table th {
+    text-align: left;
+    padding: 6px 8px;
+    background: #F1F5F9;
+    color: #334155;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    font-size: 10px;
+    border-bottom: 1px solid #CBD5E1;
+  }
+  .field-table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid #F1F5F9;
+    vertical-align: top;
+  }
+  .field-table td:first-child {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    color: #0F172A;
+    font-weight: 600;
+    white-space: nowrap;
+    font-size: 10.5px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- TOP NAV -->
+  <div class="page-nav">
+    <div class="breadcrumb">
+      <a href="index.html">📋 Execução de Agente</a>
+      <span class="sep">›</span>
+      <span>Passo 1.5 — Detalhamento</span>
+    </div>
+    <a href="index.html#step-1-5" class="back-btn">← Voltar ao diagrama</a>
+  </div>
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <span class="icon">📦</span>
+    <h1>Passo 1.5 — Carregamento de objetos personalizados</h1>
+  </div>
+  <div class="page-sub">
+    Bloco em <code>flux.service.ts:2439-2462</code>. Resolve <strong>quem é o dono dos objetos</strong> (space, companyUser ou user) e carrega os <code>UserObject</code> daquele owner. Objetos são JSONs personalizados que o node <code>nodesBox</code> lê e (às vezes) escreve durante a execução.
+  </div>
+
+  <div class="note info">
+    <strong>Contexto:</strong> objetos personalizados são estruturas de dados nomeadas (chave-valor + sessions) que o usuário define no editor e o nó <code>nodesBox</code> usa como <em>storage</em>. São carregados uma única vez aqui e passam a referenciar <code>objectCallerData</code> mutável ao longo do loop.
+  </div>
+
+  <!-- Overview chain -->
+  <div class="overview-mini">
+    <div class="overview-mini-title">Cadeia de chamadas em 1.5</div>
+    <div class="overview-chain">
+      <a href="#fn-a" class="overview-chip"><span class="lbl">A</span>Resolve ObjectOwner (3 fallbacks)</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-b" class="overview-chip"><span class="lbl">B · condicional</span>CompanyUser.findOne</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>objectsService.getObjectsByOwner()</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>objectsService.toJsonArray()</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-e" class="overview-chip"><span class="lbl">E</span>onMutateObjectCallerData</a>
+    </div>
+    <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
+      Resultado final: variável <code>objectCallerData</code> preenchida no formato <code>FluxObject[]</code>, com um callback <code>onMutateObjectCallerData</code> que permite ao <code>nodesBox</code> mutar essa lista durante a execução do agente.
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION A: Resolve ObjectOwner -->
+  <!-- ============================================================ -->
+  <div class="fn-card" id="fn-a">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#EAB308;color:white">A</span>
+        <code>Resolve ObjectOwner (3 fallbacks)</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:2439-2454</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        let objectOwner: ObjectOwner; // { userId? } | { companyUserId? } | { spaceId? }
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Decide de qual <em>escopo</em> os objetos personalizados vêm — space (compartilhado), companyUser (privado dentro de uma company) ou user (privado pessoal). Cascata em 3 casos exclusivos.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> pense nessa parte como um <em>cadastrador</em> que precisa responder uma pergunta antes de qualquer coisa: "essa gaveta de objetos personalizados é de quem?". Ela testa em ordem: (1) se o flow vive dentro de um space, a gaveta é do space (compartilhada com o time); (2) se não tem space mas o usuário está logado numa company, ela vai no banco confirmar essa relação — se achar, a gaveta é do <code>companyUser</code>; senão cai pro pessoal; (3) se não veio nem space nem company selecionada, a gaveta é do próprio <code>user</code>. O resultado é um objetinho <code>{ spaceId }</code>, <code>{ companyUserId }</code> ou <code>{ userId }</code> — <strong>mutuamente exclusivo</strong> — que os próximos passos usam pra filtrar exatamente uma prateleira no banco.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="cascade">
+            <div class="cascade-title">🪜 Cascata de resolução (primeiro match ganha)</div>
+            <div class="cascade-step">
+              <span class="cascade-num">1</span>
+              <span class="cond"><code>spaceOwnerId</code> presente (flow está em space)</span>
+              <span class="result pass"><code>{ spaceId }</code></span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">2</span>
+              <span class="cond"><code>userFound.selectedCompanyId</code> presente</span>
+              <span class="result call">→ CompanyUser.findOne</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">2a</span>
+              <span class="cond">achou companyUser</span>
+              <span class="result pass"><code>{ companyUserId }</code></span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">2b</span>
+              <span class="cond">não achou</span>
+              <span class="result pass"><code>{ userId }</code></span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">3</span>
+              <span class="cond">nenhum dos anteriores</span>
+              <span class="result pass"><code>{ userId }</code> (fallback)</span>
+            </div>
+          </div>
+
+          <div class="arrow">↓</div>
+
+          <div class="box decision">
+            <div class="box-title">ObjectOwner é um union type mutually-exclusive</div>
+            <div class="code-block">
+<span class="k">interface</span> <span class="t">ObjectOwner</span> {
+  <span class="k">userId?</span>: <span class="t">string</span>;
+  <span class="k">companyUserId?</span>: <span class="t">string</span>;
+  <span class="k">spaceId?</span>: <span class="t">string</span>;
+}
+            </div>
+            <div class="box-file">objects/interfaces/flux-object.interface.ts:26-30</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 3 modos de ownership de objetos</div>
+            <strong>1. Space</strong> — objeto compartilhado entre todos os membros do space (colaboração)
+            <br><br><strong>2. CompanyUser</strong> — privado dentro de uma company (o user pertence a essa company mas o objeto não é público no space)
+            <br><br><strong>3. User</strong> — privado, atrelado apenas ao usuário (uso pessoal, fora de qualquer company)
+          </div>
+
+          <div class="aside">
+            <div class="aside-title">📎 Precedência: por que space primeiro?</div>
+            Se o flow está em um space, faz sentido usar os objetos daquele space (contexto colaborativo). Só cai pra companyUser/user se o flow não estiver em space nenhum.
+            <br><br>Nota: <code>selectedCompanyId</code> é o "workspace ativo" do usuário — mesma company pode ter multiple users, cada um com seus próprios objetos.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 Como é usado no buildWhereClause</div>
+            Depois em (C), <code>buildWhereClause</code> traduz esse ObjectOwner na coluna correta da tabela <code>user_objects</code>:
+            <br>• <code>spaceId</code> → WHERE space_id = X
+            <br>• <code>companyUserId</code> → WHERE company_user_id = X
+            <br>• <code>userId</code> → WHERE user_id = X
+            <br><br>São 3 colunas diferentes na mesma tabela — só uma é populada por row.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION B: CompanyUser.findOne -->
+  <!-- ============================================================ -->
+  <div class="fn-card" id="fn-b">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#F59E0B;color:white">B</span>
+        <code>CompanyUser.findOne()</code>
+        <span class="badge mixed" style="font-size:9px">condicional</span>
+      </div>
+      <div class="fn-loc">flux.service.ts:2443-2448</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        await CompanyUser.findOne({ where: { user: { id: userFound.id }, company: { id: userFound.selectedCompanyId } } })
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Descobre se o usuário atual tem uma relação <code>CompanyUser</code> ativa com a company selecionada. Se sim, esse companyUser vira o "dono" dos objetos. Se não, cai pro fallback userId.
+        <br><strong>Só executa se</strong> (A) chegou no caso 2 (<code>selectedCompanyId</code> presente).
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> é o <em>cartório</em> que confirma um vínculo: "esse usuário aí ainda tem carteirinha nessa company que ele diz ter selecionado?". Ela dá um pulo rápido no banco procurando a row que liga <code>user</code> + <code>company</code>. Se achou, aponta o dono dos objetos pra essa relação (<code>companyUserId</code>) — que dá acesso à prateleira privada da company. Se não achou, dá de ombros e devolve <code>userId</code>, ou seja, cai pros objetos pessoais do usuário. Detalhe importante: essa checagem <strong>não exige status ACTIVE</strong>, então mesmo um vínculo pendente/removido serve, o que difere do porteiro do passo 1.3.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box db">
+            <div class="box-title"><span class="badge step">B1</span> Query direta na entity (não via service)</div>
+            <div class="box-desc">
+              <code>CompanyUser.findOne({ where: { user: {id}, company: {id} } })</code>
+              <br><br>Diferente das outras chamadas de 1.3-1.4 que passam por services (<code>companyUserService.findOne</code>), aqui usa a entity <strong>diretamente</strong> — atalho comum em NestJS com TypeORM ActiveRecord.
+            </div>
+            <div class="box-file">flux.service.ts:2443-2448</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box decision">
+            <div class="box-title"><span class="badge step">B2</span> companyUser existe?</div>
+            <div class="box-desc">
+              <code>objectOwner = companyUser ? { companyUserId: companyUser.id } : { userId: userFound.id }</code>
+              <br><br>Ternário inline: se achou usa companyUserId, senão fallback pra userId.
+            </div>
+            <div class="box-file">flux.service.ts:2449-2451</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Ausência de filtro status = ACTIVE</div>
+            Diferente do <code>checkIfUserCanRunFlow</code> em 1.3-C que exige <code>status === ACTIVE</code>, aqui basta a row existir. Um user com status <em>pending</em> ou <em>removed</em> mas ainda com row viva ainda vai usar os objetos como companyUser.
+            <br><br>Pode ser edge case raro em produção, mas é comportamento diferente.
+          </div>
+
+          <div class="aside info">
+            <div class="aside-title">💡 Por que o fallback userId?</div>
+            Se o usuário selecionou uma company mas não é membro dela (ou já não é mais), ainda faz sentido carregar os objetos <em>pessoais</em> dele. Não bloqueia — o pior caso é que ele vê os próprios objetos em vez dos da company.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 selectedCompanyId</div>
+            Campo em <code>user.selectedCompanyId</code>. Representa qual company o usuário está "ativo" agora (workspace switch).
+            <br><br>Um user pode pertencer a várias companies simultaneamente; o selectedCompanyId indica qual está no foco.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION C: getObjectsByOwner -->
+  <!-- ============================================================ -->
+  <div class="fn-card" id="fn-c">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#3B82F6;color:white">C</span>
+        <code>objectsService.getObjectsByOwner()</code>
+      </div>
+      <div class="fn-loc">objects.service.ts:21-24</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        async getObjectsByOwner(owner: ObjectOwner): Promise&lt;UserObject[]&gt;
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Carrega todos os <code>UserObject</code> daquele owner. Delega toda a lógica de WHERE pro helper privado <code>buildWhereClause</code>.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> agora que o dono da gaveta foi decidido em (A/B), essa é a <em>carteira</em> que efetivamente abre a gaveta e traz tudo dentro. Ela recebe o objetinho <code>ObjectOwner</code>, passa pro helper <code>buildWhereClause</code> traduzir em qual coluna do banco filtrar (space_id, company_user_id ou user_id) e roda um <code>SELECT *</code> em <code>user_objects</code>. O retorno é um array cru de entidades <code>UserObject</code> — todas as prateleiras daquele dono. Cuidado embutido: se por algum motivo o owner vier vazio, o WHERE vira <code>{}</code> e o banco devolve <strong>todos os objetos de todos os usuários</strong> — footgun clássico esperando bug em (A) pra causar leak.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">C1</span> Monta WHERE clause</div>
+            <div class="box-desc">
+              <code>const where = this.buildWhereClause(owner)</code>
+            </div>
+            <div class="box-file">objects.service.ts:22</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="nested-flow">
+            <div class="nested-flow-title">↳ buildWhereClause(owner) — objects.service.ts:201-208</div>
+            <div class="cascade" style="background:white;border-color:#94A3B8">
+              <div class="cascade-step">
+                <span class="cascade-num">1</span>
+                <span class="cond"><code>owner.spaceId</code> presente?</span>
+                <span class="result pass">return <code>{ spaceId }</code></span>
+              </div>
+              <div class="cascade-step">
+                <span class="cascade-num">2</span>
+                <span class="cond"><code>owner.companyUserId</code> presente?</span>
+                <span class="result pass">return <code>{ companyUserId }</code></span>
+              </div>
+              <div class="cascade-step">
+                <span class="cascade-num">3</span>
+                <span class="cond"><code>owner.userId</code> presente?</span>
+                <span class="result pass">return <code>{ userId }</code></span>
+              </div>
+              <div class="cascade-step">
+                <span class="cascade-num">4</span>
+                <span class="cond">nenhum</span>
+                <span class="result deny">return <code>{}</code> (traz TUDO — perigoso!)</span>
+              </div>
+            </div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box db">
+            <div class="box-title"><span class="badge step">C2</span> userObjectRepository.find({ where })</div>
+            <div class="box-desc">
+              SELECT * FROM user_objects WHERE (space_id = $1) OR (company_user_id = $1) OR (user_id = $1) dependendo do owner. Retorna array de <code>UserObject</code>.
+            </div>
+            <div class="box-file">objects.service.ts:23</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Fallback {} do buildWhereClause</div>
+            Se por algum motivo o <code>objectOwner</code> ficar vazio (todos campos undefined), o WHERE clause vira <code>{}</code> — que em TypeORM significa <strong>"trazer todas as rows"</strong>.
+            <br><br>Na prática (A) sempre popula pelo menos <code>userId</code>, mas é um footgun latente. Um bug em (A) que zerar o owner leakaria objetos de TODOS os usuários.
+          </div>
+
+          <div class="aside info">
+            <div class="aside-title">📊 Tabela user_objects</div>
+            Uma row = um objeto personalizado. Campos-chave:
+            <table class="field-table">
+              <tr><th>Campo</th><th>Descrição</th></tr>
+              <tr><td>objectId</td><td>UUID do objeto (chave lógica)</td></tr>
+              <tr><td>name</td><td>Nome exibido ao usuário</td></tr>
+              <tr><td>text</td><td>Array de FluxObjectTextItem (JSONB)</td></tr>
+              <tr><td>sessions</td><td>Array de FluxObjectSession (JSONB)</td></tr>
+              <tr><td>selectedSession</td><td>ID da session ativa</td></tr>
+              <tr><td>sessionEnabled</td><td>Se tem modo session</td></tr>
+              <tr><td>flowId</td><td>Se atrelado a um flow específico (nullable)</td></tr>
+              <tr><td>userId / companyUserId / spaceId</td><td>Mutually exclusive — só um populado</td></tr>
+            </table>
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 Sem paginação</div>
+            <code>userObjectRepository.find</code> traz todos os objetos do owner de uma vez. Se um space tiver 500 objetos, tudo vem em memória.
+            <br><br>Em teoria não é problema porque objetos são pequenos, mas em espaces gigantes pode virar bottleneck (não é o caso hoje).
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION D: toJsonArray -->
+  <!-- ============================================================ -->
+  <div class="fn-card" id="fn-d">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#8B5CF6;color:white">D</span>
+        <code>objectsService.toJsonArray()</code>
+      </div>
+      <div class="fn-loc">objects.service.ts:43-57</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        toJsonArray(objects: UserObject[]): FluxObject[]
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Mapper puro. Converte a entity <code>UserObject</code> (que tem <code>objectId</code>, colunas de owner separadas, etc.) para o DTO <code>FluxObject</code> que o frontend/nodesBox espera (com <code>id</code> em vez de <code>objectId</code>, sem colunas de ownership).
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> é o <em>tradutor</em> — uma função pura, sem I/O, que só troca a embalagem. As entidades vindas de (C) têm um monte de coisa que o frontend não precisa ver (a PK real do banco, as colunas de dono, timestamps do TypeORM) e usam <code>objectId</code> como chave lógica. Aqui elas são remapeadas num formato mais enxuto: <code>id</code> (que na verdade é o <code>objectId</code>), <code>name</code>, <code>text</code>, <code>sessions</code>, etc. Depois desse passo, quem consumir a lista (o próprio <code>nodesBox</code> e o frontend) trabalha com <code>FluxObject[]</code> — sem risco de vazar detalhes internos do banco nem PK real.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">D1</span> .map(obj => FluxObject)</div>
+            <div class="box-desc">
+              Função síncrona, sem I/O. Só renomeia e projeta campos.
+            </div>
+            <div class="code-block">
+<span class="k">return</span> objects.<span class="t">map</span>((obj) =&gt; ({
+  <span class="k">id</span>: obj.<span class="s">objectId</span>,          <span class="c">// renomeado</span>
+  <span class="k">name</span>: obj.<span class="s">name</span>,
+  <span class="k">isCreating</span>: obj.<span class="s">isCreating</span>,
+  <span class="k">localObject</span>: obj.<span class="s">localObject</span>,
+  <span class="k">sessionEnabled</span>: obj.<span class="s">sessionEnabled</span>,
+  <span class="k">selectedSession</span>: obj.<span class="s">selectedSession</span>,
+  <span class="k">sessions</span>: obj.<span class="s">sessions</span>,
+  <span class="k">flowId</span>: obj.<span class="s">flowId</span> ?? <span class="s">''</span>,
+  <span class="k">text</span>: obj.<span class="s">text</span>,
+  <span class="k">folderId</span>: obj.<span class="s">folderId</span>,
+  <span class="k">rank</span>: obj.<span class="s">rank</span> ?? <span class="k">null</span>,
+}));
+            </div>
+            <div class="box-file">objects.service.ts:43-57</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">📎 Interface FluxObject</div>
+            <div class="code-block" style="font-size:10.5px">
+<span class="k">interface</span> <span class="t">FluxObject</span> {
+  <span class="k">id</span>: <span class="t">string</span>;
+  <span class="k">name</span>: <span class="t">string</span>;
+  <span class="k">isCreating</span>: <span class="t">boolean</span>;
+  <span class="k">localObject</span>: <span class="t">boolean</span>;
+  <span class="k">sessionEnabled</span>: <span class="t">boolean</span>;
+  <span class="k">selectedSession</span>: <span class="t">string</span>;
+  <span class="k">sessions</span>: <span class="t">FluxObjectSession[]</span>;
+  <span class="k">flowId</span>: <span class="t">string</span>;
+  <span class="k">text</span>: <span class="t">FluxObjectTextItem[]</span>;
+  <span class="k">folderId?</span>: <span class="t">string | null</span>;
+  <span class="k">rank?</span>: <span class="t">string | null</span>;
+}
+            </div>
+            <div style="font-size:10.5px;font-family:monospace">flux-object.interface.ts:12-24</div>
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 objectId vs id</div>
+            <code>UserObject.id</code> = PK do banco (UUID gerado pelo TypeORM)
+            <br><code>UserObject.objectId</code> = ID lógico usado no frontend (mesmo objeto pode ter várias rows por owner, mas mesmo objectId)
+            <br><br>O DTO expõe <code>objectId</code> como <code>id</code> — o frontend nunca vê a PK real do banco.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 Diferença UserObject → FluxObject</div>
+            Ficam de fora:
+            <br>• <code>userId</code> / <code>companyUserId</code> / <code>spaceId</code> — colunas de ownership não são expostas
+            <br>• <code>createdAt</code> / <code>updatedAt</code> — timestamps do banco
+            <br>• A PK <code>id</code> — só a chave lógica <code>objectId</code> vaza pra frontend
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION E: onMutateObjectCallerData -->
+  <!-- ============================================================ -->
+  <div class="fn-card" id="fn-e">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#A855F7;color:white">E</span>
+        <code>onMutateObjectCallerData (callback)</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:2460-2462</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        const onMutateObjectCallerData = (data) =&gt; { objectCallerData = data; };
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Closure que permite ao <code>nodesBox</code> mutar a lista de objetos durante a execução do agente. Sem essa referência mutável, mudanças feitas pelo nó não se propagariam pros próximos nós do mesmo run.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> pense nele como um <em>carteiro</em> que fica entre os nós — quando um <code>nodesBox</code> altera algum objeto no meio da execução (grava um novo texto, muda a session ativa, adiciona uma linha), esse callback recebe a nova versão da lista e reatribui a variável <code>objectCallerData</code> no escopo pai. Assim, o próximo nó que ler a lista já vê o estado atualizado. É uma closure clássica de mutação: em vez de mutar o array no lugar, ele <strong>substitui a referência inteira</strong> pelo novo array que o handler devolveu. Segue o mesmo padrão de <code>onMutateSchema</code> e <code>onUpdateTokens</code>, e é o principal ponto de atrito pra qualquer migração pro worker — porque no worker os nós não compartilham essa memória e teriam que fazer round-trip pelo backend a cada mutação.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">E1</span> Cria closure capturando a variável objectCallerData</div>
+            <div class="box-desc">
+              <code>let objectCallerData = this.objectsService.toJsonArray(...)</code> em (D) — variável <strong>let</strong>, não const.
+              <br><br>O callback recebe novo <code>data</code> e reatribui a variável do escopo pai. Padrão mutação via closure.
+            </div>
+            <div class="box-file">flux.service.ts:2456, 2460-2462</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box cross">
+            <div class="box-title"><span class="badge step">E2</span> Passado como argumento pro handler de nodesBox</div>
+            <div class="box-desc">
+              Quando o loop principal (Fase 3) despacha um nó do tipo <code>nodesBox</code>, ele passa <code>objectCallerData</code> (valor atual) + <code>onMutateObjectCallerData</code> (callback pra mutação). O handler chama o callback se o object foi alterado, propagando pra próxima iteração.
+              <br><br>Ver <code>flux.service.ts:3575-3599, 4146-4174</code> (handler do nodesBox).
+            </div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Padrão de closure mutation</div>
+            É o mesmo pattern usado por <code>onMutateSchema</code> logo abaixo (linha 2465-2467) e por <code>onUpdateTokens</code> em Fase 3. Mantém a "fonte da verdade" no escopo do <code>apiV2()</code> e permite que services filhos atualizem sem passar referência de objeto.
+          </div>
+
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Race condition potencial</div>
+            Se dois nós <code>nodesBox</code> rodarem em paralelo (não acontece no loop legacy hoje, mas em qualquer refactor de paralelismo virá à tona), a última chamada do callback ganha.
+            <br><br>No worker isso seria pior porque o worker não compartilha essa closure — a mutação seria perdida.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 Reatribuição, não mutação de array</div>
+            O callback substitui a referência (<code>objectCallerData = data</code>) em vez de mutar o array in-place (<code>objectCallerData.push(...)</code>).
+            <br><br>Isso é intencional: o handler do nodesBox retorna um <em>novo</em> array já com as mudanças aplicadas.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="note info" style="margin-top:32px">
+    <strong>Resumo — o que sai de 1.5:</strong>
+    <br>• <code>objectOwner</code> = ObjectOwner (space/companyUser/user, mutually exclusive)
+    <br>• <code>objectCallerData</code> = <code>FluxObject[]</code> — lista dos objetos daquele owner, no formato flat esperado pelo frontend
+    <br>• <code>onMutateObjectCallerData</code> = callback que o loop passa pro handler do <code>nodesBox</code> pra ele reescrever a lista durante a run
+    <br>• Nenhum I/O pesado: 1 (raras vezes 2) SELECTs, sem paginação, sem cache
+  </div>
+
+  <div class="note">
+    <strong>Observações para migração:</strong>
+    <br>• A cascata de resolução do ObjectOwner (A) é business logic pura — replicável em qualquer lugar, mas precisa do <code>flow.folder.spaces.id</code> e do <code>user.selectedCompanyId</code> como input.
+    <br>• O footgun do <code>buildWhereClause</code> retornando <code>{}</code> quando o owner é vazio é um alerta pra qualquer implementação nova: <strong>sempre garanta pelo menos userId antes de chamar</strong>.
+    <br>• Se o worker precisar dos objetos, tem que receber o array já preparado no start do workflow OU fazer a query lá — mas nesse caso perde o padrão de closure mutation (o worker não pode alterar o array in-memory do backend depois).
+    <br>• <code>onMutateObjectCallerData</code> é a maior dificuldade pra migração: <strong>nodesBox mutando objectCallerData durante a run é state compartilhado entre nós</strong>. No worker, cada nó executa isolado; qualquer mutação teria que ir via API call pro backend (custa round-trip por nó de nodesBox).
+    <br>• Sem esforço de refactor, 1.5 pode continuar no backend mesmo depois da migração — é rápido e o resultado é passado nos start-args do workflow.
+  </div>
+
+  <!-- FOOTER NAV -->
+  <div class="page-footer-nav">
+    <a href="index.html#step-1-5" class="back-btn">← Voltar ao diagrama principal</a>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,1697 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Flux — Execução de Agente (Estado Atual)</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #F1F5F9;
+    color: #0F172A;
+    margin: 0;
+    padding: 32px 24px 80px;
+    line-height: 1.4;
+  }
+  .container { max-width: 1500px; margin: 0 auto; }
+
+  h1 {
+    text-align: center;
+    color: #0F172A;
+    margin: 0 0 8px 0;
+    font-size: 28px;
+    letter-spacing: -0.5px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #64748B;
+    margin-bottom: 28px;
+    font-size: 14px;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+    padding: 14px 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #334155; }
+  .legend-swatch {
+    width: 20px; height: 12px; border-radius: 3px;
+    border-left: 4px solid;
+  }
+
+  /* Section headers */
+  .section {
+    margin-bottom: 40px;
+    padding-top: 8px;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #CBD5E1;
+  }
+  .section-number {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: #0F172A;
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+  .section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #0F172A;
+  }
+  .section-desc {
+    font-size: 12px;
+    color: #64748B;
+    font-weight: normal;
+    margin-left: auto;
+    text-align: right;
+  }
+
+  /* Box - the little step boxes */
+  .flow-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .box {
+    background: white;
+    border-radius: 8px;
+    padding: 9px 13px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border-left: 4px solid #94A3B8;
+    width: 520px;
+    max-width: 100%;
+    position: relative;
+  }
+  .box.backend    { border-left-color: #3B82F6; }
+  .box.worker     { border-left-color: #10B981; }
+  .box.db         { border-left-color: #F59E0B; }
+  .box.redis      { border-left-color: #EF4444; }
+  .box.s3         { border-left-color: #8B5CF6; }
+  .box.external   { border-left-color: #64748B; }
+  .box.decision {
+    border-left-color: #EAB308;
+    background: #FEFCE8;
+  }
+  .box.cross {
+    border-left-color: #A855F7;
+    background: #FAF5FF;
+  }
+
+  .box-title {
+    font-weight: 600;
+    font-size: 12.5px;
+    color: #0F172A;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .box-desc {
+    font-size: 11.5px;
+    color: #475569;
+  }
+  .box-file {
+    font-size: 10px;
+    color: #94A3B8;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    margin-top: 3px;
+    word-break: break-all;
+  }
+  .box code {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    background: #F1F5F9;
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: #334155;
+  }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .badge.migrated { background: #D1FAE5; color: #065F46; }
+  .badge.legacy   { background: #FEE2E2; color: #991B1B; }
+  .badge.mixed    { background: #FEF3C7; color: #92400E; }
+  .badge.new      { background: #DBEAFE; color: #1E40AF; }
+  .badge.step     { background: #E0E7FF; color: #3730A3; font-size: 10px; }
+  .badge.cross    { background: #F3E8FF; color: #6B21A8; }
+  .badge.opt      { background: #FEE2E2; color: #991B1B; font-size: 9px; }
+  .badge.ess      { background: #DCFCE7; color: #14532D; font-size: 9px; }
+
+  /* Node clicável (redireciona pra página de detalhamento) */
+  .clickable-node {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    padding-right: 32px;
+  }
+  .clickable-node .click-chevron {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+    font-size: 30px;
+    line-height: 1;
+    font-weight: 300;
+    pointer-events: none;
+  }
+  .click-hint {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 4px 10px;
+    background: linear-gradient(90deg, #EFF6FF, #F3E8FF);
+    border: 1px solid #DBEAFE;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #3B82F6;
+    animation: hint-pulse 2.4s ease-in-out infinite;
+  }
+  .click-hint-icon { font-size: 12px; }
+  .click-hint-arrow { font-weight: 700; }
+  @keyframes hint-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.35); }
+    50%      { box-shadow: 0 0 0 6px rgba(59, 130, 246, 0); }
+  }
+
+  /* Arrows */
+  .arrow {
+    color: #64748B;
+    font-size: 22px;
+    line-height: 1;
+    margin: 1px 0;
+    text-align: center;
+  }
+  .arrow-label {
+    font-size: 10.5px;
+    color: #64748B;
+    font-style: italic;
+    text-align: center;
+    margin: -2px 0 -2px 0;
+  }
+
+  /* Entry endpoints grid */
+  .endpoints-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 8px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  .endpoint-box {
+    background: white;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border-left: 3px solid #64748B;
+    font-size: 11px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+  .endpoint-box code {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    color: #0F172A;
+    font-weight: 600;
+    font-size: 10.5px;
+  }
+  .endpoint-box .kind {
+    display: block;
+    color: #64748B;
+    font-size: 10px;
+    margin-top: 2px;
+  }
+
+  /* Two-lane branch (Temporal vs Inline) */
+  .branch {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 8px;
+  }
+  .lane {
+    border-radius: 10px;
+    padding: 16px;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .lane.temporal { border-top: 4px solid #10B981; }
+  .lane.inline   { border-top: 4px solid #EF4444; }
+  .lane-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+  }
+  .lane .box { width: 100%; }
+
+  /* Worker sub-flow */
+  .worker-flow {
+    background: #ECFDF5;
+    border: 1px dashed #10B981;
+    border-radius: 8px;
+    padding: 10px;
+    margin: 4px 0;
+  }
+  .worker-flow-title {
+    font-size: 10.5px;
+    color: #065F46;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Loop container */
+  .loop-container {
+    border: 2px dashed #3B82F6;
+    border-radius: 12px;
+    padding: 24px 16px 16px;
+    background: #EFF6FF;
+    position: relative;
+  }
+  .loop-badge {
+    position: absolute;
+    top: -12px;
+    left: 20px;
+    background: #3B82F6;
+    color: white;
+    padding: 3px 12px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .inner-loop-container {
+    border: 2px dashed #EF4444;
+    border-radius: 10px;
+    padding: 20px 12px 12px;
+    background: #FEF2F2;
+    position: relative;
+    margin-top: 8px;
+  }
+  .inner-loop-badge {
+    position: absolute;
+    top: -10px;
+    left: 16px;
+    background: #EF4444;
+    color: white;
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  /* Wait indicator */
+  .blocking-wait {
+    background: #FEF3C7 !important;
+    border-left-color: #F59E0B !important;
+  }
+  .blocking-wait .box-title::before {
+    content: "⏳ ";
+  }
+
+  /* Convergence */
+  .converge {
+    text-align: center;
+    color: #64748B;
+    font-size: 22px;
+    margin: 6px 0;
+  }
+
+  /* Notes callout */
+  .note {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #78350F;
+    margin: 16px auto;
+    max-width: 1000px;
+  }
+  .note.info {
+    background: #EFF6FF;
+    border-left-color: #3B82F6;
+    color: #1E3A8A;
+  }
+  .note strong { color: inherit; }
+
+  /* Node handlers list */
+  .handlers-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(115px, 1fr));
+    gap: 3px;
+    margin-top: 5px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 10px;
+  }
+  .handlers-list span {
+    background: #F1F5F9;
+    padding: 2px 5px;
+    border-radius: 3px;
+    color: #334155;
+  }
+  .handlers-list span.mig { background: #D1FAE5; color: #065F46; }
+  .handlers-list span.leg { background: #FEE2E2; color: #991B1B; }
+  .handlers-list span.special { background: #FEF3C7; color: #92400E; }
+
+  /* Cross-cutting sidebar */
+  .cross-cutting {
+    background: #FAF5FF;
+    border: 1px solid #E9D5FF;
+    border-radius: 10px;
+    padding: 16px;
+    margin: 16px auto;
+  }
+  .cross-cutting h3 {
+    margin: 0 0 12px 0;
+    color: #6B21A8;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .cross-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 10px;
+  }
+  .cross-item {
+    background: white;
+    padding: 10px 12px;
+    border-radius: 6px;
+    border-left: 3px solid #A855F7;
+    font-size: 11.5px;
+  }
+  .cross-item strong {
+    display: block;
+    color: #6B21A8;
+    margin-bottom: 4px;
+    font-size: 12px;
+  }
+
+  .side-by-side {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 8px;
+  }
+
+  hr.phase-sep {
+    border: none;
+    border-top: 3px dotted #CBD5E1;
+    margin: 40px 0 24px;
+  }
+
+  /* ===== Deep-dive styling ===== */
+  .deep-dive {
+    margin-top: 60px;
+    border: 3px solid #0F172A;
+    border-radius: 14px;
+    padding: 0;
+    background: #FFFFFF;
+    box-shadow: 0 4px 20px rgba(15,23,42,0.08);
+    overflow: hidden;
+  }
+  .deep-dive[open] {
+    padding: 28px;
+  }
+  .deep-dive > summary.deep-dive-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 20px 28px;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    background: linear-gradient(to right, #F8FAFC, #EFF6FF);
+    margin: 0;
+    transition: background 0.15s;
+  }
+  .deep-dive[open] > summary.deep-dive-header {
+    background: transparent;
+    padding: 0;
+    margin-bottom: 6px;
+  }
+  .deep-dive > summary.deep-dive-header:hover {
+    background: linear-gradient(to right, #EFF6FF, #DBEAFE);
+  }
+  .deep-dive[open] > summary.deep-dive-header:hover {
+    background: transparent;
+  }
+  .deep-dive > summary.deep-dive-header::-webkit-details-marker {
+    display: none;
+  }
+  .deep-dive > summary.deep-dive-header::marker {
+    display: none;
+    content: "";
+  }
+  .deep-dive-header .dd-icon {
+    font-size: 26px;
+  }
+  .deep-dive-header h2 {
+    margin: 0;
+    font-size: 22px;
+    color: #0F172A;
+    letter-spacing: -0.3px;
+  }
+  .dd-toggle {
+    margin-left: auto;
+    color: #64748B;
+    font-size: 14px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #CBD5E1;
+    transition: transform 0.15s, background 0.15s;
+  }
+  .dd-toggle .dd-chevron {
+    display: inline-block;
+    transition: transform 0.2s ease;
+  }
+  .deep-dive[open] .dd-toggle .dd-chevron {
+    transform: rotate(180deg);
+  }
+  .deep-dive[open] .dd-toggle .dd-label::before {
+    content: "Fechar detalhamento";
+  }
+  .deep-dive:not([open]) .dd-toggle .dd-label::before {
+    content: "Abrir detalhamento";
+  }
+  .deep-dive-sub {
+    color: #64748B;
+    font-size: 13px;
+    margin-bottom: 24px;
+  }
+
+  .overview-mini {
+    background: #F8FAFC;
+    padding: 14px 16px;
+    border-radius: 10px;
+    margin-bottom: 24px;
+  }
+  .overview-mini-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 10px;
+  }
+  .overview-chain {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .overview-chip {
+    background: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border-left: 3px solid #3B82F6;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #0F172A;
+    text-decoration: none;
+    display: inline-block;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+  .overview-chip:hover { transform: translateY(-1px); }
+  .overview-chip .lbl {
+    display: block;
+    font-size: 9.5px;
+    color: #64748B;
+    font-weight: 500;
+    margin-bottom: 2px;
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .overview-sep { color: #94A3B8; font-size: 18px; font-weight: bold; }
+
+  .fn-card {
+    margin-top: 28px;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+  }
+  .fn-card-header {
+    background: linear-gradient(to right, #0F172A, #1E293B);
+    color: white;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .fn-card-header .fn-title {
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .fn-card-header .fn-title code {
+    background: rgba(255,255,255,0.15);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 13px;
+  }
+  .fn-card-header .fn-loc {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #CBD5E1;
+  }
+  .fn-card-body {
+    padding: 20px;
+  }
+  .fn-signature {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    background: #F1F5F9;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: #334155;
+    margin-bottom: 16px;
+    overflow-x: auto;
+  }
+  .fn-purpose {
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 20px;
+    padding: 10px 14px;
+    background: #EFF6FF;
+    border-left: 3px solid #3B82F6;
+    border-radius: 6px;
+  }
+
+  /* Two-column: main flow + asides */
+  .fn-body-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 900px) {
+    .fn-body-cols { grid-template-columns: 1fr; }
+  }
+  .fn-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .fn-main .box {
+    width: 100%;
+    max-width: 100%;
+  }
+  .fn-main .branch {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .fn-main .branch .box {
+    width: 100%;
+  }
+  .fn-main .nested-flow .box {
+    width: 100%;
+  }
+  .fn-main .box-desc code {
+    word-break: break-word;
+  }
+  .fn-asides {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .aside {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 11.5px;
+    color: #78350F;
+  }
+  .aside.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .aside.warn { background: #FEE2E2; border-left-color: #EF4444; color: #991B1B; }
+  .aside.helper { background: #F3E8FF; border-left-color: #A855F7; color: #6B21A8; }
+  .aside-title {
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .aside code {
+    background: rgba(255,255,255,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 10.5px;
+  }
+
+  /* Cascade (chain of if/else) */
+  .cascade {
+    background: #FEFCE8;
+    border: 1px dashed #EAB308;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 6px 0;
+  }
+  .cascade-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #713F12;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .cascade-step {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 8px;
+    background: white;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    font-size: 11.5px;
+  }
+  .cascade-step .cond {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #334155;
+  }
+  .cascade-step .result {
+    font-weight: 700;
+    font-size: 10.5px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .cascade-step .result.pass  { background: #D1FAE5; color: #065F46; }
+  .cascade-step .result.deny  { background: #FEE2E2; color: #991B1B; }
+  .cascade-step .result.next  { background: #E0E7FF; color: #3730A3; }
+  .cascade-step .result.call  { background: #FEF3C7; color: #78350F; }
+  .cascade-num {
+    background: #EAB308;
+    color: white;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* Nested sub-flow (function-in-function) */
+  .nested-flow {
+    margin: 6px 0;
+    padding: 12px;
+    background: #F0FDF4;
+    border: 1px dashed #10B981;
+    border-radius: 8px;
+    position: relative;
+  }
+  .nested-flow-title {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #065F46;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Execução de Agente — Estado Atual</h1>
+
+  <!-- LEGEND -->
+  <div class="legend">
+    <div class="legend-item"><span class="legend-swatch" style="border-left-color:#3B82F6"></span> Backend (apiv2)</div>
+    <div class="legend-item"><span class="legend-swatch" style="border-left-color:#10B981"></span> Worker (Temporal)</div>
+    <div class="legend-item"><span class="legend-swatch" style="border-left-color:#F59E0B"></span> PostgreSQL</div>
+    <div class="legend-item"><span class="legend-swatch" style="border-left-color:#EF4444"></span> Redis</div>
+    <div class="legend-item"><span class="legend-swatch" style="border-left-color:#8B5CF6"></span> S3</div>
+    <div class="legend-item"><span class="legend-swatch" style="border-left-color:#64748B"></span> Externo</div>
+    <div class="legend-item"><span class="legend-swatch" style="border-left-color:#EAB308;background:#FEFCE8"></span> Decisão</div>
+    <div class="legend-item"><span class="legend-swatch" style="border-left-color:#A855F7;background:#FAF5FF"></span> Cross-cutting</div>
+    <div class="legend-item"><span class="badge ess">essencial</span></div>
+    <div class="legend-item"><span class="badge cross">cross</span></div>
+    <div class="legend-item"><span class="badge migrated">migrado</span></div>
+    <div class="legend-item"><span class="badge legacy">legacy</span></div>
+    <div class="legend-item"><span class="badge new">novo (pós-doc)</span></div>
+  </div>
+
+  <!-- ================================================== -->
+  <!-- FASE 1 — ENTRADA E PREPARAÇÃO -->
+  <!-- ================================================== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">1</div>
+      <div class="section-title">FASE 1 — Entrada e preparação</div>
+      <div class="section-desc">Fase 1 do doc original (passos 1–7)</div>
+    </div>
+
+    <div class="flow-column">
+      <div class="box external">
+        <div class="box-title">Cliente faz requisição</div>
+        <div class="box-desc">API pública, editor, chatbot, form, webhook público ou CSV batch</div>
+      </div>
+      <div class="arrow">↓</div>
+    </div>
+
+    <div class="endpoints-grid">
+      <div class="endpoint-box"><code>POST /flux/api-v2</code><span class="kind">API-key • síncrono • runType: api</span></div>
+      <div class="endpoint-box"><code>POST /flux/execute-from-canvas</code><span class="kind">Editor • background • runType: canvas</span></div>
+      <div class="endpoint-box"><code>POST /flux/execute-single-node</code><span class="kind">Editor • runType: single-node</span></div>
+      <div class="endpoint-box"><code>POST /flux/api-v2-webhook</code><span class="kind">Público • enfileira Bull</span></div>
+      <div class="endpoint-box"><code>POST /flux/chatbot-api-socket</code><span class="kind">Chatbot • com socketId • runType: chatbot</span></div>
+      <div class="endpoint-box"><code>POST /flux/formapi-v1</code><span class="kind">Form • runType: formapi</span></div>
+      <div class="endpoint-box"><code>POST /flux/batch-process</code><span class="kind">CSV • itera linhas • runType: batch</span></div>
+    </div>
+
+    <div class="arrow">↓</div>
+
+    <div class="flow-column">
+      <div class="box backend">
+        <div class="box-title">
+          <span class="badge step">1.1</span> Bull queue: ApiV2QueueProcessor.execute()
+          <span class="badge ess">essencial</span>
+        </div>
+        <div class="box-desc">Recebe <code>ApiV2QueueModel { jobId, params, webhookUrl }</code>. Define <code>processId = params.parentProcessId ?? jobId</code>. Chama <code>mcpRunStatusService.markRunning()</code>.</div>
+        <div class="box-file">src/app-api/flux/apiV2Job.processor.ts:34-56</div>
+      </div>
+      <div class="arrow">↓</div>
+      <div class="arrow-label">todos os endpoints (com ou sem fila) chamam</div>
+
+      <div class="box backend">
+        <div class="box-title">FluxService.apiV2() — ORQUESTRADOR ÚNICO <span class="badge legacy">4500+ linhas</span></div>
+        <div class="box-desc">Ponto de entrada de toda execução de agente</div>
+        <div class="box-file">src/app-api/flux/flux.service.ts:2234</div>
+      </div>
+      <div class="arrow">↓</div>
+
+      <div class="box backend">
+        <div class="box-title"><span class="badge step">1.2</span> Validação de usuário <span class="badge ess">essencial</span></div>
+        <div class="box-desc"><code>userService.findOne({ id: user.id })</code></div>
+        <div class="box-file">flux.service.ts:2333-2335 <em>(era ~1773)</em></div>
+      </div>
+      <div class="arrow">↓</div>
+
+      <a href="passo-1-3.html" class="box db clickable-node" id="step-1-3">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title">
+          <span class="badge step">1.3</span> Carrega flow + nós + arestas + permissões <span class="badge ess">essencial</span>
+        </div>
+        <div class="box-desc">
+          <code>getFlowWithNodesAndEdges()</code> · <code>resolveExecutionHistoryId()</code> · <code>checkIfUserCanRunFlow()</code> · <code>assertOwnerCanRunFlow()</code>
+        </div>
+        <div class="box-file">flux.service.ts:2338-2367 <em>(era ~1778)</em></div>
+        <div class="click-hint">
+          <span class="click-hint-icon">🔍</span>
+          <span>Clique para ver detalhamento das 4 funções</span>
+          <span class="click-hint-arrow">→</span>
+        </div>
+      </a>
+      <div class="arrow">↓</div>
+
+      <a href="passo-1-4.html" class="box cross clickable-node" id="step-1-4">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title"><span class="badge step">1.4</span> Setup de log por espaço <span class="badge cross">cross-cutting</span></div>
+        <div class="box-desc"><code>RunLogCollector.createRoot()</code> + <code>spaceRunLogsService.scheduleUpsert()</code> + upsert inicial</div>
+        <div class="box-file">flux.service.ts:2371-2437 <em>(era ~1809)</em></div>
+        <div class="click-hint">
+          <span class="click-hint-icon">🔍</span>
+          <span>Clique para ver detalhamento (gate + 4 funções)</span>
+          <span class="click-hint-arrow">→</span>
+        </div>
+      </a>
+      <div class="arrow">↓</div>
+
+      <a href="passo-1-5.html" class="box backend clickable-node" id="step-1-5">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title"><span class="badge step">1.5</span> Carrega objetos personalizados <span class="badge ess">essencial</span></div>
+        <div class="box-desc">Resolve <code>ObjectOwner</code> (space &gt; companyUser &gt; user), chama <code>objectsService.getObjectsByOwner()</code></div>
+        <div class="box-file">flux.service.ts:2439-2462 <em>(era ~1879)</em></div>
+        <div class="click-hint">
+          <span class="click-hint-icon">🔍</span>
+          <span>Clique para ver detalhamento (ObjectOwner + 4 funções)</span>
+          <span class="click-hint-arrow">→</span>
+        </div>
+      </a>
+      <div class="arrow">↓</div>
+
+      <a href="passo-1-6.html" class="box backend clickable-node" id="step-1-6">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title"><span class="badge step">1.6</span> Carrega contexto de chat <span class="badge ess">essencial (modo chat)</span></div>
+        <div class="box-desc"><code>sessionStateService.readContents()</code> para <code>fluxObject</code> e <code>nodesBox</code> com chat habilitado. Atualiza sessão selecionada.</div>
+        <div class="box-file">flux.service.ts:2491-2618 <em>(era ~1931)</em></div>
+        <div class="click-hint">
+          <span class="click-hint-icon">🔍</span>
+          <span>Clique para ver detalhamento (gate + 4 blocos de merge)</span>
+          <span class="click-hint-arrow">→</span>
+        </div>
+      </a>
+      <div class="arrow">↓</div>
+
+      <a href="passo-1-7.html" class="box external clickable-node" id="step-1-7">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title"><span class="badge step">1.7</span> Refresh de token Google (condicional) <span class="badge ess">essencial</span></div>
+        <div class="box-desc">Só se flow tem <code>pullData</code>/<code>pushData</code> com provider=google. Usa <code>OAuth2Client</code>.</div>
+        <div class="box-file">flux.service.ts:2620-2634 <em>(era ~2060)</em></div>
+        <div class="click-hint">
+          <span class="click-hint-icon">🔍</span>
+          <span>Clique para ver detalhamento (gate + OAuth2Client refresh)</span>
+          <span class="click-hint-arrow">→</span>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <hr class="phase-sep">
+
+  <!-- ================================================== -->
+  <!-- FASE 2 — SETUP DA EXECUÇÃO -->
+  <!-- ================================================== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">2</div>
+      <div class="section-title">FASE 2 — Setup da execução</div>
+      <div class="section-desc">Fase 2 do doc (passos 8–10) — <strong>base do algoritmo que vai ser reimplementado</strong></div>
+    </div>
+
+    <div class="flow-column">
+      <a href="passo-2-1.html" class="box backend clickable-node" id="step-2-1">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title"><span class="badge step">2.1</span> buildSchedulerState() — DAG scheduler <span class="badge ess">essencial</span></div>
+        <div class="box-desc">
+          Classifica arestas em <code>control / condition / data / global</code>, remove <strong>backedges</strong>, calcula predecessores, monta fila <code>ready</code>. Também <code>planOrder()</code> para ordem topológica de debug.
+        </div>
+        <div class="box-file">src/app-api/flux/scheduler.ts:152-293 (planOrder: 412-425)</div>
+        <div class="click-hint">
+          <span class="click-hint-icon">🔍</span>
+          <span>Clique para ver detalhamento (classify + reachable + backedges + preds)</span>
+          <span class="click-hint-arrow">→</span>
+        </div>
+      </a>
+      <div class="arrow">↓</div>
+
+      <a href="passo-2-2.html" class="box backend clickable-node" id="step-2-2">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title"><span class="badge step">2.2</span> Variáveis mutáveis de execução <span class="badge ess">essencial (é o que estora RAM hoje)</span></div>
+        <div class="box-desc">
+          <code>myUpdatedNodes</code> · <code>nodeSubstitutionSchema</code> · <code>processedNodeIds</code> · <code>totalTokensUsed</code> · <code>totalCost</code>
+          <br><code>stoppedByLoopBehavior</code> · <code>stoppedByNodeFailure</code> · <code>chargeContext.enterWith(...)</code>
+        </div>
+        <div class="box-file">flux.service.ts:3146-3182</div>
+        <div class="click-hint">
+          <span class="click-hint-icon">🔍</span>
+          <span>Clique para ver detalhamento (5 grupos de variáveis + cancellation)</span>
+          <span class="click-hint-arrow">→</span>
+        </div>
+      </a>
+      <div class="arrow">↓</div>
+
+      <a href="passo-2-3.html" class="box backend clickable-node" id="step-2-3">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title"><span class="badge step">2.3</span> generateSchemaFromNodes() — schema de substituição <span class="badge ess">essencial</span></div>
+        <div class="box-desc">
+          3 chaves por nó no schema in-memory:
+          <br>• <code>schema[nodeId]</code> (UUID)
+          <br>• <code>schema[nodeId_normalizado]</code> (ref-key)
+          <br>• <code>schema[label_lowercase]</code> (alias humano)
+        </div>
+        <div class="box-file">node-reference-substitution/node-reference-substitution.service.ts:82</div>
+        <div class="click-hint">
+          <span class="click-hint-icon">🔍</span>
+          <span>Clique para ver detalhamento (whitelist + 3-key indexing + ciclo de vida)</span>
+          <span class="click-hint-arrow">→</span>
+        </div>
+      </a>
+      <div class="arrow">↓</div>
+
+      <a href="passo-2-4.html" class="box cross clickable-node" id="step-2-4">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title"><span class="badge step">2.4</span> Setup do RunLogCollector inicial <span class="badge cross">cross</span></div>
+        <div class="box-desc">Cria novo se top-level, ou reusa <code>injectedRunLogCollector</code> se nested (chamado por fluxBox/libraryNode)</div>
+        <div class="box-file">flux.service.ts:2290-2293, 3810-3818</div>
+        <div class="click-hint">
+          <span class="click-hint-icon">🔍</span>
+          <span>Clique para ver detalhamento (init pattern + subRun + loopBody)</span>
+          <span class="click-hint-arrow">→</span>
+        </div>
+      </a>
+    </div>
+
+    <div class="note">
+      <strong>Ponto crítico:</strong> O <code>nodeSubstitutionSchema</code> é mutado in-place ao longo do loop (a memória cita ~57 sync sites).
+      O worker <strong>não tem</strong> engine equivalente — recebe cada nó já pré-substituído pelo backend.
+    </div>
+  </div>
+
+  <hr class="phase-sep">
+
+  <!-- ================================================== -->
+  <!-- FASE 2.5 - PREFETCH DECISION (NEW) -->
+  <!-- ================================================== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">2½</div>
+      <div class="section-title">Decisão prefetch vs legacy loop <span class="badge new">novo pós-doc</span></div>
+      <div class="section-desc">Modelo de memória alternativo · desligado em produção (opt-in por env var)</div>
+    </div>
+
+    <div class="note info" style="max-width:1200px;margin-bottom:12px">
+      <strong>Contexto — por que essa decisão existe:</strong>
+      No loop <strong>legacy</strong> (Fase 3), o backend mantém em memória um <em>schema gordo</em> (<code>nodeSubstitutionSchema</code>) que acumula o output completo de <strong>todos</strong> os nós já executados. Cada nó novo faz <code>applySubstitutionToObject</code> sobre esse schema inteiro pra resolver seus <code>{{...}}</code>, mesmo referenciando só 1 ou 2 upstreams. Em agentes grandes (100+ nós, com respostas de LLM longas), esse schema fica com megas de JSON vivendo na heap por toda a execução — é o principal ofensor de perf.
+      <br><br>
+      O <strong>modo prefetch</strong> resolve isso invertendo o fluxo: pra cada nó, primeiro escaneia <em>quais</em> refs (<code>{{...}}</code>) ele realmente usa, e só então <strong>puxa do banco</strong> (<code>node_executions</code>) as saídas desses upstreams específicos. Nada de schema gigante mutando em memória. Ainda roda tudo in-process no backend (não envolve worker/Temporal), só troca o modelo de propagação de dados.
+    </div>
+
+    <div class="flow-column">
+      <div class="box decision">
+        <div class="box-title">Duas condições precisam ser verdadeiras: <code>isPrefetchMode() && canUsePrefetchForFlow(newFlows)</code></div>
+        <div class="box-desc">
+          <strong>1. isPrefetchMode()</strong> — lê <code>process.env.FLUX_EXEC_MEMORY_MODE</code>. Só é <code>true</code> se estiver exatamente <code>'prefetch'</code> (default é <code>'legacy'</code>).<br>
+          <strong>2. canUsePrefetchForFlow(newFlows)</strong> — varre todos os nós do flow e confere se <em>cada tipo</em> está numa whitelist hardcoded. Basta 1 nó fora da lista pra reprovar.
+        </div>
+        <div class="box-file">flux.service.ts:177, 1402-1431, 3198-3226 · prefetch/memory-mode.ts</div>
+      </div>
+    </div>
+
+    <div class="side-by-side">
+      <div class="box backend">
+        <div class="box-title">SIM → runApiV2FlowLoopPrefetch()</div>
+        <div class="box-desc">
+          Chama <code>runPrefetchFlow(nodes, deps)</code>. Loop <strong>parecido com o legacy</strong> (mesmo scheduler, mesmos handlers), <em>mas</em>:
+          <br>• A cada nó pronto → <code>scanPlaceholderRefs</code> descobre só as refs desse nó
+          <br>• <code>loadOutputsByRefs</code> puxa <strong>apenas</strong> as saídas necessárias do <code>node_executions</code>
+          <br>• Monta um <code>schemaForNode</code> pequeno e local (não muta um schema global)
+          <br>• Guarda ponteiros (<code>OutputPointer</code>) — <code>rowId</code>, tipo e tamanho — em vez do payload
+          <br><br>
+          Retorna <code>{ processed, failed, pointer }</code> pro caller montar o resultado final com <code>assembleFinalOutputsFromDb</code>.
+        </div>
+        <div class="box-file">flux.service.ts:1433 · prefetch/prefetch-flow-executor.ts</div>
+      </div>
+      <div class="box backend">
+        <div class="box-title">NÃO → cai na Fase 3 (loop legacy padrão)</div>
+        <div class="box-desc">
+          Caminho <strong>usado em produção hoje</strong>. Cai aqui em 3 cenários:
+          <br>• Env var não está setada como <code>'prefetch'</code> (default)
+          <br>• Env var está, mas o flow tem <em>qualquer</em> nó fora da whitelist (mais comum — praticamente todo agente real usa <code>textGenerator</code>, que <strong>não está</strong> na lista)
+          <br>• Nesse segundo caso o backend loga <code>flux.prefetch.fallback</code> com <code>reason: 'unsupported_node_type_present'</code>
+        </div>
+        <div class="box-file">flux.service.ts:3219-3226</div>
+      </div>
+    </div>
+
+    <div class="note" style="max-width:1200px;margin-top:12px">
+      <strong>Whitelist atual (canUsePrefetchForFlow):</strong>
+      <code>imageGenerator</code>, <code>webSearch</code>, <code>voiceBoxNode</code>, <code>audioReaderNode</code>, <code>commandContentNode</code>, <code>pullData</code>, <code>pushData</code>, <code>thirdPartyIntegration</code>, <code>mcpNode</code>, <code>libraryNode</code>, <code>webCrawling</code>, <code>reportBuilder</code>, <code>sqlQuerier</code>, <code>nodesBox</code>, <code>comment</code>, <code>label</code>, <code>group</code>.
+      <br><br>
+      <strong>Ausências notáveis:</strong> <code>textGenerator</code>, <code>scripting</code>, <code>apiCaller</code>, <code>mathFunction</code>, <code>counter</code>, <code>displayBox</code>, <code>chatNode</code>, <code>condition</code>, <code>arrayNode</code>. Ou seja: <em>qualquer flow que use LLM ou controle de fluxo cai no legacy</em>. Na prática, o prefetch hoje só roda em agentes muito simples/lineares — o rollout é gradual, tipo por tipo de nó.
+    </div>
+  </div>
+
+  <hr class="phase-sep">
+
+  <!-- ================================================== -->
+  <!-- FASE 3 — LOOP PRINCIPAL -->
+  <!-- ================================================== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">3</div>
+      <div class="section-title">FASE 3 — Loop principal</div>
+      <div class="section-desc">Passos 11–22 do doc · flux.service.ts:3227-4734</div>
+    </div>
+
+    <div class="loop-container">
+      <div class="loop-badge">🔁 while (nextReady(schedState) !== null)</div>
+
+      <div class="flow-column">
+        <a href="passo-3-1.html" class="box backend clickable-node" id="step-3-1">
+          <span class="click-chevron" aria-hidden="true">›</span>
+          <div class="box-title"><span class="badge step">3.1</span> nextReady(schedState) <span class="badge ess">essencial</span></div>
+          <div class="box-desc">Scheduler devolve próximo nó pronto (in-degree = 0 nas arestas ativas)</div>
+          <div class="box-file">flux.service.ts:3227</div>
+          <div class="click-hint">
+            <span class="click-hint-icon">🔍</span>
+            <span>Clique para ver detalhamento (FIFO + 3 sets + markCompleted)</span>
+            <span class="click-hint-arrow">→</span>
+          </div>
+        </a>
+        <div class="arrow">↓</div>
+
+        <a href="passo-3-2.html" class="box backend clickable-node" id="step-3-2">
+          <span class="click-chevron" aria-hidden="true">›</span>
+          <div class="box-title"><span class="badge step">3.2</span> Busca do nó + previewResponses cache <span class="badge ess">essencial</span></div>
+          <div class="box-desc">Lê nó atualizado de <code>myUpdatedNodes</code>. Lê <code>previewResponses</code> (cache das 10 últimas respostas, máx 10 items).</div>
+          <div class="box-file">flux.service.ts:3241-3278</div>
+          <div class="click-hint">
+            <span class="click-hint-icon">🔍</span>
+            <span>Clique para ver detalhamento (find + bookkeeping + ring buffer)</span>
+            <span class="click-hint-arrow">→</span>
+          </div>
+        </a>
+        <div class="arrow">↓</div>
+
+        <a href="passo-3-3.html" class="box backend clickable-node" id="step-3-3">
+          <span class="click-chevron" aria-hidden="true">›</span>
+          <div class="box-title"><span class="badge step">3.3</span> applySubstitutionToObject(node, schema) <span class="badge legacy">só backend</span></div>
+          <div class="box-desc">Substitui <code>{{...}}</code> recursivamente no node.data usando o schema atualizado</div>
+          <div class="box-file">flux.service.ts:3281 · node-reference-substitution.service.ts:145</div>
+          <div class="click-hint">
+            <span class="click-hint-icon">🔍</span>
+            <span>Clique para ver detalhamento (walker + regex + 3-key lookup)</span>
+            <span class="click-hint-arrow">→</span>
+          </div>
+        </a>
+        <div class="arrow">↓</div>
+
+        <a href="passo-3-4.html" class="box cross clickable-node" id="step-3-4">
+          <span class="click-chevron" aria-hidden="true">›</span>
+          <div class="box-title"><span class="badge step">3.4</span> runLogCollector.startNode() + chargeContext.enterWith() <span class="badge cross">cross</span></div>
+          <div class="box-desc">Abre <code>RunLogNode</code> hierárquico e entra em contexto de cobrança do nó (async-local storage)</div>
+          <div class="box-file">flux.service.ts:3281-3316</div>
+          <div class="click-hint">
+            <span class="click-hint-icon">🔍</span>
+            <span>Clique para ver detalhamento (ALS + startNode + recordLegacyNodeStart)</span>
+            <span class="click-hint-arrow">→</span>
+          </div>
+        </a>
+        <div class="arrow">↓</div>
+
+        <a href="passo-3-4-cancellation.html" class="box backend clickable-node" id="step-3-cancel">
+          <span class="click-chevron" aria-hidden="true">›</span>
+          <div class="box-title">Cancellation check <span class="badge new">novo pós-doc</span></div>
+          <div class="box-desc">Feature flag <code>NODE_CANCEL_IN_FLIGHT_FLAG</code>. Se <code>cancelWatch.wasAborted()</code> → <code>finishCancelledNode()</code> e break do loop</div>
+          <div class="box-file">flux.service.ts:3192-3194, 4516-4530</div>
+          <div class="click-hint">
+            <span class="click-hint-icon">🔍</span>
+            <span>Clique para ver detalhamento (watch + AbortSignal + finishCancelledNode)</span>
+            <span class="click-hint-arrow">→</span>
+          </div>
+        </a>
+        <div class="arrow">↓</div>
+
+        <a href="passo-3-5.html" class="box decision clickable-node" id="step-3-5">
+          <span class="click-chevron" aria-hidden="true">›</span>
+          <div class="box-title"><span class="badge step">3.5</span> Dispatch: isTemporalNode(type) OR isWorkerRoutedIntegration(node)?</div>
+          <div class="box-desc">
+            Temporal: <code>commandTextNode</code>, <code>scripting</code>, <code>apiCaller</code>, <code>mathFunction</code>, <code>counterNode</code>, <code>outputController</code><br>
+            Worker-routed integration: provider ∈ {stripe, wordpress, slack, notion, zapier, hubspot} <span class="badge new">novo</span>
+          </div>
+          <div class="box-file">flux.service.ts:740 + shared/integration/integration-executable-node.ts</div>
+          <div class="click-hint">
+            <span class="click-hint-icon">🔍</span>
+            <span>Clique para ver detalhamento (3 checks + processNodeViaTemporal + 17 inline)</span>
+            <span class="click-hint-arrow">→</span>
+          </div>
+        </a>
+      </div>
+
+      <!-- BRANCH -->
+      <div class="branch" style="margin-top:16px">
+
+        <!-- LANE: TEMPORAL -->
+        <div class="lane temporal">
+          <div class="lane-title">SIM → processNodeViaTemporal() <span class="badge migrated">MIGRADO</span></div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">T1</span> Pré-resolve edge reference fields</div>
+            <div class="box-desc">Resolve <code>{{...}}</code> em <code>promptData</code>/<code>contentData</code>/<code>textData</code> antes do handoff</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box db">
+            <div class="box-title"><span class="badge step">T2</span> INSERT node_executions (input resolvido)</div>
+            <div class="box-desc">Cria row com <code>metadata</code> = {workflowId, runKind, runType, runId}</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">T3</span> temporalService.client.start('processSingleNode')</div>
+            <div class="box-desc">Workflow ID determinístico via <code>buildNodeWorkflowId(nodeId, execId)</code></div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend blocking-wait">
+            <div class="box-title"><span class="badge step">T4</span> BLOCKING WAIT pelo worker</div>
+            <div class="box-desc">Backend fica travado até workflow terminar</div>
+          </div>
+
+          <div class="worker-flow">
+            <div class="worker-flow-title">▼ Worker (processSingleNode) ▼</div>
+            <div class="flow-column">
+              <div class="box redis">
+                <div class="box-title"><span class="badge step">W1</span> notifyStatusActivity(PENDING)</div>
+                <div class="box-desc">Redis pub/sub</div>
+                <div class="box-file">activities.service.ts:191</div>
+              </div>
+              <div class="arrow">↓</div>
+              <div class="box db">
+                <div class="box-title"><span class="badge step">W2</span> getNodeInfoActivity → fetchNodeRow()</div>
+                <div class="box-desc">SELECT em <code>node_executions</code> ou <code>flows_nodes</code></div>
+              </div>
+              <div class="arrow">↓</div>
+              <div class="box s3">
+                <div class="box-title"><span class="badge step">W3</span> resolveClaimRef() se necessário</div>
+                <div class="box-desc">Fetch de payload em S3 via <code>/worker/get-payload</code></div>
+              </div>
+              <div class="arrow">↓</div>
+              <div class="box worker">
+                <div class="box-title"><span class="badge step">W4</span> Switch por node type (hardcoded)</div>
+                <div class="box-desc">
+                  <div class="handlers-list">
+                    <span class="mig">textGenerator</span>
+                    <span class="mig">scripting</span>
+                    <span class="mig">apiCaller</span>
+                    <span class="mig">mathFunction</span>
+                    <span class="mig">counter</span>
+                    <span class="mig">displayBox</span>
+                    <span class="mig">audioTranscriber</span>
+                    <span class="mig">sqlQuerier</span>
+                    <span class="mig">thirdPartyIntegration</span>
+                  </div>
+                  Default: <code>throw "Node type X not supported"</code>
+                </div>
+                <div class="box-file">workflows/process-single-node.workflow.ts:78</div>
+              </div>
+              <div class="arrow">↓</div>
+              <div class="box worker">
+                <div class="box-title"><span class="badge step">W5</span> resolveEdgeData() (local, sem <code>{{...}}</code>)</div>
+                <div class="box-desc">Deduplica e concatena outputs dos nós upstream</div>
+              </div>
+              <div class="arrow">↓</div>
+              <div class="box worker">
+                <div class="box-title"><span class="badge step">W6</span> Executa handler</div>
+                <div class="box-desc">Chama LLM/HTTP/SQL/integração externa/lambda</div>
+              </div>
+              <div class="arrow-label">(text-gen: stream via Redis)</div>
+              <div class="arrow">↓</div>
+              <div class="box backend">
+                <div class="box-title"><span class="badge step">W7</span> HTTP /worker/charge-tokens</div>
+                <div class="box-desc">INSERT em <code>token_transactions</code></div>
+              </div>
+              <div class="arrow">↓</div>
+              <div class="box db">
+                <div class="box-title"><span class="badge step">W8</span> persistNodeSuccess() → 2 UPDATEs</div>
+                <div class="box-desc">
+                  1) <code>node_executions.outputData</code> (claim-check &gt;256KB → S3)<br>
+                  2) <code>flows_nodes.data</code> (só campos leves: text/result/errorMessage)
+                </div>
+                <div class="box-file">nodes/shared/persist-node-success.ts:86</div>
+              </div>
+              <div class="arrow">↓</div>
+              <div class="box db">
+                <div class="box-title"><span class="badge step">W9</span> generateExecutionLogsActivity</div>
+                <div class="box-desc">INSERT em <code>execution_logs</code></div>
+              </div>
+              <div class="arrow">↓</div>
+              <div class="box redis">
+                <div class="box-title"><span class="badge step">W10</span> notifyStatusActivity(COMPLETED/FAILED)</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="arrow">↑ workflow retorna ↑</div>
+
+          <div class="box db">
+            <div class="box-title"><span class="badge step">T5</span> SELECT outputData FROM node_executions</div>
+            <div class="box-desc">Se {__claimRef} → GET no S3 + JSON.parse</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box db">
+            <div class="box-title"><span class="badge step">T6</span> sumChargesByExecution(execId, nodeId)</div>
+            <div class="box-desc">Agrega <code>token_transactions</code> em <code>totalTokensUsed</code>/<code>totalCost</code></div>
+          </div>
+        </div>
+
+        <!-- LANE: INLINE -->
+        <div class="lane inline">
+          <div class="lane-title">NÃO → executa inline no backend <span class="badge legacy">LEGACY</span></div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">L1</span> Switch por node type — ~60 branches</div>
+            <div class="box-desc">Handler roda direto em <code>FluxService</code>, sem Temporal</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">L2</span> Handlers dedicados no backend</div>
+            <div class="box-desc">
+              <div class="handlers-list">
+                <span class="leg">voiceBoxNode<br>(3364)</span>
+                <span class="leg">audioReaderNode<br>(7911)</span>
+                <span class="leg">imageGenerator<br>(6972)</span>
+                <span class="leg">pullData<br>(3397)</span>
+                <span class="leg">pushData<br>(3415)</span>
+                <span class="leg">thirdPartyIntegration<br>(3453) não-migrado</span>
+                <span class="special">conditionNode<br>(3540)</span>
+                <span class="leg">nodesBox<br>(3575)</span>
+                <span class="leg">commandContentNode<br>(3651)</span>
+                <span class="leg">webSearch<br>(3701)</span>
+                <span class="leg">webCrawling<br>(3719)</span>
+                <span class="special">arrayNode<br>(3738)</span>
+                <span class="leg">fluxBox<br>(4350)</span>
+                <span class="leg">libraryNode<br>(4394)</span>
+                <span class="leg">reportBuilder<br>(4463)</span>
+                <span class="leg">sqlQuerier (legacy)<br>(4479)</span>
+                <span class="leg">mcpNode</span>
+              </div>
+              <em style="font-size:10px;color:#64748B">Tipos sem dispatch (dados inline): varInputNode, GLOBAL_STARTER, OUTPUT</em>
+            </div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <!-- SPECIAL: ARRAY LOOP -->
+          <div class="inner-loop-container">
+            <div class="inner-loop-badge">🔄 arrayNode / loopIterationContext</div>
+            <div class="flow-column">
+              <div class="box backend">
+                <div class="box-title"><span class="badge step">L2a</span> arrayNode itera sobre lista <span class="badge ess">essencial e complexo</span></div>
+                <div class="box-desc">
+                  <code>for iterationIndex</code>: entra em <code>loopIterationContext.enterWith({ index, bodyNodeIds })</code>, re-executa body por item.
+                </div>
+                <div class="box-file">flux.service.ts:3738, 3825-4346</div>
+              </div>
+            </div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <!-- SPECIAL: CONDITION -->
+          <div class="box decision" style="width:100%">
+            <div class="box-title"><span class="badge step">L2b</span> conditionNode — avalia branch <span class="badge ess">essencial</span></div>
+            <div class="box-desc">
+              Avalia <code>node.data.conditions[]</code>, resolve <code>outputHandle-0/1</code> ou <code>conditionHandle-T*/F*</code>, chama <code>completeCondition(schedState, id, handle)</code>.
+            </div>
+            <div class="box-file">flux.service.ts:3540-3573, 4013-4040</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box external">
+            <div class="box-title"><span class="badge step">L3</span> Chama serviços externos</div>
+            <div class="box-desc">ElevenLabs / Ideogram / FAL / SerpAPI / Firecrawl / Google Sheets / APIs de integração</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box db">
+            <div class="box-title"><span class="badge step">L4</span> UPDATE flows_nodes.data (JSONB completo)</div>
+            <div class="box-desc">
+              Grava campos <strong>gordos</strong>: <code>previewResponses</code>, <code>contentData</code>, <code>text</code>...
+              <br><em>Padrão que causa problema de perf de FE em agentes grandes.</em>
+            </div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box cross">
+            <div class="box-title">recordLegacyNodeStart / recordInApiNodeError <span class="badge cross">cross</span></div>
+            <div class="box-desc">Registra <code>node_executions</code> row mesmo para nós não-Temporal, para trace uniforme</div>
+            <div class="box-file">flux.service.ts:1842, 3303-3316, 4593-4720</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="converge">↓ ambos convergem ↓</div>
+
+      <div class="flow-column">
+        <a href="passo-3-6.html" class="box backend clickable-node" id="step-3-6">
+          <span class="click-chevron" aria-hidden="true">›</span>
+          <div class="box-title"><span class="badge step">3.6</span> updateSchemaWithNodeOutput() <span class="badge ess">essencial</span></div>
+          <div class="box-desc">Deixa output visível para próximos nós como <code>{{nodeLabel}}</code></div>
+          <div class="box-file">flux.service.ts:3389, 3485, 3624, 3670, 4331</div>
+          <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (walker + 3 chaves + 5 handlers)</span><span class="click-hint-arrow">→</span></div>
+        </a>
+        <div class="arrow">↓</div>
+
+        <a href="passo-3-7.html" class="box cross clickable-node" id="step-3-7">
+          <span class="click-chevron" aria-hidden="true">›</span>
+          <div class="box-title"><span class="badge step">3.7</span> Contabilidade token/custo por nó <span class="badge cross">cross (billing)</span></div>
+          <div class="box-desc"><code>genericTokensBefore/After</code> + <code>onUpdateTokens</code> callback</div>
+          <div class="box-file">flux.service.ts:3248-3249, 3296-3297, 4537-4546</div>
+          <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (closure + ALS + sumChargesByExecution)</span><span class="click-hint-arrow">→</span></div>
+        </a>
+        <div class="arrow">↓</div>
+
+        <a href="passo-3-8.html" class="box backend clickable-node" id="step-3-8">
+          <span class="click-chevron" aria-hidden="true">›</span>
+          <div class="box-title"><span class="badge step">3.8</span> Tratamento de erro por nó <span class="badge ess">essencial</span></div>
+          <div class="box-desc">
+            Marca <code>errorMessage</code>/<code>errorStatusCode</code> em node.data. Se erro fatal → <code>stoppedByNodeFailure=true</code>.
+            <br>Chama <code>completeCondition(..., DEAD_HANDLE)</code> pra marcar rota morta.
+          </div>
+          <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (soft fail + catch + recordInApiNodeError)</span><span class="click-hint-arrow">→</span></div>
+        </a>
+        <div class="arrow">↓</div>
+
+        <a href="passo-3-9.html" class="box cross clickable-node" id="step-3-9">
+          <span class="click-chevron" aria-hidden="true">›</span>
+          <div class="box-title"><span class="badge step">3.9</span> runLogCollector.endNode() <span class="badge cross">cross</span></div>
+          <div class="box-desc">Fecha o RunLogNode com output/tokens/cost/status</div>
+          <div class="box-file">flux.service.ts:4537-4546 · <em>chamada duplicada em 4549-4562 (dead code)</em></div>
+          <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (endNode + duplicação/dead code)</span><span class="click-hint-arrow">→</span></div>
+        </a>
+        <div class="arrow">↓</div>
+
+        <a href="passo-3-10.html" class="box redis clickable-node" id="step-3-10">
+          <span class="click-chevron" aria-hidden="true">›</span>
+          <div class="box-title"><span class="badge step">3.10</span> Notificação WebSocket <span class="badge cross">cross</span></div>
+          <div class="box-desc">Envia iteração + <code>finalResult</code> + <code>reason</code> ao browser (via chatbotSocketByRun)</div>
+          <div class="box-file">flux.service.ts:2288, 5293-5307</div>
+          <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (chatbotSocketByRun + emitNodeStatus + gateway)</span><span class="click-hint-arrow">→</span></div>
+        </a>
+        <div class="arrow">↓</div>
+
+        <a href="passo-3-11.html" class="box backend clickable-node" id="step-3-11">
+          <span class="click-chevron" aria-hidden="true">›</span>
+          <div class="box-title"><span class="badge step">3.11</span> Avanço do DAG <span class="badge ess">essencial</span></div>
+          <div class="box-desc"><code>markCompleted(schedState, id)</code> ou <code>completeCondition(schedState, id, handle)</code> (nó de condição)</div>
+          <div class="box-file">flux.service.ts:3566-3571, 4013, 4004-4006</div>
+          <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (handledAdvance + markCompleted + completeCondition)</span><span class="click-hint-arrow">→</span></div>
+        </a>
+
+        <div class="arrow">↺</div>
+        <div class="arrow-label">volta para 3.1 (próximo nó pronto)</div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="phase-sep">
+
+  <!-- ================================================== -->
+  <!-- FASE 4 — FINALIZAÇÃO -->
+  <!-- ================================================== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">4</div>
+      <div class="section-title">FASE 4 — Finalização</div>
+      <div class="section-desc">Passos 23–33 do doc · flux.service.ts:4735+</div>
+    </div>
+
+    <div class="flow-column">
+      <a href="passo-4-1.html" class="box cross clickable-node" id="step-4-1">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title"><span class="badge step">4.1</span> Detecção de nós não-processados <span class="badge cross">cross</span></div>
+        <div class="box-desc">Warning se sobrar nó fora de <code>completed</code> ou <code>dead</code>. Loga error com IDs.</div>
+        <div class="box-file">flux.service.ts:4735-4778</div>
+        <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (unprocessed + cancel footprint + gate)</span><span class="click-hint-arrow">→</span></div>
+      </a>
+      <div class="arrow">↓</div>
+
+      <a href="passo-4-2.html" class="box cross clickable-node" id="step-4-2">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title"><span class="badge step">4.2</span> Coleta de nós com erro</div>
+        <div class="box-desc">Filtra nós com <code>errorMessage</code>/<code>errorStatusCode</code>; extrai primeira mensagem</div>
+        <div class="box-file">flux.service.ts:4780-4799</div>
+        <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (filter + resolveRunLogStatus)</span><span class="click-hint-arrow">→</span></div>
+      </a>
+      <div class="arrow">↓</div>
+
+      <a href="passo-4-3.html" class="box db clickable-node" id="step-4-3">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title"><span class="badge step">4.3</span> flowLogsService.createLog() <span class="badge cross">cross</span></div>
+        <div class="box-desc">INSERT em <code>execution_logs</code>: status, error_message, spent_tokens, cost, run_type</div>
+        <div class="box-file">flux.service.ts:4802-4822</div>
+        <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (createLog + schema flow_log)</span><span class="click-hint-arrow">→</span></div>
+      </a>
+      <div class="arrow">↓</div>
+
+      <a href="passo-4-4.html" class="box db clickable-node" id="step-4-4">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title"><span class="badge step">4.4</span> RunLogCollector.finalize() + spaceRunLogsService.flushNow()</div>
+        <div class="box-desc">Grava trace completo em <code>space_run_logs</code> (imediato, não schedulado)</div>
+        <div class="box-file">flux.service.ts:4824-4862</div>
+        <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (finalize + flushNow + summary)</span><span class="click-hint-arrow">→</span></div>
+      </a>
+      <div class="arrow">↓</div>
+
+      <a href="passo-4-5.html" class="box backend clickable-node" id="step-4-5">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title"><span class="badge step">4.5</span> Preparação de erro amigável <span class="badge ess">essencial</span></div>
+        <div class="box-desc">Constrói string: <code>nodeError = 'Execution failed at node "..." — ...'</code></div>
+        <div class="box-file">flux.service.ts:4881-4884</div>
+        <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (template string + label fallback)</span><span class="click-hint-arrow">→</span></div>
+      </a>
+      <div class="arrow">↓</div>
+
+      <a href="passo-4-6.html" class="box db clickable-node" id="step-4-6">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title"><span class="badge step">4.6</span> persistInputNodeData() para outputObjectNode <span class="badge ess">essencial</span></div>
+        <div class="box-desc">Persiste text/textData dos nós de saída</div>
+        <div class="box-file">flux.service.ts:4893-4905</div>
+        <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (filter + Promise.all + version dispatch)</span><span class="click-hint-arrow">→</span></div>
+      </a>
+      <div class="arrow">↓</div>
+
+      <a href="passo-4-7.html" class="box external clickable-node" id="step-4-7">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title"><span class="badge step">4.7</span> Emails + callbacks HTTP <span class="badge cross">cross</span></div>
+        <div class="box-desc">
+          Redis dedup <strong>duplo</strong>: run ID (24h TTL, NX) + content hash (90s). Callbacks por nó + callbackUrl consolidado do request.
+        </div>
+        <div class="box-file">flux.service.ts:4907-5161, 5030-5075 (dedup), 5164-5195 (consolidado)</div>
+        <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (dedup Redis + 3 providers + webhooks)</span><span class="click-hint-arrow">→</span></div>
+      </a>
+      <div class="arrow">↓</div>
+
+      <a href="passo-4-8.html" class="box db clickable-node" id="step-4-8">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title"><span class="badge step">4.8</span> Atualização de chat <span class="badge ess">essencial (modo chat)</span></div>
+        <div class="box-desc"><code>sessionStateService.appendEntries()</code> + ChatLog save para fluxObject/nodesBox com chat</div>
+        <div class="box-file">flux.service.ts:5211-5288</div>
+        <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (sessionAppends + appendEntries + chatLogs)</span><span class="click-hint-arrow">→</span></div>
+      </a>
+      <div class="arrow">↓</div>
+
+      <a href="passo-4-9.html" class="box backend clickable-node" id="step-4-9">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title"><span class="badge step">4.9</span> Retorno ao chamador <span class="badge ess">essencial</span></div>
+        <div class="box-desc"><code>{ message[], nodeError, totalTokensUsed, totalCost }</code></div>
+        <div class="box-file">flux.service.ts:5293-5307</div>
+        <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (return shape + arrayDataToText)</span><span class="click-hint-arrow">→</span></div>
+      </a>
+    </div>
+  </div>
+
+  <hr class="phase-sep">
+
+  <!-- ================================================== -->
+  <!-- CATCH + CLEANUP -->
+  <!-- ================================================== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">5</div>
+      <div class="section-title">Catch top-level + cleanup</div>
+      <div class="section-desc">Passos 32–33 do doc</div>
+    </div>
+    <div class="flow-column">
+      <a href="passo-5-1.html" class="box cross clickable-node" id="step-5-1">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title"><span class="badge step">5.1</span> catch { ... } — top-level <span class="badge cross">cross</span></div>
+        <div class="box-desc">Finaliza <code>RunLog</code> em erro, cria <code>FlowLog</code> com status de erro, re-lança exception</div>
+        <div class="box-file">flux.service.ts:5308-5389</div>
+        <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (finalize error + Winston hint + createLog + throw)</span><span class="click-hint-arrow">→</span></div>
+      </a>
+      <div class="arrow">↓</div>
+      <a href="passo-5-2.html" class="box backend clickable-node" id="step-5-2">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title"><span class="badge step">5.2</span> mcpRunStatusService.markFinished() (se veio da fila) <span class="badge cross">cross</span></div>
+        <div class="box-desc">Registra tokens/cost/durationMs no MCP tracking</div>
+        <div class="box-file">apiV2Job.processor.ts:58-67, 80-88</div>
+        <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (markRunning + markFinished + mcp_run_status)</span><span class="click-hint-arrow">→</span></div>
+      </a>
+      <div class="arrow">↓</div>
+      <a href="passo-5-3.html" class="box backend clickable-node" id="step-5-3">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title"><span class="badge step">5.3</span> Cleanup do socket do chatbot</div>
+        <div class="box-desc"><code>delete chatbotSocketByRun[runId]</code> no <code>finally</code></div>
+        <div class="box-file">flux.service.ts:5392-5395</div>
+        <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (delete Map + forgetRun)</span><span class="click-hint-arrow">→</span></div>
+      </a>
+    </div>
+  </div>
+
+  <hr class="phase-sep">
+
+  <!-- ================================================== -->
+  <!-- FASE 5 — CROSS-CUTTING -->
+  <!-- ================================================== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">✦</div>
+      <div class="section-title">FASE 5 — Preocupações transversais (cross-cutting)</div>
+      <div class="section-desc">Atravessam todas as fases acima</div>
+    </div>
+
+    <div class="cross-cutting">
+      <h3>Concerns que atravessam todo o fluxo</h3>
+      <div class="cross-grid">
+        <div class="cross-item">
+          <strong>Logging (4 camadas)</strong>
+          Winston (erros técnicos) · FlowLog (execução) · SpaceRunLogs via RunLogCollector (hierárquico, nested runs) · <code>recordLegacyNodeStart/Success</code> para nós não-Temporal
+        </div>
+        <div class="cross-item">
+          <strong>Token / custo</strong>
+          <code>chargeContext</code> async-local storage · pricing via tabela <code>model_price</code> · persistência em <code>execution_logs.spent_tokens</code>/<code>cost</code> e por nó em <code>RunLogNode</code>
+        </div>
+        <div class="cross-item">
+          <strong>Chat / sessão</strong>
+          <code>SessionStateService</code> com chave stable (scope + sessionKey + ownerUserId)
+        </div>
+        <div class="cross-item">
+          <strong>Mídia / arquivos S3</strong>
+          Imagens/áudio salvos antes de retornar. Padrão claim-check &gt;256KB <strong>já usado em ambos os paths</strong> (Temporal e inline) — flux.service.ts:525, 581, 1533
+        </div>
+        <div class="cross-item">
+          <strong>MCP tracking</strong>
+          <code>mcpRunStatusService.markRunning()</code> no início (apiV2Job.processor.ts:48) · <code>markFinished()</code> no fim (58-67, 80-88) com tokens/cost/durationMs
+        </div>
+        <div class="cross-item">
+          <strong>Objetos personalizados</strong>
+          <code>nodesBox</code> via <code>modifyData()</code> + <code>objectCaller()</code> · <code>onMutateObjectCallerData</code> callback
+        </div>
+        <div class="cross-item">
+          <strong>Detecção Temporal vs legacy</strong>
+          <code>isTemporalNode(type)</code> · <code>isWorkerRoutedIntegration(node)</code> <span class="badge new">novo</span>
+        </div>
+        <div class="cross-item">
+          <strong>Cancellation <span class="badge new">novo</span></strong>
+          Feature flag <code>NODE_CANCEL_IN_FLIGHT_FLAG</code> · <code>shouldWatchCancellation()</code>, <code>startNodeCancelWatch()</code>, <code>nodeCancelContext</code>, <code>finishCancelledNode()</code>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <hr class="phase-sep">
+
+  <!-- ================================================== -->
+  <!-- RESUMO -->
+  <!-- ================================================== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">✓</div>
+      <div class="section-title">Resumo — o que já foi migrado e o que falta</div>
+    </div>
+    <div class="branch">
+      <div class="lane temporal">
+        <div class="lane-title">Já executando no Worker <span class="badge migrated">migrado</span></div>
+        <div class="handlers-list" style="font-size:11px">
+          <span class="mig">commandTextNode</span>
+          <span class="mig">scripting</span>
+          <span class="mig">apiCaller</span>
+          <span class="mig">mathFunction</span>
+          <span class="mig">counterNode</span>
+          <span class="mig">outputController</span>
+          <span class="mig">sqlQuerier</span>
+          <span class="mig">audioReaderNode*</span>
+          <span class="mig">thirdParty:stripe</span>
+          <span class="mig">thirdParty:wordpress</span>
+          <span class="mig">thirdParty:slack</span>
+          <span class="mig">thirdParty:notion</span>
+          <span class="mig">thirdParty:zapier</span>
+          <span class="mig">thirdParty:hubspot (pull)</span>
+        </div>
+        <div style="font-size:11px;color:#065F46;margin-top:8px">
+          * audioReaderNode existe no worker mas backend ainda tem versão inline (7911) para casos específicos
+        </div>
+      </div>
+      <div class="lane inline">
+        <div class="lane-title">Ainda inline no Backend <span class="badge legacy">falta migrar</span></div>
+        <div class="handlers-list" style="font-size:11px">
+          <span class="leg">voiceBoxNode (TTS)</span>
+          <span class="leg">imageGenerator</span>
+          <span class="leg">commandContentNode</span>
+          <span class="leg">webSearch</span>
+          <span class="leg">webCrawling</span>
+          <span class="leg">pullData</span>
+          <span class="leg">pushData</span>
+          <span class="leg">conditionNode</span>
+          <span class="leg">arrayNode (loop)</span>
+          <span class="leg">nodesBox</span>
+          <span class="leg">libraryNode</span>
+          <span class="leg">fluxBox</span>
+          <span class="leg">varInputNode / varOutputNode</span>
+          <span class="leg">reportBuilder</span>
+          <span class="leg">fluxObject / fluxBox</span>
+          <span class="leg">objectCaller</span>
+          <span class="leg">mcpNode</span>
+          <span class="leg">thirdParty (não-migrados)</span>
+        </div>
+        <div style="font-size:11px;color:#991B1B;margin-top:8px">
+          <strong>+ Scheduler DAG (buildSchedulerState)</strong>
+          <br><strong>+ Substitution engine</strong> (57 sync sites, mutação in-memory)
+          <br><strong>+ Loop condition/arrayNode logic</strong> (completeCondition, DEAD_HANDLE, loopIterationContext)
+          <br><strong>+ RunLogCollector hierárquico</strong>
+          <br><strong>+ chargeContext</strong> async-local storage
+          <br><strong>+ SessionStateService</strong> (chat)
+          <br><strong>+ Todo o loop nó-a-nó</strong> em <code>FluxService.apiV2</code>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note" style="margin-top:32px">
+    <strong>Observações críticas para o plano de migração:</strong>
+    <br>• Backend continua sendo <em>orquestrador único</em> — worker é executor de nó isolado.
+    <br>• Cada nó Temporal é uma round-trip <strong>síncrona</strong> (BLOCKING WAIT) — sem paralelismo entre irmãos.
+    <br>• Path Temporal resolve o problema de JSONB gordo; path inline continua gravando <code>previewResponses</code>/<code>contentData</code>.
+    <br>• Nenhum fallback backend↔worker: node type ausente no worker quebra com "not supported".
+    <br>• <code>processAgent</code> workflow no worker está <strong>stub</strong> (comentado): DAG scheduling nunca migrou.
+  </div>
+
+
+</div>
+</body>
+</html>

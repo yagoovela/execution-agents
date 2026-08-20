@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Passo 3.7 — Contabilidade token/custo | Detalhamento</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F1F5F9; color: #0F172A; margin: 0; padding: 32px 24px 80px; line-height: 1.4; }
+  .container { max-width: 1500px; margin: 0 auto; }
+  .page-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; padding: 12px 16px; background: white; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); flex-wrap: wrap; }
+  .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748B; }
+  .breadcrumb a { color: #3B82F6; text-decoration: none; font-weight: 500; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #CBD5E1; }
+  .back-btn { display: inline-flex; align-items: center; gap: 6px; background: #0F172A; color: white; padding: 8px 14px; border-radius: 8px; text-decoration: none; font-size: 12.5px; font-weight: 600; }
+  .page-header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+  .page-header .icon { font-size: 32px; }
+  .page-header h1 { margin: 0; font-size: 26px; color: #0F172A; letter-spacing: -0.4px; }
+  .page-sub { color: #64748B; font-size: 13px; margin-bottom: 24px; padding-left: 46px; }
+  .page-sub code { background: #E2E8F0; padding: 1px 6px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; color: #334155; }
+  .overview-mini { background: white; padding: 16px 18px; border-radius: 10px; margin-bottom: 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .overview-mini-title { font-size: 12px; font-weight: 700; color: #334155; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px; }
+  .overview-chain { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .overview-chip { background: #F8FAFC; padding: 6px 12px; border-radius: 6px; border-left: 3px solid #3B82F6; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; font-weight: 600; color: #0F172A; text-decoration: none; display: inline-block; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+  .overview-chip .lbl { display: block; font-size: 9.5px; color: #64748B; font-weight: 500; margin-bottom: 2px; font-family: inherit; text-transform: uppercase; letter-spacing: 0.5px; }
+  .overview-sep { color: #94A3B8; font-size: 18px; font-weight: bold; }
+  .box { background: white; border-radius: 8px; padding: 9px 13px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 4px solid #94A3B8; width: 100%; max-width: 100%; }
+  .box.backend { border-left-color: #3B82F6; }
+  .box.worker { border-left-color: #10B981; }
+  .box.db { border-left-color: #F59E0B; }
+  .box.redis { border-left-color: #EF4444; }
+  .box.external { border-left-color: #64748B; }
+  .box.decision { border-left-color: #EAB308; background: #FEFCE8; }
+  .box.cross { border-left-color: #A855F7; background: #FAF5FF; }
+  .box-title { font-weight: 600; font-size: 12.5px; color: #0F172A; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .box-desc { font-size: 11.5px; color: #475569; }
+  .box-file { font-size: 10px; color: #94A3B8; font-family: 'SF Mono', Menlo, Consolas, monospace; margin-top: 3px; word-break: break-all; }
+  .box code { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; background: #F1F5F9; padding: 1px 4px; border-radius: 3px; color: #334155; word-break: break-word; }
+  .badge { display: inline-block; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; }
+  .badge.migrated { background: #D1FAE5; color: #065F46; }
+  .badge.legacy { background: #FEE2E2; color: #991B1B; }
+  .badge.mixed { background: #FEF3C7; color: #92400E; }
+  .badge.step { background: #E0E7FF; color: #3730A3; font-size: 10px; }
+  .badge.cross { background: #F3E8FF; color: #6B21A8; }
+  .arrow { color: #64748B; font-size: 22px; line-height: 1; margin: 1px 0; text-align: center; }
+  .fn-card { margin-top: 28px; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .fn-card-header { background: linear-gradient(to right, #0F172A, #1E293B); color: white; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  .fn-card-header .fn-title { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+  .fn-card-header .fn-title code { background: rgba(255,255,255,0.15); padding: 3px 8px; border-radius: 4px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 13px; }
+  .fn-card-header .fn-loc { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; color: #CBD5E1; }
+  .fn-card-body { padding: 20px; }
+  .fn-signature { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; background: #F1F5F9; padding: 8px 12px; border-radius: 6px; color: #334155; margin-bottom: 16px; overflow-x: auto; }
+  .fn-purpose { font-size: 13px; color: #475569; margin-bottom: 12px; padding: 10px 14px; background: #EFF6FF; border-left: 3px solid #3B82F6; border-radius: 6px; }
+  .fn-friendly { font-size: 13px; color: #334155; margin-bottom: 20px; padding: 12px 14px 12px 44px; background: #F0FDF4; border-left: 3px solid #10B981; border-radius: 6px; position: relative; line-height: 1.55; }
+  .fn-friendly::before { content: "💬"; position: absolute; left: 14px; top: 10px; font-size: 18px; }
+  .fn-friendly strong { color: #065F46; }
+  .fn-body-cols { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr); gap: 20px; }
+  @media (max-width: 900px) { .fn-body-cols { grid-template-columns: 1fr; } }
+  .fn-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .fn-asides { display: flex; flex-direction: column; gap: 12px; }
+  .aside { background: #FEF3C7; border-left: 4px solid #F59E0B; border-radius: 6px; padding: 10px 12px; font-size: 11.5px; color: #78350F; }
+  .aside.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .aside.warn { background: #FEE2E2; border-left-color: #EF4444; color: #991B1B; }
+  .aside.helper { background: #F3E8FF; border-left-color: #A855F7; color: #6B21A8; }
+  .aside-title { font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+  .aside code { background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 10.5px; word-break: break-word; }
+  .code-block { background: #0F172A; color: #E2E8F0; padding: 12px 16px; border-radius: 6px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; line-height: 1.6; overflow-x: auto; margin: 6px 0; }
+  .code-block .k { color: #93C5FD; }
+  .code-block .s { color: #86EFAC; }
+  .code-block .c { color: #64748B; font-style: italic; }
+  .code-block .t { color: #FDE68A; }
+  .nested-flow { margin: 6px 0; padding: 12px; background: #F0FDF4; border: 1px dashed #10B981; border-radius: 8px; }
+  .nested-flow-title { font-size: 10.5px; font-weight: 700; color: #065F46; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .note { background: #FEF3C7; border-left: 4px solid #F59E0B; padding: 12px 16px; border-radius: 6px; font-size: 12.5px; color: #78350F; margin: 20px 0; }
+  .note.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .note code { background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; }
+  .page-footer-nav { margin-top: 48px; padding: 16px; background: white; border-radius: 10px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-nav">
+    <div class="breadcrumb"><a href="index.html">📋 Execução de Agente</a><span class="sep">›</span><span>Passo 3.7 — Detalhamento</span></div>
+    <a href="index.html#step-3-7" class="back-btn">← Voltar ao diagrama</a>
+  </div>
+
+  <div class="page-header"><span class="icon">💰</span><h1>Passo 3.7 — Contabilidade token/custo por nó</h1></div>
+  <div class="page-sub">Bloco em <code>flux.service.ts:2280-2283</code> (closure), <code>3248-3249</code> (snapshot antes), <code>3296-3297</code> (2ª leitura), <code>4537-4546</code> (delta no endNode). Sem tabela, sem service — pura aritmética em variáveis globais do run + closure de mutação.</div>
+
+  <div class="note info"><strong>Contexto:</strong> billing é cross-cutting (memória <code>[[project_execution_architecture]]</code>). O <em>total</em> do run vive em <code>totalTokensUsed</code>/<code>totalCost</code> — mutados por callback quando chamadas de LLM/API/embedding cobram tokens. Já o <em>delta por nó</em> é calculado por diferença antes/depois. Duas fontes possíveis: (i) handlers legacy chamam <code>onUpdateTokens(delta, cost)</code> direto; (ii) handlers Temporal cobram via HTTP <code>/worker/charge-tokens</code> e depois <code>sumChargesByExecution(execId, nodeId)</code> agrega do banco.</div>
+
+  <div class="overview-mini">
+    <div class="overview-mini-title">Cadeia em 3.7</div>
+    <div class="overview-chain">
+      <a href="#fn-a" class="overview-chip"><span class="lbl">A</span>onUpdateTokens (closure)</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>Snapshot before/after</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>chargeContext (ALS)</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>sumChargesByExecution (Temporal)</a>
+    </div>
+    <div style="margin-top:10px; font-size:11.5px; color:#64748B;">Resultado: <code>totalTokensUsed</code>/<code>totalCost</code> refletem consumo acumulado do run; delta é atribuído ao <code>RunLogNode</code> deste nó em 3.9.</div>
+  </div>
+
+  <div class="fn-card" id="fn-a">
+    <div class="fn-card-header">
+      <div class="fn-title"><span class="badge migrated" style="background:#EAB308;color:white">A</span><code>onUpdateTokens (closure)</code></div>
+      <div class="fn-loc">flux.service.ts:2280-2283</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">const onUpdateTokens = (tokensUsed: number, cost: number) =&gt; { totalTokensUsed += tokensUsed; totalCost += cost; };</div>
+      <div class="fn-purpose"><strong>Propósito:</strong> Callback closure criado no início de <code>apiV2()</code>. Passado por argumento pra todos os handlers legacy que fazem cobrança (LLM, embedding, etc.). Cada handler chama <code>onUpdateTokens(delta, cost)</code> após cada operação cobrada — a closure muta as variáveis do escopo pai.</div>
+      <div class="fn-friendly"><strong>Em resumo:</strong> pensa nele como uma <em>caixinha de troco</em> que fica em cima da mesa do <code>apiV2()</code>. Toda vez que um handler <em>gasta</em> tokens (chamou o LLM, gerou embedding, transcreveu áudio), ele grita "gastei 300 tokens, 0.002 dolar!" chamando <code>onUpdateTokens(300, 0.002)</code>. A closure aceita e soma nos acumuladores globais do run. Como é <em>closure</em> (função definida no escopo do apiV2 acessando as variáveis <code>totalTokensUsed</code> e <code>totalCost</code>), <strong>mutar dentro da função mexe direto nas variáveis do run</strong> — sem passar por service, sem I/O, sem consistência distribuída. É simples, síncrono, e funciona porque tudo mora no mesmo processo. Cada handler recebe essa referência via arg (não via injeção) — é padrão dependency injection funcional. Handlers Temporal <em>não</em> chamam essa closure; eles cobram por HTTP direto no <code>/worker/charge-tokens</code>, e o backend depois lê via <code>sumChargesByExecution</code> (fn D). Sem worker, sem HTTP, sem lock — mas também sem paralelismo real.</div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="code-block"><span class="k">let</span> totalTokensUsed = <span class="s">0</span>;
+<span class="k">let</span> totalCost = <span class="s">0</span>;
+
+<span class="k">const</span> onUpdateTokens = (tokensUsed: number, cost: number) =&gt; {
+  totalTokensUsed += tokensUsed;
+  totalCost += cost;
+};</div>
+          <div class="arrow">↓</div>
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">A1</span> Passado a handlers legacy</div>
+            <div class="box-desc">Handlers como <code>voiceNode</code>, <code>imageGeneratorNode</code>, <code>webSearchNode</code>, <code>audioReaderNode</code>, <code>commandContentNode</code> recebem <code>onUpdateTokens</code> como arg — chamam durante execução. Dispatch em <code>flux.service.ts:3380, 3615, 3706, 3722, 3712</code>.</div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Sem lock, single-threaded funciona</div>
+            Como Node.js é single-threaded no event loop, mutar <code>totalTokensUsed += x</code> nunca vai dar race — não existem 2 handlers rodando em paralelo <em>de verdade</em>. Só um <code>await</code> tá suspenso por vez. Em qualquer refactor que introduza paralelismo real (worker_threads, cluster), essa closure precisa virar operação atômica.
+          </div>
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Sem idempotência</div>
+            Se um handler chamar <code>onUpdateTokens</code> 2× por engano (retry, bug), soma 2×. Não há dedup. Diferente do <code>token_transactions</code> do Temporal path, que pelo menos tem PK.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 Fecha sobre 2 variáveis</div>
+            A closure captura <code>totalTokensUsed</code> e <code>totalCost</code> por referência (é <code>let</code>, não const — mas mesmo com const, closure lê o valor atual da variável, não snapshot). Reatribuição fora afeta a leitura.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fn-card" id="fn-b">
+    <div class="fn-card-header">
+      <div class="fn-title"><span class="badge migrated" style="background:#3B82F6;color:white">B</span><code>Snapshot before/after do nó</code></div>
+      <div class="fn-loc">flux.service.ts:3248-3249, 3296-3297, 4537-4546</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">genericTokensBefore = totalTokensUsed; ... [handler roda] ... delta = totalTokensUsed - genericTokensBefore;</div>
+      <div class="fn-purpose"><strong>Propósito:</strong> Pattern universal pra atribuir cobrança ao nó certo — no início do <code>try</code> do nó (linha 3248 e 3296 pra segurança dupla), snapshot dos acumuladores globais. Depois do handler terminar, delta = valor atual - snapshot. Vai pro <code>endNode</code> em 3.9.</div>
+      <div class="fn-friendly"><strong>Em resumo:</strong> é a <em>régua</em> antes/depois. O total do run tá subindo o tempo todo (cada handler cobra, cada iteração). Pra saber quanto foi <em>desse nó específico</em>, marca-se o total antes do nó começar (<code>genericTokensBefore</code>) e o total depois (<code>totalTokensUsed</code>) — a diferença é o gasto atribuível. Simples e robusto <em>enquanto</em> não há paralelismo entre nós. Se 2 nós rodassem em paralelo, os deltas se cruzariam — não teria como saber quem gastou o quê só pela diferença. Por que o snapshot aparece 2× (3248 e 3296)? Segurança dupla: a linha 3248 é depois do <code>try {</code> abrir; a 3296 é dentro do bloco onde o RunLog está sendo criado — reset explícito pra garantir que qualquer cobrança do <code>runLogCollector.startNode</code> (não deveria acontecer mas...) não vaze pro delta do nó. Um tanto paranóico mas defensivo. E o delta final é escrito no <code>RunLogNode</code> em 3.9 (<code>endNode</code>), com <code>tokens: totalTokensUsed - genericTokensBefore</code>. Assim a UI de timeline mostra tokens/custo <em>por nó</em>, não só o total do run.</div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="code-block"><span class="c">// linha 3248-3249</span>
+<span class="k">let</span> genericTokensBefore = totalTokensUsed;
+<span class="k">let</span> genericCostBefore = totalCost;
+<span class="c">// linha 3296-3297: reset após startNode</span>
+genericTokensBefore = totalTokensUsed;
+genericCostBefore = totalCost;
+<span class="c">// [... handler roda ...]</span>
+<span class="c">// linha 4539-4540: cálculo do delta em endNode</span>
+tokens: totalTokensUsed - genericTokensBefore,
+cost: totalCost - genericCostBefore,</div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Por que 2 snapshots?</div>
+            Linha 3248 é durante inicialização de vars. Linha 3296-3297 é depois do <code>startNode</code>, garantindo reset — se o <code>startNode</code>/<code>redactSecrets</code> ativou algum path que cobrasse tokens (improvável mas defensivo), fica fora do delta do nó.
+          </div>
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Delta pode ficar negativo?</div>
+            Não em código normal — <code>totalTokensUsed</code> só cresce. Mas se alguém decidir "compensar" (subtrair tokens em caso de erro), o delta pode ficar negativo. O <code>endNode</code> passa cru pra <code>RunLogNode</code>, que persiste o número — futuramente pode virar bug se alguém somar sem checar sinal.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 Snapshot em cópia por valor</div>
+            Numbers em JS são valores, não referências. <code>genericTokensBefore = totalTokensUsed</code> copia o número — mudar <code>totalTokensUsed</code> depois não afeta o snapshot.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fn-card" id="fn-c">
+    <div class="fn-card-header">
+      <div class="fn-title"><span class="badge migrated" style="background:#10B981;color:white">C</span><code>chargeContext (AsyncLocalStorage)</code></div>
+      <div class="fn-loc">product/charge-context.ts:1-8 · product.service.ts:1013-1015</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">chargeContext = new AsyncLocalStorage&lt;{ execId, nodeId }&gt;() · getStore() lido em updateTokens</div>
+      <div class="fn-purpose"><strong>Propósito:</strong> Faz a ponte entre "quem está cobrando" (services de provider genéricos) e "onde persistir" (execId + nodeId do run atual). Injetado em 3.4 antes do handler; lido pelo <code>ProductService.updateTokens</code> quando insere row em <code>token_transactions</code>.</div>
+      <div class="fn-friendly"><strong>Em resumo:</strong> se você olhar <em>só</em> o <code>onUpdateTokens</code> do fn A, parece que a cobrança só vive na memória do backend. Mas na verdade, quando um handler chama <code>anthropicService.chat(...)</code>, esse service internamente também chama <code>productService.updateTokens(delta, cost)</code> — que <strong>insere row em <code>token_transactions</code></strong> no Postgres. E aí vem o problema: o <code>ProductService</code> é compartilhado com rotas API públicas — como ele sabe que essa cobrança pertence a este agente, a este nó? Resposta: via <code>chargeContext.getStore()</code>. O 3.4 injetou <code>{ execId, nodeId }</code> na AsyncLocalStorage <em>antes</em> do handler começar; quando o <code>ProductService</code> lê a ALS, pega esses ids e escreve na coluna <code>metadata</code> da row. Assim, <em>duas</em> cobranças acontecem em paralelo: (i) <code>onUpdateTokens</code> soma no total do run em memória; (ii) <code>ProductService</code> insere row com identificação por-nó no banco. A memória vira o retorno síncrono do run (Fase 4 pega); o banco vira audit trail e fonte pra <code>sumChargesByExecution</code> depois (fn D).</div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="nested-flow">
+            <div class="nested-flow-title">↳ ProductService.updateTokens — product.service.ts:1013-1015</div>
+            <div class="code-block" style="font-size:10.5px"><span class="k">const</span> chargeCtx = chargeContext.<span class="t">getStore</span>();  <span class="c">// ALS lookup</span>
+execId = execId ?? chargeCtx?.execId ?? <span class="k">null</span>;
+nodeId = nodeId ?? chargeCtx?.nodeId ?? <span class="k">null</span>;
+<span class="c">// INSERT INTO token_transactions ({ execId, nodeId, tokens, cost, ... })</span></div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Fallback para arg explícito</div>
+            <code>execId = execId ?? chargeCtx?.execId</code> — se o caller passou explícito, respeita. Só usa ALS como fallback. Permite outros callers (API pública) não precisar do contexto.
+          </div>
+          <div class="aside">
+            <div class="aside-title">📎 Duas fontes de verdade</div>
+            Memória (<code>totalTokensUsed</code>) e banco (<code>token_transactions</code>) podem divergir — se <code>onUpdateTokens</code> é chamado mas o INSERT do <code>ProductService</code> falha, memória tem valor mas banco não. Não há reconciliação automática — mas em prática, se <code>ProductService</code> falha, o request de LLM falharia antes.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fn-card" id="fn-d">
+    <div class="fn-card-header">
+      <div class="fn-title"><span class="badge migrated" style="background:#8B5CF6;color:white">D</span><code>sumChargesByExecution (path Temporal)</code></div>
+      <div class="fn-loc">flux.service.ts:709-716 · tokenTransactionService</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">const { tokens, cost } = await tokenTransactionService.sumChargesByExecution(execId, nodeId)</div>
+      <div class="fn-purpose"><strong>Propósito:</strong> Handlers Temporal cobram via HTTP <code>/worker/charge-tokens</code> no worker (não têm acesso ao <code>onUpdateTokens</code> closure). Após workflow terminar, o backend agrega esses charges do banco por <code>{execId, nodeId}</code> e soma no <code>totalTokensUsed</code>/<code>totalCost</code> do run.</div>
+      <div class="fn-friendly"><strong>Em resumo:</strong> handlers no worker não podem chamar a closure — outro processo, outra memória, outra vida. A solução: cada activity que cobra tokens chama HTTP <code>/worker/charge-tokens</code> passando <code>{ execId, nodeId, tokens, cost }</code>. O endpoint no backend insere row em <code>token_transactions</code>. Aí, quando <code>processNodeViaTemporal</code> retorna, o backend chama <code>tokenTransactionService.sumChargesByExecution(execId, nodeId)</code> — <code>SELECT SUM(tokens), SUM(cost) FROM token_transactions WHERE exec_id = $1 AND node_id = $2</code>. O resultado é somado direto em <code>totalTokensUsed</code>/<code>totalCost</code>. Efeito: <em>dois caminhos</em> de propagação de billing, mas <strong>uma única fonte de verdade final</strong> no fim (a soma em memória do backend). Elegante mas com custo de round-trip: HTTP + SQL por nó Temporal. Em runs grandes com muitos nós migrados, é overhead considerável — mas garante consistência entre paths.</div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box worker">
+            <div class="box-title"><span class="badge step">D1</span> Worker cobra via HTTP</div>
+            <div class="box-desc">Activity <code>chargeTokensActivity</code> chama <code>/worker/charge-tokens</code> com <code>{ execId, nodeId, tokens, cost }</code> — passo W7 do diagrama.</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box db">
+            <div class="box-title"><span class="badge step">D2</span> Backend agrega ao retornar</div>
+            <div class="box-desc"><code>await tokenTransactionService.sumChargesByExecution(execId, nodeId)</code> → SUM em <code>token_transactions</code> por (execId, nodeId). Soma em <code>totalTokensUsed</code>/<code>totalCost</code>.</div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Idempotente por design</div>
+            Se o worker retentar uma activity de cobrança, o INSERT em <code>token_transactions</code> pode duplicar — mas se a activity chargeTokens tem PK única, é seguro. Verificar se existe unique constraint em (execId, nodeId, iterationIndex) ou similar.
+          </div>
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Overhead per node</div>
+            HTTP call + SQL SUM por nó Temporal. Numa agente com 50 nós migrados, é 100 round-trips extras (charge + sum). Poderia ser batched — hoje é um-a-um.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 Ambos os paths somam no mesmo lugar</div>
+            Path legacy: <code>onUpdateTokens</code> muta memória direto. Path Temporal: <code>sumChargesByExecution</code> lê do banco e soma na memória. Depois de 3.7 rodar (ou equivalente para Temporal), <code>totalTokensUsed</code> reflete os dois caminhos.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note info" style="margin-top:32px"><strong>Resumo — o que sai de 3.7:</strong><br>• <code>totalTokensUsed</code>/<code>totalCost</code> refletem consumo pós-execução do nó<br>• Delta atribuído ao <code>RunLogNode</code> em 3.9 (<code>tokens</code>/<code>cost</code>)<br>• Row em <code>token_transactions</code> gravada (via ProductService ou HTTP worker)<br>• 2 mecanismos: closure legacy + AsyncLocalStorage/HTTP Temporal</div>
+
+  <div class="note"><strong>Observações para migração:</strong><br>• A closure <code>onUpdateTokens</code> vira <strong>obsoleta</strong> quando tudo estiver no worker — todo mundo cobra via HTTP <code>/worker/charge-tokens</code>. É bom sinal: menos código, menos padrões concorrentes.<br>• <code>chargeContext</code> ALS também some — o worker sempre passa execId/nodeId explícitos por API.<br>• O snapshot before/after continua útil como pattern — mas se worker paralelizar, precisa de dedup por PK em <code>token_transactions</code>, não subtração de acumuladores.<br>• É <strong>cross-cutting e essencial</strong> pra billing. Deve ser migrado junto com o loop principal, com contract HTTP claro entre worker e backend.</div>
+
+  <div class="page-footer-nav"><a href="index.html#step-3-7" class="back-btn">← Voltar ao diagrama principal</a></div>
+</div>
+</body>
+</html>
