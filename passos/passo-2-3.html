@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Passo 2.3 — generateSchemaFromNodes | Detalhamento</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F1F5F9; color: #0F172A; margin: 0; padding: 32px 24px 80px; line-height: 1.4; }
+  .container { max-width: 1500px; margin: 0 auto; }
+  .page-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; padding: 12px 16px; background: white; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); flex-wrap: wrap; }
+  .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748B; }
+  .breadcrumb a { color: #3B82F6; text-decoration: none; font-weight: 500; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #CBD5E1; }
+  .back-btn { display: inline-flex; align-items: center; gap: 6px; background: #0F172A; color: white; padding: 8px 14px; border-radius: 8px; text-decoration: none; font-size: 12.5px; font-weight: 600; }
+  .page-header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+  .page-header .icon { font-size: 32px; }
+  .page-header h1 { margin: 0; font-size: 26px; color: #0F172A; letter-spacing: -0.4px; }
+  .page-sub { color: #64748B; font-size: 13px; margin-bottom: 24px; padding-left: 46px; }
+  .page-sub code { background: #E2E8F0; padding: 1px 6px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; color: #334155; }
+  .overview-mini { background: white; padding: 16px 18px; border-radius: 10px; margin-bottom: 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .overview-mini-title { font-size: 12px; font-weight: 700; color: #334155; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px; }
+  .overview-chain { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .overview-chip { background: #F8FAFC; padding: 6px 12px; border-radius: 6px; border-left: 3px solid #3B82F6; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; font-weight: 600; color: #0F172A; text-decoration: none; display: inline-block; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+  .overview-chip .lbl { display: block; font-size: 9.5px; color: #64748B; font-weight: 500; margin-bottom: 2px; font-family: inherit; text-transform: uppercase; letter-spacing: 0.5px; }
+  .overview-sep { color: #94A3B8; font-size: 18px; font-weight: bold; }
+  .box { background: white; border-radius: 8px; padding: 9px 13px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 4px solid #94A3B8; width: 100%; max-width: 100%; }
+  .box.backend { border-left-color: #3B82F6; }
+  .box.worker { border-left-color: #10B981; }
+  .box.db { border-left-color: #F59E0B; }
+  .box.redis { border-left-color: #EF4444; }
+  .box.s3 { border-left-color: #8B5CF6; }
+  .box.external { border-left-color: #64748B; }
+  .box.decision { border-left-color: #EAB308; background: #FEFCE8; }
+  .box.cross { border-left-color: #A855F7; background: #FAF5FF; }
+  .box-title { font-weight: 600; font-size: 12.5px; color: #0F172A; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .box-desc { font-size: 11.5px; color: #475569; }
+  .box-file { font-size: 10px; color: #94A3B8; font-family: 'SF Mono', Menlo, Consolas, monospace; margin-top: 3px; word-break: break-all; }
+  .box code { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; background: #F1F5F9; padding: 1px 4px; border-radius: 3px; color: #334155; word-break: break-word; }
+  .box-desc code { word-break: break-word; }
+  .badge { display: inline-block; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; }
+  .badge.migrated { background: #D1FAE5; color: #065F46; }
+  .badge.legacy { background: #FEE2E2; color: #991B1B; }
+  .badge.mixed { background: #FEF3C7; color: #92400E; }
+  .badge.step { background: #E0E7FF; color: #3730A3; font-size: 10px; }
+  .badge.cross { background: #F3E8FF; color: #6B21A8; }
+  .badge.ess { background: #DCFCE7; color: #14532D; font-size: 9px; }
+  .arrow { color: #64748B; font-size: 22px; line-height: 1; margin: 1px 0; text-align: center; }
+  .converge { text-align: center; color: #64748B; font-size: 22px; margin: 6px 0; }
+  .fn-card { margin-top: 28px; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .fn-card-header { background: linear-gradient(to right, #0F172A, #1E293B); color: white; padding: 14px 20px 14px 44px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; cursor: pointer; position: relative; user-select: none; transition: background 0.15s; }
+  .fn-card-header .fn-title { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+  .fn-card-header .fn-title code { background: rgba(255,255,255,0.15); padding: 3px 8px; border-radius: 4px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 13px; }
+  .fn-card-header .fn-loc { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; color: #CBD5E1; }
+  .fn-card-header:hover { background: linear-gradient(to right, #1E293B, #334155); }
+  .fn-card-header::before {
+    content: "▾";
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+    font-size: 14px;
+    transition: transform 0.2s ease;
+    line-height: 1;
+  }
+  .fn-card.collapsed .fn-card-header::before {
+    transform: translateY(-50%) rotate(-90deg);
+  }
+  .fn-card.collapsed .fn-card-body { display: none; }
+  .fn-card-body { padding: 20px; }
+  .fn-signature { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; background: #F1F5F9; padding: 8px 12px; border-radius: 6px; color: #334155; margin-bottom: 16px; overflow-x: auto; }
+  .fn-purpose { font-size: 13px; color: #475569; margin-bottom: 12px; padding: 10px 14px; background: #EFF6FF; border-left: 3px solid #3B82F6; border-radius: 6px; }
+  .fn-friendly { font-size: 13px; color: #334155; margin-bottom: 20px; padding: 12px 14px 12px 44px; background: #F0FDF4; border-left: 3px solid #10B981; border-radius: 6px; position: relative; line-height: 1.55; }
+  .fn-friendly::before { content: "💬"; position: absolute; left: 14px; top: 10px; font-size: 18px; }
+  .fn-friendly strong { color: #065F46; }
+
+  /* Step-level friendly summary (page-wide, appears after page-sub) */
+  .step-friendly {
+    font-size: 13.5px;
+    color: #334155;
+    margin-bottom: 28px;
+    padding: 16px 18px 16px 52px;
+    background: #F0FDF4;
+    border-left: 4px solid #10B981;
+    border-radius: 10px;
+    position: relative;
+    line-height: 1.6;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.08);
+  }
+  .step-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 18px;
+    top: 14px;
+    font-size: 22px;
+  }
+  .step-friendly-title {
+    font-weight: 700;
+    color: #065F46;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 8px;
+  }
+  .step-friendly ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .step-friendly li {
+    margin-bottom: 6px;
+  }
+  .step-friendly li:last-child {
+    margin-bottom: 0;
+  }
+  .step-friendly strong {
+    color: #065F46;
+  }
+  .step-friendly code {
+    background: #DCFCE7;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: #065F46;
+  }
+  .step-friendly em {
+    color: #047857;
+    font-style: italic;
+  }
+  .fn-body-cols { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr); gap: 20px; }
+  @media (max-width: 900px) { .fn-body-cols { grid-template-columns: 1fr; } }
+  .fn-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .fn-asides { display: flex; flex-direction: column; gap: 12px; }
+  .aside { background: #FEF3C7; border-left: 4px solid #F59E0B; border-radius: 6px; padding: 10px 12px; font-size: 11.5px; color: #78350F; }
+  .aside.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .aside.warn { background: #FEE2E2; border-left-color: #EF4444; color: #991B1B; }
+  .aside.helper { background: #F3E8FF; border-left-color: #A855F7; color: #6B21A8; }
+  .aside-title { font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+  .aside code { background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 10.5px; word-break: break-word; }
+  .cascade { background: #FEFCE8; border: 1px dashed #EAB308; border-radius: 8px; padding: 12px; margin: 6px 0; }
+  .cascade-title { font-size: 11px; font-weight: 700; color: #713F12; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .cascade-step { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; padding: 6px 8px; background: white; border-radius: 6px; margin-bottom: 4px; font-size: 11.5px; }
+  .cascade-step .cond { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; color: #334155; }
+  .cascade-step .result { font-weight: 700; font-size: 10.5px; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+  .cascade-step .result.pass { background: #D1FAE5; color: #065F46; }
+  .cascade-step .result.deny { background: #FEE2E2; color: #991B1B; }
+  .cascade-step .result.next { background: #E0E7FF; color: #3730A3; }
+  .cascade-step .result.call { background: #FEF3C7; color: #78350F; }
+  .cascade-num { background: #EAB308; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+  .nested-flow { margin: 6px 0; padding: 12px; background: #F0FDF4; border: 1px dashed #10B981; border-radius: 8px; }
+  .nested-flow-title { font-size: 10.5px; font-weight: 700; color: #065F46; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .code-block { background: #0F172A; color: #E2E8F0; padding: 12px 16px; border-radius: 6px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; line-height: 1.6; overflow-x: auto; margin: 6px 0; }
+  .code-block .k { color: #93C5FD; }
+  .code-block .s { color: #86EFAC; }
+  .code-block .c { color: #64748B; font-style: italic; }
+  .code-block .t { color: #FDE68A; }
+  .note { background: #FEF3C7; border-left: 4px solid #F59E0B; padding: 12px 16px; border-radius: 6px; font-size: 12.5px; color: #78350F; margin: 20px 0; }
+  .note.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .note code { background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; }
+  .page-footer-nav { margin-top: 48px; padding: 16px; background: white; border-radius: 10px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .field-table { width: 100%; border-collapse: collapse; font-size: 11px; margin: 8px 0; }
+  .field-table th { text-align: left; padding: 6px 8px; background: #F1F5F9; color: #334155; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; font-size: 10px; border-bottom: 1px solid #CBD5E1; }
+  .field-table td { padding: 5px 8px; border-bottom: 1px solid #F1F5F9; vertical-align: top; }
+  .field-table td:first-child { font-family: 'SF Mono', Menlo, Consolas, monospace; color: #0F172A; font-weight: 600; white-space: nowrap; font-size: 10.5px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-nav">
+    <div class="breadcrumb">
+      <a href="../index.html">📋 Execução de Agente</a>
+      <span class="sep">›</span>
+      <span>Passo 2.3 — Detalhamento</span>
+    </div>
+    <a href="../index.html#step-2-3" class="back-btn">← Voltar ao diagrama</a>
+  </div>
+
+  <div class="page-header">
+    <span class="icon">🏷️</span>
+    <h1>Passo 2.3 — generateSchemaFromNodes (schema de substituição)</h1>
+  </div>
+  <div class="page-sub">
+    Bloco em <code>node-reference-substitution.service.ts:82-143</code>. Constrói o <strong>mapa de substituição in-memory</strong> que resolve placeholders <code>{{...}}</code> em tempo de execução. Cada nó vira até 3 chaves no mapa: UUID puro, UUID normalizado (pontos → underscores), e label lowercase — todas apontando pra mesma <code>entry</code> (compartilhada por referência).
+  </div>
+
+  <!-- Step friendly summary -->
+  <div class="step-friendly">
+    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <ul>
+      <li><strong>Monta a "agenda de referências" do agente:</strong> constrói um único mapa in-memory que responde à pergunta <em>"quando o prompt escreve <code>{{persona}}</code>, o que ele quer dizer?"</em>. Sem esse mapa nenhum placeholder resolve.</li>
+      <li><strong>Filtra por whitelist hand-maintained:</strong> só publica campos listados em <code>basedOnType</code> — nó de tipo novo com campo referenciável precisa ser adicionado à mão nessa lista, ou o placeholder falha <em>silenciosamente</em>.</li>
+      <li><strong>Normaliza tudo pra string:</strong> se o campo é objeto, tenta <code>value.text ?? value.content ?? value.result</code> em ordem, e cai em <code>JSON.stringify</code> como fallback. É onde a RAM infla se um <code>result</code> for gigante (2MB fica inteiro no schema).</li>
+      <li><strong>Indexa cada nó sob 3 chaves apontando pra mesma <code>entry</code>:</strong> UUID puro, UUID com <code>.</code> trocado por <code>_</code>, e label lowercase sem espaço — permite o user escrever <code>{{Persona Model}}</code>, <code>{{a1b2_c3d4}}</code> ou o UUID cru e todos resolverem pro mesmo valor. Colisão de label sobrescreve <em>silenciosamente</em>.</li>
+      <li><strong>Roda 1× no início do run:</strong> depois disso o schema é <em>mutado in-place</em> por <code>updateSchemaWithNodeOutput</code> a cada nó completado — nunca regenerado. A memória <code>[[project_substitution_engine]]</code> avisa que existem 57 sync sites tocando esse schema no <code>FluxService</code>.</li>
+      <li><strong>Saída:</strong> <code>nodeSubstitutionSchema: { [key]: { [field]: string } }</code> pronto pra ser consumido por <code>applySubstitutionToObject</code> em cada iteração do loop — zero I/O, puro CPU, <code>O(N × F)</code>.</li>
+    </ul>
+  </div>
+
+  <div class="note info">
+    <strong>Contexto:</strong> este é o <strong>motor de referência</strong> — o que faz um node poder escrever <code>{{model_1}}</code> ou <code>{{Persona Model}}</code> no prompt e receber o output do node upstream substituído. A memória <code>[[project_substitution_engine]]</code> avisa que esse engine tem <strong>57 sync sites</strong> em <code>FluxService</code> lendo/mutando o schema — não é regex simples, envolve resolução de field-paths e aliases humanos.
+  </div>
+
+  <div class="overview-mini">
+    <div class="overview-mini-title">Cadeia de operações em 2.3</div>
+    <div class="overview-chain">
+      <a href="#fn-a" class="overview-chip"><span class="lbl">A</span>basedOnType (whitelist)</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>Loop por node</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>Extração de value</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>3-key indexing</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-e" class="overview-chip"><span class="lbl">E</span>Ciclo de vida no run</a>
+    </div>
+    <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
+      Resultado final: <code>nodeSubstitutionSchema: { [key]: { [field]: value } }</code> pronto pra ser consumido por <code>applySubstitutionToObject</code> em cada iteração.
+    </div>
+  </div>
+
+  <!-- CARD A -->
+  <div class="fn-card collapsed" id="fn-a">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#EAB308;color:white">A</span>
+        <code>basedOnType (whitelist estática)</code>
+      </div>
+      <div class="fn-loc">node-reference-substitution.service.ts:25-80</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        private readonly basedOnType: Record&lt;nodeType, string[]&gt;
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Definir <em>quais campos</em> de <code>node.data</code> valem a pena publicar no schema, por tipo de nó. Nó não listado é ignorado; campo não listado (mesmo existindo em <code>data</code>) não vira substituível.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> pense nesta whitelist como o <em>cadastrador</em> do sistema de referência — é uma lista escrita à mão dizendo "para cada tipo de nó, esses aqui são os campos que podem ser citados via <code>{{placeholder}}</code>". Um <code>commandTextNode</code>, por exemplo, expõe <code>prompt</code>, <code>persona</code>, <code>content</code>, <code>text</code>; um <code>sqlQuerier</code> expõe <code>host</code>, <code>query</code> e etc. Se o tipo do nó nem aparece no cadastro, ele é ignorado sem log; se o campo não está listado, ele existe em memória mas ninguém consegue referenciar. É por isso que criar um novo tipo de nó e esquecer de atualizar esta lista gera <strong>bug silencioso</strong>: o placeholder simplesmente não resolve, sem barulho nenhum.
+      </div>
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title">Whitelist parcial (~30 tipos, ~8 campos comuns)</div>
+            <div class="code-block">
+{
+  <span class="k">commandTextNode</span>: [<span class="s">'prompt'</span>, <span class="s">'persona'</span>, <span class="s">'instruction'</span>, <span class="s">'content'</span>, <span class="s">'text'</span>, <span class="s">'modelSettings'</span>],
+  <span class="k">outputController</span>: [<span class="s">'text'</span>],
+  <span class="k">textBox</span>: [<span class="s">'text'</span>],
+  <span class="k">imageGenerator</span>: [<span class="s">'subject'</span>, <span class="s">'environment'</span>, <span class="s">'tone'</span>, <span class="s">'view'</span>],
+  <span class="k">apiCaller</span>: [<span class="s">'url'</span>, <span class="s">'jsonRequestBody'</span>, <span class="s">'jsonAuth'</span>, <span class="s">'username'</span>, <span class="s">'password'</span>],
+  <span class="k">sqlQuerier</span>: [<span class="s">'host'</span>, <span class="s">'port'</span>, <span class="s">'database'</span>, ..., <span class="s">'query'</span>],
+  <span class="c">// ... ~25 mais</span>
+}
+            </div>
+            <div class="box-file">node-reference-substitution.service.ts:25-80</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box decision">
+            <div class="box-title">Nó não listado = skip silencioso</div>
+            <div class="box-desc">
+              <code>if (!relevantFields) continue;</code> — sem log, sem erro. Se algum tipo de nó novo tiver campo textual que deveria ser substituível, alguém <em>tem</em> que atualizar essa lista à mão.
+            </div>
+            <div class="box-file">node-reference-substitution.service.ts:89-91</div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Manutenção manual</div>
+            Esta é uma das <em>hand-maintained lists</em> do projeto — igual ao MCP schema catalog (ver CLAUDE.md). Adicionar tipo novo de nó com campo referenciável sem atualizar aqui = placeholder <code>{{new_field}}</code> nunca resolve. Bug silencioso.
+          </div>
+          <div class="aside info">
+            <div class="aside-title">🎯 Por que só campos textuais?</div>
+            Placeholder <code>{{x}}</code> só faz sentido substituir por string. Campos como <code>modelId</code>, <code>temperature</code>, <code>fluxId</code> não entram — não são conteúdo referenciável.
+            <br><br>Exceção: <code>modelSettings</code> em <code>commandTextNode</code> — é objeto, e vira JSON string pelo fallback de (C).
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 Tipos que <strong>não</strong> estão na lista</div>
+            <code>varInputNode</code>, <code>fluxObject</code>, <code>nodesBox</code>, <code>arrayNode</code> (só <code>content</code>, não outputs internos), <code>conditionNode</code>, <code>fluxBox</code>/<code>libraryNode</code>. Nós de fluxo/storage não expõem output substituível.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARD B -->
+  <div class="fn-card collapsed" id="fn-b">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#3B82F6;color:white">B</span>
+        <code>Loop principal — build entry por node</code>
+      </div>
+      <div class="fn-loc">node-reference-substitution.service.ts:82-140</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        generateSchemaFromNodes(nodes: any[]): { [key]: { [field]: value } }
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Iterar sobre todos os nodes, ignorar os não-mapeados, e pra cada mapeado montar uma <code>entry</code> extraindo os campos da whitelist. Retorna o schema final.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> se a whitelist do Card A é o cadastro, esta função é o <em>montador</em> — ela pega o cadastro na mão e sai visitando um nó de cada vez pra construir a agenda de referências do agente. Pra cada nó: confere se o tipo está na lista, calcula um "apelido" baseado no label (tipo "Persona Model" vira <code>personamodel</code>), abre um bolso vazio (<code>entry</code>), copia pra dentro dele só os campos que o cadastro permite, e no fim passa pro Card D pra ser arquivado sob 3 chaves. É <strong>rodado uma única vez</strong> no começo do run — depois disso o schema é mutado in-place a cada nó executado, nunca regenerado. Zero I/O, puro processamento em memória.
+      </div>
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B1</span> <code>const schema = {}</code></div>
+            <div class="box-desc">
+              Objeto vanilla — não é Map. Chaves podem colidir se nodeId contiver caracteres esquisitos, mas UUIDs são seguros.
+            </div>
+            <div class="box-file">node-reference-substitution.service.ts:83</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B2</span> Loop <code>for (const node of nodes)</code></div>
+            <div class="box-desc">
+              Passa 1 vez por cada node. Skips: sem <code>type</code> mapeado, sem <code>id</code> (<code>stableKey</code>).
+            </div>
+            <div class="box-file">node-reference-substitution.service.ts:85-97</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B3</span> Constrói <code>labelKey</code></div>
+            <div class="code-block">
+<span class="k">const</span> labelKey = (node.data?.label || <span class="s">''</span>)
+  .<span class="t">toLowerCase</span>()
+  .<span class="t">replace</span>(/\s/g, <span class="s">''</span>);
+            </div>
+            <div class="box-desc">
+              Ex.: label <code>"Persona Model"</code> → labelKey <code>"personamodel"</code>. Sem espaços, tudo minúsculo. Usado pra permitir <code>{{Persona Model}}</code> no template resolver pra <code>{{personamodel}}</code>.
+            </div>
+            <div class="box-file">node-reference-substitution.service.ts:99-101</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B4</span> Extrai fields (loop interno)</div>
+            <div class="box-desc">
+              <code>for (const field of relevantFields) { ... }</code> — ver Card C pro tratamento de valor.
+              <br><br>Depois de popular a <code>entry</code>, chama Card D pra indexar sob as 3 chaves.
+            </div>
+            <div class="box-file">node-reference-substitution.service.ts:105-140</div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Complexidade O(N × F)</div>
+            N = nodes, F = campos médios por tipo (~4). Puro CPU, sem I/O. Trivial em qualquer flow real.
+          </div>
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Chamado 1× por run</div>
+            <strong>Só</strong> no início do loop (linha 3149-3152 do flux.service). O schema é depois <em>mutado in-place</em> pelo <code>updateSchemaWithNodeOutput</code> em cada iteração (não regerado). Se algum handler zera o schema por acidente, os handlers seguintes rodam sem substituição.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 Sem paginação</div>
+            Um flow com 500 nós = 500 entries em memória. Cada entry pode ter valor grande se algum field for <code>content</code> stringificado (JSON de arrays). Ver Card C.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARD C -->
+  <div class="fn-card collapsed" id="fn-c">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#10B981;color:white">C</span>
+        <code>Extração de value (flatten de object)</code>
+      </div>
+      <div class="fn-loc">node-reference-substitution.service.ts:105-127</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        for (const field of relevantFields) { let value = node.data[field]; if (object) value = value.text ?? value.content ?? value.result ?? JSON.stringify(value); entry[field] = value; }
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Normalizar o valor pra sempre ser string. Se <code>node.data[field]</code> é objeto (comum em outputs), tenta extrair <code>text</code>/<code>content</code>/<code>result</code>; se nada bate, cai em <code>JSON.stringify</code>. Se é undefined, não cria a chave.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> imagine essa parte como o <em>tradutor</em> que garante que tudo que vai pro schema saia como texto — porque, no final, o <code>{{placeholder}}</code> vai ser jogado dentro de um prompt de LLM, e prompt é string. Se o campo já é primitivo (string/número/boolean), passa direto; se é objeto, ela tenta pescar em ordem: primeiro <code>text</code>, depois <code>content</code>, depois <code>result</code>; se nenhum bate, serializa o objeto inteiro como JSON. Se o campo está <code>undefined</code>, nem cria a entrada. Detalhe importante: essa ordem <code>text &gt; content &gt; result</code> é <strong>silenciosa e frágil</strong> — se um handler grava os dois, quem ganha é <code>text</code>, e mudar essa precedência num refactor pode quebrar coisas sem aviso. Também é aqui que a memória infla: um único <code>result</code> de 2MB fica <em>inteiro</em> no schema e é replicado em cada substituição.
+      </div>
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="cascade">
+            <div class="cascade-title">🪜 Cascata de coerção</div>
+            <div class="cascade-step">
+              <span class="cascade-num">1</span>
+              <span class="cond"><code>node.data[field] === undefined</code></span>
+              <span class="result deny">skip (não adiciona)</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">2</span>
+              <span class="cond">value é primitivo</span>
+              <span class="result pass">grava direto</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">3a</span>
+              <span class="cond">objeto com <code>value.text</code></span>
+              <span class="result pass"><code>entry[field] = value.text</code></span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">3b</span>
+              <span class="cond">senão, com <code>value.content</code></span>
+              <span class="result pass"><code>entry[field] = value.content</code></span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">3c</span>
+              <span class="cond">senão, com <code>value.result</code></span>
+              <span class="result pass"><code>entry[field] = value.result</code></span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">3d</span>
+              <span class="cond">fallback</span>
+              <span class="result call"><code>JSON.stringify(value)</code></span>
+            </div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box decision">
+            <div class="box-title">Resultado: <code>entry[field]: string | number | boolean</code></div>
+            <div class="box-desc">
+              Nunca objeto — sempre coerced. Isso permite <code>String.replace</code> funcionar direto no <code>applySubstitutionToObject</code>.
+            </div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Precedência <code>text &gt; content &gt; result</code></div>
+            Se o objeto tem <em>ambos</em> <code>text</code> e <code>content</code> setados (raro mas acontece), <code>text</code> ganha. Se um handler grava <code>{text: 'x', content: {...json_grande...}}</code>, o placeholder <code>{{node}}</code> resolve pra <code>'x'</code>, não pra JSON.
+            <br><br>Se essa precedência mudar em refactor, quebra silenciosamente handlers que dependem dela.
+          </div>
+          <div class="aside info">
+            <div class="aside-title">🎯 <code>JSON.stringify</code> fallback</div>
+            Quando o objeto não tem nenhum dos 3 campos padrão, vira JSON serializado. Ex.: <code>modelSettings</code> em commandTextNode. O prompt final vai ter uma string JSON literal — não é bonito mas funciona pra LLM ler.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 Grande contribuidor de RAM</div>
+            <code>content</code>/<code>result</code> podem ser payloads gigantes (respostas de LLM, resultados SQL). Se um único node tem <code>result</code> de 2MB, o schema carrega esses 2MB e todo <code>{{node}}</code> substituído replica isso na string final. Ver [[project_jsonb_fat_fields]] pro pattern relacionado.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARD D -->
+  <div class="fn-card collapsed" id="fn-d">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#A855F7;color:white">D</span>
+        <code>3-key indexing (stable/ref/label)</code>
+      </div>
+      <div class="fn-loc">node-reference-substitution.service.ts:129-140</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        schema[stableKey] = entry; schema[refKey] = entry; schema[labelKey] = entry; // 3 keys, MESMA referência
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Aceitar 3 formatos diferentes de placeholder pro mesmo nó: UUID puro, UUID normalizado, e label humano. Todos apontam pra <em>mesma referência</em> — atualização em uma vaza pras outras.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> pense nesta etapa como o <em>cartório</em> que registra o mesmo nó sob três nomes diferentes, mas todos apontando pro mesmo endereço. O nó vai pro arquivo: (1) sob o UUID puro (<code>a1b2-...</code>), (2) sob o UUID com pontos trocados por underscore (porque ponto em placeholder é usado como field access <code>{{x.y}}</code>), e (3) sob o label humano lowercase sem espaço (<code>personamodel</code>). O truque legal é que os três slots guardam a <em>mesma referência</em> pro objeto <code>entry</code> — então quando o output é atualizado depois, uma única mutação já reflete nas três chaves de graça. Isso é o que permite o usuário escrever <code>{{Persona Model}}</code>, <code>{{a1b2_c3d4_...}}</code> ou usar o UUID cru no template e todos resolverem pro mesmo valor. <strong>Perigo:</strong> se dois nós tiverem o mesmo label, o segundo sobrescreve o primeiro no slot do label, e <code>{{persona}}</code> vira ambíguo silenciosamente.
+      </div>
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="code-block">
+schema[stableKey] = entry;    <span class="c">// UUID puro: schema['a1b2-...']</span>
+<span class="k">const</span> refKey = stableKey.<span class="t">replace</span>(/\./g, <span class="s">'_'</span>);
+<span class="k">if</span> (refKey !== stableKey) {
+  schema[refKey] = entry;     <span class="c">// UUID normalizado: schema['a1b2___']</span>
+}
+<span class="k">if</span> (labelKey &amp;&amp; labelKey !== stableKey &amp;&amp; labelKey !== refKey) {
+  schema[labelKey] = entry;   <span class="c">// label lowercase: schema['personamodel']</span>
+}
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">D1</span> stableKey = node.id</div>
+            <div class="box-desc">
+              UUID puro do node. Sempre presente (skip acima se ausente).
+            </div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">D2</span> refKey = id.replace(/\./g, '_')</div>
+            <div class="box-desc">
+              Normaliza pontos (não permitidos em placeholder path <code>{{x.y}}</code> — colidiria com field access). Só entra no schema se difere do stableKey.
+            </div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">D3</span> labelKey (opcional)</div>
+            <div class="box-desc">
+              Só se o label do node existe e não colide com as outras 2 chaves. Permite user escrever <code>{{Persona Model}}</code> no prompt e o replacer buscar <code>schema.personamodel</code> depois de normalizar.
+            </div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Colisão de labels</div>
+            2 nós com o mesmo label → o <em>último</em> ganha no schema. <code>{{persona}}</code> vira ambíguo. Front deveria proibir labels duplicados; se não, silenciosamente ignora um.
+          </div>
+          <div class="aside info">
+            <div class="aside-title">🎯 Compartilhamento de referência</div>
+            As 3 chaves apontam pro MESMO objeto <code>entry</code>. Isso é intencional: <code>updateSchemaWithNodeOutput</code> só precisa mutar via <em>uma</em> chave e as outras 2 refletem automaticamente. Elegante.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 Placeholder syntax suportada</div>
+            <code>{{&lt;key&gt;.&lt;field&gt;}}</code> ou <code>{{&lt;key&gt;}}</code> (só a chave, resolve pro fallback do primeiro campo). O <code>replacePlaceholders</code> (linhas 5-22) faz split por <code>.</code> e caminha o objeto.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARD E -->
+  <div class="fn-card collapsed" id="fn-e">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#EF4444;color:white">E</span>
+        <code>Ciclo de vida do schema no run</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:3149, 3281, 3389+ · node-reference-substitution.service.ts:145-216</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        // 1x generate (aqui) → N× applySubstitutionToObject + updateSchemaWithNodeOutput (loop) → onMutateSchema (callback pra reatribuição)
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Mostrar como o schema criado aqui é consumido e mutado ao longo do run. Não é regenerado — é <em>vivido</em>. Cada nó completado enriquece o schema com seu output.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> se as etapas anteriores <em>construíram</em> a agenda de referências, esta aqui é o <em>carteiro</em> que fica indo e vindo com essa agenda durante toda a execução. O ciclo por nó vira: (1) antes do handler rodar, chama <code>applySubstitutionToObject</code> que troca todos os <code>{{...}}</code> pelos valores do schema; (2) o handler executa em cima do nó já preenchido e produz um output; (3) esse output é gravado de volta no schema via <code>updateSchemaWithNodeOutput</code> pra ficar disponível pros nós seguintes; (4) como o schema é reatribuído (novo objeto raiz via spread), o callback <code>onMutateSchema</code> avisa "atenção, use esta nova referência agora". A memória <code>[[project_substitution_engine]]</code> alerta que existem <strong>57 lugares</strong> no <code>FluxService</code> tocando esse ciclo — por isso qualquer refactor do engine precisa mexer em todos ao mesmo tempo, não dá pra fazer troca cirúrgica.
+      </div>
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">E1</span> <code>applySubstitutionToObject(node, schema)</code></div>
+            <div class="box-desc">
+              Chamada 1× por iteração do loop (linha 3281). Recursivamente substitui todos os <code>{{...}}</code> em <code>node.data</code> — string, array, object. Retorna <em>novo</em> objeto (não muta original).
+            </div>
+            <div class="box-file">node-reference-substitution.service.ts:145-167</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">E2</span> Handler executa o nó</div>
+            <div class="box-desc">
+              Recebe <code>processedNode</code> (com placeholders já resolvidos) e produz output.
+            </div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">E3</span> <code>updateSchemaWithNodeOutput(schema, nodeId, label, output)</code></div>
+            <div class="box-desc">
+              Chamada após handler completar (linhas 3389, 3485, 3624, 3670, 4331 — múltiplos call sites). Cria novo schema com <code>...schema</code> spread, atualiza <code>entry.text/content/result</code>. As 3 chaves reindexam.
+            </div>
+            <div class="box-file">node-reference-substitution.service.ts:169-216</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box cross">
+            <div class="box-title"><span class="badge step">E4</span> <code>onMutateSchema(schema)</code> callback</div>
+            <div class="box-desc">
+              Como o schema é <code>let</code> e reatribuído (spread), handlers precisam do callback <code>onMutateSchema</code> pra sinalizar "novo schema aqui, use este". Similar ao padrão de <code>onMutateObjectCallerData</code> em 1.5.
+            </div>
+            <div class="box-file">flux.service.ts:2464-2467</div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside warn">
+            <div class="aside-title">⚠️ 57 sync sites (ver memória)</div>
+            [[project_substitution_engine]]: FluxService tem <strong>57 lugares</strong> que sincronizam o schema. Refactor de substitution não é regex swap — envolve tocar em todos esses sites simultaneamente.
+          </div>
+          <div class="aside info">
+            <div class="aside-title">🎯 Por que spread em <code>updateSchemaWithNodeOutput</code>?</div>
+            <code>const updatedSchema = { ...schema }</code> cria novo objeto raiz, mas as <em>entries</em> permanecem compartilhadas. Mutação pontual não invalida referências antigas — mas reatribuição sim, daí o callback <code>onMutateSchema</code>.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 <code>processFlowWithSubstitution</code> — legacy</div>
+            Método na linha 241-267 do service que faz o mesmo ciclo (generate → apply → execute → update). Não é usado pela Fase 3 (que faz manualmente), mas está exportado. Possível dead code ou usado por endpoint alternativo.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note info" style="margin-top:32px">
+    <strong>Resumo — o que sai de 2.3:</strong>
+    <br>• <code>nodeSubstitutionSchema: { [key]: { [field]: string } }</code> — mapa in-memory pronto pra <code>applySubstitutionToObject</code>
+    <br>• 1 a 3 chaves por node (UUID puro + UUID normalizado + label lowercase)
+    <br>• Valores coerced pra string (via <code>text ?? content ?? result ?? JSON.stringify</code>)
+    <br>• Zero I/O; puro CPU; O(N × F) onde F é ~4 campos por tipo
+  </div>
+
+  <div class="note">
+    <strong>Observações para migração:</strong>
+    <br>• <strong>Ver memória <a href="#">[[project_substitution_engine]]</a></strong>: 57 sync sites em FluxService. Refactor requer tocar em todos simultaneamente.
+    <br>• Worker <em>não</em> tem esse engine — recebe cada nó já pré-substituído (aplica <code>applySubstitutionToObject</code> antes do handoff). Migração pro worker preserva essa boundary.
+    <br>• A <code>basedOnType</code> é hand-maintained (igual MCP schema catalog). Ao adicionar novo tipo de nó com campo referenciável, <strong>tem</strong> que atualizar. Sem CI check — bug silencioso.
+    <br>• O <code>result</code>/<code>content</code>/<code>text</code> flattening carrega payloads gigantes pra memória. <strong>Não</strong> é seguro só preview-truncar (ver [[project_node_field_taxonomy]]) — placeholder pode precisar do valor completo.
+    <br>• Alternativa longo prazo: index-only schema — o schema guarda só <code>{nodeId, field}</code>, e o resolver busca o valor real sob demanda. Elimina duplicação em memória mas complica cache.
+    <br>• <code>processFlowWithSubstitution</code> (linhas 241-267) parece dead code — validar antes de qualquer limpeza.
+  </div>
+
+  <div class="page-footer-nav">
+    <a href="../index.html#step-2-3" class="back-btn">← Voltar ao diagrama principal</a>
+  </div>
+
+</div>
+<script>
+(function() {
+  function toggle(card) {
+    if (card) card.classList.toggle('collapsed');
+  }
+  function expand(card) {
+    if (card && card.classList.contains('collapsed')) card.classList.remove('collapsed');
+  }
+  document.querySelectorAll('.fn-card-header').forEach(function(header) {
+    header.addEventListener('click', function(e) {
+      if (e.target.closest('a')) return;
+      toggle(header.parentElement);
+    });
+  });
+  document.querySelectorAll('a[href^="#fn-"]').forEach(function(link) {
+    link.addEventListener('click', function() {
+      var id = link.getAttribute('href').slice(1);
+      expand(document.getElementById(id));
+    });
+  });
+  if (window.location.hash && window.location.hash.startsWith('#fn-')) {
+    expand(document.querySelector(window.location.hash));
+  }
+  window.addEventListener('hashchange', function() {
+    if (window.location.hash.startsWith('#fn-')) {
+      expand(document.querySelector(window.location.hash));
+    }
+  });
+})();
+</script>
+</body>
+</html>

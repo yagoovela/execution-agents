@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Passo 1.8 — Resolução de inputs + OCR | Detalhamento</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #F1F5F9;
+    color: #0F172A;
+    margin: 0;
+    padding: 32px 24px 80px;
+    line-height: 1.4;
+  }
+  .container { max-width: 1500px; margin: 0 auto; }
+
+  .page-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    flex-wrap: wrap;
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #64748B;
+  }
+  .breadcrumb a {
+    color: #3B82F6;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #CBD5E1; }
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #0F172A;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+
+  .page-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 8px;
+  }
+  .page-header .icon { font-size: 32px; }
+  .page-header h1 {
+    margin: 0;
+    font-size: 26px;
+    color: #0F172A;
+    letter-spacing: -0.4px;
+  }
+  .page-sub {
+    color: #64748B;
+    font-size: 13px;
+    margin-bottom: 24px;
+    padding-left: 46px;
+  }
+  .page-sub code {
+    background: #E2E8F0;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 12px;
+    color: #334155;
+  }
+
+  .overview-mini {
+    background: white;
+    padding: 16px 18px;
+    border-radius: 10px;
+    margin-bottom: 28px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .overview-mini-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 12px;
+  }
+  .overview-chain {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .overview-chip {
+    background: #F8FAFC;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border-left: 3px solid #3B82F6;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #0F172A;
+    text-decoration: none;
+    display: inline-block;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+  .overview-chip .lbl {
+    display: block;
+    font-size: 9.5px;
+    color: #64748B;
+    font-weight: 500;
+    margin-bottom: 2px;
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .overview-sep { color: #94A3B8; font-size: 18px; font-weight: bold; }
+
+  .box {
+    background: white;
+    border-radius: 8px;
+    padding: 9px 13px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border-left: 4px solid #94A3B8;
+    width: 100%;
+    max-width: 100%;
+  }
+  .box.backend    { border-left-color: #3B82F6; }
+  .box.worker     { border-left-color: #10B981; }
+  .box.db         { border-left-color: #F59E0B; }
+  .box.redis      { border-left-color: #EF4444; }
+  .box.s3         { border-left-color: #8B5CF6; }
+  .box.external   { border-left-color: #64748B; }
+  .box.decision { border-left-color: #EAB308; background: #FEFCE8; }
+  .box.cross { border-left-color: #A855F7; background: #FAF5FF; }
+
+  .box-title {
+    font-weight: 600;
+    font-size: 12.5px;
+    color: #0F172A;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .box-desc { font-size: 11.5px; color: #475569; }
+  .box-file {
+    font-size: 10px;
+    color: #94A3B8;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    margin-top: 3px;
+    word-break: break-all;
+  }
+  .box code {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    background: #F1F5F9;
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: #334155;
+    word-break: break-word;
+  }
+  .box-desc code { word-break: break-word; }
+
+  .badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .badge.migrated { background: #D1FAE5; color: #065F46; }
+  .badge.legacy   { background: #FEE2E2; color: #991B1B; }
+  .badge.mixed    { background: #FEF3C7; color: #92400E; }
+  .badge.new      { background: #DBEAFE; color: #1E40AF; }
+  .badge.step     { background: #E0E7FF; color: #3730A3; font-size: 10px; }
+  .badge.cross    { background: #F3E8FF; color: #6B21A8; }
+  .badge.ess      { background: #DCFCE7; color: #14532D; font-size: 9px; }
+
+  .arrow {
+    color: #64748B;
+    font-size: 22px;
+    line-height: 1;
+    margin: 1px 0;
+    text-align: center;
+  }
+  .converge { text-align: center; color: #64748B; font-size: 22px; margin: 6px 0; }
+
+  .fn-card {
+    margin-top: 28px;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .fn-card-header {
+    background: linear-gradient(to right, #0F172A, #1E293B);
+    color: white;
+    padding: 14px 20px 14px 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .fn-card-header .fn-title {
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .fn-card-header .fn-title code {
+    background: rgba(255,255,255,0.15);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 13px;
+  }
+  .fn-card-header .fn-loc {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #CBD5E1;
+  }
+  .fn-card-header:hover { background: linear-gradient(to right, #1E293B, #334155); }
+  .fn-card-header::before {
+    content: "▾";
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+    font-size: 14px;
+    transition: transform 0.2s ease;
+    line-height: 1;
+  }
+  .fn-card.collapsed .fn-card-header::before {
+    transform: translateY(-50%) rotate(-90deg);
+  }
+  .fn-card.collapsed .fn-card-body { display: none; }
+  .fn-card-body { padding: 20px; }
+
+  .fn-signature {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    background: #F1F5F9;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: #334155;
+    margin-bottom: 16px;
+    overflow-x: auto;
+  }
+  .fn-purpose {
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    background: #EFF6FF;
+    border-left: 3px solid #3B82F6;
+    border-radius: 6px;
+  }
+  .fn-friendly {
+    font-size: 13px;
+    color: #334155;
+    margin-bottom: 20px;
+    padding: 12px 14px 12px 44px;
+    background: #F0FDF4;
+    border-left: 3px solid #10B981;
+    border-radius: 6px;
+    position: relative;
+    line-height: 1.55;
+  }
+  .fn-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 14px;
+    top: 10px;
+    font-size: 18px;
+  }
+  .fn-friendly strong { color: #065F46; }
+
+  .step-friendly {
+    font-size: 13.5px;
+    color: #334155;
+    margin-bottom: 28px;
+    padding: 16px 18px 16px 52px;
+    background: #F0FDF4;
+    border-left: 4px solid #10B981;
+    border-radius: 10px;
+    position: relative;
+    line-height: 1.6;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.08);
+  }
+  .step-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 18px;
+    top: 14px;
+    font-size: 22px;
+  }
+  .step-friendly-title {
+    font-weight: 700;
+    color: #065F46;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 8px;
+  }
+  .step-friendly ul { margin: 0; padding-left: 18px; }
+  .step-friendly li { margin-bottom: 6px; }
+  .step-friendly li:last-child { margin-bottom: 0; }
+  .step-friendly strong { color: #065F46; }
+  .step-friendly code {
+    background: #DCFCE7;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: #065F46;
+  }
+  .step-friendly em { color: #047857; font-style: italic; }
+
+  .fn-body-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 900px) {
+    .fn-body-cols { grid-template-columns: 1fr; }
+  }
+  .fn-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .fn-asides {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .aside {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 11.5px;
+    color: #78350F;
+  }
+  .aside.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .aside.warn { background: #FEE2E2; border-left-color: #EF4444; color: #991B1B; }
+  .aside.helper { background: #F3E8FF; border-left-color: #A855F7; color: #6B21A8; }
+  .aside-title {
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .aside code {
+    background: rgba(255,255,255,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    word-break: break-word;
+  }
+
+  .cascade {
+    background: #FEFCE8;
+    border: 1px dashed #EAB308;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 6px 0;
+  }
+  .cascade-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #713F12;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .cascade-step {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 8px;
+    background: white;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    font-size: 11.5px;
+  }
+  .cascade-step .cond {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #334155;
+  }
+  .cascade-step .result {
+    font-weight: 700;
+    font-size: 10.5px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .cascade-step .result.pass  { background: #D1FAE5; color: #065F46; }
+  .cascade-step .result.deny  { background: #FEE2E2; color: #991B1B; }
+  .cascade-step .result.next  { background: #E0E7FF; color: #3730A3; }
+  .cascade-step .result.call  { background: #FEF3C7; color: #78350F; }
+  .cascade-num {
+    background: #EAB308;
+    color: white;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .nested-flow {
+    margin: 6px 0;
+    padding: 12px;
+    background: #F0FDF4;
+    border: 1px dashed #10B981;
+    border-radius: 8px;
+  }
+  .nested-flow-title {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #065F46;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  .code-block {
+    background: #0F172A;
+    color: #E2E8F0;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 6px 0;
+  }
+  .code-block .k { color: #93C5FD; }
+  .code-block .s { color: #86EFAC; }
+  .code-block .c { color: #64748B; font-style: italic; }
+  .code-block .t { color: #FDE68A; }
+
+  .note {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    color: #78350F;
+    margin: 20px 0;
+  }
+  .note.info {
+    background: #EFF6FF;
+    border-left-color: #3B82F6;
+    color: #1E3A8A;
+  }
+  .note code {
+    background: rgba(255,255,255,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+  }
+
+  .page-footer-nav {
+    margin-top: 48px;
+    padding: 16px;
+    background: white;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .field-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin: 8px 0;
+  }
+  .field-table th {
+    text-align: left;
+    padding: 6px 8px;
+    background: #F1F5F9;
+    color: #334155;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    font-size: 10px;
+    border-bottom: 1px solid #CBD5E1;
+  }
+  .field-table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid #F1F5F9;
+    vertical-align: top;
+  }
+  .field-table td:first-child {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    color: #0F172A;
+    font-weight: 600;
+    white-space: nowrap;
+    font-size: 10.5px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-nav">
+    <div class="breadcrumb">
+      <a href="../index.html">📋 Execução de Agente</a>
+      <span class="sep">›</span>
+      <span>Passo 1.8 — Detalhamento</span>
+    </div>
+    <a href="../index.html#step-1-8" class="back-btn">← Voltar ao diagrama</a>
+  </div>
+
+  <div class="page-header">
+    <span class="icon">📥</span>
+    <h1>Passo 1.8 — Resolução de inputs (<code>varInputNode</code>) + extração/OCR</h1>
+  </div>
+  <div class="page-sub">
+    Bloco em <code>flux.service.ts:2772-3134</code>. É a fase onde o request HTTP (<code>body.variableInputs</code>/<code>body.dataInput</code>) vira <code>data</code> nos <code>varInputNode</code>s do canvas. Se o input for arquivo/link e <code>isExtraction=true</code>, chama o <code>ExtractionService</code> com um dos três providers OCR. Termina propagando o resultado via <code>addConnectToNodes()</code> pros nós conectados. <strong>Roda antes do scheduler</strong> — o loop principal já começa com <code>varInputNode.data</code> populado.
+  </div>
+
+  <div class="step-friendly">
+    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <ul>
+      <li><strong>Traduz o request HTTP em nós do canvas:</strong> a API recebe uma lista <code>variableInputs[]</code> (ou um atalho <code>dataInput</code> string) e precisa espalhar cada valor no <code>varInputNode</code> certo, identificado por <code>inputId</code>. Sem isso, o agente começaria a rodar com os <code>varInputNode</code>s vazios.</li>
+      <li><strong>Atalho <code>dataInput</code>:</strong> se o cliente mandou só <code>dataInput</code> como string (sem <code>variableInputs</code>), pega o <em>primeiro</em> <code>varInputNode</code> do flow e injeta o texto ali. É o "modo fácil" pra agentes com um único input — o principal caso de uso em Chatbot/API pública simples.</li>
+      <li><strong>Três caminhos por varInput:</strong> (a) <code>isExtraction=true</code> com links/files → chama OCR e concatena texto; (b) <code>isExtraction=false</code> com links/files → só upload S3 sem OCR (armazena URL); (c) sem arquivos → data mínima só com texto. Também trata <code>inputFileUrl</code> pra tipos não-<code>varInputNode</code> (nós de arquivo custom).</li>
+      <li><strong>OCR com escolha de provider:</strong> <code>extractionService.extractTextFromLink()</code> aceita 3 providers: <code>mistral_ocr</code> (default), <code>mistral_vision</code>, <code>google_ocr</code>. Cada varInput pode escolher via <code>typeOCR</code> — é <em>por nó</em>, não por flow. Se falhar, retorna uma mensagem de erro amigável no lugar do texto e continua (não derruba o run).</li>
+      <li><strong>Upload S3 obrigatório pra base64:</strong> arquivos vêm como base64 no request; <code>awsService.uploadFile()</code> gera uma URL S3 antes do OCR. Isso significa que arquivos grandes viram tráfego S3 mesmo se o OCR falhar depois.</li>
+      <li><strong>Propaga via arestas antes do loop:</strong> <code>addConnectToNodes()</code> pega o <code>data</code> resolvido do <code>varInputNode</code> e escreve nos nós conectados (via <code>edges</code>) — texto vai como <code>text</code>, arquivos como <code>uploadedFiles</code>. O loop principal (Fase 3) já vê os inputs no lugar certo.</li>
+      <li><strong>Persistência:</strong> <code>persistInputNodeData()</code> grava o <code>data</code> resolvido no banco pra ficar visível no editor e no histórico de execução. Uma escrita por varInput — em agentes com muitos inputs é I/O sequencial não-trivial.</li>
+      <li><strong>Custo silencioso:</strong> esse passo pode ser o <em>mais caro</em> da Fase 1 dependendo do input — PDF de 30 páginas com OCR Mistral bloqueia o run por segundos. Não tem telemetria específica pra medir isso.</li>
+    </ul>
+  </div>
+
+  <div class="note info">
+    <strong>Contexto — por que essa fase existe:</strong>
+    O canvas do agente foi desenhado assumindo que <code>varInputNode.data.text</code> / <code>uploadedFiles</code> já estão prontos quando a execução começa. O request HTTP não sabe nada de nós — só de <code>inputId</code>. Esse passo é o <em>adaptador</em>: pega o payload da API e reescreve o canvas em memória pra que o loop de Fase 3 encontre tudo já resolvido. É também onde qualquer arquivo binário (PDF, imagem, áudio) vira texto pro LLM consumir — logo, é o principal ponto de entrada de dados não-estruturados.
+  </div>
+
+  <div class="overview-mini">
+    <div class="overview-mini-title">Cadeia de operações em 1.8</div>
+    <div class="overview-chain">
+      <a href="#fn-a" class="overview-chip"><span class="lbl">A</span>Fallback dataInput</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>Loop variableInputs</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>OCR (isExtraction=true)</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>Upload puro (isExtraction=false)</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-e" class="overview-chip"><span class="lbl">E</span>Propaga + persiste</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-f" class="overview-chip"><span class="lbl">F</span>Fallback sem body</a>
+    </div>
+    <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
+      Resultado final: cada <code>varInputNode</code> no <code>newFlows</code> tem <code>data = { text, uploadedFiles, isExtraction, extractText }</code> populado; nós downstream conectados via arestas também recebem uma cópia. Também escreve no banco em <code>flows_nodes</code>.
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION A: dataInput fallback -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-a">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#EAB308;color:white">A</span>
+        <code>Fallback dataInput → variableInputs[0]</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:2772-2795</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        if (!body.variableInputs?.length && bodyWithInput.dataInput != null && varInputNodes.length &gt; 0) { body.variableInputs = [{ inputId: varInputNodes[0].id, inputText }] }
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Aceitar um atalho onde o cliente manda só <code>dataInput</code> (string ou <code>{inputText}</code>) em vez de montar o array <code>variableInputs[]</code>. Injeta no primeiro <code>varInputNode</code> do flow.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> pensa em <em>"digitou uma mensagem no chatbot"</em> — o cliente não sabe qual é o ID do <code>varInputNode</code>, então esse pedaço faz o backend adivinhar: pega o primeiro varInput que achar no canvas e injeta o texto ali. É um <em>syntactic sugar</em>. Se o agente tem mais de um varInput ou o cliente já preencheu <code>variableInputs</code> corretamente, esse bloco é ignorado. Aceita duas formas do <code>dataInput</code>: string pura ou objeto com <code>inputText</code>/<code>text</code>.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="cascade">
+            <div class="cascade-title">🪜 Gate triplo</div>
+            <div class="cascade-step">
+              <span class="cascade-num">1</span>
+              <span class="cond"><code>!body.variableInputs?.length</code></span>
+              <span class="result next">continua</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">2</span>
+              <span class="cond">&&&nbsp;<code>bodyWithInput.dataInput != null</code></span>
+              <span class="result next">continua</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">3</span>
+              <span class="cond">&&&nbsp;<code>varInputNodes.length &gt; 0</code></span>
+              <span class="result pass">injeta</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">✗</span>
+              <span class="cond">qualquer condição falsa</span>
+              <span class="result deny">pula fallback</span>
+            </div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">A1</span> Normaliza <code>dataInput</code></div>
+            <div class="code-block">
+<span class="k">const</span> inputText =
+  <span class="k">typeof</span> bodyWithInput.dataInput === <span class="s">'string'</span>
+    ? bodyWithInput.dataInput
+    : (bodyWithInput.dataInput?.inputText ??
+       bodyWithInput.dataInput?.text ?? <span class="s">''</span>);
+            </div>
+            <div class="box-file">flux.service.ts:2783-2788</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">A2</span> Monta <code>variableInputs[0]</code></div>
+            <div class="box-desc">
+              <code>body.variableInputs = [{ inputId: firstVar.id, inputText }]</code> — mesmo shape do caso normal, mas com links/files/isExtraction/typeOCR ausentes (undefined). O bloco B (loop) trata isso naturalmente.
+            </div>
+            <div class="box-file">flux.service.ts:2789-2794</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Uso típico</div>
+            Chatbot público (<code>POST /flux/chatbot-api-socket</code>) e formulários simples: o front manda só <code>dataInput: "texto do usuário"</code> e o backend adivinha onde colar. Reduz atrito pra integrações externas que não conhecem a estrutura do canvas.
+          </div>
+          <div class="aside">
+            <div class="aside-title">📎 Escolha "primeiro varInput"</div>
+            Se o agente tem <em>múltiplos</em> varInputs, esse fallback só popula o primeiro do array — os outros ficam vazios. Em canvas grandes a ordem depende de como o front serializa os nós; não é determinística por posição visual. Cuidado ao usar esse atalho em agentes multi-input.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 Compatibilidade forward</div>
+            Aceita <code>dataInput.text</code> como alias de <code>inputText</code>. Adicionado depois pra convergir com uma API alternativa que usava <code>text</code>. Mantém retrocompatibilidade sem quebrar clientes antigos.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION B: Loop principal variableInputs -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-b">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#3B82F6;color:white">B</span>
+        <code>for (const variableInput of body.variableInputs)</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:2797-3071</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        if (body.variableInputs?.length &gt; 0) for (const variableInput of body.variableInputs) { const node = nodes.find(n =&gt; n.id === variableInput.inputId); ... }
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Iterar sobre cada input recebido no request, achar o nó correspondente no canvas via <code>inputId</code>, e despachar pra sub-branches por tipo (<code>varInputNode</code> vs outros) e por modo (<code>isExtraction</code>).
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> aqui é o <em>despachante</em>. Cada entrada da lista <code>variableInputs[]</code> é um pedido "coloca esse conteúdo nesse nó" (identificado por <code>inputId</code>). O código valida se o nó existe (se não, joga exceção e mata o run), extrai <code>inputText</code>, <code>links</code>, <code>files</code>, <code>isExtraction</code>, <code>typeOCR</code>, e decide o caminho: se for <code>varInputNode</code>, entra na sub-lógica de OCR/upload; se for outro tipo (nós antigos ou custom com <code>inputFileUrl</code>), grava só a URL. Também tem uma normalização silenciosa: se veio link/file mas o cliente não disse se quer extração ou não, força <code>isExtraction=false</code> — evita executar OCR sem consentimento.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B1</span> Busca nó por inputId</div>
+            <div class="code-block">
+<span class="k">const</span> node = nodes.find(<span class="k">node</span> =&gt; node.id === variableInput.inputId);
+<span class="k">if</span> (!node) <span class="k">throw new</span> <span class="t">Error</span>(<span class="s">`Error reading node, please check this inputId`</span>);
+            </div>
+            <div class="box-desc">
+              Se o cliente mandou um <code>inputId</code> que não existe no flow, mata a execução na hora — sem contexto de qual foi o input ruim. Mensagem genérica dificulta debug em APIs de terceiros.
+            </div>
+            <div class="box-file">flux.service.ts:2799-2803</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B2</span> Desestruturação + normalização de <code>isExtraction</code></div>
+            <div class="code-block">
+<span class="k">const</span> { inputId, inputText, links = [], isExtraction: rawIsExtraction, files, typeOCR } = variableInput;
+
+<span class="k">let</span> isExtraction: boolean | null = rawIsExtraction ?? <span class="k">null</span>;
+<span class="k">if</span> (isExtraction === <span class="k">null</span> && (links?.length &gt; 0 || files?.length &gt; 0)) {
+  isExtraction = <span class="k">false</span>;  <span class="c">// default: guarda URL, não faz OCR</span>
+}
+            </div>
+            <div class="box-file">flux.service.ts:2807-2822</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box decision">
+            <div class="box-title"><span class="badge step">B3</span> Validações de entrada</div>
+            <div class="box-desc">
+              • <code>!inputId</code> → <code>throw 'EDI - please enter the inputId'</code><br>
+              • <code>isExtraction === true</code> mas sem <code>links</code> nem <code>files</code> → <code>throw 'EDI - please provide the link or file'</code>
+              <br><br>Prefixo <em>EDI</em> = "Execution Data Input" (convenção interna, aparece em outros pontos de validação de input).
+            </div>
+            <div class="box-file">flux.service.ts:2824-2832</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B4</span> Split por tipo do nó</div>
+            <div class="box-desc">
+              • <code>node.type === 'varInputNode'</code> → sub-branch com OCR/upload (funções <a href="#fn-c">C</a> e <a href="#fn-d">D</a>)<br>
+              • <code>variableInput.inputFileUrl</code> setado → sub-branch de URL simples (linha 3050+): grava <code>{ fileUrl }</code> no nó e persiste
+            </div>
+            <div class="box-file">flux.service.ts:2806, 3050</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Throw sem contexto derruba o run</div>
+            Se qualquer varInput for inválido, o run inteiro morre com mensagem genérica. Em batch (CSV) ou webhook público, um único payload malformado quebra a execução — sem retry, sem skip, sem log detalhado.
+          </div>
+          <div class="aside info">
+            <div class="aside-title">🎯 <code>isExtraction</code> tri-estado</div>
+            Aceita <code>true</code>, <code>false</code>, ou <code>null/undefined</code>. Quando é <code>null</code>, tem que <em>inferir</em>: se veio arquivo/link mas cliente não disse nada, assume <code>false</code> pra evitar OCR silencioso e caro. Se não veio arquivo, fica <code>null</code> mesmo (linha 3023 usa isso).
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 <code>typeOCR</code> é opcional</div>
+            Se não vier, o default é <code>mistral_ocr</code>. Definido em D (call de <code>extractionService</code>). Valores válidos: <code>'mistral_ocr' | 'mistral_vision' | 'google_ocr'</code>.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION C: OCR (isExtraction=true) -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-c">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#8B5CF6;color:white">C</span>
+        <code>Sub-branch: isExtraction === true → OCR</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:2838-2953</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        for (const link of links) { texts = await extractionService.extractTextFromLink({ fileSrc, fileMimetype, flowId, user, typeOCR }); ... }
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Quando <code>isExtraction=true</code>, cada link e cada file base64 vira texto via <code>ExtractionService</code>. Cada file base64 sobe pra S3 primeiro. O texto extraído é concatenado com <code>\n\n</code> entre fontes e salvo em <code>data.extractText</code>.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> essa é a <em>oficina</em> onde PDF vira texto pro LLM ler. Dois caminhos: (1) links externos entram direto no OCR pela URL; (2) files base64 primeiro sobem pra S3 (o OCR precisa de URL acessível), depois entram no OCR. O texto de todas as fontes é concatenado com quebra dupla entre eles — é o que o LLM vai ler como "arquivo do usuário". Se qualquer extração falhar, coloca uma mensagem de erro amigável no lugar do texto (<em>"Unable to extract text from this file..."</em>) e <strong>continua</strong> — o run não morre, o LLM só recebe menos contexto. Providers OCR são escolhidos por nó via <code>typeOCR</code>: Mistral OCR (default, textos gerais), Mistral Vision (imagens complexas), Google OCR (documentos).
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">C1</span> Loop <code>links[]</code></div>
+            <div class="box-desc">
+              Pra cada link externo (URL de arquivo já hospedado): resolve mimetype via <code>getFileMimetype(link.url)</code>, chama <code>extractionService.extractTextFromLink</code> com <code>typeOCR</code>.
+              <br><br>Try/catch por link — falha em um não trava os outros. Erro vira mensagem amigável concatenada.
+            </div>
+            <div class="box-file">flux.service.ts:2840-2882</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box s3">
+            <div class="box-title"><span class="badge step">C2</span> Loop <code>files[]</code> — upload S3 antes do OCR</div>
+            <div class="code-block">
+<span class="k">const</span> { key, mimetype, payload } = <span class="t">generateFileKeyFromBase64</span>(file.name, file.base64);
+<span class="k">const</span> buffer = <span class="t">Buffer.from</span>(payload, <span class="s">'base64'</span>);
+<span class="k">const</span> uploadedFile = <span class="k">await</span> <span class="t">this.awsService.uploadFile</span>(buffer, key, mimetype);
+            </div>
+            <div class="box-desc">
+              Todo file base64 vira URL S3 <strong>antes</strong> do OCR. O <code>ExtractionService</code> precisa de URL — não aceita buffer inline. Custo: 1 PUT S3 por file + 1 chamada OCR.
+            </div>
+            <div class="box-file">flux.service.ts:2888-2897</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box external">
+            <div class="box-title"><span class="badge step">C3</span> Call OCR: <code>extractionService.extractTextFromLink</code></div>
+            <div class="code-block">
+texts = <span class="k">await</span> <span class="t">this.extractionService.extractTextFromLink</span>({
+  <span class="k">fileSrc</span>: uploadedFile.src,
+  <span class="k">fileMimetype</span>: fileMimetype,
+  <span class="k">flowId</span>,
+  <span class="k">user</span>: userFound,
+  <span class="k">typeOCR</span>: typeOCR
+    ? (typeOCR <span class="k">as</span> <span class="s">'mistral_ocr'</span> | <span class="s">'mistral_vision'</span> | <span class="s">'google_ocr'</span>)
+    : <span class="s">'mistral_ocr'</span>,  <span class="c">// default</span>
+});
+            </div>
+            <div class="box-desc">
+              Um dos três providers. Blocking wait: espera resposta completa do OCR antes de continuar. PDF grande pode levar dezenas de segundos.
+            </div>
+            <div class="box-file">flux.service.ts:2847-2858, 2904-2915</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">C4</span> Concatena resultados</div>
+            <div class="box-desc">
+              <code>extractText</code> acumula texto de todos os links + todos os files, com <code>\n\n</code> entre fontes. Nenhum marcador de origem — o LLM não sabe qual pedaço veio de qual arquivo.
+              <br><br>Se um link falhou, o erro amigável fica no lugar: <em>"Unable to process link: ..."</em>.
+            </div>
+            <div class="box-file">flux.service.ts:2863-2882, 2922-2944</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">C5</span> Monta <code>data</code> final</div>
+            <div class="code-block">
+data = {
+  <span class="k">text</span>: inputText,
+  <span class="k">uploadedFiles</span>,       <span class="c">// [...links, ...fileUrls]</span>
+  <span class="k">isExtraction</span>,        <span class="c">// true</span>
+  <span class="k">extractText</span>,         <span class="c">// texto OCR concatenado</span>
+};
+            </div>
+            <div class="box-file">flux.service.ts:2946-2953</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside">
+            <div class="aside-title">📎 Providers OCR</div>
+            <table class="field-table">
+              <tr><th>Provider</th><th>Uso típico</th></tr>
+              <tr><td>mistral_ocr</td><td>Default. Documentos gerais (PDF, DOCX)</td></tr>
+              <tr><td>mistral_vision</td><td>Imagens complexas, screenshots com layout</td></tr>
+              <tr><td>google_ocr</td><td>Documentos escaneados, handwriting</td></tr>
+            </table>
+          </div>
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Custo escondido</div>
+            OCR é <strong>síncrono</strong> e <strong>caro</strong>. Um agente com 3 PDFs grandes gasta 30-60s <em>antes</em> do primeiro nó rodar. Não aparece nos logs de nó (só no tempo total do run). Zero telemetria de latência por provider.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 Fallback silencioso em erro</div>
+            Try/catch em cada link/file individual — falha vira string de erro no <code>extractText</code>. <strong>O run não é abortado</strong>, o LLM só recebe "Unable to extract text from this file..." no lugar do conteúdo real. Bom pra resiliência, ruim pra debug: cliente acha que passou o arquivo, LLM acha que o arquivo tá vazio/quebrado.
+          </div>
+          <div class="aside info">
+            <div class="aside-title">🎯 <code>fileUrls</code> vs <code>links</code></div>
+            <code>fileUrls</code> guarda URLs S3 dos files base64 uploaded. Junto com <code>links</code> originais, forma <code>uploadedFiles</code> = <code>[...links, ...fileUrls]</code>. Perde a diferença original entre "arquivo do usuário" e "link externo" — nó downstream vê tudo como URL.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION D: Upload puro (isExtraction=false) -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-d">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#F59E0B;color:white">D</span>
+        <code>Sub-branch: isExtraction === false → upload sem OCR</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:2955-3029</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        if (isExtraction === false) { for (const file of files) uploadedFile = await awsService.uploadFile(...); data = { text, uploadedFiles: uploadedFilesNoExtraction, isExtraction, extractText: '' }; }
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Cliente <em>tem</em> arquivo/link mas <strong>não</strong> quer OCR — só quer que a URL fique disponível pra nós downstream (típico de agentes que só passam a URL adiante, ex.: <code>imageGenerator</code> como referência, ou webhook que só armazena).
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> é o modo <em>"só guarda a URL"</em>. Sem OCR, sem custo de extração — apenas upload S3 pra files base64 e concatenação de URLs no <code>extractText</code>. Note a peculiaridade: mesmo sem OCR, o campo se chama <code>extractText</code> — mas o conteúdo é só a lista de URLs, não texto extraído. Uso comum: agentes de análise de imagem que passam a URL pro LLM multimodal ler <em>ele mesmo</em>, sem OCR intermediário; ou pipelines que só arquivam o arquivo. Erro de upload S3 (mais raro que OCR) vira mensagem no <code>extractText</code> e o run continua.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">D1</span> Concatena URLs de links</div>
+            <div class="box-desc">
+              Cada link vira uma linha em <code>extractTextFromURL</code> (<em>sim, o nome é confuso — não tem OCR aqui</em>). Também vai pra <code>uploadedFilesNoExtraction</code>.
+            </div>
+            <div class="box-file">flux.service.ts:2959-2968</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box s3">
+            <div class="box-title"><span class="badge step">D2</span> Upload S3 sem OCR</div>
+            <div class="box-desc">
+              Mesmo padrão de C2 — base64 vira buffer, sobe pra S3, URL entra em <code>uploadedFilesNoExtraction</code> e a URL S3 é concatenada no <code>extractTextFromURL</code>.
+              <br><br>Try/catch por file: falha de upload não trava; mensagem de erro entra no <code>extractText</code>.
+            </div>
+            <div class="box-file">flux.service.ts:2970-3006</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">D3</span> Monta <code>data</code></div>
+            <div class="code-block">
+data = {
+  <span class="k">text</span>: inputText,
+  <span class="k">uploadedFiles</span>: uploadedFilesNoExtraction,
+  <span class="k">isExtraction</span>,          <span class="c">// false</span>
+  <span class="k">extractText</span>,           <span class="c">// URLs concatenadas (não texto OCR!)</span>
+};
+            </div>
+            <div class="box-file">flux.service.ts:3010-3015</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box decision">
+            <div class="box-title"><span class="badge step">D4</span> Case: sem arquivos nem links</div>
+            <div class="box-desc">
+              Se <code>isExtraction</code> for <code>false</code> ou falsy <em>e</em> não veio nem <code>links</code> nem <code>files</code>, sobrescreve <code>data</code> com o mínimo:
+              <br><code>{ text: inputText, uploadedFiles: [], isExtraction: null, extractText: '' }</code>
+              <br><br>Isso normaliza o shape do <code>data</code> pros nós downstream nunca receberem <code>undefined</code>.
+            </div>
+            <div class="box-file">flux.service.ts:3018-3029</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Nome enganoso: <code>extractText</code> ≠ texto extraído</div>
+            No caminho D, <code>extractText</code> guarda uma lista de URLs concatenadas com <code>\n\n</code>, não texto OCR. Nó downstream que espera "texto do arquivo" vai receber URLs — bug silencioso se o schema não distinguir.
+          </div>
+          <div class="aside info">
+            <div class="aside-title">🎯 Uso típico</div>
+            LLMs multimodais (Claude, GPT-4V, Gemini) que recebem a URL da imagem diretamente e leem o binário — o OCR intermediário só atrapalha. Também: pipelines de arquivamento (agente só empurra o arquivo pra outro sistema).
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 Overwrite em cascata</div>
+            D1 monta <code>data</code>, D4 <em>sobrescreve</em> completamente se não veio nada. A cadeia é <code>isExtraction=true → data</code> (C), depois <code>isExtraction=false → data</code> (D), depois <code>sem arquivos → data</code> (D4). Só o último match ganha. Ordem importa.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION E: Propaga + persiste -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-e">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#10B981;color:white">E</span>
+        <code>addConnectToNodes() + persistInputNodeData()</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:3031-3047, 3050-3069</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        newFlows = addConnectToNodes({ edges, nds: newFlows, nodeData: { id: inputId, data }, onMutateSchema, changeType: 'default', objectCallerData }); await this.persistInputNodeData(flowId, inputId, data, flowVersionHistoryId);
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Depois de resolver o <code>data</code> em C ou D, dois efeitos: (1) propagar o <code>data</code> via arestas pros nós conectados no canvas em memória (<code>addConnectToNodes</code>); (2) persistir no banco (<code>persistInputNodeData</code>) pra ficar visível no editor.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> aqui a mágica sai da variável e vira <em>estado do canvas</em>. <code>addConnectToNodes</code> pega o <code>data</code> resolvido e escreve não só no próprio <code>varInputNode</code>, mas também nos nós conectados a ele via arestas — se o varInput está ligado a um <code>textGenerator</code>, o campo <code>text</code> do textGenerator já vai começar preenchido antes do loop rodar. É como se o input "vazasse" pela topologia. Junto com isso, <code>persistInputNodeData</code> grava no banco (<code>flows_nodes.data</code> JSONB) pra que abrir o editor mostre o input aplicado. <strong>Um DB write por varInput</strong> — sequential I/O que em agentes com muitos inputs escala mal. Também atualiza o <code>nodeSubstitutionSchema</code> via callback <code>onMutateSchema</code> (relação com passo 2.3).
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">E1</span> <code>addConnectToNodes()</code> — propaga via arestas</div>
+            <div class="box-desc">
+              Escreve <code>data</code> no <code>varInputNode</code> identificado por <code>inputId</code>, e replica em nós conectados via <code>edges</code>. Retorna <code>newFlows</code> mutado — a partir daqui, o <code>newFlows</code> é a fonte da verdade que vai pro scheduler.
+              <br><br>Também dispara callback <code>onMutateSchema</code> que atualiza o <code>nodeSubstitutionSchema</code> (relaciona com <a href="passo-2-3.html">passo 2.3</a>).
+            </div>
+            <div class="box-file">flux.service.ts:3031-3041 · addConnectToNodes helper</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box db">
+            <div class="box-title"><span class="badge step">E2</span> <code>persistInputNodeData()</code> — grava no banco</div>
+            <div class="box-desc">
+              UPDATE em <code>flows_nodes.data</code> (JSONB). Uma escrita por varInput. Sequential — em agentes com N varInputs, N round-trips DB.
+              <br><br>Também respeita <code>flowVersionHistoryId</code> pra escrever na versão certa (relaciona com <a href="passo-1-3.html">passo 1.3</a>).
+            </div>
+            <div class="box-file">flux.service.ts:3042-3047</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">E3</span> Alt-branch: <code>inputFileUrl</code> (tipos não-varInput)</div>
+            <div class="code-block">
+<span class="k">if</span> (variableInput.inputFileUrl) {
+  <span class="k">const</span> fileUrlData = { fileUrl: variableInput.inputFileUrl };
+  newFlows = <span class="t">addConnectToNodes</span>({ ..., nodeData: { id: variableInput.inputId, data: fileUrlData } });
+  <span class="k">await this.persistInputNodeData</span>(flowId, variableInput.inputId, fileUrlData, ...);
+}
+            </div>
+            <div class="box-desc">
+              Rota alternativa pra tipos custom que aceitam <code>inputFileUrl</code> em vez de <code>varInputNode</code>. Mesmo mecanismo (<code>addConnectToNodes</code> + <code>persistInputNodeData</code>), payload mais simples.
+            </div>
+            <div class="box-file">flux.service.ts:3050-3069</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside">
+            <div class="aside-title">📎 Por que propagar via arestas ANTES do loop?</div>
+            Design decision: em vez do <code>varInputNode</code> ser executado como qualquer outro nó (Fase 3) e escrever no schema, ele é <em>pré-resolvido</em> aqui pra economizar uma passada no scheduler. Consequência: <code>varInputNode</code> não aparece no dispatch da Fase 3.5 — [[project_node_field_taxonomy]] chama isso de "static config resolvido em Fase 1".
+          </div>
+          <div class="aside warn">
+            <div class="aside-title">⚠️ N round-trips DB sequenciais</div>
+            Cada varInput = 1 UPDATE em <code>flows_nodes</code>. Agente com 10 varInputs = 10 chamadas sequenciais. Não é <code>Promise.all</code>. Em agentes formulário-based (varInputs por campo), esse setup pode dominar a latência de Fase 1.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 Relação com <code>nodeSubstitutionSchema</code></div>
+            O callback <code>onMutateSchema</code> em <code>addConnectToNodes</code> já popula o schema de substituição — quando <a href="passo-2-3.html">passo 2.3</a> for gerar o schema oficial, os varInputs já estão lá. É um "pre-seed" do schema.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION F: Fallback sem variableInputs -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-f">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#64748B;color:white">F</span>
+        <code>Fallback: sem variableInputs no body</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:3073-3134</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        if (!body.variableInputs || body.variableInputs.length === 0) for (const variableInput of varInputNodes) { ... }
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Se o request <em>não</em> mandou nenhum <code>variableInput</code>, mesmo assim propaga o <code>data</code> <strong>já existente</strong> em cada <code>varInputNode</code> pros seus vizinhos via arestas. Usado quando o cliente confia nos valores default gravados no canvas.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> caso <em>"executa com o que já tá salvo"</em>. Aqui o cliente não sobrescreve nada — só quer que o agente rode usando os valores que já estão nos varInputs (útil pra testes, agentes pré-populados, ou runs disparados por schedule). Pra cada <code>varInputNode</code> do flow, o código pega <code>node.data</code> como veio do banco, monta um <code>varInputData</code> mínimo (<code>text</code>, <code>uploadedFiles</code>, <code>isExtraction</code>, <code>extractText</code>), e chama o mesmo <code>addConnectToNodes</code> + <code>persistInputNodeData</code>. É basicamente uma repetição do E, mas usando dados existentes em vez de resolvidos no request. Cobre também tipos não-<code>varInputNode</code> com <code>inputFileUrl</code>.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">F1</span> Gate: sem variableInputs no body</div>
+            <div class="code-block">
+<span class="k">if</span> (!body.variableInputs || body.variableInputs.length === 0) { ... }
+            </div>
+            <div class="box-file">flux.service.ts:3073</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">F2</span> Loop sobre <code>varInputNodes</code> (do canvas)</div>
+            <div class="box-desc">
+              Diferença: em B (função B), o loop é sobre <code>body.variableInputs</code>; aqui é sobre os <code>varInputNode</code>s <strong>do canvas</strong>. Cada nó vira o próprio input.
+            </div>
+            <div class="box-file">flux.service.ts:3074-3079</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">F3</span> Extrai <code>data</code> existente</div>
+            <div class="code-block">
+<span class="k">const</span> { inputId, inputText, uploadedFiles, isExtraction, extractText } = variableInput.data;
+
+<span class="k">const</span> varInputData = { text: inputText, uploadedFiles, isExtraction, extractText };
+            </div>
+            <div class="box-desc">
+              Lê os campos já persistidos em <code>node.data</code>. Se o canvas nunca teve valores salvos, esses campos ficam <code>undefined</code> — o loop de Fase 3 vai lidar com isso.
+              <br><br><strong>Não roda OCR aqui</strong> — a extração aconteceu quando o dado foi salvo, não agora.
+            </div>
+            <div class="box-file">flux.service.ts:3080-3093</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">F4</span> <code>addConnectToNodes</code> + <code>persistInputNodeData</code></div>
+            <div class="box-desc">
+              Mesmo par E1+E2, aplicado a cada varInput do canvas.
+            </div>
+            <div class="box-file">flux.service.ts:3094-3111</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">F5</span> Alt-branch: tipos não-<code>varInputNode</code></div>
+            <div class="box-desc">
+              Se <code>variableInput.type !== 'varInputNode'</code>, usa <code>{ fileUrl: variableInput.inputFileUrl }</code> como data. Cobre nós custom que aceitam arquivo como input.
+            </div>
+            <div class="box-file">flux.service.ts:3113-3132</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Uso típico</div>
+            Runs disparados por schedule (cron), preview do editor com valores pré-preenchidos, ou clientes que só querem "rodar o agente com o que tá salvo". Também: chatbot que já tem contexto persistido.
+          </div>
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Depende de <code>data</code> pré-existente</div>
+            Se o <code>varInputNode</code> nunca foi preenchido no editor (<code>data</code> vazio), esse fallback propaga <code>undefined</code> pros vizinhos. Isso pode causar substituição <code>{{varInputLabel}}</code> render string vazia em Fase 3 — comportamento silencioso, sem erro.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 Simetria com B</div>
+            F é essencialmente o mesmo padrão de B, mas com <code>node.data</code> como fonte em vez de <code>variableInput</code>. Poderia ser refatorado pra função única com fonte parametrizada, mas hoje é duplicado.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- SECOND OCR OCCURRENCE -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-g">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge new" style="background:#A855F7;color:white">↻</span>
+        <code>Re-execução em sub-flows (nodesBox / libraryNode / fluxBox)</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:5464-5533, 5819+</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        // Dentro do handler de nodesBox/libraryNode/fluxBox, quando um sub-flow é chamado: mesmo mecanismo de varInputNode+OCR roda de novo.
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Quando o agente chama outro agente (via <code>nodesBox</code>, <code>libraryNode</code> ou <code>fluxBox</code>), o sub-flow tem os próprios <code>varInputNode</code>s — que precisam ser resolvidos <em>de novo</em>, usando o <code>callerData</code> em vez de <code>body.variableInputs</code>.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> lembra que 1.8 roda no <em>top-level</em>? Quando um nó chama outro agente (sub-flow), <strong>tudo isso acontece de novo</strong> — mas o dado de input não vem do request HTTP, vem do nó pai. Esse bloco lê <code>callerData.textData[varNodeId]</code>, <code>callerData.fileLinkData[varNodeId]</code>, e também campos legados como <code>${varNodeId}Text</code> / <code>${varNodeId}FileLink</code>. Faz <code>replacePlaceholders</code> pra resolver <code>{{...}}</code> dentro dos textos (é onde inputs de sub-flow são "sub-substituídos" com dados do pai). Depois monta um <code>variableInputs[]</code> equivalente e envia pro <code>apiV2()</code> do sub-flow — que vai executar 1.8 tudo de novo. <strong>Consequência crítica:</strong> cada nível de aninhamento paga o custo de OCR novamente se o arquivo for reextraído. Não tem cache entre execuções — mesmo PDF, mesmo run, dois OCRs se for chamado de dois sub-flows.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">G1</span> Localização 1: <code>nodesBox</code></div>
+            <div class="box-desc">
+              Handler em <code>flux.service.ts:5464-5533</code>. Constrói <code>variableInputs</code> a partir de <code>callerData.textData</code> / <code>fileLinkData</code>. Faz <code>replacePlaceholders</code> pra resolver <code>{{...}}</code> dentro do texto usando <code>mutatedSchema</code>.
+            </div>
+            <div class="box-file">flux.service.ts:5464-5533</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">G2</span> Localização 2: <code>libraryNode</code> / <code>fluxBox</code></div>
+            <div class="box-desc">
+              Padrão simétrico em <code>flux.service.ts:5819+</code>. Mesmo mapping <code>callerData</code> → <code>variableInputs</code>, mesmo <code>typeOCR</code> por nó.
+            </div>
+            <div class="box-file">flux.service.ts:5819-5920</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box external">
+            <div class="box-title"><span class="badge step">G3</span> Chama <code>apiV2()</code> recursivamente</div>
+            <div class="box-desc">
+              O sub-flow entra em <code>apiV2()</code> como se fosse uma requisição nova — passa por 1.1 até 1.8, incluindo a resolução OCR se algum varInput do sub-flow tiver <code>isExtraction=true</code>.
+              <br><br>É o mesmo código de 1.8 rodando N vezes, uma vez por nível de aninhamento.
+            </div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Custo OCR multiplicativo</div>
+            Sem cache de extração entre chamadas. Se o mesmo PDF passa por 3 sub-flows no mesmo run, 3 OCRs. Latência escala linear com profundidade de sub-flow × número de arquivos.
+          </div>
+          <div class="aside info">
+            <div class="aside-title">🎯 <code>replacePlaceholders</code> no <code>inputText</code></div>
+            Diferente do top-level (que só recebe texto puro do request), aqui o <code>inputText</code> do sub-flow pode conter <code>{{outputDoNoAnterior}}</code> — e o <code>replacePlaceholders</code> resolve esses placeholders <em>antes</em> de enviar pro <code>apiV2</code>. É a ponte entre a substitution engine (Fase 2.3+3.3) e a fase de input.
+            <br><br>Relaciona com <a href="passo-2-3.html">passo 2.3</a> (schema) e <a href="passo-3-3.html">passo 3.3</a> (substituição).
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 Chaves legadas em <code>callerData</code></div>
+            Aceita duas convenções: nova (<code>callerData.textData[nodeId]</code>) e legada (<code>callerData[${nodeId}Text]</code>). O legado é dead-weight — só existe pra não quebrar flows salvos com o schema antigo.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="note info" style="margin-top:32px">
+    <strong>Resumo — o que sai de 1.8:</strong>
+    <br>• <code>newFlows</code> mutado: cada <code>varInputNode</code> com <code>data = { text, uploadedFiles, isExtraction, extractText }</code>
+    <br>• Nós conectados via arestas também recebem <code>data</code> (pré-substituído)
+    <br>• <code>nodeSubstitutionSchema</code> pré-populado via callback <code>onMutateSchema</code>
+    <br>• <code>flows_nodes.data</code> gravado no banco (1 UPDATE por varInput)
+    <br>• I/O: 0-N chamadas OCR (por <code>links</code>+<code>files</code>) + 0-N uploads S3 (por <code>files</code>) + N UPDATEs banco
+    <br>• <strong>Consumido em</strong>: Fase 2.3 (schema já pré-populado) e Fase 3 (nós downstream recebem <code>data</code> resolvido)
+  </div>
+
+  <div class="note">
+    <strong>Observações para migração:</strong>
+    <br>• <strong>OCR pode virar handler Temporal:</strong> hoje é síncrono e cega o backend. Um workflow dedicado (<code>extractInputActivity</code>) libera o backend enquanto o OCR corre. Ganho grande em agentes com múltiplos arquivos.
+    <br>• <strong>Cache de extração:</strong> mesmo arquivo (mesma URL, mesmo hash) pode reusar <code>extractText</code>. Especialmente relevante pra sub-flows (função G) — hoje é rework puro.
+    <br>• <strong>N UPDATEs sequenciais:</strong> <code>persistInputNodeData</code> por varInput pode virar <code>Promise.all</code> ou um UPDATE batched.
+    <br>• <strong>Nome <code>extractText</code> confuso:</strong> em <code>isExtraction=false</code> guarda URLs, não texto extraído. Renomear pra <code>extractedContent</code> ou split em dois campos ajudaria.
+    <br>• <strong>Telemetria zero:</strong> nada é logado sobre duração de OCR, tamanho de arquivo, provider escolhido. Impossível diagnosticar latência de Fase 1 sem instrumentar.
+    <br>• <strong>Whitelist prefetch:</strong> <code>varInputNode</code> nem aparece na whitelist do modo prefetch (Fase 2½) porque é resolvido <em>antes</em> — não passa pelo loop. Isso é feature, não bug.
+  </div>
+
+  <div class="page-footer-nav">
+    <a href="../index.html#step-1-8" class="back-btn">← Voltar ao diagrama principal</a>
+  </div>
+
+</div>
+<script>
+(function() {
+  function toggle(card) {
+    if (card) card.classList.toggle('collapsed');
+  }
+  function expand(card) {
+    if (card && card.classList.contains('collapsed')) card.classList.remove('collapsed');
+  }
+  document.querySelectorAll('.fn-card-header').forEach(function(header) {
+    header.addEventListener('click', function(e) {
+      if (e.target.closest('a')) return;
+      toggle(header.parentElement);
+    });
+  });
+  document.querySelectorAll('a[href^="#fn-"]').forEach(function(link) {
+    link.addEventListener('click', function() {
+      var id = link.getAttribute('href').slice(1);
+      expand(document.getElementById(id));
+    });
+  });
+  if (window.location.hash && window.location.hash.startsWith('#fn-')) {
+    expand(document.querySelector(window.location.hash));
+  }
+  window.addEventListener('hashchange', function() {
+    if (window.location.hash.startsWith('#fn-')) {
+      expand(document.querySelector(window.location.hash));
+    }
+  });
+})();
+</script>
+</body>
+</html>

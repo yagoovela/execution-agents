@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Flux — Algoritmo do DAG (Arquitetura v2)</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #F1F5F9;
+    color: #0F172A;
+    margin: 0;
+    padding: 32px 24px 80px;
+    line-height: 1.5;
+  }
+  .container { max-width: 1300px; margin: 0 auto; }
+
+  h1 {
+    text-align: center;
+    color: #0F172A;
+    margin: 0 0 8px 0;
+    font-size: 28px;
+    letter-spacing: -0.5px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #64748B;
+    margin-bottom: 20px;
+    font-size: 14px;
+  }
+
+  .top-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1300px;
+    margin: 0 auto 20px;
+    padding: 0 4px;
+  }
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: white;
+    color: #334155;
+    text-decoration: none;
+    border-radius: 8px;
+    border: 1px solid #CBD5E1;
+    font-size: 12.5px;
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    transition: transform 0.15s, background 0.15s;
+  }
+  .back-btn:hover {
+    background: #EFF6FF;
+    transform: translateY(-1px);
+  }
+  .step-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: linear-gradient(90deg, #DBEAFE, #F3E8FF);
+    border: 1px solid #C7D2FE;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #3730A3;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  h2 {
+    font-size: 20px;
+    color: #0F172A;
+    margin: 40px 0 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #CBD5E1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  h2 .num {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: #0F172A;
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+  }
+  h3 {
+    font-size: 15px;
+    color: #0F172A;
+    margin: 20px 0 8px;
+  }
+  p { font-size: 13.5px; color: #334155; margin: 0 0 12px; }
+
+  code {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 12px;
+    background: #F1F5F9;
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: #334155;
+  }
+
+  /* Definition card */
+  .def-card {
+    background: white;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 14px 0;
+    border-left: 4px solid #3B82F6;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .def-card.ref { border-left-color: #A855F7; }
+  .def-card.edge { border-left-color: #10B981; }
+  .def-card-title {
+    font-weight: 700;
+    font-size: 14px;
+    color: #0F172A;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .def-card ul {
+    margin: 8px 0 4px 0;
+    padding-left: 20px;
+  }
+  .def-card li { font-size: 13px; color: #334155; margin: 4px 0; }
+
+  .kind-tag {
+    display: inline-block;
+    font-size: 9.5px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    vertical-align: middle;
+  }
+  .kind-tag.edge { background: #D1FAE5; color: #065F46; }
+  .kind-tag.ref  { background: #F3E8FF; color: #6B21A8; }
+  .kind-tag.no-dep { background: #FEE2E2; color: #991B1B; }
+  .kind-tag.dep    { background: #DCFCE7; color: #14532D; }
+
+  /* Algorithm steps */
+  .algo-steps {
+    background: white;
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin: 16px 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .algo-step {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px dashed #E2E8F0;
+  }
+  .algo-step:last-child { border-bottom: none; }
+  .algo-num {
+    background: #3B82F6;
+    color: white;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .algo-content strong { color: #0F172A; font-size: 14px; }
+  .algo-content { font-size: 13px; color: #334155; }
+
+  /* DAG viz */
+  .dag-viz {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    overflow-x: auto;
+  }
+  .dag-lanes {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    min-width: 900px;
+  }
+  .wave-col {
+    background: #F8FAFC;
+    border-radius: 10px;
+    padding: 12px;
+    border-top: 3px solid #3B82F6;
+  }
+  .wave-col.w1 { border-top-color: #64748B; }
+  .wave-col.w2 { border-top-color: #10B981; }
+  .wave-col.w3 { border-top-color: #F59E0B; }
+  .wave-col.w4 { border-top-color: #A855F7; }
+
+  .wave-title {
+    font-weight: 700;
+    font-size: 12px;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: center;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px dashed #CBD5E1;
+  }
+  .wave-title .parallel {
+    display: inline-block;
+    margin-left: 6px;
+    background: #DBEAFE;
+    color: #1E40AF;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 9px;
+  }
+  .dag-node {
+    background: white;
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+    border-left: 3px solid #3B82F6;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+  .dag-node .n-name {
+    font-weight: 700;
+    font-size: 12.5px;
+    color: #0F172A;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 3px;
+  }
+  .dag-node .n-type {
+    display: inline-block;
+    font-size: 9px;
+    background: #F1F5F9;
+    color: #64748B;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-weight: 500;
+  }
+  .dag-node .n-deps {
+    font-size: 10.5px;
+    color: #64748B;
+    margin-top: 4px;
+  }
+  .dag-node .n-deps .dep {
+    display: inline-block;
+    margin-right: 4px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 9.5px;
+  }
+  .dag-node .n-deps .dep.edge { background: #D1FAE5; color: #065F46; }
+  .dag-node .n-deps .dep.ref { background: #F3E8FF; color: #6B21A8; }
+
+  /* Ref example */
+  .ref-example {
+    background: #FAFAFA;
+    border: 1px dashed #CBD5E1;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 10px 0;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 12px;
+    color: #334155;
+  }
+  .ref-example .tag {
+    display: inline-block;
+    font-family: -apple-system, sans-serif;
+    background: #A855F7;
+    color: white;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 9.5px;
+    font-weight: 700;
+    margin-right: 6px;
+  }
+  .ref-example .tag.edge { background: #10B981; }
+  .ref-example .tag.no-dep { background: #EF4444; }
+
+  /* Trace */
+  .trace {
+    background: white;
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin: 16px 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .trace-wave {
+    padding: 14px;
+    margin-bottom: 12px;
+    border-radius: 8px;
+    background: #F8FAFC;
+    border-left: 4px solid #3B82F6;
+  }
+  .trace-wave.w1 { border-left-color: #64748B; background: #F8FAFC; }
+  .trace-wave.w2 { border-left-color: #10B981; background: #ECFDF5; }
+  .trace-wave.w3 { border-left-color: #F59E0B; background: #FEF3C7; }
+  .trace-wave.w4 { border-left-color: #A855F7; background: #FAF5FF; }
+  .trace-wave.done { border-left-color: #059669; background: #F0FDF4; }
+
+  .trace-wave-title {
+    font-weight: 700;
+    font-size: 13px;
+    color: #0F172A;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .trace-line {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: #334155;
+    margin: 3px 0;
+    padding-left: 12px;
+    line-height: 1.6;
+  }
+  .trace-line .k { color: #6B21A8; font-weight: 600; }
+  .trace-line .v { color: #065F46; }
+  .trace-line .op { color: #991B1B; font-weight: 700; }
+  .trace-line .note { color: #64748B; font-style: italic; font-family: -apple-system, sans-serif; font-size: 11px; }
+
+  /* Callout */
+  .callout {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin: 14px 0;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .callout.info {
+    background: #EFF6FF;
+    border-left: 4px solid #3B82F6;
+    color: #1E3A8A;
+  }
+  .callout.warn {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    color: #78350F;
+  }
+  .callout.tip {
+    background: #F0FDF4;
+    border-left: 4px solid #10B981;
+    color: #065F46;
+  }
+  .callout strong { color: inherit; }
+
+  /* Types table */
+  .types-table {
+    background: white;
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    overflow-x: auto;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .types-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+  }
+  .types-table th {
+    text-align: left;
+    padding: 8px 12px;
+    background: #F1F5F9;
+    color: #334155;
+    font-weight: 700;
+    border-bottom: 2px solid #CBD5E1;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .types-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #E2E8F0;
+    vertical-align: top;
+  }
+  .types-table tr:last-child td { border-bottom: none; }
+  .types-table code { font-size: 11px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="top-nav">
+    <a href="arquitetura-v2.html" class="back-btn">
+      <span>←</span>
+      <span>Voltar para Arquitetura v2</span>
+    </a>
+    <span class="step-badge">
+      <span>◈</span>
+      <span>Aprofundamento — Passo 2.2</span>
+    </span>
+  </div>
+
+  <h1>Algoritmo do DAG</h1>
+  <p class="subtitle">Como o workflow decide o que roda, em que ordem e o que pode rodar em paralelo</p>
+
+  <!-- ============================================ -->
+  <h2><span class="num">1</span> O que é o DAG aqui</h2>
+
+  <p>
+    <strong>DAG</strong> (Directed Acyclic Graph) é a estrutura de dados que o workflow constrói uma vez, no início do run (passo 2.2 da <a href="arquitetura-v2.html">arquitetura v2</a>), e usa para dirigir todo o loop de execução da FASE 3.
+  </p>
+  <p>
+    A ideia central é simples: <strong>um nó só pode rodar quando todas as coisas de que ele depende já rodaram</strong>. Nós que não dependem uns dos outros podem rodar <strong>em paralelo</strong>. O DAG é a forma matemática de representar essas dependências, e o algoritmo de "ondas topológicas" é a forma de executá-lo maximizando paralelismo.
+  </p>
+
+  <div class="callout info">
+    <strong>Por que "acíclico":</strong> se A depende de B e B depende de A, ninguém pode começar. O algoritmo detecta e remove ciclos (chamados <em>back-edges</em>) antes de começar a executar.
+  </div>
+
+  <!-- ============================================ -->
+  <h2><span class="num">2</span> Os dois tipos de dependência</h2>
+
+  <p>Aqui está o ponto crítico que a maioria dos DAGs de ferramentas de flow ignoram: <strong>a dependência não vem só das arestas visíveis do canvas</strong>. Ela pode vir também das refs <code>{{...}}</code> escondidas dentro do texto de configuração do nó. O algoritmo precisa considerar os dois.</p>
+
+  <div class="def-card edge">
+    <div class="def-card-title">
+      <span class="kind-tag edge">Tipo A</span>
+      <span>Arestas explícitas (edges do canvas)</span>
+    </div>
+    <p style="margin:0">
+      São os "fios" que o usuário desenha ligando nó a nó no editor. Ficam salvos na tabela <code>flows_nodes_edges</code>. Cada aresta tem um <code>source</code>, um <code>target</code> e um <code>type</code> (control, condition, data, side-effect).
+    </p>
+    <p style="margin:8px 0 0 0">
+      <strong>Toda aresta explícita é dependência</strong> — o nó <code>target</code> não pode começar antes de o <code>source</code> terminar.
+    </p>
+  </div>
+
+  <div class="def-card ref">
+    <div class="def-card-title">
+      <span class="kind-tag ref">Tipo B</span>
+      <span>Refs <code>{{...}}</code> dentro do texto do nó</span>
+    </div>
+    <p style="margin:0 0 8px 0">
+      São placeholders que o usuário digita dentro dos campos do nó — prompts de LLM, corpos de requisição HTTP, expressões de script, etc. Nem toda ref é dependência de nó: depende do <em>alvo</em> que ela referencia.
+    </p>
+
+    <div class="ref-example">
+      <span class="tag">DEP</span>
+      <code>{{TextGen1.output}}</code> — aponta pra saída de outro nó do flow &nbsp;<span class="kind-tag dep">cria dep</span>
+    </div>
+    <div class="ref-example">
+      <span class="tag">DEP</span>
+      <code>{{WebSearch_results}}</code> — mesma coisa via alias humanizado &nbsp;<span class="kind-tag dep">cria dep</span>
+    </div>
+    <div class="ref-example">
+      <span class="tag no-dep">SEM DEP</span>
+      <code>{{input.body.topic}}</code> — vem do request/trigger, não de um nó &nbsp;<span class="kind-tag no-dep">sem dep</span>
+    </div>
+    <div class="ref-example">
+      <span class="tag no-dep">SEM DEP</span>
+      <code>{{context.user.email}}</code> — vem do contexto global (user/space) &nbsp;<span class="kind-tag no-dep">sem dep</span>
+    </div>
+    <div class="ref-example">
+      <span class="tag no-dep">SEM DEP</span>
+      <code>{{env.MY_API_KEY}}</code> — vem de variáveis do workspace &nbsp;<span class="kind-tag no-dep">sem dep</span>
+    </div>
+  </div>
+
+  <div class="types-table">
+    <table>
+      <thead>
+        <tr>
+          <th>Alvo da ref</th>
+          <th>Exemplo</th>
+          <th>Cria dep no DAG?</th>
+          <th>Resolvido de onde</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Outro nó do flow</td>
+          <td><code>{{NodeLabel.field}}</code></td>
+          <td><span class="kind-tag dep">SIM</span></td>
+          <td><code>node_executions.output_data</code> do nó fonte</td>
+        </tr>
+        <tr>
+          <td>Input do trigger</td>
+          <td><code>{{input.body.x}}</code></td>
+          <td><span class="kind-tag no-dep">NÃO</span></td>
+          <td>Input do workflow (payload do request)</td>
+        </tr>
+        <tr>
+          <td>Contexto global</td>
+          <td><code>{{context.user.id}}</code></td>
+          <td><span class="kind-tag no-dep">NÃO</span></td>
+          <td>Contexto do run (user, space, session)</td>
+        </tr>
+        <tr>
+          <td>Variáveis do workspace</td>
+          <td><code>{{env.MY_KEY}}</code></td>
+          <td><span class="kind-tag no-dep">NÃO</span></td>
+          <td>Config do workspace / secrets</td>
+        </tr>
+        <tr>
+          <td>Loop context (arrayNode)</td>
+          <td><code>{{item.name}}</code></td>
+          <td><span class="kind-tag no-dep">NÃO*</span></td>
+          <td>Iteração corrente do array; *o arrayNode em si é dep, o <code>item</code> não</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout warn">
+    <strong>Consequência prática:</strong> se o algoritmo só olhasse as arestas, um nó com <code>{{TextGen1.output}}</code> no prompt <em>sem aresta explícita para TextGen1</em> tentaria rodar antes de <code>TextGen1</code>. Resultado: substituição falharia e o run quebraria. Por isso o passo 2.2 <strong>escaneia refs além das arestas</strong>.
+  </div>
+
+  <!-- ============================================ -->
+  <h2><span class="num">3</span> O algoritmo passo a passo</h2>
+
+  <p>
+    Rodando dentro do workflow Temporal, sobre o snapshot congelado no enqueue. Puro, sem I/O — só transformação de dados.
+  </p>
+
+  <div class="algo-steps">
+    <div class="algo-step">
+      <div class="algo-num">1</div>
+      <div class="algo-content">
+        <strong>Seed com todos os nós</strong>
+        <br>Cria mapa <code>nodes: Map&lt;nodeId, {type, ...}&gt;</code> a partir da topologia. Inicializa <code>adjacency: Map&lt;nodeId, Set&lt;nodeId&gt;&gt;</code> vazio e <code>inDegree: Map&lt;nodeId, number&gt;</code> zerado.
+      </div>
+    </div>
+
+    <div class="algo-step">
+      <div class="algo-num">2</div>
+      <div class="algo-content">
+        <strong>Processa arestas explícitas</strong>
+        <br>Para cada aresta <code>(source, target, type)</code> da topologia:
+        <br>• Adiciona <code>target</code> em <code>adjacency[source]</code>
+        <br>• Incrementa <code>inDegree[target]</code>
+        <br>• Guarda o <code>type</code> pra usar em pruning de <code>conditionNode</code>
+      </div>
+    </div>
+
+    <div class="algo-step">
+      <div class="algo-num">3</div>
+      <div class="algo-content">
+        <strong>Escaneia refs <code>{{...}}</code> em cada nó</strong>
+        <br>Para cada nó <code>N</code>:
+        <br>• Percorre todos os campos textuais da config (<code>prompt</code>, <code>promptData</code>, <code>textData</code>, <code>contentData</code>, corpos de request, expressões de script, etc.)
+        <br>• Aplica regex <code>/\{\{([^}]+)\}\}/g</code> pra extrair as refs
+        <br>• Para cada ref: descobre o <em>alvo</em>. Se for outro nó do flow (<code>{{X.field}}</code> onde X é um nodeId ou label válido) → adiciona aresta implícita <code>X → N</code> se ainda não existir; incrementa <code>inDegree[N]</code>.
+        <br>• Se for input/context/env → ignora (não cria dep).
+      </div>
+    </div>
+
+    <div class="algo-step">
+      <div class="algo-num">4</div>
+      <div class="algo-content">
+        <strong>Detecta e remove back-edges (ciclos)</strong>
+        <br>Roda DFS a partir dos nós de entrada (in-degree=0 antes da remoção). Se um DFS visita um nó já na pilha atual, a aresta que fecha o ciclo é uma back-edge → é <strong>removida</strong> da adjacency e o <code>inDegree</code> do target é decrementado.
+        <br><span style="color:#78350F">Nota: back-edges são normalmente erros de config (ref circular). Em runtime a gente escolhe remover em vez de falhar pra não travar flows que casualmente têm ciclos benignos.</span>
+      </div>
+    </div>
+
+    <div class="algo-step">
+      <div class="algo-num">5</div>
+      <div class="algo-content">
+        <strong>Poda nós inalcançáveis</strong>
+        <br>Faz BFS a partir dos nós com <code>inDegree === 0</code> após passo 4. Nós não visitados = unreachable → marca como <code>skipped</code>, tira do <code>pending</code>.
+      </div>
+    </div>
+
+    <div class="algo-step">
+      <div class="algo-num">6</div>
+      <div class="algo-content">
+        <strong>Retorna estruturas imutáveis</strong>
+        <br>• <code>adjacency</code> — final, não muda no run
+        <br>• <code>inDegree</code> — inicial; será decrementado ao longo do run (mas isso é <em>state</em>, não muda a estrutura do DAG)
+        <br>• <code>edgeTypes</code> — pra decisões de condition/side-effect na FASE 3
+        <br>• <code>pending</code> — set inicial de nós a executar (todos menos os skipped)
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <h2><span class="num">4</span> Exemplo concreto</h2>
+
+  <p>Flow simples: pesquisa em duas fontes em paralelo, junta os resultados e escreve um artigo.</p>
+
+  <h3>Nós e sua configuração</h3>
+
+  <div class="def-card" style="border-left-color:#64748B">
+    <div class="def-card-title"><code>Topic</code> <span class="n-type" style="font-size:10px;background:#F1F5F9;padding:2px 6px;border-radius:3px">variableInputNode</span></div>
+    <p style="margin:0">Ponto de entrada. Recebe do trigger o campo <code>topic</code> (ex: "Machine Learning").</p>
+  </div>
+
+  <div class="def-card" style="border-left-color:#3B82F6">
+    <div class="def-card-title"><code>WebSearch</code> <span class="n-type" style="font-size:10px;background:#F1F5F9;padding:2px 6px;border-radius:3px">webSearch</span></div>
+    <p style="margin:0">Query = <code>{{Topic.topic}}</code>. Roda uma busca web.</p>
+    <p style="margin:6px 0 0 0"><em>Deps:</em> <span class="kind-tag edge">EDGE</span> Topic <span class="kind-tag ref">REF</span> Topic</p>
+  </div>
+
+  <div class="def-card" style="border-left-color:#3B82F6">
+    <div class="def-card-title"><code>NewsSearch</code> <span class="n-type" style="font-size:10px;background:#F1F5F9;padding:2px 6px;border-radius:3px">webSearch</span></div>
+    <p style="margin:0">Query = <code>últimas notícias sobre {{Topic.topic}}</code>. Busca só em fontes de notícias.</p>
+    <p style="margin:6px 0 0 0"><em>Deps:</em> <span class="kind-tag edge">EDGE</span> Topic <span class="kind-tag ref">REF</span> Topic</p>
+  </div>
+
+  <div class="def-card" style="border-left-color:#3B82F6">
+    <div class="def-card-title"><code>Compare</code> <span class="n-type" style="font-size:10px;background:#F1F5F9;padding:2px 6px;border-radius:3px">textGenerator</span></div>
+    <p style="margin:0">Prompt = <code>Compare estas fontes:\nWEB: {{WebSearch.results}}\nNEWS: {{NewsSearch.results}}</code></p>
+    <p style="margin:6px 0 0 0"><em>Deps:</em> <span class="kind-tag ref">REF</span> WebSearch <span class="kind-tag ref">REF</span> NewsSearch <span style="color:#991B1B;font-size:11px">(sem edges — só refs!)</span></p>
+  </div>
+
+  <div class="def-card" style="border-left-color:#3B82F6">
+    <div class="def-card-title"><code>Article</code> <span class="n-type" style="font-size:10px;background:#F1F5F9;padding:2px 6px;border-radius:3px">textGenerator</span></div>
+    <p style="margin:0">Prompt = <code>Escreva artigo sobre {{Topic.topic}} baseado em: {{Compare.text}}</code></p>
+    <p style="margin:6px 0 0 0"><em>Deps:</em> <span class="kind-tag edge">EDGE</span> Compare <span class="kind-tag ref">REF</span> Compare <span class="kind-tag ref">REF</span> Topic</p>
+  </div>
+
+  <h3>DAG resultante (após algoritmo)</h3>
+
+  <p>Depois do passo 2.2 rodar, o DAG fica organizado em <strong>ondas topológicas</strong>. Cada onda contém os nós que podem rodar em paralelo:</p>
+
+  <div class="dag-viz">
+    <div class="dag-lanes">
+
+      <div class="wave-col w1">
+        <div class="wave-title">Onda 1</div>
+        <div class="dag-node" style="border-left-color:#64748B">
+          <div class="n-name">Topic</div>
+          <span class="n-type">variableInputNode</span>
+          <div class="n-deps">
+            <span style="color:#94A3B8">nenhuma dep (in-degree=0)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="wave-col w2">
+        <div class="wave-title">Onda 2 <span class="parallel">2 em paralelo</span></div>
+        <div class="dag-node">
+          <div class="n-name">WebSearch</div>
+          <span class="n-type">webSearch</span>
+          <div class="n-deps">
+            <span class="dep edge">edge: Topic</span>
+            <span class="dep ref">ref: Topic</span>
+          </div>
+        </div>
+        <div class="dag-node">
+          <div class="n-name">NewsSearch</div>
+          <span class="n-type">webSearch</span>
+          <div class="n-deps">
+            <span class="dep edge">edge: Topic</span>
+            <span class="dep ref">ref: Topic</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="wave-col w3">
+        <div class="wave-title">Onda 3</div>
+        <div class="dag-node">
+          <div class="n-name">Compare</div>
+          <span class="n-type">textGenerator</span>
+          <div class="n-deps">
+            <span class="dep ref">ref: WebSearch</span>
+            <span class="dep ref">ref: NewsSearch</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="wave-col w4">
+        <div class="wave-title">Onda 4</div>
+        <div class="dag-node">
+          <div class="n-name">Article</div>
+          <span class="n-type">textGenerator</span>
+          <div class="n-deps">
+            <span class="dep edge">edge: Compare</span>
+            <span class="dep ref">ref: Compare</span>
+            <span class="dep ref">ref: Topic</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="callout tip">
+    <strong>Duas observações importantes:</strong>
+    <br><br>
+    <strong>1.</strong> <code>Compare</code> só tem refs, nenhuma aresta explícita — o usuário digitou <code>{{WebSearch.results}}</code> no prompt sem desenhar fios. Mesmo assim, o algoritmo captura essas deps no passo 3 do algoritmo e coloca <code>Compare</code> corretamente na onda 3. Sem esse scan, ele iria pra onda 1 e falharia na substituição.
+    <br><br>
+    <strong>2.</strong> <code>Article</code> tem <code>ref: Topic</code> mesmo estando 3 ondas depois. O algoritmo detecta e adiciona a aresta implícita, mas isso <strong>não afeta a onda</strong> em que <code>Article</code> roda — como já depende de <code>Compare</code> (que depende de <code>WebSearch</code>/<code>NewsSearch</code>, que dependem de <code>Topic</code>), <code>Topic</code> já vai estar completo quando a onda 4 começar. É belt-and-suspenders — a dep é registrada por segurança, sem custo real.
+  </div>
+
+  <!-- ============================================ -->
+  <h2><span class="num">5</span> Trace de execução — onda por onda</h2>
+
+  <p>
+    Estado inicial após o passo 2.2 rodar:
+  </p>
+
+  <div class="trace">
+
+    <div class="trace-wave" style="background:#F8FAFC;border-left-color:#64748B">
+      <div class="trace-wave-title">
+        <span>◇</span>
+        <span>Estado inicial (antes da onda 1)</span>
+      </div>
+      <div class="trace-line"><span class="k">pending</span> = <span class="v">{ Topic, WebSearch, NewsSearch, Compare, Article }</span></div>
+      <div class="trace-line"><span class="k">completed</span> = <span class="v">{ }</span></div>
+      <div class="trace-line"><span class="k">inDegree</span> = <span class="v">{ Topic: 0, WebSearch: 1, NewsSearch: 1, Compare: 2, Article: 2 }</span></div>
+      <div class="trace-line"><span class="k">outputStore</span> = <span class="v">{ input.topic: "Machine Learning" }</span></div>
+    </div>
+
+    <div class="trace-wave w1">
+      <div class="trace-wave-title">
+        <span>①</span>
+        <span>Onda 1</span>
+      </div>
+      <div class="trace-line"><span class="op">readySet</span> = { <strong>Topic</strong> } &nbsp;<span class="note">// único com in-degree=0</span></div>
+      <div class="trace-line"><span class="op">Promise.all([ dispatch(Topic) ])</span> &nbsp;<span class="note">// 1 activity só</span></div>
+      <div class="trace-line"><span class="note">→ Topic termina, output = { topic: "Machine Learning" }</span></div>
+      <div class="trace-line"><span class="op">outputStore.append</span>(Topic, output)</div>
+      <div class="trace-line"><span class="op">decrementa inDegree</span> dos sucessores de Topic:</div>
+      <div class="trace-line">&nbsp;&nbsp;WebSearch: 1 → <strong>0</strong></div>
+      <div class="trace-line">&nbsp;&nbsp;NewsSearch: 1 → <strong>0</strong></div>
+      <div class="trace-line">&nbsp;&nbsp;Article: 2 → 1 &nbsp;<span class="note">// via ref implícita</span></div>
+      <div class="trace-line"><span class="k">completed</span> = <span class="v">{ Topic }</span></div>
+    </div>
+
+    <div class="trace-wave w2">
+      <div class="trace-wave-title">
+        <span>②</span>
+        <span>Onda 2 — paralelismo real</span>
+      </div>
+      <div class="trace-line"><span class="op">readySet</span> = { <strong>WebSearch, NewsSearch</strong> } &nbsp;<span class="note">// AMBOS com in-degree=0</span></div>
+      <div class="trace-line"><span class="op">Promise.all([ dispatch(WebSearch), dispatch(NewsSearch) ])</span> &nbsp;<span class="note">// 2 activities em paralelo!</span></div>
+      <div class="trace-line"><span class="note">→ Ambas rodam ao mesmo tempo. Se cada uma leva 3s, onda 2 dura ~3s (não 6s).</span></div>
+      <div class="trace-line"><span class="op">outputStore.append</span>(WebSearch, ...) &nbsp;+&nbsp; <span class="op">outputStore.append</span>(NewsSearch, ...)</div>
+      <div class="trace-line"><span class="op">decrementa inDegree</span> de Compare:</div>
+      <div class="trace-line">&nbsp;&nbsp;Compare: 2 → 1 → <strong>0</strong> &nbsp;<span class="note">// duas decrementadas (uma por WebSearch, outra por NewsSearch)</span></div>
+      <div class="trace-line"><span class="k">completed</span> = <span class="v">{ Topic, WebSearch, NewsSearch }</span></div>
+    </div>
+
+    <div class="trace-wave w3">
+      <div class="trace-wave-title">
+        <span>③</span>
+        <span>Onda 3</span>
+      </div>
+      <div class="trace-line"><span class="op">readySet</span> = { <strong>Compare</strong> }</div>
+      <div class="trace-line"><span class="op">Promise.all([ dispatch(Compare) ])</span></div>
+      <div class="trace-line"><span class="note">→ Activity resolve {{WebSearch.results}} e {{NewsSearch.results}} lendo do node_executions dos dois; roda LLM.</span></div>
+      <div class="trace-line"><span class="op">outputStore.append</span>(Compare, ...)</div>
+      <div class="trace-line"><span class="op">decrementa inDegree</span> de Article: 1 → <strong>0</strong></div>
+      <div class="trace-line"><span class="k">completed</span> = <span class="v">{ Topic, WebSearch, NewsSearch, Compare }</span></div>
+    </div>
+
+    <div class="trace-wave w4">
+      <div class="trace-wave-title">
+        <span>④</span>
+        <span>Onda 4</span>
+      </div>
+      <div class="trace-line"><span class="op">readySet</span> = { <strong>Article</strong> }</div>
+      <div class="trace-line"><span class="op">Promise.all([ dispatch(Article) ])</span></div>
+      <div class="trace-line"><span class="note">→ Resolve {{Compare.text}} e {{Topic.topic}} do outputStore; roda LLM final.</span></div>
+      <div class="trace-line"><span class="op">outputStore.append</span>(Article, ...)</div>
+      <div class="trace-line"><span class="k">completed</span> = <span class="v">{ Topic, WebSearch, NewsSearch, Compare, Article }</span></div>
+    </div>
+
+    <div class="trace-wave done">
+      <div class="trace-wave-title">
+        <span>✓</span>
+        <span>Fim do loop</span>
+      </div>
+      <div class="trace-line"><span class="op">readySet</span> = { } &nbsp;<span class="op">pending</span> = { } → <span class="note">sai do loop, vai pra FASE 4 (finalização)</span></div>
+    </div>
+
+  </div>
+
+  <div class="callout tip">
+    <strong>Ganho de paralelismo:</strong> se o legacy executasse esse flow em série, o tempo total seria a soma de todos (5 nós × tempo médio). Com ondas paralelas, o tempo total é a soma das <em>ondas</em> — na onda 2, WebSearch e NewsSearch dividem o tempo. Em flows com muitas branches paralelas (agentes de pesquisa multi-fonte, geração de N variações, etc.), o ganho é linear com a largura do grafo.
+  </div>
+
+  <!-- ============================================ -->
+  <h2><span class="num">6</span> Casos especiais que o algoritmo precisa tratar</h2>
+
+  <h3>Nó condition</h3>
+  <p>
+    Um <code>conditionNode</code> tem múltiplos handles de saída (ex: true/false, ou N branches nomeadas). Durante a construção do DAG, todas as arestas de saída viram deps normais. Mas em runtime (FASE 3.5), quando o condition avalia e escolhe UM handle, os outros são marcados como <strong>dead</strong>: os sucessores das arestas mortas têm seu <code>inDegree</code> decrementado como se o predecessor tivesse "completado", mas o output é vazio. Sem isso, sucessores de handles não-tomados ficariam no <code>pending</code> pra sempre.
+  </p>
+
+  <h3>Nó com efeito colateral independente</h3>
+  <p>
+    Certos nós (<code>apiCaller</code>, <code>mcpNode</code>, <code>pushData</code>) rodam pelo <em>efeito</em>, não pelo output. Se o grafo de refs nunca os inclui como dep de ninguém, uma implementação ingênua acharia que eles são "unreachable" e pularia. O algoritmo classifica esse tipo de aresta como <code>side-effect</code> na etapa 2 e os preserva no <code>pending</code> mesmo sem dependentes.
+  </p>
+
+  <h3>Refs em campos aninhados</h3>
+  <p>
+    Refs podem aparecer dentro de arrays, objetos JSON, expressões, etc. O escaneamento (passo 3) precisa ser recursivo em toda a estrutura do <code>node_data</code>. Refs em campos que <em>não</em> são de execução (label, cor, posição no canvas) são ignoradas — o escanner tem uma lista dos campos "executáveis" por tipo de nó.
+  </p>
+
+  <h3>Refs para nó que não existe no snapshot</h3>
+  <p>
+    Pode acontecer: usuário renomeou/deletou um nó mas outro nó ainda tem <code>{{OldName.field}}</code>. O passo 2.3 (<code>validateDag</code>) — logo depois do <code>buildDag</code> — falha o run rápido com <code>InvalidReferenceError</code>, apontando qual nó tem qual ref quebrada. Sem <code>validateDag</code>, o run iria até o nó com a ref quebrada, gastaria créditos das dependências, e só quebraria no meio.
+  </p>
+
+  <h3>arrayNode (fan-out real)</h3>
+  <p>
+    O <code>arrayNode</code> não expande no DAG estático — ele é <strong>um nó só</strong> no grafo. Quando executa (FASE 3.5), dispara um <code>ChildWorkflow</code> que constrói seu próprio DAG para as N iterações do array. O DAG pai vê o arrayNode como uma unidade atômica; a paralelização das iterações é interna ao child workflow. Isso mantém o DAG raiz pequeno mesmo com loops grandes.
+  </p>
+
+  <!-- ============================================ -->
+
+  <div style="text-align:center;margin-top:40px">
+    <a href="arquitetura-v2.html" class="back-btn">
+      <span>←</span>
+      <span>Voltar para Arquitetura v2</span>
+    </a>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Passo 3.2 — Busca do nó + previewResponses cache | Detalhamento</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F1F5F9; color: #0F172A; margin: 0; padding: 32px 24px 80px; line-height: 1.4; }
+  .container { max-width: 1500px; margin: 0 auto; }
+  .page-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; padding: 12px 16px; background: white; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); flex-wrap: wrap; }
+  .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748B; }
+  .breadcrumb a { color: #3B82F6; text-decoration: none; font-weight: 500; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #CBD5E1; }
+  .back-btn { display: inline-flex; align-items: center; gap: 6px; background: #0F172A; color: white; padding: 8px 14px; border-radius: 8px; text-decoration: none; font-size: 12.5px; font-weight: 600; }
+  .page-header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+  .page-header .icon { font-size: 32px; }
+  .page-header h1 { margin: 0; font-size: 26px; color: #0F172A; letter-spacing: -0.4px; }
+  .page-sub { color: #64748B; font-size: 13px; margin-bottom: 24px; padding-left: 46px; }
+  .page-sub code { background: #E2E8F0; padding: 1px 6px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; color: #334155; }
+  .overview-mini { background: white; padding: 16px 18px; border-radius: 10px; margin-bottom: 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .overview-mini-title { font-size: 12px; font-weight: 700; color: #334155; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px; }
+  .overview-chain { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .overview-chip { background: #F8FAFC; padding: 6px 12px; border-radius: 6px; border-left: 3px solid #3B82F6; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; font-weight: 600; color: #0F172A; text-decoration: none; display: inline-block; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+  .overview-chip .lbl { display: block; font-size: 9.5px; color: #64748B; font-weight: 500; margin-bottom: 2px; font-family: inherit; text-transform: uppercase; letter-spacing: 0.5px; }
+  .overview-sep { color: #94A3B8; font-size: 18px; font-weight: bold; }
+  .box { background: white; border-radius: 8px; padding: 9px 13px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 4px solid #94A3B8; width: 100%; max-width: 100%; }
+  .box.backend    { border-left-color: #3B82F6; }
+  .box.worker     { border-left-color: #10B981; }
+  .box.db         { border-left-color: #F59E0B; }
+  .box.redis      { border-left-color: #EF4444; }
+  .box.s3         { border-left-color: #8B5CF6; }
+  .box.external   { border-left-color: #64748B; }
+  .box.decision { border-left-color: #EAB308; background: #FEFCE8; }
+  .box.cross { border-left-color: #A855F7; background: #FAF5FF; }
+  .box-title { font-weight: 600; font-size: 12.5px; color: #0F172A; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .box-desc { font-size: 11.5px; color: #475569; }
+  .box-file { font-size: 10px; color: #94A3B8; font-family: 'SF Mono', Menlo, Consolas, monospace; margin-top: 3px; word-break: break-all; }
+  .box code { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; background: #F1F5F9; padding: 1px 4px; border-radius: 3px; color: #334155; word-break: break-word; }
+  .box-desc code { word-break: break-word; }
+  .badge { display: inline-block; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; }
+  .badge.migrated { background: #D1FAE5; color: #065F46; }
+  .badge.legacy   { background: #FEE2E2; color: #991B1B; }
+  .badge.mixed    { background: #FEF3C7; color: #92400E; }
+  .badge.step     { background: #E0E7FF; color: #3730A3; font-size: 10px; }
+  .badge.cross    { background: #F3E8FF; color: #6B21A8; }
+  .arrow { color: #64748B; font-size: 22px; line-height: 1; margin: 1px 0; text-align: center; }
+  .fn-card { margin-top: 28px; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .fn-card-header { background: linear-gradient(to right, #0F172A, #1E293B); color: white; padding: 14px 20px 14px 44px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; cursor: pointer; position: relative; user-select: none; transition: background 0.15s; }
+  .fn-card-header .fn-title { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+  .fn-card-header .fn-title code { background: rgba(255,255,255,0.15); padding: 3px 8px; border-radius: 4px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 13px; }
+  .fn-card-header .fn-loc { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; color: #CBD5E1; }
+  .fn-card-header:hover { background: linear-gradient(to right, #1E293B, #334155); }
+  .fn-card-header::before {
+    content: "▾";
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+    font-size: 14px;
+    transition: transform 0.2s ease;
+    line-height: 1;
+  }
+  .fn-card.collapsed .fn-card-header::before {
+    transform: translateY(-50%) rotate(-90deg);
+  }
+  .fn-card.collapsed .fn-card-body { display: none; }
+  .fn-card-body { padding: 20px; }
+  .fn-signature { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; background: #F1F5F9; padding: 8px 12px; border-radius: 6px; color: #334155; margin-bottom: 16px; overflow-x: auto; }
+  .fn-purpose { font-size: 13px; color: #475569; margin-bottom: 12px; padding: 10px 14px; background: #EFF6FF; border-left: 3px solid #3B82F6; border-radius: 6px; }
+  .fn-friendly { font-size: 13px; color: #334155; margin-bottom: 20px; padding: 12px 14px 12px 44px; background: #F0FDF4; border-left: 3px solid #10B981; border-radius: 6px; position: relative; line-height: 1.55; }
+  .fn-friendly::before { content: "💬"; position: absolute; left: 14px; top: 10px; font-size: 18px; }
+  .fn-friendly strong { color: #065F46; }
+
+  /* Step-level friendly summary (page-wide, appears after page-sub) */
+  .step-friendly {
+    font-size: 13.5px;
+    color: #334155;
+    margin-bottom: 28px;
+    padding: 16px 18px 16px 52px;
+    background: #F0FDF4;
+    border-left: 4px solid #10B981;
+    border-radius: 10px;
+    position: relative;
+    line-height: 1.6;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.08);
+  }
+  .step-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 18px;
+    top: 14px;
+    font-size: 22px;
+  }
+  .step-friendly-title {
+    font-weight: 700;
+    color: #065F46;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 8px;
+  }
+  .step-friendly ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .step-friendly li {
+    margin-bottom: 6px;
+  }
+  .step-friendly li:last-child {
+    margin-bottom: 0;
+  }
+  .step-friendly strong {
+    color: #065F46;
+  }
+  .step-friendly code {
+    background: #DCFCE7;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: #065F46;
+  }
+  .step-friendly em {
+    color: #047857;
+    font-style: italic;
+  }
+
+  .fn-body-cols { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr); gap: 20px; }
+  @media (max-width: 900px) { .fn-body-cols { grid-template-columns: 1fr; } }
+  .fn-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .fn-asides { display: flex; flex-direction: column; gap: 12px; }
+  .aside { background: #FEF3C7; border-left: 4px solid #F59E0B; border-radius: 6px; padding: 10px 12px; font-size: 11.5px; color: #78350F; }
+  .aside.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .aside.warn { background: #FEE2E2; border-left-color: #EF4444; color: #991B1B; }
+  .aside.helper { background: #F3E8FF; border-left-color: #A855F7; color: #6B21A8; }
+  .aside-title { font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+  .aside code { background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 10.5px; word-break: break-word; }
+  .cascade { background: #FEFCE8; border: 1px dashed #EAB308; border-radius: 8px; padding: 12px; margin: 6px 0; }
+  .cascade-title { font-size: 11px; font-weight: 700; color: #713F12; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .cascade-step { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; padding: 6px 8px; background: white; border-radius: 6px; margin-bottom: 4px; font-size: 11.5px; }
+  .cascade-step .cond { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; color: #334155; }
+  .cascade-step .result { font-weight: 700; font-size: 10.5px; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+  .cascade-step .result.pass  { background: #D1FAE5; color: #065F46; }
+  .cascade-step .result.deny  { background: #FEE2E2; color: #991B1B; }
+  .cascade-step .result.next  { background: #E0E7FF; color: #3730A3; }
+  .cascade-step .result.call  { background: #FEF3C7; color: #78350F; }
+  .cascade-num { background: #EAB308; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+  .nested-flow { margin: 6px 0; padding: 12px; background: #F0FDF4; border: 1px dashed #10B981; border-radius: 8px; }
+  .nested-flow-title { font-size: 10.5px; font-weight: 700; color: #065F46; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .code-block { background: #0F172A; color: #E2E8F0; padding: 12px 16px; border-radius: 6px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; line-height: 1.6; overflow-x: auto; margin: 6px 0; }
+  .code-block .k { color: #93C5FD; }
+  .code-block .s { color: #86EFAC; }
+  .code-block .c { color: #64748B; font-style: italic; }
+  .code-block .t { color: #FDE68A; }
+  .note { background: #FEF3C7; border-left: 4px solid #F59E0B; padding: 12px 16px; border-radius: 6px; font-size: 12.5px; color: #78350F; margin: 20px 0; }
+  .note.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .note code { background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; }
+  .page-footer-nav { margin-top: 48px; padding: 16px; background: white; border-radius: 10px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-nav">
+    <div class="breadcrumb">
+      <a href="../index.html">📋 Execução de Agente</a>
+      <span class="sep">›</span>
+      <span>Passo 3.2 — Detalhamento</span>
+    </div>
+    <a href="../index.html#step-3-2" class="back-btn">← Voltar ao diagrama</a>
+  </div>
+
+  <div class="page-header">
+    <span class="icon">🔎</span>
+    <h1>Passo 3.2 — Busca do nó + previewResponses cache</h1>
+  </div>
+  <div class="page-sub">
+    Bloco em <code>flux.service.ts:3240-3278</code>. Recupera o objeto <code>node</code> completo (com data mutada por passos anteriores) do array <code>myUpdatedNodes</code>, marca o id como processado e prepara o cache local <code>responses</code> (últimas 10 preview responses).
+  </div>
+
+  <!-- Step friendly summary -->
+  <div class="step-friendly">
+    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <ul>
+      <li><strong>Abre a pasta viva do funcionário:</strong> o scheduler entregou só um <code>id</code> em 3.1 — agora <code>myUpdatedNodes.find</code> devolve o <em>node inteiro</em>, como <strong>referência viva</strong> do array, com todas as mutações que handlers anteriores já fizeram (schema, contentData, previewResponses).</li>
+      <li><strong>Skip silencioso se sumiu:</strong> se o <code>find</code> não achar (bug latente sem repro), o loop <em>não crasha</em> — <code>if (node) { ... }</code> engole o caso e pula pra próxima iteração. Custo é <code>O(n)</code> por nó — em agentes com 1000+ nós vira quadrático.</li>
+      <li><strong>Carimba o ponto e tira foto dos contadores:</strong> <code>processedNodeIds.add(id)</code> vira audit trail pra Fase 4.1; <code>genericTokensBefore/genericCostBefore</code> guardam snapshot dos acumuladores globais pra calcular o <em>delta desse nó</em> depois em 3.9; <code>nodeStartedAtMs</code> marca o timer pra <code>durationMs</code>.</li>
+      <li><strong>Clona o carrossel de preview responses:</strong> lê <code>node.data.previewResponses</code> pra um array local com até 10 itens (ring buffer com bug <code>=== 10</code> em vez de <code>&gt;= 10</code>). Só handlers <em>legacy</em> usam esse cache — path Temporal persiste em <code>node_executions</code>.</li>
+      <li><strong>Saída:</strong> <code>node</code> (ref viva), <code>responses</code> (array local), snapshots de tokens/cost e timer de duração — tudo pronto pro dispatch em 3.5. Zero I/O.</li>
+    </ul>
+  </div>
+
+  <div class="note info">
+    <strong>Contexto:</strong> o scheduler devolveu só um <code>id</code> em 3.1. Agora precisamos do <em>node inteiro</em> — inclusive campos <code>data</code> que já foram atualizados por nós anteriores neste mesmo run (ex: schema mutado, contentData preenchido). Essa referência é <strong>viva</strong>: mutar <code>node.data</code> aqui reflete no array pai (é o mesmo objeto), o que várias handlers dependem depois.
+  </div>
+
+  <!-- Overview chain -->
+  <div class="overview-mini">
+    <div class="overview-mini-title">Cadeia de operações em 3.2</div>
+    <div class="overview-chain">
+      <a href="#fn-a" class="overview-chip"><span class="lbl">A</span>myUpdatedNodes.find</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>processedNodeIds.add + bookkeeping</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>previewResponses cache</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>Ring buffer (max 10)</a>
+    </div>
+    <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
+      Resultado: <code>node</code> (ref viva), <code>responses</code> (array local com até 10 itens do histórico), tokens/cost snapshot pré-execução. Se <code>node</code> não for encontrado, o loop <em>não</em> lança erro — apenas skipa o body inteiro.
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION A: myUpdatedNodes.find -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-a">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#EAB308;color:white">A</span>
+        <code>myUpdatedNodes.find(node =&gt; node.id === id)</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:3241</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        const node = myUpdatedNodes.find(node =&gt; node.id === id);
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Busca linear pelo id no array <code>myUpdatedNodes</code>. Devolve <em>referência</em> — não cópia. Qualquer mutação em <code>node.data</code> nas etapas seguintes atinge o mesmo objeto que o próximo <code>find</code> vai encontrar.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> é o <em>arquivo vivo</em> do run. O scheduler te deu só uma etiqueta (id), mas você precisa da pasta inteira do funcionário — com todos os documentos que outros nós já mexeram nele: schema atualizado, contentData preenchido, previewResponses acumulados. O <code>find</code> abre essa pasta no arquivo compartilhado (<code>myUpdatedNodes</code>) e te entrega a <strong>pasta original, não uma fotocópia</strong>. Isso significa que qualquer coisa que você riscar ou escrever nela vai aparecer pro próximo cara que abrir a mesma pasta. É o que permite handlers escreverem <code>node.data.text = 'resposta do LLM'</code> e o próximo nó já ver essa saída. Detalhe importante: se o <code>find</code> não achar (algum handler removeu o nó do array mas o scheduler ainda tem esse id na fila — bug latente sem repro conhecido), o loop <em>não crasha</em> — apenas pula pra próxima iteração com um <code>if (node) { ... }</code> silencioso. E outra coisa: é <strong>O(n)</strong> — em agentes com 1000+ nós, essa busca linear a cada iteração vai virar quadrática. Barato hoje, ofensor amanhã.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">A1</span> Array de nós mutáveis do run</div>
+            <div class="box-desc">
+              <code>myUpdatedNodes</code> foi inicializado no início do <code>apiV2()</code> a partir de <code>newFlows</code> (nós carregados em 1.3) e é <strong>reatribuído</strong> por vários handlers ao longo do loop:
+              <br>• handlers Temporal: <code>myUpdatedNodes = result.myUpdatedNodes</code> (novo array)
+              <br>• handlers inline: <code>myUpdatedNodes = [...nodes]</code>
+              <br>• arrayNode: reescreve durante iteração
+            </div>
+            <div class="box-file">flux.service.ts:3241 · inicializado em ~3146-3182</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box decision">
+            <div class="box-title"><span class="badge step">A2</span> node encontrado?</div>
+            <div class="box-desc">
+              <code>if (node) { ... }</code> — todo o corpo do loop está dentro desse guard. Se <code>find</code> retornar <code>undefined</code>, o loop pula pra próxima iteração sem executar 3.3-3.11.
+              <br><br>Por que isso aconteceria? Se um handler removeu um id do array mas o scheduler ainda tem esse id em <code>ready</code> (bug latente, sem repro conhecido).
+            </div>
+            <div class="box-file">flux.service.ts:3244</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Custo O(n) por nó</div>
+            <code>Array.find</code> é linear no tamanho de <code>myUpdatedNodes</code>. Em agentes com 100+ nós, isso é 100 iterações internas × 100 nós no loop = 10.000 comparações — barato hoje, mas escalar pra 1.000+ nós vira O(n²).
+            <br><br>Um <code>Map&lt;id, node&gt;</code> resolveria em O(1), mas exigiria manutenção sempre que <code>myUpdatedNodes</code> é reatribuído.
+          </div>
+
+          <div class="aside info">
+            <div class="aside-title">🎯 Reatribuição vs mutação</div>
+            Alguns handlers <strong>reatribuem</strong> <code>myUpdatedNodes</code> (novo array). Outros mutam campos in-place em <code>node.data</code>. As duas coisas convivem — pra saber qual precisa ler o handler específico. Consistência não é garantida.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 Silent skip quando node = undefined</div>
+            O guard <code>if (node)</code> engole o caso sem log. Se o scheduler agendou um id que não existe mais em <code>myUpdatedNodes</code>, o loop apenas prossegue pro próximo — sem marcar como completed nem dead. Isso pode causar warning na Fase 4 (nós não-processados) mas sem crash.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION B: bookkeeping -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-b">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#3B82F6;color:white">B</span>
+        <code>processedNodeIds.add + snapshot de tokens/cost</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:3245-3250</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        processedNodeIds.add(id); lastExecutedNodeId = id; genericTokensBefore = totalTokensUsed; genericCostBefore = totalCost; nodeStartedAtMs = Date.now();
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Registra pra usos posteriores: (i) que este id foi visto pelo loop (usado no aviso de Fase 4.1 sobre nós não-processados), (ii) snapshot de <em>quantos tokens/custo</em> já foram gastos <strong>antes</strong> deste nó — o delta é atribuído ao nó em 3.7 e 3.9.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> é o <em>carimbo de entrada</em> do funcionário no ponto. Antes do trabalho começar, o sistema anota 4 coisas: (1) "esse cara passou por aqui hoje" (<code>processedNodeIds</code>) — vira audit trail pra Fase 4 detectar nós que ficaram órfãos; (2) "esse foi o último a entrar" (<code>lastExecutedNodeId</code>) — pro caso do run explodir, o catch top-level saber onde parou; (3) snapshot do <em>total de tokens/custo já gastos</em> no run inteiro <strong>até esse momento</strong> — pra depois do nó rodar, o passo 3.9 fazer a subtração <code>totalTokensUsed - genericTokensBefore</code> e saber exatamente quantos tokens esse nó específico consumiu; (4) marca o timestamp de início pra calcular <code>durationMs</code>. Nada disso executa o nó — é só preparação de contadores. O ponto sutil é o snapshot: os acumuladores <code>totalTokensUsed</code>/<code>totalCost</code> são <em>globais do run</em>, atualizados via callback <code>onUpdateTokens</code> durante streaming de LLM. A única forma de saber "quanto foi só desse nó" é fazer esse snapshot antes-depois — pattern simples mas essencial pro billing por nó.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="code-block">
+processedNodeIds.<span class="t">add</span>(id);
+lastExecutedNodeId = id;
+<span class="k">let</span> genericRunLogNode: RunLogNode | <span class="k">null</span> = <span class="k">null</span>;
+<span class="k">let</span> genericTokensBefore = totalTokensUsed;   <span class="c">// snapshot pré-execução</span>
+<span class="k">let</span> genericCostBefore = totalCost;
+<span class="k">const</span> nodeStartedAtMs = <span class="t">Date</span>.<span class="t">now</span>();       <span class="c">// timer p/ durationMs</span>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box cross">
+            <div class="box-title"><span class="badge step">B1</span> processedNodeIds — Set&lt;string&gt;</div>
+            <div class="box-desc">
+              Inicializado como <code>new Set&lt;string&gt;()</code> no bloco de "variáveis mutáveis" (passo 2.2). Cresce a cada iteração aqui. Não é usado pra decidir schedule (isso é o <code>scheduled</code> set do scheduler), mas sim pra <strong>audit trail</strong> em Fase 4:
+              <br>• 4.1 loga warning se <code>nodeIds - completed - dead - processedNodeIds ≠ ∅</code>
+              <br>• Usado pra debug quando o run terminou "estranho"
+            </div>
+            <div class="box-file">flux.service.ts:3245, 4735-4778</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box cross">
+            <div class="box-title"><span class="badge step">B2</span> Snapshot tokens/cost — base pro delta por nó</div>
+            <div class="box-desc">
+              <code>totalTokensUsed</code> e <code>totalCost</code> são acumuladores <strong>globais do run</strong>. Cada handler pode chamar <code>onUpdateTokens(delta)</code> várias vezes (streaming, retries).
+              <br><br>Em 3.9 (<code>endNode</code>), o delta é calculado: <code>tokens = totalTokensUsed - genericTokensBefore</code>. Isso é o custo <em>desse nó específico</em>, atribuído ao <code>RunLogNode</code>.
+            </div>
+            <div class="box-file">flux.service.ts:3248-3249, 4537-4546</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Por que Date.now() aqui e não em 3.4?</div>
+            <code>nodeStartedAtMs</code> é usado no branch de cancelamento (linha 4525: <code>elapsedMs: Date.now() - nodeStartedAtMs</code>) e no <code>durationMs</code> do RunLogNode. Marcar aqui garante que o timer captura <em>toda</em> a preparação do nó (substitution, RunLog, dispatch), não só a execução propriamente.
+          </div>
+
+          <div class="aside">
+            <div class="aside-title">📎 lastExecutedNodeId</div>
+            Usado pelo catch top-level (5.1) pra reportar <em>onde</em> parou quando algo explode. Também aparece em logs de webhook de erro. É uma string, atualizada a cada iteração — se o run crasha no meio de um nó, esse campo aponta pra ele.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 genericRunLogNode = null</div>
+            Inicializado como <code>null</code>. Vai ser preenchido em 3.4 <em>exceto</em> pra <code>fluxBox</code>/<code>libraryNode</code> (sub-run anchors — o coletor cria um documento aninhado em vez de um nó simples). Depois, 3.9 só chama <code>endNode</code> se <code>genericRunLogNode</code> ficou não-nulo.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION C: previewResponses cache -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-c">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#10B981;color:white">C</span>
+        <code>previewResponses (leitura do cache in-JSONB)</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:3270-3274</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        let responses = []; if (node?.data?.previewResponses?.length) { responses = [...node?.data?.previewResponses]; }
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Copia (spread) as respostas de preview <em>já persistidas em <code>flows_nodes.data</code></em> pra um array local. Handlers de nós que produzem preview (voiceBoxNode, imageGenerator, audioReaderNode, etc.) usam esse array como base pra montar o próximo item do histórico.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> é o <em>carrossel de últimas fotos</em> do nó — pense num painel na UI que mostra "veja as últimas 10 respostas que esse nó gerou". Esses históricos vivem <strong>dentro do JSONB de <code>flows_nodes.data.previewResponses</code></strong>, e o loop clona esse array pro escopo local no início de cada execução. Handlers que produzem preview (TTS, imagem, áudio, HTML) recebem esse array como argumento, adicionam o novo item no fim, e no passo 3.6/L4 gravam de volta no banco. Se já tiver 10 itens, o mais antigo é descartado (<code>shift</code>) pra manter o carrossel no tamanho — <em>mas</em> a checagem é <code>=== 10</code>, não <code>&gt;= 10</code>, então se por bug o array chegou com 11+ ele só remove um e a próxima persistência já enche demais. Bug latente. O ponto crítico pra migração: <code>previewResponses</code> é o <strong>principal ofensor de perf de FE</strong> em agentes grandes. Cada item pode carregar texto longo, imagem base64, contentData inteiro — × 10 versões por nó × 100 nós = 1000 blobs vivos no JSONB. Handlers migrados pro worker (textGenerator, scripting, etc.) já não recebem esse array — persistem em <code>node_executions.outputData</code>, que é o padrão desejado.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="code-block">
+<span class="k">let</span> responses = [];
+
+<span class="k">if</span> (node?.data?.previewResponses?.length) {
+  responses = [...node?.data?.previewResponses];   <span class="c">// shallow clone</span>
+}
+
+<span class="k">if</span> (responses.length === <span class="s">10</span>) {
+  responses.<span class="t">shift</span>();                        <span class="c">// remove o mais antigo</span>
+}
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="cascade">
+            <div class="cascade-title">🪜 Estado do array responses</div>
+            <div class="cascade-step">
+              <span class="cascade-num">1</span>
+              <span class="cond">node.data.previewResponses ausente/vazio</span>
+              <span class="result pass">responses = [] (começa vazio)</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">2</span>
+              <span class="cond">tem 1-9 itens</span>
+              <span class="result pass">clone shallow, sem shift</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">3</span>
+              <span class="cond">tem exatamente 10 itens</span>
+              <span class="result deny">shift() — descarta o [0]</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">4</span>
+              <span class="cond">tem 11+ itens (não deveria acontecer)</span>
+              <span class="result deny">shift() só uma vez — bug latente!</span>
+            </div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">C1</span> Passado por args para handlers</div>
+            <div class="box-desc">
+              O array <code>responses</code> é passado a handlers como <code>voiceBoxNode</code>, <code>audioReaderNode</code>, <code>commandContentNode</code>, <code>imageGenerator</code>. Cada um <code>push</code>-a o novo item e grava <code>node.data.previewResponses = responses</code> na saída — persistido em <code>flows_nodes.data</code> no passo 3.6/L4.
+            </div>
+            <div class="box-file">flux.service.ts:3372, 3651, 6972, 7911</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Ring buffer só cuida de len === 10</div>
+            O check é <code>if (responses.length === 10)</code>. Se por algum bug o array chegou com 11+ itens (ex: dois handlers escreveram em ordem estranha), o shift acontece <em>uma vez só</em>, permanecendo com 10 ou mais na próxima persistência.
+            <br><br>Não é robusto. Deveria ser <code>while (responses.length &gt;= 10)</code>.
+          </div>
+
+          <div class="aside info">
+            <div class="aside-title">🎯 Por que 10?</div>
+            Limite arbitrário pra evitar que <code>flows_nodes.data</code> cresça indefinidamente por nó com histórico de reruns manuais. É o "carrossel de últimas respostas" que aparece na UI do canvas — permite o usuário navegar entre execuções recentes sem persistir tudo em <code>node_executions</code>.
+          </div>
+
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Origem do JSONB gordo</div>
+            <code>previewResponses</code> é <em>o</em> campo campeão de RAM/perf pesada em <code>flows_nodes.data</code>. Cada item pode ter texto longo, image base64, contentData completo. Manter 10 versões por nó × 100 nós = 1000 blobs vivos no JSONB. É o motivo de agentes grandes terem FE travando ao abrir o canvas.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 Path Temporal não usa isso</div>
+            Handlers migrados pro worker (<code>textGenerator</code>, <code>scripting</code>, etc.) <em>não recebem</em> o array <code>responses</code>. O worker persiste output em <code>node_executions.outputData</code> — não replica em <code>flows_nodes.data.previewResponses</code>. Só o path inline (legacy) mantém esse cache.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="note info" style="margin-top:32px">
+    <strong>Resumo — o que sai de 3.2:</strong>
+    <br>• <code>node</code> — referência viva do array <code>myUpdatedNodes</code> (mutável)
+    <br>• <code>processedNodeIds</code> ganhou 1 entrada (audit trail)
+    <br>• <code>lastExecutedNodeId</code> = id do nó atual
+    <br>• <code>genericTokensBefore</code> / <code>genericCostBefore</code> — snapshot pra calcular delta em 3.7
+    <br>• <code>nodeStartedAtMs</code> — timer pra <code>durationMs</code> e telemetria de cancelamento
+    <br>• <code>responses</code> — array local com até 10 preview responses (só usado pelo path inline)
+    <br>• Nenhum I/O: 100% in-memory
+  </div>
+
+  <div class="note">
+    <strong>Observações para migração:</strong>
+    <br>• <code>myUpdatedNodes.find</code> é acoplado ao modelo "backend é orquestrador único". No worker, cada activity recebe o node por payload; sem array vivo, sem <code>find</code>.
+    <br>• <strong>previewResponses precisa sair de <code>flows_nodes.data</code></strong>. É o principal ofensor de perf de FE (memória <code>[[project_jsonb_fat_fields]]</code>). Migração vai levá-lo pra <code>node_executions</code>, o que já é o padrão do path Temporal.
+    <br>• O snapshot de tokens/cost via variável local do loop <strong>não sobrevive</strong> num modelo onde cada nó é uma activity isolada — o worker cobra individualmente via HTTP <code>/worker/charge-tokens</code> (passo W7), e o backend agrega depois via <code>sumChargesByExecution</code> (T6).
+    <br>• Bookkeeping (<code>processedNodeIds</code>, <code>lastExecutedNodeId</code>) hoje é usado em Fase 4/5 pra warnings e diagnóstico. No worker, essa informação pode vir do próprio <code>WorkflowHistory</code> do Temporal (mais confiável). É essencial mas simples de reimplementar.
+    <br>• O bug do ring buffer (<code>=== 10</code> em vez de <code>&gt;= 10</code>) merece uma linha no plano de migração pra corrigir antes de portar.
+  </div>
+
+  <div class="page-footer-nav">
+    <a href="../index.html#step-3-2" class="back-btn">← Voltar ao diagrama principal</a>
+  </div>
+
+</div>
+<script>
+(function() {
+  function toggle(card) {
+    if (card) card.classList.toggle('collapsed');
+  }
+  function expand(card) {
+    if (card && card.classList.contains('collapsed')) card.classList.remove('collapsed');
+  }
+  document.querySelectorAll('.fn-card-header').forEach(function(header) {
+    header.addEventListener('click', function(e) {
+      if (e.target.closest('a')) return;
+      toggle(header.parentElement);
+    });
+  });
+  document.querySelectorAll('a[href^="#fn-"]').forEach(function(link) {
+    link.addEventListener('click', function() {
+      var id = link.getAttribute('href').slice(1);
+      expand(document.getElementById(id));
+    });
+  });
+  if (window.location.hash && window.location.hash.startsWith('#fn-')) {
+    expand(document.querySelector(window.location.hash));
+  }
+  window.addEventListener('hashchange', function() {
+    if (window.location.hash.startsWith('#fn-')) {
+      expand(document.querySelector(window.location.hash));
+    }
+  });
+})();
+</script>
+</body>
+</html>

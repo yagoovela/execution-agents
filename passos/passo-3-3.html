@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Passo 3.3 — applySubstitutionToObject | Detalhamento</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F1F5F9; color: #0F172A; margin: 0; padding: 32px 24px 80px; line-height: 1.4; }
+  .container { max-width: 1500px; margin: 0 auto; }
+  .page-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; padding: 12px 16px; background: white; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); flex-wrap: wrap; }
+  .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748B; }
+  .breadcrumb a { color: #3B82F6; text-decoration: none; font-weight: 500; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #CBD5E1; }
+  .back-btn { display: inline-flex; align-items: center; gap: 6px; background: #0F172A; color: white; padding: 8px 14px; border-radius: 8px; text-decoration: none; font-size: 12.5px; font-weight: 600; }
+  .page-header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+  .page-header .icon { font-size: 32px; }
+  .page-header h1 { margin: 0; font-size: 26px; color: #0F172A; letter-spacing: -0.4px; }
+  .page-sub { color: #64748B; font-size: 13px; margin-bottom: 24px; padding-left: 46px; }
+  .page-sub code { background: #E2E8F0; padding: 1px 6px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; color: #334155; }
+  .overview-mini { background: white; padding: 16px 18px; border-radius: 10px; margin-bottom: 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .overview-mini-title { font-size: 12px; font-weight: 700; color: #334155; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px; }
+  .overview-chain { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .overview-chip { background: #F8FAFC; padding: 6px 12px; border-radius: 6px; border-left: 3px solid #3B82F6; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; font-weight: 600; color: #0F172A; text-decoration: none; display: inline-block; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+  .overview-chip .lbl { display: block; font-size: 9.5px; color: #64748B; font-weight: 500; margin-bottom: 2px; font-family: inherit; text-transform: uppercase; letter-spacing: 0.5px; }
+  .overview-sep { color: #94A3B8; font-size: 18px; font-weight: bold; }
+  .box { background: white; border-radius: 8px; padding: 9px 13px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 4px solid #94A3B8; width: 100%; max-width: 100%; }
+  .box.backend    { border-left-color: #3B82F6; }
+  .box.worker     { border-left-color: #10B981; }
+  .box.db         { border-left-color: #F59E0B; }
+  .box.redis      { border-left-color: #EF4444; }
+  .box.s3         { border-left-color: #8B5CF6; }
+  .box.external   { border-left-color: #64748B; }
+  .box.decision { border-left-color: #EAB308; background: #FEFCE8; }
+  .box.cross { border-left-color: #A855F7; background: #FAF5FF; }
+  .box-title { font-weight: 600; font-size: 12.5px; color: #0F172A; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .box-desc { font-size: 11.5px; color: #475569; }
+  .box-file { font-size: 10px; color: #94A3B8; font-family: 'SF Mono', Menlo, Consolas, monospace; margin-top: 3px; word-break: break-all; }
+  .box code { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; background: #F1F5F9; padding: 1px 4px; border-radius: 3px; color: #334155; word-break: break-word; }
+  .box-desc code { word-break: break-word; }
+  .badge { display: inline-block; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; }
+  .badge.migrated { background: #D1FAE5; color: #065F46; }
+  .badge.legacy   { background: #FEE2E2; color: #991B1B; }
+  .badge.mixed    { background: #FEF3C7; color: #92400E; }
+  .badge.step     { background: #E0E7FF; color: #3730A3; font-size: 10px; }
+  .badge.cross    { background: #F3E8FF; color: #6B21A8; }
+  .arrow { color: #64748B; font-size: 22px; line-height: 1; margin: 1px 0; text-align: center; }
+  .fn-card { margin-top: 28px; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .fn-card-header { background: linear-gradient(to right, #0F172A, #1E293B); color: white; padding: 14px 20px 14px 44px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; cursor: pointer; position: relative; user-select: none; transition: background 0.15s; }
+  .fn-card-header .fn-title { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+  .fn-card-header .fn-title code { background: rgba(255,255,255,0.15); padding: 3px 8px; border-radius: 4px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 13px; }
+  .fn-card-header .fn-loc { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; color: #CBD5E1; }
+  .fn-card-header:hover { background: linear-gradient(to right, #1E293B, #334155); }
+  .fn-card-header::before {
+    content: "▾";
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+    font-size: 14px;
+    transition: transform 0.2s ease;
+    line-height: 1;
+  }
+  .fn-card.collapsed .fn-card-header::before {
+    transform: translateY(-50%) rotate(-90deg);
+  }
+  .fn-card.collapsed .fn-card-body { display: none; }
+  .fn-card-body { padding: 20px; }
+  .fn-signature { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; background: #F1F5F9; padding: 8px 12px; border-radius: 6px; color: #334155; margin-bottom: 16px; overflow-x: auto; }
+  .fn-purpose { font-size: 13px; color: #475569; margin-bottom: 12px; padding: 10px 14px; background: #EFF6FF; border-left: 3px solid #3B82F6; border-radius: 6px; }
+  .fn-friendly { font-size: 13px; color: #334155; margin-bottom: 20px; padding: 12px 14px 12px 44px; background: #F0FDF4; border-left: 3px solid #10B981; border-radius: 6px; position: relative; line-height: 1.55; }
+  .fn-friendly::before { content: "💬"; position: absolute; left: 14px; top: 10px; font-size: 18px; }
+  .fn-friendly strong { color: #065F46; }
+
+  /* Step-level friendly summary (page-wide, appears after page-sub) */
+  .step-friendly {
+    font-size: 13.5px;
+    color: #334155;
+    margin-bottom: 28px;
+    padding: 16px 18px 16px 52px;
+    background: #F0FDF4;
+    border-left: 4px solid #10B981;
+    border-radius: 10px;
+    position: relative;
+    line-height: 1.6;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.08);
+  }
+  .step-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 18px;
+    top: 14px;
+    font-size: 22px;
+  }
+  .step-friendly-title {
+    font-weight: 700;
+    color: #065F46;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 8px;
+  }
+  .step-friendly ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .step-friendly li {
+    margin-bottom: 6px;
+  }
+  .step-friendly li:last-child {
+    margin-bottom: 0;
+  }
+  .step-friendly strong {
+    color: #065F46;
+  }
+  .step-friendly code {
+    background: #DCFCE7;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: #065F46;
+  }
+  .step-friendly em {
+    color: #047857;
+    font-style: italic;
+  }
+
+  .fn-body-cols { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr); gap: 20px; }
+  @media (max-width: 900px) { .fn-body-cols { grid-template-columns: 1fr; } }
+  .fn-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .fn-asides { display: flex; flex-direction: column; gap: 12px; }
+  .aside { background: #FEF3C7; border-left: 4px solid #F59E0B; border-radius: 6px; padding: 10px 12px; font-size: 11.5px; color: #78350F; }
+  .aside.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .aside.warn { background: #FEE2E2; border-left-color: #EF4444; color: #991B1B; }
+  .aside.helper { background: #F3E8FF; border-left-color: #A855F7; color: #6B21A8; }
+  .aside-title { font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+  .aside code { background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 10.5px; word-break: break-word; }
+  .cascade { background: #FEFCE8; border: 1px dashed #EAB308; border-radius: 8px; padding: 12px; margin: 6px 0; }
+  .cascade-title { font-size: 11px; font-weight: 700; color: #713F12; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .cascade-step { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; padding: 6px 8px; background: white; border-radius: 6px; margin-bottom: 4px; font-size: 11.5px; }
+  .cascade-step .cond { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; color: #334155; }
+  .cascade-step .result { font-weight: 700; font-size: 10.5px; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+  .cascade-step .result.pass  { background: #D1FAE5; color: #065F46; }
+  .cascade-step .result.deny  { background: #FEE2E2; color: #991B1B; }
+  .cascade-step .result.next  { background: #E0E7FF; color: #3730A3; }
+  .cascade-step .result.call  { background: #FEF3C7; color: #78350F; }
+  .cascade-num { background: #EAB308; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+  .nested-flow { margin: 6px 0; padding: 12px; background: #F0FDF4; border: 1px dashed #10B981; border-radius: 8px; }
+  .nested-flow-title { font-size: 10.5px; font-weight: 700; color: #065F46; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .code-block { background: #0F172A; color: #E2E8F0; padding: 12px 16px; border-radius: 6px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; line-height: 1.6; overflow-x: auto; margin: 6px 0; }
+  .code-block .k { color: #93C5FD; }
+  .code-block .s { color: #86EFAC; }
+  .code-block .c { color: #64748B; font-style: italic; }
+  .code-block .t { color: #FDE68A; }
+  .note { background: #FEF3C7; border-left: 4px solid #F59E0B; padding: 12px 16px; border-radius: 6px; font-size: 12.5px; color: #78350F; margin: 20px 0; }
+  .note.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .note code { background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; }
+  .page-footer-nav { margin-top: 48px; padding: 16px; background: white; border-radius: 10px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .field-table { width: 100%; border-collapse: collapse; font-size: 11px; margin: 8px 0; }
+  .field-table th { text-align: left; padding: 6px 8px; background: #F1F5F9; color: #334155; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; font-size: 10px; border-bottom: 1px solid #CBD5E1; }
+  .field-table td { padding: 5px 8px; border-bottom: 1px solid #F1F5F9; vertical-align: top; }
+  .field-table td:first-child { font-family: 'SF Mono', Menlo, Consolas, monospace; color: #0F172A; font-weight: 600; white-space: nowrap; font-size: 10.5px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-nav">
+    <div class="breadcrumb">
+      <a href="../index.html">📋 Execução de Agente</a>
+      <span class="sep">›</span>
+      <span>Passo 3.3 — Detalhamento</span>
+    </div>
+    <a href="../index.html#step-3-3" class="back-btn">← Voltar ao diagrama</a>
+  </div>
+
+  <div class="page-header">
+    <span class="icon">🧩</span>
+    <h1>Passo 3.3 — applySubstitutionToObject(node, schema)</h1>
+  </div>
+  <div class="page-sub">
+    Bloco em <code>flux.service.ts:3280-3284</code> · engine em <code>node-reference-substitution.service.ts:145-167</code>. Percorre <em>recursivamente</em> o <code>node</code> e substitui todo <code>{{...}}</code> pelo valor real do <code>nodeSubstitutionSchema</code> (montado em 2.3, mutado ao longo do loop em 3.6).
+  </div>
+
+  <!-- Step friendly summary -->
+  <div class="step-friendly">
+    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <ul>
+      <li><strong>Preenche todos os buracos <code>{{...}}</code>:</strong> pega o node cru (com placeholders tipo <code>"Escreva sobre {{tema}}"</code>) e devolve <code>processedNode</code> com tudo resolvido em texto concreto. É <em>o</em> ponto onde referências entre nós viram valores reais.</li>
+      <li><strong>Walker recursivo sem whitelist:</strong> <code>applySubstitutionToObject</code> desce a árvore inteira do node — strings passam pelo regex, arrays viram <code>.map</code> recursivo, objetos ganham container novo. Nunca muta o original — retorna uma <em>árvore paralela clonada</em>, o que preserva o node cru pra retry.</li>
+      <li><strong>Motor de placeholder navega paths com ponto:</strong> <code>replacePlaceholders</code> roda <code>/{{(.*?)}}/g</code>, splita por <code>.</code>, e vai andando no schema segmento a segmento. Se qualquer nó do path resolve <code>undefined</code>, deixa o placeholder <em>literal</em> no output — fallback silencioso intencional pra templates opcionais.</li>
+      <li><strong>Cada nó vira 3 chaves no schema:</strong> <em>stableKey</em> (UUID), <em>refKey</em> (id legacy com dots→underscore) e <em>labelKey</em> (label humano). Todas apontam pra mesma entry — o usuário pode escrever <code>{{writer}}</code>, <code>{{6d09d1...}}</code> ou o refKey e todos resolvem igual. Colisões entre labels de nós diferentes são first-write-wins (footgun).</li>
+      <li><strong>Handlers ignoram <code>processedNode</code> em partes:</strong> Temporal, voice, mcp usam <code>processedNode</code>; pull/push, condition, nodesBox, arrayNode, fluxBox usam <code>node</code> cru e fazem substitution interna própria — origem dos <strong>57 sync sites</strong> espalhados pelo código.</li>
+      <li><strong>Saída:</strong> <code>processedNode</code> resolvido (árvore paralela), <code>node</code> intocado. 100% síncrono, 100% in-memory — mas com memória gorda: schema × N nós × strings pode virar megabytes vivos.</li>
+    </ul>
+  </div>
+
+  <div class="note info">
+    <strong>Contexto:</strong> este é <strong>o</strong> ponto onde referências entre nós viram texto concreto. Antes: <code>node.data.prompt = "Escreva sobre {{tema}}"</code>. Depois: <code>processedNode.data.prompt = "Escreva sobre inteligência artificial"</code>. A função é síncrona e sem I/O — <em>toda</em> a resolução vem do schema in-memory (memória <code>[[project_substitution_engine]]</code>).
+  </div>
+
+  <!-- Overview chain -->
+  <div class="overview-mini">
+    <div class="overview-mini-title">Cadeia interna em 3.3</div>
+    <div class="overview-chain">
+      <a href="#fn-a" class="overview-chip"><span class="lbl">A</span>applySubstitutionToObject (recursão)</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>replacePlaceholders (regex + path)</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>Schema: 3 chaves por nó</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>processedNode (clone raso)</a>
+    </div>
+    <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
+      Resultado: <code>processedNode</code> — objeto novo com mesma estrutura de <code>node</code>, mas todo campo string teve seus placeholders resolvidos. O <code>node</code> original permanece intacto (não muta).
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION A: applySubstitutionToObject -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-a">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#EAB308;color:white">A</span>
+        <code>applySubstitutionToObject(obj, schema)</code>
+      </div>
+      <div class="fn-loc">node-reference-substitution.service.ts:145-167</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        applySubstitutionToObject(obj: any, schema: any): any
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Walker recursivo genérico. Cria uma <em>nova árvore</em> percorrendo <code>obj</code>. Sem whitelist de campos — aplica em <em>tudo</em> que for string. Sem clonagem prévia, sem deep-copy — o retorno é o próprio novo objeto montado nível-por-nível.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> é o <em>revisor de rascunho</em> — pega o texto do nó cheio de <code>{{...}}</code> ("Escreva sobre {{tema}} para {{publico}}") e devolve uma versão limpa, com todos os buracos preenchidos. Só que ao invés de percorrer o texto de forma tradicional, ele desce recursivo pela árvore inteira do <code>node</code>: se topa com string, chama o motor de substitution (fn B); se é array, percorre cada item; se é objeto, cria um <em>novo</em> objeto e revisa campo por campo. O importante é que <strong>nunca muta o original</strong> — o <code>node</code> que veio como argumento continua intacto (com seus <code>{{...}}</code>), e o retorno é uma árvore paralela clonada. Isso é o que garante que se o handler falhar no meio, o <code>node</code> original ainda tá disponível pra retry. Não tem whitelist — aplica em <em>todo</em> campo string, inclusive coisas internas como <code>_rawProviderResponse</code>, <code>_attempts</code>. Não tem limite de profundidade — patologicamente pode dar stack overflow, mas nós reais ficam em 3-4 níveis. Este é o <strong>coração da substitution engine</strong>: os 57 sync sites que a memória menciona (<code>[[project_substitution_engine]]</code>) são todos variações desse walker, um dos ofensores centrais que a migração pro worker precisa reescrever ou eliminar via prefetch.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="code-block">
+<span class="t">applySubstitutionToObject</span>(obj: <span class="k">any</span>, schema: <span class="k">any</span>): <span class="k">any</span> {
+  <span class="k">if</span> (!obj || !schema) <span class="k">return</span> obj;
+
+  <span class="k">if</span> (<span class="k">typeof</span> obj === <span class="s">'string'</span>) {
+    <span class="k">return</span> <span class="k">this</span>.<span class="t">replacePlaceholders</span>(obj, schema);
+  }
+
+  <span class="k">if</span> (<span class="t">Array</span>.<span class="t">isArray</span>(obj)) {
+    <span class="k">return</span> obj.<span class="t">map</span>(item =&gt; <span class="k">this</span>.<span class="t">applySubstitutionToObject</span>(item, schema));
+  }
+
+  <span class="k">if</span> (<span class="k">typeof</span> obj === <span class="s">'object'</span>) {
+    <span class="k">const</span> result = {};
+    <span class="k">for</span> (<span class="k">const</span> [key, value] <span class="k">of</span> <span class="t">Object</span>.<span class="t">entries</span>(obj)) {
+      result[key] = <span class="k">this</span>.<span class="t">applySubstitutionToObject</span>(value, schema);
+    }
+    <span class="k">return</span> result;
+  }
+
+  <span class="k">return</span> obj;   <span class="c">// number, boolean, null → inalterado</span>
+}
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="cascade">
+            <div class="cascade-title">🪜 Dispatch por tipo</div>
+            <div class="cascade-step">
+              <span class="cascade-num">1</span>
+              <span class="cond">obj === null/undefined OU schema falsy</span>
+              <span class="result pass">return obj (early)</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">2</span>
+              <span class="cond">typeof obj === 'string'</span>
+              <span class="result call">→ replacePlaceholders (fn B)</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">3</span>
+              <span class="cond">Array.isArray(obj)</span>
+              <span class="result call">.map(item =&gt; recursiva)</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">4</span>
+              <span class="cond">typeof obj === 'object'</span>
+              <span class="result call">novo {} + Object.entries loop</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">5</span>
+              <span class="cond">tipo primitivo (number/boolean)</span>
+              <span class="result pass">return obj inalterado</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Clonagem estrutural, não in-place</div>
+            Cada objeto/array retorna um <strong>novo container</strong> (<code>const result = {}</code>). O <code>node</code> original nunca é mutado — o retorno é uma árvore paralela. Isso é o que garante que <code>previewResponses</code> antigos (lidos em 3.2) não vazem pra <code>processedNode</code> depois de a saída ser reescrita.
+          </div>
+
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Sem whitelist, sem limite de profundidade</div>
+            A função aplica em <em>todos</em> os campos. Se <code>node.data</code> tem campos <em>internos</em> tipo <code>_rawProviderResponse</code>, <code>_attempts</code>, <code>_modelId</code>, eles também são copiados (e strings dentro também passam pelo regex).
+            <br><br>Sem <code>maxDepth</code>. Um <code>node.data</code> patologicamente profundo pode dar stack overflow, mas nós de flow ficam em 3-4 níveis.
+          </div>
+
+          <div class="aside">
+            <div class="aside-title">📎 typeof null === 'object'</div>
+            O guard <code>!obj</code> (linha 146) já pega <code>null</code>. Se não fosse ele, o ramo do <code>typeof obj === 'object'</code> tentaria <code>Object.entries(null)</code> e explodiria.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 Chamada em flux.service</div>
+            <div class="code-block" style="font-size:10px">
+<span class="k">const</span> processedNode =
+  <span class="k">this</span>.nodeReferenceSubstitutionService.<span class="t">applySubstitutionToObject</span>(
+    node,
+    nodeSubstitutionSchema,
+  );
+            </div>
+            <code>node</code> é a referência viva; <code>nodeSubstitutionSchema</code> é o schema mutado pelo loop.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION B: replacePlaceholders -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-b">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#3B82F6;color:white">B</span>
+        <code>replacePlaceholders(str, schema)</code>
+      </div>
+      <div class="fn-loc">node-reference-substitution.service.ts:5-23</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        replacePlaceholders(originalString: string, replacementSchema: any): string
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Núcleo da engine — encontra <code>{{qualquer.coisa}}</code>, faz split por <code>.</code>, navega o schema segmento por segmento. Se em qualquer ponto o lookup falha, devolve o <code>match</code> original (não resolvido).
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> é o <em>dicionário</em> chamado pra cada palavra entre chaves duplas. Recebe uma string como <code>"Escreva sobre {{textGen1.text}} pro cliente {{clienteAtual}}"</code>, roda um regex <code>/{{(.*?)}}/g</code> pra achar todos os <code>{{...}}</code>, e pra cada um: pega o conteúdo (<code>textGen1.text</code>), splita por ponto (<code>['textGen1', 'text']</code>), e vai navegando o schema segmento a segmento — <code>schema['textGen1']</code>, depois <code>.text</code>. Se qualquer segmento retornar <code>undefined</code>, aborta e devolve o placeholder original literal (<code>{{textGen1.text}}</code> fica no output, sem substituir). Isso é comportamento <em>intencional</em>: permite prompts template com placeholders opcionais que só se resolvem se o dado existir. Ponto sutil: se o valor final for um objeto (não string), o <code>String.replace</code> coage pra <code>"[object Object]"</code> — quase nunca é o que o usuário quer. Por isso o passo 2.3 (<code>generateSchemaFromNodes</code>) achata objetos pra <code>.text/.content/.result</code> antes de indexar. E outra: a substituição é <strong>de esquerda pra direita, uma passada só</strong> — se um placeholder resolvido conter outros <code>{{...}}</code>, eles ficam literais (não é recursivo). Simples, previsível, mas exige que o usuário conheça essa restrição.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="code-block">
+<span class="t">replacePlaceholders</span>(originalString: string, replacementSchema: <span class="k">any</span>): string {
+  <span class="k">if</span> (!originalString || <span class="k">typeof</span> originalString !== <span class="s">'string'</span>) {
+    <span class="k">return</span> originalString;
+  }
+
+  <span class="k">const</span> result = originalString.<span class="t">replace</span>(<span class="s">/{{(.*?)}}/g</span>, (match, p1) =&gt; {
+    <span class="k">const</span> keys = p1?.<span class="t">split</span>(<span class="s">'.'</span>);
+    <span class="k">let</span> value = replacementSchema;
+    <span class="k">for</span> (<span class="k">const</span> key <span class="k">of</span> keys) {
+      value = value[key];
+      <span class="k">if</span> (value === <span class="k">undefined</span>) {
+        <span class="k">return</span> match;               <span class="c">// não resolveu → mantém {{...}}</span>
+      }
+    }
+    <span class="k">return</span> value;
+  });
+
+  <span class="k">return</span> result;
+}
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B1</span> Regex non-greedy: <code>/{{(.*?)}}/g</code></div>
+            <div class="box-desc">
+              <code>.*?</code> pega o menor match possível — pra <code>"{{a}} e {{b}}"</code> ele acha 2 grupos, não 1 gigante.
+              <br>Aceita qualquer conteúdo entre <code>{{</code> e <code>}}</code>, inclusive espaços, símbolos e paths com dots.
+            </div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B2</span> Navegação por path <code>a.b.c</code></div>
+            <div class="box-desc">
+              <code>keys = p1.split('.')</code>. Loop: <code>value = value[key]</code>. Se qualquer segmento retorna <code>undefined</code>, aborta e retorna o <code>match</code> original.
+              <br><br>Suporta <em>N segmentos</em>. Casos comuns:
+              <br>• <code>{{textGen1}}</code> — 1 segmento → objeto inteiro do nó
+              <br>• <code>{{textGen1.text}}</code> — 2 segmentos → só o campo text
+              <br>• <code>{{age.text}}</code> — usa labelKey (fn C)
+            </div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Coerção implícita string</div>
+            Quando o <code>value</code> final é um objeto/array, o <code>String.replace</code> chama <code>String(value)</code> — vira <code>"[object Object]"</code> ou <code>"1,2,3"</code>. Isso quase nunca é o que o usuário quer.
+            <br><br>É por isso que <code>generateSchemaFromNodes</code> (passo 2.3) já achata objetos pra <code>.text/.content/.result</code> antes de indexar — pra evitar esse cenário.
+          </div>
+
+          <div class="aside info">
+            <div class="aside-title">💡 Fallback silencioso</div>
+            Placeholder não resolvido não lança erro — apenas fica no output como <code>{{nomeErrado}}</code>. Handler downstream (ex: LLM) pode ver isso e reclamar, mas o loop segue.
+            <br><br>É comportamento intencional pra permitir <em>prompts template</em> com placeholders opcionais.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 Ordem de match</div>
+            <code>String.replace</code> com regex <code>/g</code> aplica da esquerda pra direita, não recursivamente. Um placeholder cujo <em>valor resolvido</em> contém <code>{{...}}</code> não é re-processado nesta passada.
+          </div>
+
+          <div class="aside">
+            <div class="aside-title">📎 typeof guard duplo</div>
+            Tanto <code>applySubstitutionToObject</code> quanto <code>replacePlaceholders</code> checam <code>typeof === 'string'</code>. Redundante mas defensivo — a segunda checagem protege se <code>replacePlaceholders</code> é chamada direto (fora do walker).
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION C: 3 chaves por nó -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-c">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#10B981;color:white">C</span>
+        <code>Schema: 3 chaves por nó (contrato)</code>
+      </div>
+      <div class="fn-loc">node-reference-substitution.service.ts:82-143</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        generateSchemaFromNodes(nodes) — indexa cada nó sob stableKey (UUID), refKey (dots→_), labelKey (label sem espaços)
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Contexto do schema que 3.3 consome. Cada nó do flow vira <strong>3 entradas</strong> no objeto <code>nodeSubstitutionSchema</code> — mesma <em>referência de entry</em>, chaves diferentes. Isso permite que o usuário escreva <code>{{6d09d1...uuid}}</code>, <code>{{textBox_1714_0_8148}}</code> ou <code>{{writer}}</code> e todos resolvam pro mesmo lugar.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> pensa nas 3 chaves como <em>3 nomes que a mesma pessoa atende</em>: o CPF (stableKey — UUID collision-free), o apelido do RG (refKey — id legacy com dots trocados por underscore) e o nome social (labelKey — o que o usuário digitou como "label" do nó, tipo <code>"My Writer"</code> → <code>"mywriter"</code>). Todas as 3 chaves apontam pra <strong>mesma entry</strong> — se o output do nó atualizar, atualiza pra todas simultaneamente porque é a mesma referência. Isso é o que dá flexibilidade pro usuário: no editor ele pode arrastar uma referência (usa o UUID por baixo dos panos) ou digitar <code>{{writer}}</code> na mão — os dois funcionam. Também é o que permite ids legacy com dots (herança de versões antigas) continuarem resolvendo — porque o parser de <code>{{path.field}}</code> splitaria no dot errado. Cuidado com <em>colisões</em>: se dois nós têm o mesmo label, o segundo <em>não</em> sobrescreve o primeiro (o check <code>labelKey !== stableKey && labelKey !== refKey</code> só cuida disso <em>dentro</em> do mesmo nó), mas o <em>escopo</em> do labelKey de nós diferentes é first-write-wins — footgun quando alguém duplica um label sem perceber. A whitelist <code>basedOnType</code> (linhas 25-80) define <em>quais campos</em> de cada tipo aparecem na entry — não é o walker que filtra, é o indexing que já entrega só o essencial (prompt, text, url, etc.).
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">C1</span> stableKey — node.id (UUID)</div>
+            <div class="box-desc">
+              <code>const stableKey = node.id</code>. É o identificador collision-free, sobrevive a renomeações. É a chave "canônica".
+            </div>
+            <div class="box-file">service.ts:93, 132</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">C2</span> refKey — dots viram underscore</div>
+            <div class="box-desc">
+              <code>const refKey = stableKey.replace(/\./g, '_')</code>. Ids legacy como <code>textBox_1714569876581_0.8148</code> viram <code>textBox_1714569876581_0_8148</code>.
+              <br>Necessário porque o <em>parser</em> de <code>{{path.field}}</code> em (B) splitaria no dot errado — refKey elimina essa ambiguidade.
+            </div>
+            <div class="box-file">service.ts:133-136</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">C3</span> labelKey — alias humano</div>
+            <div class="box-desc">
+              <code>const labelKey = (node.data?.label || '').toLowerCase().replace(/\s/g, '')</code>. Ex: <code>"My Writer"</code> → <code>"mywriter"</code>. Só adicionado se não colidir com stableKey/refKey.
+            </div>
+            <div class="box-file">service.ts:99-101, 137-139</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="nested-flow">
+            <div class="nested-flow-title">↳ Formato do entry (mesma referência nas 3 chaves)</div>
+            <div class="code-block" style="font-size:10.5px">
+schema = {
+  <span class="s">"6d09d1a3-..."</span>: {                 <span class="c">// stableKey</span>
+    prompt: <span class="s">"Write about..."</span>,
+    text: <span class="s">"AI response here"</span>,        <span class="c">// atualizado por updateSchemaWithNodeOutput</span>
+  },
+  <span class="s">"textBox_1714_0_8148"</span>: /* mesmo */,  <span class="c">// refKey (se ≠ stableKey)</span>
+  <span class="s">"writer"</span>: /* mesmo */,               <span class="c">// labelKey (se ≠ dos anteriores)</span>
+};
+            </div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Whitelist basedOnType é INDEXING</div>
+            <code>basedOnType</code> (linhas 25-80) define <strong>quais campos do node.data são indexados</strong> por tipo. Só campos listados aparecem no entry — ex: <code>textBox</code> só expõe <code>text</code>; <code>apiCaller</code> expõe <code>url/jsonRequestBody/etc</code>.
+            <br><br>Mas ATENÇÃO: a whitelist é da geração do schema, <strong>não</strong> do walker. O walker (fn A) aplica em tudo. A whitelist só filtra o <em>que fica disponível pra ser referenciado</em>.
+          </div>
+
+          <div class="aside info">
+            <div class="aside-title">🎯 Precedência de lookup</div>
+            Não existe. Todas as 3 chaves apontam pra <em>mesma entry</em>. Se o usuário escrever <code>{{writer}}</code> ou <code>{{6d09d1...}}</code>, o resultado é idêntico. A "escolha" da chave é do usuário no editor.
+            <br><br>Colisões (label = outro nodeId) não são tratadas — o <code>if (labelKey && labelKey !== stableKey && labelKey !== refKey)</code> só evita sobrescrever a si mesmo, não colisões entre nós diferentes.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 Objetos achatados no indexing</div>
+            Se <code>node.data.prompt</code> é um objeto (não string), <code>generateSchemaFromNodes</code> extrai <code>.text</code> → <code>.content</code> → <code>.result</code> nessa ordem. Fallback: <code>JSON.stringify(value)</code>. Isso <em>não</em> acontece no walker — só no schema build.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION D: processedNode -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-d">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#8B5CF6;color:white">D</span>
+        <code>processedNode (variável do loop)</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:3280-3284</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        const processedNode = this.nodeReferenceSubstitutionService.applySubstitutionToObject(node, nodeSubstitutionSchema);
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Consumidor final da engine. É o que os handlers de nó (inline ou Temporal) recebem como input <em>já resolvido</em>. Alguns handlers usam <code>processedNode</code>, outros usam <code>node</code> — a distinção não é uniforme e é um dos <em>footguns</em> do código atual.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> imagina que <code>node</code> é o <em>original manuscrito</em> do documento (com anotações, referências pendentes, o rascunho) e <code>processedNode</code> é a <em>versão datilografada</em>, com todos os buracos preenchidos e pronta pra ser lida. O loop entrega os dois pros handlers, e aí começa a confusão: <code>processNodeViaTemporal</code>, <code>voiceNode</code>, <code>thirdPartyIntegrationNode</code>, <code>mcpNode</code> usam <strong>processedNode</strong> (a versão limpa) — perfeito. Mas <code>pullDataNode</code>, <code>pushDataNode</code>, <code>conditionNode</code>, <code>nodesBox</code>, <code>arrayNode</code>, <code>fluxBox</code>, <code>libraryNode</code> usam <code>node</code> cru — fazem sua própria substitution internamente. Não tá documentado no código quem usa o quê; é convenção ad-hoc que só se aprende lendo cada handler. É por isso que existem <strong>57 sync sites</strong> de substitution: cada handler que ignora <code>processedNode</code> reimplementa parte da engine com regras próprias, e sincronizar todas essas variações é o pesadelo de qualquer refactor. Outro footgun: mutar <code>processedNode.data</code> <em>não</em> afeta o array <code>myUpdatedNodes</code> (é árvore paralela clonada) — mutar <code>node.data</code> afeta (é ref viva). Quem tentar "corrigir" o output escrevendo em <code>processedNode</code> vai perder a mudança silenciosamente.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">D1</span> Quem recebe processedNode vs node</div>
+            <div class="box-desc">
+              <table class="field-table">
+                <tr><th>Handler</th><th>Argumento</th></tr>
+                <tr><td>processNodeViaTemporal</td><td><strong>processedNode</strong> — worker recebe input já resolvido</td></tr>
+                <tr><td>voiceNode</td><td><strong>processedNode</strong> (linha 3366)</td></tr>
+                <tr><td>thirdPartyIntegrationNode / mcpNode</td><td><strong>processedNode</strong> (3457, 3469)</td></tr>
+                <tr><td>pullDataNode / pushDataNode</td><td><strong>node</strong> (raw!) — resolve inputs internamente</td></tr>
+                <tr><td>conditionNode / nodesBox / arrayNode</td><td><strong>node</strong> (raw)</td></tr>
+              </table>
+            </div>
+            <div class="box-file">flux.service.ts:3299-4438 (dispatch)</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box cross">
+            <div class="box-title"><span class="badge step">D2</span> Também usado por isWorkerRoutedIntegration</div>
+            <div class="box-desc">
+              A decisão de dispatch (passo 3.5) checa <code>isWorkerRoutedIntegration(processedNode)</code> — precisa do <code>provider</code> resolvido (caso ele venha via <code>{{...}}</code> de outro nó, o que raramente acontece mas é possível).
+              <br>Sem essa substituição prévia, um provider dinâmico poderia ser roteado errado.
+            </div>
+            <div class="box-file">flux.service.ts:3301, 3433, 3453</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Handlers que ignoram processedNode</div>
+            <code>pullDataNode</code>, <code>pushDataNode</code>, <code>conditionNode</code>, <code>arrayNode</code>, <code>nodesBox</code>, <code>fluxBox</code>, <code>libraryNode</code> recebem <code>node</code> cru. Eles fazem sua própria resolução (via <code>schema: mutatedSchema</code> ou reimplementação parcial).
+            <br><br>Resultado: a <em>substituição</em> é feita 57 sync sites, alguns explícitos como este 3.3, outros escondidos dentro dos handlers.
+          </div>
+
+          <div class="aside info">
+            <div class="aside-title">🎯 Por que processedNode é "puro" mas node é "vivo"</div>
+            <code>node</code> é a referência do array <code>myUpdatedNodes</code> — se um handler mutar <code>node.data.text</code>, o próximo <code>find</code> em 3.2 pega esse valor. <code>processedNode</code> é uma árvore paralela — mutá-la <em>não</em> reflete de volta no array.
+            <br><br>Isso não é documentado no código. É fonte comum de bugs quando alguém tenta "corrigir" o output escrevendo em <code>processedNode.data</code>.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 mutatedSchema é o mesmo objeto</div>
+            <code>let nodeSubstitutionSchema</code> e <code>let mutatedSchema</code> em <code>apiV2()</code> apontam pro <em>mesmo</em> schema — nomes duplicados por refactor incompleto. Ambos são passados aos handlers. Reatribuir um não afeta o outro (footgun).
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="note info" style="margin-top:32px">
+    <strong>Resumo — o que sai de 3.3:</strong>
+    <br>• <code>processedNode</code> — árvore nova com todo <code>{{...}}</code> resolvido em campos string
+    <br>• <code>node</code> permanece intacto (mesma ref do array <code>myUpdatedNodes</code>)
+    <br>• Placeholders não resolvidos ficam literais no output (<code>{{nomeErrado}}</code>)
+    <br>• 100% síncrono, 100% in-memory, sem I/O
+    <br>• Tempo O(size(node.data) × avg-placeholders-per-string)
+  </div>
+
+  <div class="note">
+    <strong>Observações para migração:</strong>
+    <br>• Este é <strong>o</strong> ofensor da migração pro worker (memória <code>[[project_substitution_engine]]</code>). São 57 sync sites, alguns explícitos (3.3), outros escondidos em cada handler legacy. O worker <em>não tem</em> engine de substitution — recebe input já resolvido.
+    <br>• A whitelist <code>basedOnType</code> é <strong>hard-coded</strong> em <code>node-reference-substitution.service.ts:25-80</code>. Cada tipo novo que precisar de campos referenciáveis exige editar essa lista. Prefetch mode e worker também têm listas paralelas — três lugares pra manter sincronizados.
+    <br>• A ausência de resolução recursiva (placeholders dentro de outputs resolvidos) é intencional mas frágil. Migração pode escolher: (a) suportar via 2ª passada, (b) proibir explicitamente, (c) manter o comportamento atual documentado.
+    <br>• <code>processedNode</code> é temporário — não persistido em lugar nenhum. Se um nó falhar após substitution mas antes de gravar, o input resolvido é perdido. No path Temporal, o INSERT em <code>node_executions</code> (passo T2) grava justamente esse input resolvido — pattern superior.
+    <br>• 3 chaves × N nós × strings dentro de cada = memória do schema cresce O(nodes × avg-fields × avg-string-size). Em agentes grandes com respostas de LLM longas, o schema fica com megabytes de JSON vivos.
+    <br>• É <strong>essencial e crítico</strong> — todo o modelo de propagação de dados entre nós depende disso. Migração pro worker precisa desenhar um modelo alternativo (prefetch por refs já é uma tentativa) antes de tocar nesse código.
+  </div>
+
+  <div class="page-footer-nav">
+    <a href="../index.html#step-3-3" class="back-btn">← Voltar ao diagrama principal</a>
+  </div>
+
+</div>
+<script>
+(function() {
+  function toggle(card) {
+    if (card) card.classList.toggle('collapsed');
+  }
+  function expand(card) {
+    if (card && card.classList.contains('collapsed')) card.classList.remove('collapsed');
+  }
+  document.querySelectorAll('.fn-card-header').forEach(function(header) {
+    header.addEventListener('click', function(e) {
+      if (e.target.closest('a')) return;
+      toggle(header.parentElement);
+    });
+  });
+  document.querySelectorAll('a[href^="#fn-"]').forEach(function(link) {
+    link.addEventListener('click', function() {
+      var id = link.getAttribute('href').slice(1);
+      expand(document.getElementById(id));
+    });
+  });
+  if (window.location.hash && window.location.hash.startsWith('#fn-')) {
+    expand(document.querySelector(window.location.hash));
+  }
+  window.addEventListener('hashchange', function() {
+    if (window.location.hash.startsWith('#fn-')) {
+      expand(document.querySelector(window.location.hash));
+    }
+  });
+})();
+</script>
+</body>
+</html>

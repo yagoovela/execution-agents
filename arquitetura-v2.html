@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Flux — Execução de Agente (REVISANDO)</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #F1F5F9;
+    color: #0F172A;
+    margin: 0;
+    padding: 32px 24px 80px;
+    line-height: 1.4;
+  }
+  .container { max-width: 1500px; margin: 0 auto; }
+
+  h1 {
+    text-align: center;
+    color: #0F172A;
+    margin: 0 0 8px 0;
+    font-size: 28px;
+    letter-spacing: -0.5px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #64748B;
+    margin-bottom: 20px;
+    font-size: 14px;
+  }
+
+  /* Top nav / back button */
+  .top-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1500px;
+    margin: 0 auto 20px;
+    padding: 0 4px;
+  }
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    background: white;
+    color: #334155;
+    text-decoration: none;
+    border-radius: 8px;
+    border: 1px solid #CBD5E1;
+    font-size: 12.5px;
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    transition: transform 0.15s, background 0.15s;
+  }
+  .back-btn:hover {
+    background: #EFF6FF;
+    transform: translateY(-1px);
+  }
+  .proposal-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: linear-gradient(90deg, #DBEAFE, #F3E8FF);
+    border: 1px solid #C7D2FE;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #3730A3;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    padding: 14px 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #334155; }
+  .legend-swatch {
+    width: 20px; height: 12px; border-radius: 3px;
+    border-left: 4px solid;
+  }
+
+  /* Principles grid */
+  .principles {
+    background: white;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 40px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .principles-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0F172A;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .principles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 10px;
+  }
+  .principle {
+    background: #F8FAFC;
+    padding: 10px 12px;
+    border-radius: 6px;
+    border-left: 3px solid #3B82F6;
+    font-size: 11.5px;
+    color: #334155;
+  }
+  .principle strong {
+    display: block;
+    color: #0F172A;
+    margin-bottom: 4px;
+    font-size: 12px;
+  }
+  .principle.p2 { border-left-color: #10B981; }
+  .principle.p3 { border-left-color: #A855F7; }
+  .principle.p4 { border-left-color: #F59E0B; }
+  .principle.p5 { border-left-color: #EF4444; }
+  .principle.p6 { border-left-color: #EAB308; }
+  .principle.p7 { border-left-color: #8B5CF6; }
+  .principle.p8 { border-left-color: #64748B; }
+
+  /* Section headers */
+  .section {
+    margin-bottom: 40px;
+    padding-top: 8px;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #CBD5E1;
+  }
+  .section-number {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: #0F172A;
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+  .section-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #0F172A;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-desc {
+    font-size: 12px;
+    color: #64748B;
+    font-weight: normal;
+    margin-left: auto;
+    text-align: right;
+  }
+
+  /* Box */
+  .flow-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .box {
+    background: white;
+    border-radius: 8px;
+    padding: 9px 13px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border-left: 4px solid #94A3B8;
+    width: 620px;
+    max-width: 100%;
+    position: relative;
+  }
+  .box.backend    { border-left-color: #3B82F6; }
+  .box.worker     { border-left-color: #10B981; }
+  .box.db         { border-left-color: #F59E0B; }
+  .box.redis      { border-left-color: #EF4444; }
+  .box.s3         { border-left-color: #8B5CF6; }
+  .box.external   { border-left-color: #64748B; }
+  .box.decision {
+    border-left-color: #EAB308;
+    background: #FEFCE8;
+  }
+  .box.cross {
+    border-left-color: #A855F7;
+    background: #FAF5FF;
+  }
+  .box.temporal {
+    border-left-color: #10B981;
+    background: #ECFDF5;
+  }
+  .box.parallel {
+    border-left-color: #3B82F6;
+    background: #EFF6FF;
+  }
+
+  .box-title {
+    font-weight: 600;
+    font-size: 12.5px;
+    color: #0F172A;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .box-desc {
+    font-size: 11.5px;
+    color: #475569;
+  }
+  .box-file {
+    font-size: 10px;
+    color: #94A3B8;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    margin-top: 3px;
+    word-break: break-all;
+  }
+  .box code {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    background: #F1F5F9;
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: #334155;
+  }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .badge.migrated { background: #D1FAE5; color: #065F46; }
+  .badge.legacy   { background: #FEE2E2; color: #991B1B; }
+  .badge.mixed    { background: #FEF3C7; color: #92400E; }
+  .badge.new      { background: #DBEAFE; color: #1E40AF; }
+  .badge.step     { background: #E0E7FF; color: #3730A3; font-size: 10px; }
+  .badge.cross    { background: #F3E8FF; color: #6B21A8; }
+  .badge.opt      { background: #FEE2E2; color: #991B1B; font-size: 9px; }
+  .badge.ess      { background: #DCFCE7; color: #14532D; font-size: 9px; }
+  .badge.temporal { background: #D1FAE5; color: #065F46; }
+  .badge.parallel { background: #DBEAFE; color: #1E40AF; }
+  .badge.signal   { background: #F3E8FF; color: #6B21A8; }
+  .badge.immutable{ background: #FEF3C7; color: #92400E; }
+
+  /* Arrows */
+  .arrow {
+    color: #64748B;
+    font-size: 22px;
+    line-height: 1;
+    margin: 1px 0;
+    text-align: center;
+  }
+  .arrow-label {
+    font-size: 10.5px;
+    color: #64748B;
+    font-style: italic;
+    text-align: center;
+    margin: -2px 0 -2px 0;
+  }
+
+  /* Entry endpoints grid */
+  .endpoints-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 8px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  .endpoint-box {
+    background: white;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border-left: 3px solid #64748B;
+    font-size: 11px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+  .endpoint-box code {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    color: #0F172A;
+    font-weight: 600;
+    font-size: 10.5px;
+  }
+  .endpoint-box .kind {
+    display: block;
+    color: #64748B;
+    font-size: 10px;
+    margin-top: 2px;
+  }
+
+  /* Parallel wave — 3-lane fan-out */
+  .wave-container {
+    border: 2px dashed #3B82F6;
+    border-radius: 12px;
+    padding: 28px 16px 16px;
+    background: #EFF6FF;
+    position: relative;
+    margin-top: 8px;
+  }
+  .wave-badge {
+    position: absolute;
+    top: -12px;
+    left: 20px;
+    background: #3B82F6;
+    color: white;
+    padding: 3px 12px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .wave-lanes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-top: 6px;
+  }
+  @media (max-width: 900px) {
+    .wave-lanes { grid-template-columns: 1fr; }
+  }
+  .wave-lane {
+    background: white;
+    border-radius: 8px;
+    padding: 10px;
+    border-top: 3px solid #3B82F6;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .wave-lane-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #1E40AF;
+    text-align: center;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .wave-lane .box { width: 100%; padding: 6px 8px; }
+  .wave-lane .box-title { font-size: 11px; }
+  .wave-lane .box-desc { font-size: 10.5px; }
+  .wave-lane .arrow { font-size: 16px; }
+
+  /* Special nodes 3-lane */
+  .special-lanes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 8px;
+  }
+  @media (max-width: 900px) {
+    .special-lanes { grid-template-columns: 1fr; }
+  }
+  .lane {
+    border-radius: 10px;
+    padding: 16px;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .lane.condition { border-top: 4px solid #EAB308; }
+  .lane.array     { border-top: 4px solid #A855F7; }
+  .lane.subflow   { border-top: 4px solid #10B981; }
+  .lane-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+  }
+  .lane .box { width: 100%; }
+
+  /* Convergence */
+  .converge {
+    text-align: center;
+    color: #64748B;
+    font-size: 22px;
+    margin: 6px 0;
+  }
+
+  /* Notes callout */
+  .note {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #78350F;
+    margin: 16px auto;
+    max-width: 1200px;
+  }
+  .note.info {
+    background: #EFF6FF;
+    border-left-color: #3B82F6;
+    color: #1E3A8A;
+  }
+  .note.temporal {
+    background: #ECFDF5;
+    border-left-color: #10B981;
+    color: #065F46;
+  }
+  .note strong { color: inherit; }
+
+  /* Cross-cutting sidebar */
+  .cross-cutting {
+    background: #FAF5FF;
+    border: 1px solid #E9D5FF;
+    border-radius: 10px;
+    padding: 16px;
+    margin: 16px auto;
+  }
+  .cross-cutting h3 {
+    margin: 0 0 12px 0;
+    color: #6B21A8;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .cross-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 10px;
+  }
+  .cross-item {
+    background: white;
+    padding: 10px 12px;
+    border-radius: 6px;
+    border-left: 3px solid #A855F7;
+    font-size: 11.5px;
+  }
+  .cross-item strong {
+    display: block;
+    color: #6B21A8;
+    margin-bottom: 4px;
+    font-size: 12px;
+  }
+
+  hr.phase-sep {
+    border: none;
+    border-top: 3px dotted #CBD5E1;
+    margin: 40px 0 24px;
+  }
+
+  /* Comparison table */
+  .comparison {
+    background: white;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 40px 0 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    overflow-x: auto;
+  }
+  .comparison-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0F172A;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .comparison table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .comparison th {
+    text-align: left;
+    padding: 10px 12px;
+    background: #F1F5F9;
+    color: #334155;
+    font-weight: 700;
+    border-bottom: 2px solid #CBD5E1;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .comparison td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #E2E8F0;
+    vertical-align: top;
+  }
+  .comparison td:first-child {
+    font-weight: 600;
+    color: #0F172A;
+    width: 22%;
+  }
+  .comparison td.old {
+    color: #991B1B;
+    background: #FEF2F2;
+    width: 39%;
+  }
+  .comparison td.new-col {
+    color: #065F46;
+    background: #F0FDF4;
+    width: 39%;
+  }
+  .comparison tr:last-child td { border-bottom: none; }
+
+  /* Sub-step group (for 3.4.x) */
+  .substep-group {
+    background: #F8FAFC;
+    border: 1px dashed #94A3B8;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin: 6px 0;
+    width: 100%;
+  }
+  .substep-group-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .substep-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .substep {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px;
+    align-items: start;
+    padding: 6px 8px;
+    background: white;
+    border-radius: 6px;
+    border-left: 3px solid #64748B;
+    font-size: 11.5px;
+  }
+  .substep.temporal { border-left-color: #10B981; }
+  .substep.db       { border-left-color: #F59E0B; }
+  .substep.backend  { border-left-color: #3B82F6; }
+  .substep-num {
+    background: #E0E7FF;
+    color: #3730A3;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+    height: fit-content;
+  }
+  .substep-content strong { color: #0F172A; font-size: 11.5px; }
+  .substep-content { color: #475569; }
+
+  /* Annotations (TODO / dúvida / decisão) */
+  .annotation {
+    display: block;
+    margin-top: 8px;
+    padding: 8px 10px 8px 12px;
+    border-radius: 6px;
+    font-size: 11.5px;
+    line-height: 1.45;
+    border-left: 3px solid #94A3B8;
+    background: #F8FAFC;
+    color: #334155;
+  }
+  .annotation + .annotation { margin-top: 6px; }
+  .annotation-tag {
+    display: inline-block;
+    font-size: 9.5px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 3px;
+    margin-right: 6px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    vertical-align: 1px;
+  }
+  .annotation.todo    { background: #FFFBEB; border-left-color: #F59E0B; color: #78350F; }
+  .annotation.todo .annotation-tag    { background: #FDE68A; color: #78350F; }
+  .annotation.doubt   { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .annotation.doubt .annotation-tag   { background: #BFDBFE; color: #1E3A8A; }
+  .annotation.decision{ background: #F5F3FF; border-left-color: #8B5CF6; color: #4C1D95; }
+  .annotation.decision .annotation-tag{ background: #DDD6FE; color: #4C1D95; }
+  .annotation code {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    background: rgba(255,255,255,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+  }
+
+  /* Cancellation section */
+  .cancel-container {
+    background: #FEF2F2;
+    border: 2px dashed #EF4444;
+    border-radius: 12px;
+    padding: 24px 16px 16px;
+    position: relative;
+    margin-top: 8px;
+  }
+  .cancel-badge {
+    position: absolute;
+    top: -12px;
+    left: 20px;
+    background: #EF4444;
+    color: white;
+    padding: 3px 12px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- TOP NAV -->
+  <div class="top-nav">
+    <a href="index.html" class="back-btn">
+      <span>←</span>
+      <span>Ver arquitetura atual</span>
+    </a>
+    <span class="proposal-badge">
+      <span>✦</span>
+      <span>Proposta v2 — REVISANDO</span>
+    </span>
+  </div>
+
+  <h1>Execução de Agente — REVISANDO</h1>
+
+  <!-- ================================================== -->
+  <!-- FASE 1 — RECEPÇÃO E AGENDAMENTO -->
+  <!-- ================================================== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">1</div>
+      <div class="section-title">
+        FASE 1 — Recepção e agendamento
+      </div>
+    </div>
+
+    <div class="flow-column">
+      <div class="box external">
+        <div class="box-title">Cliente faz requisição</div>
+        <div class="box-desc">Execução do agente completo ou de um nó individual (debug/preview no editor)</div>
+      </div>
+      <div class="arrow">↓</div>
+    </div>
+
+    <div class="endpoints-grid" style="grid-template-columns:repeat(2, minmax(260px, 1fr));max-width:900px">
+      <a href="endpoint-api-v2.html" class="endpoint-box" style="border-left-color:#3B82F6;text-decoration:none;color:inherit;display:block;position:relative;padding-right:28px">
+        <code>POST /flux/api-v2</code>
+        <span class="kind">Dispara <code>FlowExecutionWorkflow</code> (agente completo) — <em>3 modos de resposta →</em></span>
+        <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#3B82F6;font-size:20px;font-weight:300">›</span>
+      </a>
+      <a href="single-node.html" class="endpoint-box" style="border-left-color:#A855F7;text-decoration:none;color:inherit;display:block;position:relative;padding-right:28px">
+        <code>POST /flux/execute-single-node</code>
+        <span class="kind">Dispara <code>SingleNodeWorkflow</code> (1 nó só) — <em>doc separada →</em></span>
+        <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#A855F7;font-size:20px;font-weight:300">›</span>
+      </a>
+    </div>
+
+    <div class="annotation todo" style="max-width:900px;margin:12px auto 0">
+      <span class="annotation-tag">TODO</span>
+      Documentar o <strong>payload</strong> aceito por cada endpoint (body, headers, auth, query params) — inclusive os 6 endpoints legados que convergem em <code>FluxService.apiV2()</code>. Verificar quais são os tradeoff de ter apenas duas rotas
+    </div>
+
+    <div class="arrow">↓</div>
+
+    <div class="flow-column">
+      <div class="box backend">
+        <div class="box-title"><span class="badge step">1.1</span> Autenticação + validação de usuário <span class="badge ess">essencial</span></div>
+        <div class="box-desc"><code>userService.findOne()</code> + verificação de API-key/sessão</div>
+      </div>
+      <div class="arrow">↓</div>
+
+      <div class="box backend">
+        <div class="box-title"><span class="badge step">1.2</span> Verificação de créditos e permissões <span class="badge ess">essencial</span></div>
+        <div class="box-desc"><code>checkIfUserCanRunFlow()</code> · <code>assertOwnerCanRunFlow()</code> — falha rápida antes de qualquer trabalho</div>
+      </div>
+
+      <div class="box annotation doubt">
+          <span class="annotation-tag">Dúvida 1.2</span>
+          Vale a pena, já aqui, validar se o usuário tem <strong>acesso aos nodes</strong> que estão no agente e aos <strong>modelos</strong> que estão sendo usados? (falha rápida no enqueue vs. descobrir só quando o nó for executado)
+        </div>
+
+      <div class="arrow">↓</div>
+
+      <a href="flow-version-atual.html" class="box db" id="step-1-3" style="text-decoration:none;color:inherit;display:block;position:relative;padding-right:32px;cursor:pointer">
+        <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#F59E0B;font-size:26px;font-weight:300;line-height:1">›</span>
+        <div class="box-title">
+          <span class="badge step">1.3</span> Cria row <code>flow_executions</code> + congela snapshot + persiste trigger inputs
+          <span class="badge immutable">imutável</span>
+        </div>
+        <div class="box-desc">
+          Em uma <strong>única transação</strong>:
+          <br>• INSERT <code>flow_executions</code> (status=<code>queued</code>) → gera <code>flowExecutionId</code>
+          <br>• INSERT bulk em <code>flow_execution_snapshots(execution_id, node_id, node_data)</code> — copia a config atual de cada nó no <em>momento exato do enqueue</em>
+          <br>• INSERT bulk em <code>flow_execution_edge_snapshots</code> — mesma ideia para arestas
+          <br>• INSERT em <code>flow_execution_trigger_inputs(execution_id, raw_body)</code> — payload cru: <code>variableInputs[]</code> (com base64/links/isExtraction/typeOCR) + <code>dataInput</code> shortcut. <strong>Não</strong> faz upload S3 nem OCR aqui — só persiste raw.
+          <br><br>
+          <strong>Por que agora, no backend?</strong> Se o usuário editar o flow depois (às 12h32), o snapshot da execução de 12h30 permanece congelado — edits não vazam pro run em curso.
+          <br>
+          <strong>Por que separar OCR pra Fase 2?</strong> Extração de PDF/imagem pode levar dezenas de segundos. Fazer aqui bloqueia o retorno de <code>flowExecutionId</code> — cliente ficaria esperando. Deixando pra activity <code>resolveTriggerInputs</code> (2.4), a API responde em ms e o OCR corre dentro do workflow com retry/cancel nativos.
+          <div style="display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:4px 10px;background:linear-gradient(90deg,#FEF3C7,#FEF9C3);border:1px solid #FDE68A;border-radius:12px;font-size:11px;font-weight:600;color:#78350F">
+            <span>🕰️</span>
+            <span>Clique para ver como o versionamento funciona <em>hoje</em> (e por que precisa mudar)</span>
+            <span style="font-weight:700">→</span>
+          </div>
+        </div>
+      </a>
+      <div class="arrow">↓</div>
+
+      <div class="box temporal">
+        <div class="box-title">
+          <span class="badge step">1.4</span> temporal.start('FlowExecutionWorkflow', { flowExecutionId })
+          <span class="badge temporal">temporal</span>
+          <span class="badge immutable">idempotente</span>
+        </div>
+        <div class="box-desc">
+          <code>WorkflowId = flowExecutionId</code> · <code>WorkflowIdReusePolicy = REJECT_DUPLICATE</code>
+          <br>Passa <strong>só o ID</strong>. Workflow lê topologia e config do snapshot congelado — nada de payload no input.
+        </div>
+      </div>
+      <div class="arrow">↓</div>
+
+      <div class="box backend">
+        <div class="box-title"><span class="badge step">1.5</span> Retorna <code>flowExecutionId</code> ao caller</div>
+        <div class="box-desc">Fire-and-forget. Cliente pode escutar status via WebSocket / polling em <code>flow_executions</code>.</div>
+      </div>
+    </div>
+  </div>
+
+ 
+
+  <!-- ================================================== -->
+  <!-- FASE 2 — BOOTSTRAP DO WORKFLOW -->
+  <!-- ================================================== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">2</div>
+      <div class="section-title">
+        FASE 2 — Bootstrap do workflow
+        <span class="badge temporal">dentro do Temporal</span>
+      </div>
+      <div class="section-desc">Carrega snapshot, constrói DAG imutável, prepara OutputStore</div>
+    </div>
+
+    <div class="flow-column">
+      <div class="box temporal">
+        <div class="box-title">
+          <span class="badge step">2.1</span> Activity <code>loadFlowTopology(flowExecutionId)</code>
+          <span class="badge ess">essencial</span>
+          <span class="badge immutable">só topologia</span>
+        </div>
+        <div class="box-desc">
+          Lê de <code>flow_execution_snapshots</code> <strong>apenas</strong>: <code>nodeIds</code>, <code>nodeType</code> por id, adjacency list, <code>edgeIds</code> + tipo de aresta.
+          <br><strong>Nunca</strong> carrega <code>node_data</code> (config gorda: prompts, scripts, textData) — isso fica no snapshot e é lido on-demand pela activity de cada nó.
+          <br>Idempotente (query pura, retryable).
+        </div>
+      </div>
+      <div class="arrow">↓</div>
+
+      <a href="algoritmo-dag.html" class="box worker" style="text-decoration:none;color:inherit;display:block;position:relative;padding-right:32px;cursor:pointer">
+        <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#10B981;font-size:26px;font-weight:300;line-height:1">›</span>
+        <div class="box-title"><span class="badge step">2.2</span> <code>buildDag(snapshot)</code> — puro, in-workflow <span class="badge ess">essencial</span></div>
+        <div class="box-desc">
+          Adjacency list · in-degree por nó · classifica arestas (control/condition/data/side-effect) · <strong>scan de refs <code>{{...}}</code></strong> para criar deps implícitas · detecta e remove back-edges · calcula unreachable.
+          <br><strong>Poda nós puramente visuais</strong> — <code>comment</code>, <code>label</code>, <code>group</code>: nunca entram em <code>pending</code>/<code>readySet</code>. Hoje (v1) eles atravessam o loop como no-op silencioso, gastando ciclo de dispatch.
+          <br><strong>Poda também <code>varInputNode</code></strong> do set de dispatch — eles já foram materializados como outputs em 2.4 (<code>resolveTriggerInputs</code>). No DAG figuram só como <em>fonte</em> de arestas, sem in-degree.
+          <br><strong>DAG resultante é imutável para o resto do run.</strong>
+          <div style="display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:4px 10px;background:linear-gradient(90deg,#ECFDF5,#F0FDF4);border:1px solid #A7F3D0;border-radius:12px;font-size:11px;font-weight:600;color:#065F46">
+            <span>🔍</span>
+            <span>Clique para ver o algoritmo passo a passo + exemplo com ondas paralelas</span>
+            <span style="font-weight:700">→</span>
+          </div>
+        </div>
+      </a>
+      <div class="arrow">↓</div>
+
+      <a href="validacao-dag.html" class="box worker" style="text-decoration:none;color:inherit;display:block;position:relative;padding-right:32px;cursor:pointer">
+        <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#10B981;font-size:26px;font-weight:300;line-height:1">›</span>
+        <div class="box-title"><span class="badge step">2.3</span> <code>validateDag()</code> — falha rápida <span class="badge ess">essencial</span></div>
+        <div class="box-desc">
+          Portão entre "montar o grafo" (2.2) e "começar a gastar recursos" (Fase 3). Valida: ciclos remanescentes · refs (<code>{{...}}</code>) apontando pra nós inexistentes · tipos incompatíveis · nós órfãos essenciais.
+          <br>Falha aqui = flow inválido, não roda nada. Sustenta o invariante do deadlock guard 3.2.
+          <div style="display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:4px 10px;background:linear-gradient(90deg,#ECFDF5,#F0FDF4);border:1px solid #A7F3D0;border-radius:12px;font-size:11px;font-weight:600;color:#065F46">
+            <span>🔍</span>
+            <span>Clique para ver cada check em detalhe + custo evitado com exemplo real</span>
+            <span style="font-weight:700">→</span>
+          </div>
+        </div>
+      </a>
+      <div class="arrow">↓</div>
+
+      <div class="box worker">
+        <div class="box-title">
+          <span class="badge step">2.4</span> Activity <code>resolveTriggerInputs(flowExecutionId)</code>
+          <span class="badge ess">essencial</span>
+        </div>
+        <div class="box-desc">
+          Lê <code>flow_execution_trigger_inputs.raw_body</code> persistido em 1.3 e traduz em <code>data</code> resolvido pra cada <code>varInputNode</code>. Por varInput no request:
+          <br>• Se <code>dataInput</code> string veio sozinho → injeta no primeiro <code>varInputNode</code> do snapshot (shortcut do chatbot/API pública).
+          <br>• Se <code>isExtraction === true</code> e tem <code>links</code>/<code>files</code>: sub-activity <strong><code>extractTextFromFile</code></strong> por fonte — upload S3 pros base64, <code>ExtractionService.extractTextFromLink</code> com <code>typeOCR ∈ { mistral_ocr | mistral_vision | google_ocr }</code>. Cada extração é uma sub-activity separada (retryable, cancelável, isolada).
+          <br>• Se <code>isExtraction === false</code>: só upload S3 pros base64, sem OCR — só armazena URLs.
+          <br>• Sem arquivos → <code>data</code> mínimo só com <code>text</code>.
+          <br><br>
+          Escreve o resultado em <code>node_executions</code> com <code>executor='trigger-input'</code> (uma row por varInput). O <code>outputData</code> vira o "output" desses nós pro OutputStore — <code>varInputNode</code> nunca precisa ser dispatched no loop de ondas.
+        </div>
+      </div>
+      <div class="arrow">↓</div>
+
+      <div class="box worker">
+        <div class="box-title">
+          <span class="badge step">2.5</span> <code>initOutputStore</code>
+          <span class="badge immutable">append-only</span>
+        </div>
+        <div class="box-desc">
+          Estrutura <code>Map&lt;nodeId, ReadonlyOutput&gt;</code> versionada por wave. Seed com os outputs dos <code>varInputNode</code>s <strong>já resolvidos</strong> em 2.4 (lê de <code>node_executions</code> onde <code>executor='trigger-input'</code>).
+          <br><strong>Substitui</strong> o <code>nodeSubstitutionSchema</code> mutável — nunca é modificado, só cresce com <code>.append()</code>.
+        </div>
+      </div>
+      <div class="arrow">↓</div>
+
+      <div class="box cross">
+        <div class="box-title">
+          <span class="badge step">2.6</span> <code>initRunLog</code> via signal
+          <span class="badge signal">signal</span>
+          <span class="badge cross">cross</span>
+        </div>
+        <div class="box-desc">
+          <code>runLogCollector.createRoot()</code> disparado como <strong>signal assíncrono</strong> — não bloqueia o dispatch da primeira wave.
+        </div>
+      </div>
+      <div class="arrow">↓</div>
+
+      <div class="box redis">
+        <div class="box-title"><span class="badge step">2.7</span> Emit "flow started"</div>
+        <div class="box-desc">Publica em Redis + WebSocket. Cliente recebe <code>flowExecutionId</code> em modo running.</div>
+      </div>
+    </div>
+
+    <div class="note temporal">
+      <strong>Por que dentro do workflow?</strong> Se o worker cair no meio, Temporal reexecuta o workflow do zero. Todas essas activities são idempotentes (query, não escrita). Nenhum estado in-memory sobrevive fora do workflow — recuperação é grátis.
+    </div>
+  </div>
+
+ 
+
+  <!-- ================================================== -->
+  <!-- FASE 3 — LOOP DE ONDAS PARALELAS -->
+  <!-- ================================================== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">3</div>
+      <div class="section-title">
+        FASE 3 — Loop de ondas paralelas
+        <span class="badge parallel">paralelo</span>
+        <span class="badge temporal">temporal</span>
+      </div>
+      <div class="section-desc">Coração da nova arquitetura · substitui o <code>while (scheduledId !== null)</code> serial</div>
+    </div>
+
+    <div class="wave-container">
+      <div class="wave-badge">🌊 while (pending.size &gt; 0)</div>
+
+      <div class="flow-column">
+        <div class="box worker">
+          <div class="box-title"><span class="badge step">3.1</span> Compute <code>readySet</code> <span class="badge ess">essencial</span></div>
+          <div class="box-desc"><code>readySet = { n ∈ pending | in-degree(n) === 0 }</code> — snapshot atômico do DAG</div>
+        </div>
+        <div class="arrow">↓</div>
+
+        <div class="box decision">
+          <div class="box-title"><span class="badge step">3.2</span> Guard: <code>readySet.size === 0 && pending.size &gt; 0</code>?</div>
+          <div class="box-desc">
+            <strong>Deadlock</strong> — DAG inválido ou branch travado por condition dead. Falha o workflow com <code>DeadlockError</code>.
+            <br>(Não deve acontecer com <code>validateDag</code> passando.)
+          </div>
+        </div>
+        <div class="arrow">↓</div>
+
+        <div class="box decision">
+          <div class="box-title"><span class="badge step">3.3</span> Guard: <code>pending.size === 0</code>?</div>
+          <div class="box-desc"><strong>Sucesso</strong> — todos os nós resolvidos. Sai do loop → FASE 4.</div>
+        </div>
+        <div class="arrow">↓</div>
+
+        <div class="box parallel">
+          <div class="box-title">
+            <span class="badge step">3.4</span> Dispatch paralelo — <code>await Promise.all(readySet.map(dispatchNode))</code>
+            <span class="badge parallel">paralelo</span>
+          </div>
+          <div class="box-desc">Cada nó do <code>readySet</code> executa em paralelo. Sub-passos abaixo rodam <em>por nó</em>, isolados entre si.</div>
+        </div>
+
+        <div class="substep-group">
+          <div class="substep-group-title">Sub-passos por nó (executam em paralelo entre nós)</div>
+          <div class="substep-list">
+            <div class="substep backend">
+              <span class="substep-num">3.4.1</span>
+              <div class="substep-content">
+                <strong>Fetch dirigido + substitutePlaceholders(node, outputStore.snapshot())</strong>
+                <br>Activity faz 2 queries pequenas:
+                <br>• <code>SELECT node_data FROM flow_execution_snapshots WHERE execution_id = ? AND node_id = ?</code> — só a config <em>deste</em> nó
+                <br>• Para cada <code>{{X.output}}</code> referenciado, <code>SELECT output_data FROM node_executions WHERE id = outputStore.get(X)</code> — só os outputs referenciados
+                <br>Depois roda a substituição pura, isolada. Nenhum estado global é tocado.
+                <br><span style="color:#065F46"><strong>Isso é, nativamente, o modo prefetch atual — sem opt-in, sem whitelist.</strong></span>
+              </div>
+            </div>
+            <div class="substep backend">
+              <span class="substep-num">3.4.2</span>
+              <div class="substep-content">
+                <strong>chooseExecutor(node.type)</strong> — 3 rotas: (a) activity local rápida, (b) activity com timeout longo (LLM/HTTP), (c) <code>ChildWorkflow</code> para nós compostos (array, subflow).
+              </div>
+            </div>
+            <div class="substep db">
+              <span class="substep-num">3.4.3</span>
+              <div class="substep-content">
+                <strong>INSERT <code>node_executions</code></strong> (status=<code>running</code>, <code>inputData</code> resolvido, <code>waveIndex</code>).
+              </div>
+            </div>
+            <div class="substep temporal">
+              <span class="substep-num">3.4.4</span>
+              <div class="substep-content">
+                <strong>Dispatch</strong> com <code>StartToCloseTimeout</code> e <code>RetryPolicy</code> do tipo do nó. Activity ou <code>startChild()</code> dependendo do 3.4.2.
+                <br><span style="color:#065F46">Se o nó precisa de credencial externa (ex: <code>pullData</code>/<code>pushData</code> Google), a <strong>própria activity</strong> chama a sub-activity <code>refreshCredentialsForNode(nodeId, provider)</code> como pré-step — com cache Redis TTL (~55min) por <code>{workspaceId, provider, userId}</code> pra evitar refresh duplicado quando múltiplos nós do mesmo flow usam o mesmo provider.</span>
+              </div>
+            </div>
+            <div class="substep backend">
+              <span class="substep-num">3.4.5</span>
+              <div class="substep-content">
+                <strong><code>outputStore.append(nodeId, output)</code></strong> — append-only. Versão do store incrementa por wave, mas nenhum output anterior é sobrescrito.
+              </div>
+            </div>
+            <div class="substep db">
+              <span class="substep-num">3.4.6</span>
+              <div class="substep-content">
+                <strong>UPDATE <code>node_executions</code></strong> (status=<code>completed</code>/<code>failed</code>, <code>outputData</code> ou <code>claimRef</code> para payloads &gt; threshold → S3).
+              </div>
+            </div>
+            <div class="substep temporal">
+              <span class="substep-num">3.4.7</span>
+              <div class="substep-content">
+                <strong>Emit status via signal</strong> → WS + <code>RunLogCollector</code>. Não-bloqueante.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="arrow">↓</div>
+
+        <div class="box parallel">
+          <div class="box-title"><span class="badge step">3.5</span> <code>await Promise.all(...)</code> — barreira da wave</div>
+          <div class="box-desc">Wave só termina quando <strong>todos</strong> os nós dela terminam (ou falham). Sem stragglers escondidos.</div>
+        </div>
+        <div class="arrow">↓</div>
+
+        <div class="box decision">
+          <div class="box-title"><span class="badge step">3.6</span> Política de falha</div>
+          <div class="box-desc">
+            <strong>fail-fast</strong> (default): qualquer erro cancela workflow, propaga cancelation às activities in-flight.
+            <br><strong>best-effort</strong> (opt-in por flag no flow): marca nó falho, continua com nós que não dependem dele.
+          </div>
+        </div>
+        <div class="arrow">↓</div>
+
+        <div class="box worker">
+          <div class="box-title"><span class="badge step">3.7</span> Reduce in-degree dos sucessores</div>
+          <div class="box-desc">Para cada nó completado com sucesso, decrementa <code>in-degree</code> dos filhos no DAG. Se condition, marca handles dead antes → volta a <strong>3.1</strong>.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note">
+      <strong>Contraste com o loop atual:</strong> hoje o backend faz <code>while (scheduledId !== null)</code> serial, com blocking-wait em <code>handle.result()</code> a cada nó Temporal (perde todo o paralelismo do worker). Aqui, a wave só termina quando <strong>todos</strong> os nós dela terminam, e o worker executa cada activity de forma independente.
+    </div>
+  </div>
+
+ 
+
+  <!-- ================================================== -->
+  <!-- FASE 3.5 — NÓS ESPECIAIS -->
+  <!-- ================================================== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">3½</div>
+      <div class="section-title">
+        FASE 3.5 — Nós especiais (condition · arrayNode · subflowNode)
+        <span class="badge temporal">child workflow</span>
+      </div>
+      <div class="section-desc">Quebram a semântica "1 dispatch = 1 output" — tratados como lanes específicas dentro da wave</div>
+    </div>
+
+    <div class="special-lanes">
+
+      <!-- LANE: CONDITION -->
+      <div class="lane condition">
+        <div class="lane-title">
+          <span>◆</span>
+          <span>conditionNode</span>
+        </div>
+
+        <div class="box decision">
+          <div class="box-title">Activity: <code>evaluateCondition</code></div>
+          <div class="box-desc">Resolve predicado usando snapshot do <code>OutputStore</code>. Retorna handle tomado.</div>
+        </div>
+        <div class="arrow">↓</div>
+
+        <div class="box worker">
+          <div class="box-title">Signal <code>pruneBranch</code> ao workflow</div>
+          <div class="box-desc">Marca handles não-tomados como <code>dead</code>. Descendentes desses handles são removidos do <code>pending</code>.</div>
+        </div>
+        <div class="arrow">↓</div>
+
+        <div class="box worker">
+          <div class="box-title">DAG imutável, pruning só marca</div>
+          <div class="box-desc"><strong>Nunca</strong> altera arestas. Estrutura permanece igual — apenas o set <code>pending</code> encolhe.</div>
+        </div>
+      </div>
+
+      <!-- LANE: ARRAYNODE -->
+      <div class="lane array">
+        <div class="lane-title">
+          <span>◆</span>
+          <span>arrayNode</span>
+        </div>
+
+        <div class="box temporal">
+          <div class="box-title"><code>startChild('ArrayIterationWorkflow')</code></div>
+          <div class="box-desc">Fan-out real: N iterações em paralelo (com <code>maxConcurrent</code> configurável).</div>
+        </div>
+        <div class="arrow">↓</div>
+
+        <div class="box temporal">
+          <div class="box-title">Cada iteração = sub-DAG</div>
+          <div class="box-desc">Body do array vira um sub-DAG executado por iteração. Cada uma tem seu <code>OutputStore</code> local.</div>
+        </div>
+        <div class="arrow">↓</div>
+
+        <div class="box worker">
+          <div class="box-title">Fan-in: agrega resultados</div>
+          <div class="box-desc">Ao terminar todas as iterações, agrega em array final e faz <code>outputStore.append()</code> no store pai.</div>
+        </div>
+      </div>
+
+      <!-- LANE: SUBFLOWNODE -->
+      <div class="lane subflow">
+        <div class="lane-title">
+          <span>◆</span>
+          <span>subflowNode <em style="font-size:10px;color:#64748B;font-weight:normal">(nodesBox · libraryNode · fluxBox)</em></span>
+        </div>
+
+        <div class="box temporal">
+          <div class="box-title"><code>startChild('FlowExecutionWorkflow')</code></div>
+          <div class="box-desc">Recursão explícita — mesma engine, workflow filho com input mapping. Cria a própria row <code>flow_executions</code> + <code>flow_execution_trigger_inputs</code> a partir de <code>callerData</code> (mapa <code>varNodeId → { text, files, links, typeOCR }</code>).</div>
+        </div>
+        <div class="arrow">↓</div>
+
+        <div class="box worker">
+          <div class="box-title">Reusa <code>resolveTriggerInputs</code> (2.4) — <span style="color:#065F46">cache Redis</span></div>
+          <div class="box-desc">
+            Sub-flow passa pela Fase 2 completa, incluindo o <code>resolveTriggerInputs</code>. Se o arquivo/link já foi extraído no run pai (ou em run anterior), o cache <code>extract:{sha256(fileUrl)}:{typeOCR}</code> retorna direto.
+            <br><strong>Ganho vs v1:</strong> hoje cada nível de aninhamento paga OCR do zero (<code>flux.service.ts:5464-5533</code> para <code>nodesBox</code>, <code>5819+</code> para <code>libraryNode</code>/<code>fluxBox</code>). Em v2, N níveis = 1 OCR real + N-1 cache hits.
+          </div>
+        </div>
+        <div class="arrow">↓</div>
+
+        <div class="box temporal">
+          <div class="box-title">Cancelation herdada</div>
+          <div class="box-desc">Signal <code>cancelFlow</code> no pai propaga para o filho automaticamente. Sem código extra.</div>
+        </div>
+        <div class="arrow">↓</div>
+
+        <div class="box worker">
+          <div class="box-title">Output vira input do nó no pai</div>
+          <div class="box-desc">Ao terminar, o output do filho é <code>append()</code>-ado no <code>OutputStore</code> do pai como saída do <code>subflowNode</code>.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="converge">↓ resultado alimenta OutputStore da wave ↓</div>
+  </div>
+
+ 
+
+  <!-- ================================================== -->
+  <!-- FASE 4 — FINALIZAÇÃO -->
+  <!-- ================================================== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">4</div>
+      <div class="section-title">FASE 4 — Finalização</div>
+      <div class="section-desc">Loop de ondas terminou · workflow monta resultado e persiste artefatos</div>
+    </div>
+
+    <div class="flow-column">
+      <div class="box worker">
+        <div class="box-title"><span class="badge step">4.1</span> Coleta de nós com erro</div>
+        <div class="box-desc">Query no <code>OutputStore</code> + <code>node_executions</code> por status=<code>failed</code>. Monta <code>errorSummary</code>.</div>
+      </div>
+      <div class="arrow">↓</div>
+
+      <div class="box db">
+        <div class="box-title"><span class="badge step">4.2</span> Persist output nodes finais</div>
+        <div class="box-desc">Só campos <strong>não</strong> de execução (config, display) em <code>flows_nodes</code>. Outputs ficam em <code>node_executions</code>.</div>
+      </div>
+      <div class="arrow">↓</div>
+
+      <div class="box cross">
+        <div class="box-title"><span class="badge step">4.3</span> <code>runLog.finalize</code> + <code>spaceRunLogsService.flushNow</code> <span class="badge cross">cross</span></div>
+        <div class="box-desc">Activity dedicada — flush do trace hierárquico para <code>space_run_logs</code>.</div>
+      </div>
+      <div class="arrow">↓</div>
+
+      <div class="box db">
+        <div class="box-title"><span class="badge step">4.4</span> INSERT <code>flow_logs</code> — summary row</div>
+        <div class="box-desc">Status, <code>total_tokens</code>, <code>total_cost</code>, <code>duration_ms</code>, <code>run_type</code>. Uma row por execução.</div>
+      </div>
+      <div class="arrow">↓</div>
+
+      <div class="box external">
+        <div class="box-title"><span class="badge step">4.5</span> Callbacks (email + HTTP)</div>
+        <div class="box-desc">Activity com <code>RetryPolicy</code>. Dedup Redis dupla: runId 24h TTL + hash de conteúdo 90s.</div>
+      </div>
+      <div class="arrow">↓</div>
+
+      <div class="box db">
+        <div class="box-title"><span class="badge step">4.6</span> Update chat session (se chat)</div>
+        <div class="box-desc"><code>sessionStateService.appendEntries()</code> + <code>ChatLog</code>. Só se <code>runType === 'chatbot'</code>.</div>
+      </div>
+      <div class="arrow">↓</div>
+
+      <div class="box db">
+        <div class="box-title"><span class="badge step">4.7</span> Mark <code>flow_executions</code> finished</div>
+        <div class="box-desc">Status=<code>completed</code>/<code>failed</code>/<code>cancelled</code>, tokens, cost, duration.</div>
+      </div>
+      <div class="arrow">↓</div>
+
+      <div class="box redis">
+        <div class="box-title"><span class="badge step">4.8</span> Emit "flow completed"</div>
+        <div class="box-desc">WS + Redis. Cliente encerra polling.</div>
+      </div>
+      <div class="arrow">↓</div>
+
+      <div class="box db">
+        <div class="box-title">
+          <span class="badge step">4.9</span> Cleanup do snapshot da execução
+          <span class="badge new">novo</span>
+        </div>
+        <div class="box-desc">
+          Activity <code>DELETE FROM flow_execution_snapshots WHERE execution_id = ?</code> + análogo em <code>flow_execution_edge_snapshots</code>.
+          <br><br>
+          <strong>Por quê deletar:</strong> o snapshot é escafolde só do run. Depois de concluído, tudo que foi consumido pelo run está registrado em <code>node_executions</code> (input <em>resolvido</em> + output). Manter o snapshot vira dado morto.
+          <br>
+          <strong>Trade-off aceito:</strong> perde-se o template <em>pré-substituição</em> (ex: <code>"Resuma {{X.output}}"</code>) — mas o input pós-substituição está em <code>node_executions.inputData</code>, que é o que interessa pra auditoria/replay.
+        </div>
+      </div>
+    </div>
+  </div>
+
+ 
+
+  <!-- ================================================== -->
+  <!-- FASE 5 — CANCELAMENTO -->
+  <!-- ================================================== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">5</div>
+      <div class="section-title">
+        FASE 5 — Cancelamento
+        <span class="badge cross">transversal</span>
+        <span class="badge signal">signal</span>
+      </div>
+      <div class="section-desc">Nativo do Temporal · substitui o polling Redis atual</div>
+    </div>
+
+    <div class="cancel-container">
+      <div class="cancel-badge">✕ signal cancelFlow</div>
+
+      <div class="flow-column">
+        <div class="box redis">
+          <div class="box-title"><span class="badge step">5.1</span> Signal externo <code>cancelFlow</code></div>
+          <div class="box-desc">Cliente chama endpoint → backend envia signal ao workflow. Sem escrever em Redis.</div>
+        </div>
+        <div class="arrow">↓</div>
+
+        <div class="box temporal">
+          <div class="box-title"><span class="badge step">5.2</span> Workflow entra em modo cancelling</div>
+          <div class="box-desc">Activities in-flight recebem <code>CancellationScope</code>. Abortam graceful via <code>AbortSignal</code>/deadline.</div>
+        </div>
+        <div class="arrow">↓</div>
+
+        <div class="box db">
+          <div class="box-title"><span class="badge step">5.3</span> Nós ativos → <code>node_executions.status = 'cancelled'</code></div>
+          <div class="box-desc">Bulk update. Nós pendentes (nunca dispatched) ficam com status=<code>skipped</code>.</div>
+        </div>
+        <div class="arrow">↓</div>
+
+        <div class="box redis">
+          <div class="box-title"><span class="badge step">5.4</span> Emit "flow cancelled" + footprint</div>
+          <div class="box-desc">WS + registro dos <code>nodeIds</code> não-executados para auditoria.</div>
+        </div>
+        <div class="arrow">↓</div>
+
+        <div class="box worker">
+          <div class="box-title"><span class="badge step">5.5</span> Rota para FASE 4 (finalização em modo cancelled)</div>
+          <div class="box-desc">Reusa 4.3–4.9 (inclusive o cleanup do snapshot). Diferença: <code>flow_logs.status = 'cancelled'</code>, callbacks pulam email de sucesso.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+ 
+
+  <!-- ================================================== -->
+  <!-- FASE 6 — ERROS E RETRY -->
+  <!-- ================================================== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-number">6</div>
+      <div class="section-title">
+        FASE 6 — Erros e retry
+        <span class="badge cross">transversal</span>
+      </div>
+      <div class="section-desc">Uniformiza o que hoje é ad-hoc · Temporal RetryPolicy por tipo de nó</div>
+    </div>
+
+    <div class="flow-column">
+      <div class="box temporal">
+        <div class="box-title"><span class="badge step">6.1</span> <code>RetryPolicy</code> por tipo de nó</div>
+        <div class="box-desc">
+          <strong>LLM</strong> (<code>textGenerator</code>): 3 tentativas, backoff exponencial 2s→8s, non-retryable em <code>context_length_exceeded</code>.
+          <br><strong>HTTP</strong> (<code>apiCaller</code>, integrações): 5 tentativas, backoff 1s→30s, non-retryable em 4xx (exceto 429).
+          <br><strong>Script</strong> (<code>scripting</code>, <code>mathFunction</code>): 1 tentativa (erros são bugs, não flakiness).
+          <br><strong>External</strong> (Elevenlabs, Ideogram, FAL): 3 tentativas com jitter.
+        </div>
+      </div>
+      <div class="arrow">↓</div>
+
+      <div class="box decision">
+        <div class="box-title"><span class="badge step">6.2</span> Non-retryable errors</div>
+        <div class="box-desc">
+          Validação, permission denied, out-of-credits → marca nó falho imediatamente, sem retry.
+          <br>Categorias explícitas em <code>errorCategory</code> (mantém compatibilidade com o campo atual).
+        </div>
+      </div>
+      <div class="arrow">↓</div>
+
+      <div class="box temporal">
+        <div class="box-title"><span class="badge step">6.3</span> Compensating activity (opcional)</div>
+        <div class="box-desc">
+          Para nós com side-effect externo (push para Slack, INSERT em DB externo), possibilidade opcional de compensating activity para rollback quando o flow falhar.
+          <br>Opt-in por tipo de nó — não é default.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

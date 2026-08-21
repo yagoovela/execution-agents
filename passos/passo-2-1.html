@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Passo 2.1 — buildSchedulerState (DAG) | Detalhamento</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #F1F5F9;
+    color: #0F172A;
+    margin: 0;
+    padding: 32px 24px 80px;
+    line-height: 1.4;
+  }
+  .container { max-width: 1500px; margin: 0 auto; }
+  .page-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-bottom: 24px; padding: 12px 16px;
+    background: white; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    flex-wrap: wrap;
+  }
+  .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748B; }
+  .breadcrumb a { color: #3B82F6; text-decoration: none; font-weight: 500; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #CBD5E1; }
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #0F172A; color: white; padding: 8px 14px; border-radius: 8px;
+    text-decoration: none; font-size: 12.5px; font-weight: 600;
+  }
+  .page-header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+  .page-header .icon { font-size: 32px; }
+  .page-header h1 { margin: 0; font-size: 26px; color: #0F172A; letter-spacing: -0.4px; }
+  .page-sub { color: #64748B; font-size: 13px; margin-bottom: 24px; padding-left: 46px; }
+  .page-sub code {
+    background: #E2E8F0; padding: 1px 6px; border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; color: #334155;
+  }
+  .overview-mini {
+    background: white; padding: 16px 18px; border-radius: 10px;
+    margin-bottom: 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .overview-mini-title {
+    font-size: 12px; font-weight: 700; color: #334155;
+    text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px;
+  }
+  .overview-chain { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .overview-chip {
+    background: #F8FAFC; padding: 6px 12px; border-radius: 6px;
+    border-left: 3px solid #3B82F6;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px; font-weight: 600; color: #0F172A;
+    text-decoration: none; display: inline-block;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+  .overview-chip .lbl {
+    display: block; font-size: 9.5px; color: #64748B;
+    font-weight: 500; margin-bottom: 2px; font-family: inherit;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .overview-sep { color: #94A3B8; font-size: 18px; font-weight: bold; }
+  .box {
+    background: white; border-radius: 8px; padding: 9px 13px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 4px solid #94A3B8;
+    width: 100%; max-width: 100%;
+  }
+  .box.backend { border-left-color: #3B82F6; }
+  .box.worker { border-left-color: #10B981; }
+  .box.db { border-left-color: #F59E0B; }
+  .box.redis { border-left-color: #EF4444; }
+  .box.s3 { border-left-color: #8B5CF6; }
+  .box.external { border-left-color: #64748B; }
+  .box.decision { border-left-color: #EAB308; background: #FEFCE8; }
+  .box.cross { border-left-color: #A855F7; background: #FAF5FF; }
+  .box-title {
+    font-weight: 600; font-size: 12.5px; color: #0F172A; margin-bottom: 2px;
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  }
+  .box-desc { font-size: 11.5px; color: #475569; }
+  .box-file {
+    font-size: 10px; color: #94A3B8;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    margin-top: 3px; word-break: break-all;
+  }
+  .box code {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px; background: #F1F5F9; padding: 1px 4px; border-radius: 3px;
+    color: #334155; word-break: break-word;
+  }
+  .box-desc code { word-break: break-word; }
+  .badge {
+    display: inline-block; font-size: 9px; font-weight: 700;
+    padding: 2px 6px; border-radius: 4px;
+    text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap;
+  }
+  .badge.migrated { background: #D1FAE5; color: #065F46; }
+  .badge.legacy { background: #FEE2E2; color: #991B1B; }
+  .badge.mixed { background: #FEF3C7; color: #92400E; }
+  .badge.step { background: #E0E7FF; color: #3730A3; font-size: 10px; }
+  .badge.cross { background: #F3E8FF; color: #6B21A8; }
+  .badge.ess { background: #DCFCE7; color: #14532D; font-size: 9px; }
+  .arrow { color: #64748B; font-size: 22px; line-height: 1; margin: 1px 0; text-align: center; }
+  .converge { text-align: center; color: #64748B; font-size: 22px; margin: 6px 0; }
+  .fn-card {
+    margin-top: 28px; border: 1px solid #E2E8F0; border-radius: 12px;
+    overflow: hidden; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .fn-card-header {
+    background: linear-gradient(to right, #0F172A, #1E293B);
+    color: white; padding: 14px 20px 14px 44px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .fn-card-header .fn-title {
+    font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px;
+  }
+  .fn-card-header .fn-title code {
+    background: rgba(255,255,255,0.15); padding: 3px 8px; border-radius: 4px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 13px;
+  }
+  .fn-card-header .fn-loc {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px; color: #CBD5E1;
+  }
+  .fn-card-header:hover { background: linear-gradient(to right, #1E293B, #334155); }
+  .fn-card-header::before {
+    content: "▾";
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+    font-size: 14px;
+    transition: transform 0.2s ease;
+    line-height: 1;
+  }
+  .fn-card.collapsed .fn-card-header::before {
+    transform: translateY(-50%) rotate(-90deg);
+  }
+  .fn-card.collapsed .fn-card-body { display: none; }
+  .fn-card-body { padding: 20px; }
+  .fn-signature {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px; background: #F1F5F9; padding: 8px 12px; border-radius: 6px;
+    color: #334155; margin-bottom: 16px; overflow-x: auto;
+  }
+  .fn-purpose {
+    font-size: 13px; color: #475569; margin-bottom: 12px;
+    padding: 10px 14px; background: #EFF6FF; border-left: 3px solid #3B82F6; border-radius: 6px;
+  }
+  .fn-friendly {
+    font-size: 13px;
+    color: #334155;
+    margin-bottom: 20px;
+    padding: 12px 14px 12px 44px;
+    background: #F0FDF4;
+    border-left: 3px solid #10B981;
+    border-radius: 6px;
+    position: relative;
+    line-height: 1.55;
+  }
+  .fn-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 14px;
+    top: 10px;
+    font-size: 18px;
+  }
+  .fn-friendly strong {
+    color: #065F46;
+  }
+
+  /* Step-level friendly summary (page-wide, appears after page-sub) */
+  .step-friendly {
+    font-size: 13.5px;
+    color: #334155;
+    margin-bottom: 28px;
+    padding: 16px 18px 16px 52px;
+    background: #F0FDF4;
+    border-left: 4px solid #10B981;
+    border-radius: 10px;
+    position: relative;
+    line-height: 1.6;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.08);
+  }
+  .step-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 18px;
+    top: 14px;
+    font-size: 22px;
+  }
+  .step-friendly-title {
+    font-weight: 700;
+    color: #065F46;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 8px;
+  }
+  .step-friendly ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .step-friendly li {
+    margin-bottom: 6px;
+  }
+  .step-friendly li:last-child {
+    margin-bottom: 0;
+  }
+  .step-friendly strong {
+    color: #065F46;
+  }
+  .step-friendly code {
+    background: #DCFCE7;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: #065F46;
+  }
+  .step-friendly em {
+    color: #047857;
+    font-style: italic;
+  }
+  .fn-body-cols {
+    display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr); gap: 20px;
+  }
+  @media (max-width: 900px) { .fn-body-cols { grid-template-columns: 1fr; } }
+  .fn-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .fn-asides { display: flex; flex-direction: column; gap: 12px; }
+  .aside {
+    background: #FEF3C7; border-left: 4px solid #F59E0B; border-radius: 6px;
+    padding: 10px 12px; font-size: 11.5px; color: #78350F;
+  }
+  .aside.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .aside.warn { background: #FEE2E2; border-left-color: #EF4444; color: #991B1B; }
+  .aside.helper { background: #F3E8FF; border-left-color: #A855F7; color: #6B21A8; }
+  .aside-title {
+    font-weight: 700; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.4px; margin-bottom: 4px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .aside code {
+    background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 10.5px;
+    word-break: break-word;
+  }
+  .cascade {
+    background: #FEFCE8; border: 1px dashed #EAB308; border-radius: 8px;
+    padding: 12px; margin: 6px 0;
+  }
+  .cascade-title {
+    font-size: 11px; font-weight: 700; color: #713F12;
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;
+  }
+  .cascade-step {
+    display: grid; grid-template-columns: auto 1fr auto; gap: 8px;
+    align-items: center; padding: 6px 8px; background: white;
+    border-radius: 6px; margin-bottom: 4px; font-size: 11.5px;
+  }
+  .cascade-step .cond {
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; color: #334155;
+  }
+  .cascade-step .result {
+    font-weight: 700; font-size: 10.5px; padding: 2px 8px; border-radius: 4px; white-space: nowrap;
+  }
+  .cascade-step .result.pass { background: #D1FAE5; color: #065F46; }
+  .cascade-step .result.deny { background: #FEE2E2; color: #991B1B; }
+  .cascade-step .result.next { background: #E0E7FF; color: #3730A3; }
+  .cascade-step .result.call { background: #FEF3C7; color: #78350F; }
+  .cascade-num {
+    background: #EAB308; color: white; width: 20px; height: 20px;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; flex-shrink: 0;
+  }
+  .nested-flow {
+    margin: 6px 0; padding: 12px; background: #F0FDF4;
+    border: 1px dashed #10B981; border-radius: 8px;
+  }
+  .nested-flow-title {
+    font-size: 10.5px; font-weight: 700; color: #065F46;
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
+  }
+  .code-block {
+    background: #0F172A; color: #E2E8F0; padding: 12px 16px; border-radius: 6px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px; line-height: 1.6; overflow-x: auto; margin: 6px 0;
+  }
+  .code-block .k { color: #93C5FD; }
+  .code-block .s { color: #86EFAC; }
+  .code-block .c { color: #64748B; font-style: italic; }
+  .code-block .t { color: #FDE68A; }
+  .note {
+    background: #FEF3C7; border-left: 4px solid #F59E0B;
+    padding: 12px 16px; border-radius: 6px;
+    font-size: 12.5px; color: #78350F; margin: 20px 0;
+  }
+  .note.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .note code {
+    background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px;
+  }
+  .page-footer-nav {
+    margin-top: 48px; padding: 16px; background: white;
+    border-radius: 10px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .field-table { width: 100%; border-collapse: collapse; font-size: 11px; margin: 8px 0; }
+  .field-table th {
+    text-align: left; padding: 6px 8px; background: #F1F5F9; color: #334155;
+    font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;
+    font-size: 10px; border-bottom: 1px solid #CBD5E1;
+  }
+  .field-table td { padding: 5px 8px; border-bottom: 1px solid #F1F5F9; vertical-align: top; }
+  .field-table td:first-child {
+    font-family: 'SF Mono', Menlo, Consolas, monospace; color: #0F172A;
+    font-weight: 600; white-space: nowrap; font-size: 10.5px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-nav">
+    <div class="breadcrumb">
+      <a href="../index.html">📋 Execução de Agente</a>
+      <span class="sep">›</span>
+      <span>Passo 2.1 — Detalhamento</span>
+    </div>
+    <a href="../index.html#step-2-1" class="back-btn">← Voltar ao diagrama</a>
+  </div>
+
+  <div class="page-header">
+    <span class="icon">🗺️</span>
+    <h1>Passo 2.1 — buildSchedulerState (DAG scheduler)</h1>
+  </div>
+  <div class="page-sub">
+    Bloco em <code>scheduler.ts:152-293</code> (planOrder: 412-425). Constrói o estado do scheduler DAG que vai reger o loop principal: classifica arestas em <em>control / condition / data / global</em>, calcula alcançabilidade a partir do starter, remove backedges (ciclos), monta contadores de predecessores e devolve a fila inicial de nós prontos (<code>ready</code>).
+  </div>
+
+  <!-- Step friendly summary -->
+  <div class="step-friendly">
+    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <ul>
+      <li><strong>Etiqueta cada aresta do canvas:</strong> passa por todas as ligações entre nós e coloca um rótulo (<code>global</code>, <code>control</code>, <code>condition</code>, <code>data</code>) que diz <em>se aquela aresta bloqueia execução ou não</em>.</li>
+      <li><strong>Descobre quem entra na festa:</strong> partindo do starter, calcula o <code>Set</code> de nós <em>reachable</em> — quem não estiver nele fica dormindo o run inteiro, mesmo desenhado no canvas.</li>
+      <li><strong>Remove ciclos do grafo:</strong> um DFS com coloring (branco/cinza/preto) identifica as <em>backedges</em> (típico de <code>arrayNode</code> que volta pro início) e as ignora, pra não travar os contadores de predecessores.</li>
+      <li><strong>Monta o "painel de controle" do loop:</strong> pra cada nó, calcula quantos predecessores tem no total e quantos são <em>gates</em> (control+condition), inicializa contadores em zero e popula o <code>ready[]</code> só com nós de in-degree 0.</li>
+      <li><strong>Saída:</strong> um <code>SchedulerState</code> mutável de 12 campos (<code>ready</code>, <code>forwardDeps</code>, <code>conditionEdges</code>, contadores, sets vazios de <code>completed/dead/scheduled</code>) que o loop da Fase 3 vai consumir — puro CPU, zero I/O, <code>O(V+E)</code>.</li>
+    </ul>
+  </div>
+
+  <div class="note info">
+    <strong>Contexto:</strong> este é o <strong>coração do algoritmo de execução</strong>. Todo o loop da Fase 3 depende do <code>SchedulerState</code> que sai daqui — <code>nextReady()</code>, <code>markCompleted()</code>, <code>markDead()</code>, <code>completeCondition()</code> operam nas estruturas montadas em 2.1. É código puro (sem I/O, sem async), determinístico, ~140 linhas — pode virar unit test trivial.
+  </div>
+
+  <div class="overview-mini">
+    <div class="overview-mini-title">Cadeia de operações em 2.1</div>
+    <div class="overview-chain">
+      <a href="#fn-a" class="overview-chip"><span class="lbl">A</span>classifyEdge</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>reachable + pullProviders/Consumers</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>findBackEdges (DFS)</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>Monta preds + gating + ready</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-e" class="overview-chip"><span class="lbl">E</span>planOrder (debug)</a>
+    </div>
+    <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
+      Resultado final: <code>SchedulerState</code> com 12 campos que o loop consome — <code>ready[]</code>, <code>forwardDeps</code>, <code>conditionEdges</code>, contadores de preds/gating, sets de <code>completed/dead/scheduled</code>.
+    </div>
+  </div>
+
+  <!-- CARD A -->
+  <div class="fn-card collapsed" id="fn-a">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#EAB308;color:white">A</span>
+        <code>classifyEdge()</code>
+      </div>
+      <div class="fn-loc">scheduler.ts:46-57</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        function classifyEdge(edge, starterSourceId): 'control' | 'condition' | 'data' | 'global'
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Categoriza cada aresta em uma de 4 classes. Essa classificação determina como o scheduler trata a dependência: <em>control</em>/<em>condition</em> gateiam execução; <em>data</em> passa valor mas não bloqueia por si só; <em>global</em> não conta como dep.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> pense nessa função como o <em>cadastrador</em> das arestas — ela pega cada linha que liga um nó a outro no canvas e coloca uma etiqueta em cada uma. Olhando pro handle de saída, ela decide: "essa aqui é <code>global</code> (vem do starter, não trava ninguém)", "essa é <code>control</code> (fluxo explícito, tem que respeitar a ordem)", "essa é <code>condition</code> (saída de if/switch, pode matar a branch se o teste der errado)" ou "essa é <code>data</code> (só entrega um valor)". É uma cascata de 5 checks, e o primeiro que bater ganha. O rótulo é o que vai dizer pro resto do scheduler <strong>se aquela aresta bloqueia execução</strong> ou não.
+      </div>
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="cascade">
+            <div class="cascade-title">🪜 Cascata de classificação</div>
+            <div class="cascade-step">
+              <span class="cascade-num">1</span>
+              <span class="cond"><code>source === starterSourceId</code> || handle = <code>'a'</code></span>
+              <span class="result pass"><code>global</code></span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">2</span>
+              <span class="cond">handle = <code>'outputFlow'</code></span>
+              <span class="result pass"><code>control</code></span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">3</span>
+              <span class="cond">handle bate em <code>/outputHandle-[01]/</code> ou <code>/conditionHandle-[TF]\d+/</code></span>
+              <span class="result pass"><code>condition</code></span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">4</span>
+              <span class="cond">tem <code>targetHandle</code></span>
+              <span class="result pass"><code>data</code></span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">5</span>
+              <span class="cond">nenhum</span>
+              <span class="result deny"><code>global</code> (fallback)</span>
+            </div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box backend">
+            <div class="box-title">isDependencyEdge = <code>control</code> || <code>condition</code> || <code>data</code></div>
+            <div class="box-desc">
+              Ou seja: só arestas <em>global</em> são ignoradas no cálculo de dependência. As demais viram nós no grafo de precedência.
+            </div>
+            <div class="box-file">scheduler.ts:59-65</div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Semântica das 4 classes</div>
+            <strong>global</strong> — starter/globals (não gateiam nada, todo run começa com)
+            <br><strong>control</strong> — fluxo explícito (aresta <code>outputFlow</code>): "só rode depois deste"
+            <br><strong>condition</strong> — saída de conditionNode: pode marcar branch como <em>dead</em>
+            <br><strong>data</strong> — aresta de valor: dep de precedência mas não força ordem no DAG se já resolvido
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 Handles hardcoded</div>
+            <code>GLOBAL_HANDLE = 'a'</code>, <code>CONTROL_HANDLE = 'outputFlow'</code>, regex <code>outputHandle-[01]</code> (bool if/else) e <code>conditionHandle-[TF]\d+</code> (switch). Se o front cria um handle com nome fora desses padrões, ele cai em <code>data</code> ou <code>global</code> por acidente.
+          </div>
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Fallback silencioso pra global</div>
+            Aresta sem <code>sourceHandle</code> e sem <code>targetHandle</code> → <code>global</code>. Se um bug no front criar aresta assim entre 2 nós de negócio, o scheduler <em>não</em> vai gatear a execução — pode causar race na Fase 3.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARD B -->
+  <div class="fn-card collapsed" id="fn-b">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#3B82F6;color:white">B</span>
+        <code>reachableFrom + pullDataProviders + pullSinkConsumers</code>
+      </div>
+      <div class="fn-loc">scheduler.ts:113-220</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        // BFS a partir do starter, depois expande por data-providers e data-sinks até fixed point
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Descobrir quais nós vão realmente rodar neste run. Só nós alcançáveis a partir do <code>flow-global-starter</code> via arestas control/condition entram na base, e depois puxa <em>data providers</em> (nós cujo output alimenta um nó alcançável) e <em>data sinks</em> (output/varInput consumers). Fixed point até estabilizar.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> essa etapa é o <em>vigia</em> que decide quem entra na festa. Ela parte do nó starter e vai andando pelas arestas de <code>control</code>/<code>condition</code> pra montar um primeiro grupo de nós "com convite"; depois faz uma passada puxando quem <em>alimenta</em> esses nós com dados (os providers), e uma outra passada puxando quem <em>recebe</em> resultado deles (os sinks tipo <code>outputController</code>, <code>varInputNode</code>). Roda em fixed point — repete até nada mudar. No final sobra um <code>Set</code> chamado <code>reachable</code>, e <strong>quem não está nele nem existe pro loop</strong>: mesmo estando desenhado no canvas, o nó fica dormindo o run inteiro. É o que evita rodar um <code>apiCaller</code> desconectado só porque ele está pendurado por lá.
+      </div>
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B1</span> BFS de control/condition (<code>reachableFrom</code>)</div>
+            <div class="box-desc">
+              Começa dos <code>starterTargets</code> (nós ligados diretamente ao <code>starterSourceId</code>) e caminha por <code>orchAdj</code> (control + condition).
+            </div>
+            <div class="box-file">scheduler.ts:113-128, 181</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B2</span> Fase 1: pullDataProviders(<code>false</code>)</div>
+            <div class="box-desc">
+              Loop até fixed point: pra cada nó alcançável, puxa seus <em>data providers</em> upstream (via <code>reverseDataAdj</code>). Nesta fase, <strong>não</strong> pula side-effects.
+            </div>
+            <div class="box-file">scheduler.ts:212-215</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B3</span> Fase 2: pullSinkConsumers + pullDataProviders(<code>true</code>)</div>
+            <div class="box-desc">
+              Segundo loop até fixed point. <code>pullSinkConsumers</code> puxa consumers do tipo <code>outputController</code>/<code>outputObjectNode</code>/<code>varInputNode</code> (que precisam existir mesmo sem control edge). Depois puxa mais providers, agora <strong>pulando</strong> side-effect types.
+            </div>
+            <div class="box-file">scheduler.ts:200-220</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box decision">
+            <div class="box-title"><span class="badge step">B4</span> <code>reachable: Set&lt;string&gt;</code></div>
+            <div class="box-desc">
+              Set final de nodeIds que vão rodar. Nós fora do <code>reachable</code> nem são registrados em <code>totalPreds</code> — o loop nunca os toca.
+            </div>
+            <div class="box-file">scheduler.ts:182, 278</div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Por que 2 fases?</div>
+            Fase 1 é a expansão "completa" (traz tudo que alimenta os nós de negócio, mesmo side-effects como <code>apiCaller</code>). Fase 2 corrige overshoot: se um output-sink virou alcançável e precisa de mais providers, só puxa se não for side-effect (evita disparar <code>apiCaller</code> só pra popular um output).
+          </div>
+          <div class="aside">
+            <div class="aside-title">📎 <code>SIDE_EFFECT_TYPES</code></div>
+            <code>apiCaller</code>, <code>mcpNode</code>, <code>thirdPartyIntegration</code>, <code>pushData</code>, <code>hubSpotCRM</code>, <code>fileSave</code>. Set fechado em <code>scheduler.ts:29-36</code>. Adicionar tipo novo aqui muda semântica de alcançabilidade — cuidado.
+          </div>
+          <div class="aside">
+            <div class="aside-title">📎 <code>DATA_SINK_TYPES</code></div>
+            <code>outputController</code>, <code>outputObjectNode</code>, <code>varInputNode</code>. Só esses 3 são puxados pela regra "consumer alcançável se produzido por alcançável". <code>scheduler.ts:23-27</code>.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 <code>orchAdj</code> vs <code>dataAdj</code></div>
+            Duas listas de adjacência separadas: <code>orchAdj</code> só tem control+condition (usada na BFS inicial); <code>dataAdj</code>/<code>reverseDataAdj</code> só tem data (usada na expansão). Bug clássico é misturar as duas.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARD C -->
+  <div class="fn-card collapsed" id="fn-c">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#10B981;color:white">C</span>
+        <code>findBackEdges()</code>
+      </div>
+      <div class="fn-loc">scheduler.ts:130-150</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        function findBackEdges(roots, adj: depAdj): Set&lt;`${src}-&gt;${tgt}`&gt;
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> DFS clássico com <em>coloring</em> (0=white/unvisited, 1=gray/on-stack, 2=black/done) pra detectar backedges no grafo de dependência. Backedges são <strong>ignoradas</strong> na montagem de <code>forwardDeps</code>/<code>preds</code> — sem isso, ciclos travariam <code>nextReady</code> (nunca zera predecessores).
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> imagina que o grafo tem um <em>arrayNode</em> que volta pro início pra iterar: isso é um ciclo, e ciclo em DAG é veneno pro scheduler (o contador de predecessores nunca chega a zero, então <code>nextReady</code> nunca acha o nó pronto e o loop trava). Essa função é o <em>faxineiro</em> que sai passeando pelo grafo com uma marcação de três cores (branco = não visitei, cinza = estou dentro, preto = já saí) e, sempre que topa com uma seta apontando pra alguém que ainda está "cinza" (ou seja, tem a mesma seta subindo pela pilha), <strong>marca aquela aresta como backedge</strong>. Essas backedges ficam num <code>Set</code> e são simplesmente <em>ignoradas</em> na hora de montar as dependências — o loop lógico do array vira problema do handler de <code>arrayNode</code> na Fase 3, não do scheduler.
+      </div>
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">C1</span> Constrói <code>depAdj</code> (só arestas de dependência)</div>
+            <div class="box-desc">
+              Filtra <code>edges</code>: só as classificadas como dep (não-global) E ambas as pontas alcançáveis. Vira o input do DFS.
+            </div>
+            <div class="box-file">scheduler.ts:222-228</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">C2</span> DFS recursivo com <code>state</code> map</div>
+            <div class="code-block">
+<span class="k">const</span> visit = (node) =&gt; {
+  state.<span class="t">set</span>(node, <span class="s">1</span>); <span class="c">// gray</span>
+  <span class="k">for</span> (<span class="k">const</span> next <span class="k">of</span> adj.<span class="t">get</span>(node) ?? []) {
+    <span class="k">const</span> s = state.<span class="t">get</span>(next) ?? <span class="s">0</span>;
+    <span class="k">if</span> (s === <span class="s">1</span>) backEdges.<span class="t">add</span>(<span class="s">`${node}-&gt;${next}`</span>); <span class="c">// cycle</span>
+    <span class="k">else if</span> (s === <span class="s">0</span>) <span class="t">visit</span>(next);
+  }
+  state.<span class="t">set</span>(node, <span class="s">2</span>); <span class="c">// black</span>
+};
+            </div>
+            <div class="box-file">scheduler.ts:136-147</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box decision">
+            <div class="box-title"><span class="badge step">C3</span> Filtra <code>backEdges</code> na montagem de <code>forwardDeps</code></div>
+            <div class="box-desc">
+              <code>if (backEdges.has(`${source}-&gt;${target}`)) continue;</code>
+              <br><br>Arestas de loop viram invisíveis pro scheduler — o loop propriamente dito é gerenciado por <code>arrayNode</code>/<code>loopIterationContext</code> na Fase 3.
+            </div>
+            <div class="box-file">scheduler.ts:246</div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside warn">
+            <div class="aside-title">⚠️ DFS recursivo — risco de stack overflow</div>
+            Flow com &gt; ~5000 nós encadeados em série pode estourar o call stack do Node. Não é caso real hoje (nenhum flow em prod chega perto), mas é limitação latente. Migrar pra DFS iterativo com stack explícito eliminaria.
+          </div>
+          <div class="aside info">
+            <div class="aside-title">🎯 Por que ignorar backedge?</div>
+            Se A → B → A é um ciclo, um dos dois nós tem in-degree ≥ 1 pra sempre — <code>nextReady</code> nunca acha ele pronto. Removendo o backedge do grafo de deps, o loop principal consegue rodar A, depois B (que agora tem in-degree 0), e o <em>loop lógico</em> vira responsabilidade do <code>arrayNode</code> handler em Fase 3.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 Chave <code>${node}-&gt;${next}</code></div>
+            String literal, não tupla. Concat direto. Se algum <code>nodeId</code> contiver a substring <code>-&gt;</code>, colisão. Como IDs são UUIDs no front, seguro na prática.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARD D -->
+  <div class="fn-card collapsed" id="fn-d">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#A855F7;color:white">D</span>
+        <code>Monta forwardDeps + preds + gating + ready[]</code>
+      </div>
+      <div class="fn-loc">scheduler.ts:232-292</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        return { nodeIds, forwardDeps, conditionEdges, totalPreds, resolvedPreds, deadPreds, gatingPairs, totalGating..., ready: [], completed: Set(), dead: Set(), scheduled: Set() }
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Materializar o estado final que o loop vai mutar. Cada nó tem 6 contadores (total/resolved/dead × preds/gating) que <code>markCompleted</code>/<code>markDead</code>/<code>completeCondition</code> incrementam em O(1) durante o run. <code>ready[]</code> começa com nós de in-degree 0.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> essa aqui é o <em>montador</em> do painel de controle que o loop de execução vai usar do início ao fim. Passando aresta por aresta, ela vai enchendo mapas: pra cada nó quantos predecessores totais existem, quantos deles são "gates" (control+condition, os que podem matar o nó), quais são as arestas de saída pra propagar depois, e quais saídas de <code>conditionNode</code> devem ser lembradas pra quando o if resolver. No fim inicializa contadores zerados de "resolved" e "dead" pra cada um e monta o <code>ready[]</code> inicial só com quem não tem predecessor nenhum — esses são os primeiros a rodar. Daqui pra frente, cada <code>markCompleted</code>/<code>markDead</code>/<code>completeCondition</code> vai só incrementar esses contadores em O(1) e mover nós pro <code>ready</code> conforme forem se liberando.
+      </div>
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">D1</span> Loop único monta <code>forwardDeps</code>, <code>preds</code>, <code>gatingPairs</code>, <code>conditionEdges</code></div>
+            <div class="box-desc">
+              Passa por cada aresta 1x. Se é <em>condition</em>: guarda em <code>conditionEdges[source]</code> pro <code>completeCondition</code> resolver depois. Se é dep e não-backedge: preenche forward + preds + (se control/condition) gating.
+            </div>
+            <div class="box-file">scheduler.ts:238-256</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">D2</span> Inicializa contadores</div>
+            <div class="code-block">
+<span class="k">for</span> (<span class="k">const</span> id <span class="k">of</span> reachable) {
+  totalPreds.<span class="t">set</span>(id, preds.<span class="t">get</span>(id)?.size ?? <span class="s">0</span>);
+  resolvedPreds.<span class="t">set</span>(id, <span class="s">0</span>);
+  deadPreds.<span class="t">set</span>(id, <span class="s">0</span>);
+  totalGatingPreds.<span class="t">set</span>(id, gatingPreds.<span class="t">get</span>(id)?.size ?? <span class="s">0</span>);
+  <span class="c">// ... e mais 2</span>
+}
+            </div>
+            <div class="box-file">scheduler.ts:264-271</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">D3</span> Monta <code>ready[]</code> inicial</div>
+            <div class="box-desc">
+              <code>for (id of reachable) if (totalPreds.get(id) === 0) ready.push(id)</code>
+              <br><br>Nós sem predecessores = pontos de entrada do DAG. Tipicamente: os targets do starter, e globals. É o array que <code>nextReady()</code> vai shift() na Fase 3.
+            </div>
+            <div class="box-file">scheduler.ts:273-275</div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Por que 2 contagens (preds vs gating)?</div>
+            <strong>preds</strong> = todas as deps (control+condition+data). Só quando <em>todas</em> resolvidas o nó pode ir pra <code>ready</code>.
+            <br><br><strong>gating</strong> = subset (só control+condition). Se <em>todos</em> os gates que sobraram estão mortos, o nó também morre (não roda).
+            <br><br>Data edges contam pra ordem mas não podem "matar" o nó sozinhas.
+          </div>
+          <div class="aside">
+            <div class="aside-title">📎 <code>conditionEdges</code> guarda todas as arestas de condition por source</div>
+            Usado pelo <code>completeCondition(schedState, id, takenHandle)</code> pra decidir qual branch vira <em>dead</em> quando um <code>conditionNode</code> resolve. Ver <code>scheduler.ts:366-389</code>.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 Sets vazios pre-alocados</div>
+            <code>completed</code>, <code>dead</code>, <code>scheduled</code> começam vazios. O loop popula on-the-fly. <code>scheduled</code> evita re-enfileirar o mesmo id se <code>nextReady</code> for chamado após já ter servido.
+          </div>
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Todas as estruturas são <code>Map</code>/<code>Set</code></div>
+            Rápido em memória, mas não são serializáveis pra Redis/Postgres direto. Se algum dia o scheduler precisar sobreviver a um crash do backend, precisa serializer custom.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARD E -->
+  <div class="fn-card collapsed" id="fn-e">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#EF4444;color:white">E</span>
+        <code>planOrder()</code>
+      </div>
+      <div class="fn-loc">scheduler.ts:412-425</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        function planOrder(nodes, edges, starterSourceId): string[] // ordem topológica linear
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Roda o scheduler <strong>a seco</strong> — chama <code>buildSchedulerState</code> + loop <code>nextReady → markCompleted</code> até esvaziar, sem executar handlers. Só devolve a ordem em que os nós <em>iriam</em> rodar. Usado pra popular <code>allNodesIds</code> no flux.service pra debug/UI.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> é um <em>ensaio geral</em> do agente sem ninguém no palco. Ela chama tudo que a D montou e simula o loop: pega o próximo nó pronto, "marca como completo" (sem executar de verdade, sem gastar token, sem chamar API), pega o próximo, e assim por diante até acabar. O que sai é só a <strong>lista ordenada dos IDs</strong> na sequência em que iriam rodar — usada em <code>allNodesIds</code> pra debug, previews e alguns asserts. Cuidado com uma pegadinha: como ela nunca chama <code>completeCondition</code> nem <code>markDead</code>, o ensaio assume que <em>todos</em> os branches são tomados — então a lista é o "cenário máximo", não necessariamente o que vai acontecer num run real com condições.
+      </div>
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="code-block">
+<span class="k">export function</span> <span class="t">planOrder</span>(nodes, edges, starterSourceId): <span class="k">string</span>[] {
+  <span class="k">const</span> state = <span class="t">buildSchedulerState</span>(nodes, edges, starterSourceId);
+  <span class="k">const</span> order = [];
+  <span class="k">let</span> id;
+  <span class="k">while</span> ((id = <span class="t">nextReady</span>(state)) !== <span class="k">null</span>) {
+    order.<span class="t">push</span>(id);
+    <span class="t">markCompleted</span>(state, id);
+  }
+  <span class="k">return</span> order;
+}
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box backend">
+            <div class="box-title">Uso em flux.service.ts</div>
+            <div class="box-desc">
+              <code>allNodesIds = planOrder(newFlows, edges, flowGlobalEdge?.source)</code>
+              <br><br>Consumido em asserts e por endpoints de debug/preview.
+            </div>
+            <div class="box-file">flux.service.ts:3141</div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Não considera conditions</div>
+            <code>planOrder</code> só chama <code>markCompleted</code> — nunca <code>completeCondition</code> ou <code>markDead</code>. Ou seja: assume que <strong>todo</strong> branch é tomado. Ordem gerada é a <em>hipótese máxima</em>, não o que vai rodar de verdade num run com condições.
+          </div>
+          <div class="aside info">
+            <div class="aside-title">🎯 Custo</div>
+            É basicamente o dobro do trabalho do build — chama <code>buildSchedulerState</code> de novo e depois faz uma passada topológica. Rodado a cada run. Poderia ser cacheado por (flowId, version) já que é determinístico só a partir de nodes+edges, mas hoje não é.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 <code>buildSchedulerState</code> é chamado 2 vezes no run</div>
+            1x aqui pra <code>schedState</code> (flux.service.ts:3136) e 1x dentro de <code>planOrder</code> pra <code>allNodesIds</code>. Poderia reusar o mesmo state, mas requer <code>markCompleted</code> ser não-destrutivo (não é).
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note info" style="margin-top:32px">
+    <strong>Resumo — o que sai de 2.1:</strong>
+    <br>• <code>schedState: SchedulerState</code> — mutável, consumido pelo loop da Fase 3
+    <br>• <code>allNodesIds: string[]</code> — ordem topológica pra debug/UI
+    <br>• Zero I/O; puro CPU; ~O(V+E) na maioria dos casos
+    <br>• Nós fora do <code>reachable</code> ficam invisíveis pro run (nunca executados)
+  </div>
+
+  <div class="note">
+    <strong>Observações para migração:</strong>
+    <br>• <strong>Essencial e código puro</strong> — é o menor risco de migrar. Pode virar biblioteca compartilhada backend/worker com zero mudança semântica.
+    <br>• Worker <em>não</em> precisa rodar scheduler hoje (cada activity é um nó isolado). Se algum dia o worker orquestrar sub-DAGs, esse mesmo módulo funciona.
+    <br>• Cachear <code>buildSchedulerState</code> por (flowId, versionId) elimina uma rodada por run. Custo trivial hoje mas cresce linear com nº nós.
+    <br>• Formalizar interface pública (só exporta <code>buildSchedulerState</code>/<code>nextReady</code>/<code>markCompleted</code>/<code>markDead</code>/<code>completeCondition</code>) antes de qualquer refactor — hoje é fácil alguém importar helper interno sem querer.
+    <br>• <strong>Adicionar tipo em cima de handles</strong>: as regex <code>outputHandle-[01]</code> e <code>conditionHandle-[TF]\d+</code> são strings mágicas — enum tipado no front que gera esses handles seria mais seguro.
+  </div>
+
+  <div class="page-footer-nav">
+    <a href="../index.html#step-2-1" class="back-btn">← Voltar ao diagrama principal</a>
+  </div>
+
+</div>
+<script>
+(function() {
+  function toggle(card) {
+    if (card) card.classList.toggle('collapsed');
+  }
+  function expand(card) {
+    if (card && card.classList.contains('collapsed')) card.classList.remove('collapsed');
+  }
+  document.querySelectorAll('.fn-card-header').forEach(function(header) {
+    header.addEventListener('click', function(e) {
+      if (e.target.closest('a')) return;
+      toggle(header.parentElement);
+    });
+  });
+  document.querySelectorAll('a[href^="#fn-"]').forEach(function(link) {
+    link.addEventListener('click', function() {
+      var id = link.getAttribute('href').slice(1);
+      expand(document.getElementById(id));
+    });
+  });
+  if (window.location.hash && window.location.hash.startsWith('#fn-')) {
+    expand(document.querySelector(window.location.hash));
+  }
+  window.addEventListener('hashchange', function() {
+    if (window.location.hash.startsWith('#fn-')) {
+      expand(document.querySelector(window.location.hash));
+    }
+  });
+})();
+</script>
+</body>
+</html>

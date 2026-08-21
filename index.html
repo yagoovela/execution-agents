@@ -774,24 +774,17 @@
 <body>
 <div class="container">
 
-  <h1>Execução de Agente — Estado Atual</h1>
-
-  <!-- LEGEND -->
-  <div class="legend">
-    <div class="legend-item"><span class="legend-swatch" style="border-left-color:#3B82F6"></span> Backend (apiv2)</div>
-    <div class="legend-item"><span class="legend-swatch" style="border-left-color:#10B981"></span> Worker (Temporal)</div>
-    <div class="legend-item"><span class="legend-swatch" style="border-left-color:#F59E0B"></span> PostgreSQL</div>
-    <div class="legend-item"><span class="legend-swatch" style="border-left-color:#EF4444"></span> Redis</div>
-    <div class="legend-item"><span class="legend-swatch" style="border-left-color:#8B5CF6"></span> S3</div>
-    <div class="legend-item"><span class="legend-swatch" style="border-left-color:#64748B"></span> Externo</div>
-    <div class="legend-item"><span class="legend-swatch" style="border-left-color:#EAB308;background:#FEFCE8"></span> Decisão</div>
-    <div class="legend-item"><span class="legend-swatch" style="border-left-color:#A855F7;background:#FAF5FF"></span> Cross-cutting</div>
-    <div class="legend-item"><span class="badge ess">essencial</span></div>
-    <div class="legend-item"><span class="badge cross">cross</span></div>
-    <div class="legend-item"><span class="badge migrated">migrado</span></div>
-    <div class="legend-item"><span class="badge legacy">legacy</span></div>
-    <div class="legend-item"><span class="badge new">novo (pós-doc)</span></div>
+  <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
+    <a href="arquitetura-v2.html" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:linear-gradient(90deg,#DBEAFE,#F3E8FF);color:#3730A3;text-decoration:none;border-radius:8px;border:1px solid #C7D2FE;font-size:12.5px;font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,0.06);transition:transform 0.15s"
+       onmouseover="this.style.transform='translateY(-1px)'"
+       onmouseout="this.style.transform='translateY(0)'">
+      <span>✦</span>
+      <span>Ver proposta — Arquitetura v2</span>
+      <span style="font-weight:700">→</span>
+    </a>
   </div>
+
+  <h1>Execução de Agente — Estado Atual</h1>
 
   <!-- ================================================== -->
   <!-- FASE 1 — ENTRADA E PREPARAÇÃO -->
@@ -800,7 +793,7 @@
     <div class="section-header">
       <div class="section-number">1</div>
       <div class="section-title">FASE 1 — Entrada e preparação</div>
-      <div class="section-desc">Fase 1 do doc original (passos 1–7)</div>
+      <div class="section-desc">Fase 1 do doc original (passos 1–8, com 1.8 adicionado pós-doc)</div>
     </div>
 
     <div class="flow-column">
@@ -832,6 +825,9 @@
         <div class="box-desc">Recebe <code>ApiV2QueueModel { jobId, params, webhookUrl }</code>. Define <code>processId = params.parentProcessId ?? jobId</code>. Chama <code>mcpRunStatusService.markRunning()</code>.</div>
         <div class="box-file">src/app-api/flux/apiV2Job.processor.ts:34-56</div>
       </div>
+      <div style="width:520px;max-width:100%;background:#FEF3C7;border-left:4px solid #F59E0B;padding:10px 14px;border-radius:6px;font-size:12px;color:#78350F;margin-top:6px">
+        <strong>⚠ Aviso:</strong> A nova regra de fila ainda não foi documentada.
+      </div>
       <div class="arrow">↓</div>
       <div class="arrow-label">todos os endpoints (com ou sem fila) chamam</div>
 
@@ -849,7 +845,7 @@
       </div>
       <div class="arrow">↓</div>
 
-      <a href="passo-1-3.html" class="box db clickable-node" id="step-1-3">
+      <a href="passos/passo-1-3.html" class="box db clickable-node" id="step-1-3">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title">
           <span class="badge step">1.3</span> Carrega flow + nós + arestas + permissões <span class="badge ess">essencial</span>
@@ -866,7 +862,7 @@
       </a>
       <div class="arrow">↓</div>
 
-      <a href="passo-1-4.html" class="box cross clickable-node" id="step-1-4">
+      <a href="passos/passo-1-4.html" class="box cross clickable-node" id="step-1-4">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title"><span class="badge step">1.4</span> Setup de log por espaço <span class="badge cross">cross-cutting</span></div>
         <div class="box-desc"><code>RunLogCollector.createRoot()</code> + <code>spaceRunLogsService.scheduleUpsert()</code> + upsert inicial</div>
@@ -877,9 +873,12 @@
           <span class="click-hint-arrow">→</span>
         </div>
       </a>
+      <div style="width:520px;max-width:100%;background:#EFF6FF;border-left:4px solid #3B82F6;padding:10px 14px;border-radius:6px;font-size:12px;color:#1E3A8A;margin-top:6px">
+        <strong>📝 Nota:</strong> Precisamos estruturar melhor o que precisamos documentar, pra que, e o que é importante para o time de produto/dev.
+      </div>
       <div class="arrow">↓</div>
 
-      <a href="passo-1-5.html" class="box backend clickable-node" id="step-1-5">
+      <a href="passos/passo-1-5.html" class="box backend clickable-node" id="step-1-5">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title"><span class="badge step">1.5</span> Carrega objetos personalizados <span class="badge ess">essencial</span></div>
         <div class="box-desc">Resolve <code>ObjectOwner</code> (space &gt; companyUser &gt; user), chama <code>objectsService.getObjectsByOwner()</code></div>
@@ -892,7 +891,7 @@
       </a>
       <div class="arrow">↓</div>
 
-      <a href="passo-1-6.html" class="box backend clickable-node" id="step-1-6">
+      <a href="passos/passo-1-6.html" class="box backend clickable-node" id="step-1-6">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title"><span class="badge step">1.6</span> Carrega contexto de chat <span class="badge ess">essencial (modo chat)</span></div>
         <div class="box-desc"><code>sessionStateService.readContents()</code> para <code>fluxObject</code> e <code>nodesBox</code> com chat habilitado. Atualiza sessão selecionada.</div>
@@ -905,7 +904,7 @@
       </a>
       <div class="arrow">↓</div>
 
-      <a href="passo-1-7.html" class="box external clickable-node" id="step-1-7">
+      <a href="passos/passo-1-7.html" class="box external clickable-node" id="step-1-7">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title"><span class="badge step">1.7</span> Refresh de token Google (condicional) <span class="badge ess">essencial</span></div>
         <div class="box-desc">Só se flow tem <code>pullData</code>/<code>pushData</code> com provider=google. Usa <code>OAuth2Client</code>.</div>
@@ -916,10 +915,34 @@
           <span class="click-hint-arrow">→</span>
         </div>
       </a>
+      <div class="arrow">↓</div>
+
+      <a href="passos/passo-1-8.html" class="box backend clickable-node" id="step-1-8">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title">
+          <span class="badge step">1.8</span> Resolução de inputs (<code>varInputNode</code>) + extração/OCR
+          <span class="badge ess">essencial</span>
+          <span class="badge new">omitido no doc original</span>
+        </div>
+        <div class="box-desc">
+          Consome <code>body.variableInputs</code> / <code>body.dataInput</code>. Para cada <code>varInputNode</code>:
+          upload S3 dos arquivos base64 · <code>extractionService.extractTextFromLink()</code>
+          com provider OCR (<code>mistral_ocr</code> / <code>mistral_vision</code> / <code>google_ocr</code>) ·
+          <code>addConnectToNodes()</code> propaga <code>{ text, uploadedFiles, extractText, isExtraction }</code> pros nós conectados via arestas ·
+          <code>persistInputNodeData()</code> grava no banco.
+          <br><em>Bloco pesado que roda antes do scheduler — é onde PDF/imagem/áudio viram texto pro LLM.</em>
+        </div>
+        <div class="box-file">flux.service.ts:2772-3134</div>
+        <div class="click-hint">
+          <span class="click-hint-icon">🔍</span>
+          <span>Clique para ver detalhamento (dataInput fallback + OCR + propagação + persistência)</span>
+          <span class="click-hint-arrow">→</span>
+        </div>
+      </a>
     </div>
   </div>
 
-  <hr class="phase-sep">
+ 
 
   <!-- ================================================== -->
   <!-- FASE 2 — SETUP DA EXECUÇÃO -->
@@ -932,7 +955,7 @@
     </div>
 
     <div class="flow-column">
-      <a href="passo-2-1.html" class="box backend clickable-node" id="step-2-1">
+      <a href="passos/passo-2-1.html" class="box backend clickable-node" id="step-2-1">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title"><span class="badge step">2.1</span> buildSchedulerState() — DAG scheduler <span class="badge ess">essencial</span></div>
         <div class="box-desc">
@@ -947,7 +970,7 @@
       </a>
       <div class="arrow">↓</div>
 
-      <a href="passo-2-2.html" class="box backend clickable-node" id="step-2-2">
+      <a href="passos/passo-2-2.html" class="box backend clickable-node" id="step-2-2">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title"><span class="badge step">2.2</span> Variáveis mutáveis de execução <span class="badge ess">essencial (é o que estora RAM hoje)</span></div>
         <div class="box-desc">
@@ -963,7 +986,7 @@
       </a>
       <div class="arrow">↓</div>
 
-      <a href="passo-2-3.html" class="box backend clickable-node" id="step-2-3">
+      <a href="passos/passo-2-3.html" class="box backend clickable-node" id="step-2-3">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title"><span class="badge step">2.3</span> generateSchemaFromNodes() — schema de substituição <span class="badge ess">essencial</span></div>
         <div class="box-desc">
@@ -981,7 +1004,7 @@
       </a>
       <div class="arrow">↓</div>
 
-      <a href="passo-2-4.html" class="box cross clickable-node" id="step-2-4">
+      <a href="passos/passo-2-4.html" class="box cross clickable-node" id="step-2-4">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title"><span class="badge step">2.4</span> Setup do RunLogCollector inicial <span class="badge cross">cross</span></div>
         <div class="box-desc">Cria novo se top-level, ou reusa <code>injectedRunLogCollector</code> se nested (chamado por fluxBox/libraryNode)</div>
@@ -1000,7 +1023,7 @@
     </div>
   </div>
 
-  <hr class="phase-sep">
+ 
 
   <!-- ================================================== -->
   <!-- FASE 2.5 - PREFETCH DECISION (NEW) -->
@@ -1064,7 +1087,7 @@
     </div>
   </div>
 
-  <hr class="phase-sep">
+ 
 
   <!-- ================================================== -->
   <!-- FASE 3 — LOOP PRINCIPAL -->
@@ -1080,7 +1103,7 @@
       <div class="loop-badge">🔁 while (nextReady(schedState) !== null)</div>
 
       <div class="flow-column">
-        <a href="passo-3-1.html" class="box backend clickable-node" id="step-3-1">
+        <a href="passos/passo-3-1.html" class="box backend clickable-node" id="step-3-1">
           <span class="click-chevron" aria-hidden="true">›</span>
           <div class="box-title"><span class="badge step">3.1</span> nextReady(schedState) <span class="badge ess">essencial</span></div>
           <div class="box-desc">Scheduler devolve próximo nó pronto (in-degree = 0 nas arestas ativas)</div>
@@ -1093,7 +1116,7 @@
         </a>
         <div class="arrow">↓</div>
 
-        <a href="passo-3-2.html" class="box backend clickable-node" id="step-3-2">
+        <a href="passos/passo-3-2.html" class="box backend clickable-node" id="step-3-2">
           <span class="click-chevron" aria-hidden="true">›</span>
           <div class="box-title"><span class="badge step">3.2</span> Busca do nó + previewResponses cache <span class="badge ess">essencial</span></div>
           <div class="box-desc">Lê nó atualizado de <code>myUpdatedNodes</code>. Lê <code>previewResponses</code> (cache das 10 últimas respostas, máx 10 items).</div>
@@ -1106,7 +1129,7 @@
         </a>
         <div class="arrow">↓</div>
 
-        <a href="passo-3-3.html" class="box backend clickable-node" id="step-3-3">
+        <a href="passos/passo-3-3.html" class="box backend clickable-node" id="step-3-3">
           <span class="click-chevron" aria-hidden="true">›</span>
           <div class="box-title"><span class="badge step">3.3</span> applySubstitutionToObject(node, schema) <span class="badge legacy">só backend</span></div>
           <div class="box-desc">Substitui <code>{{...}}</code> recursivamente no node.data usando o schema atualizado</div>
@@ -1119,7 +1142,7 @@
         </a>
         <div class="arrow">↓</div>
 
-        <a href="passo-3-4.html" class="box cross clickable-node" id="step-3-4">
+        <a href="passos/passo-3-4.html" class="box cross clickable-node" id="step-3-4">
           <span class="click-chevron" aria-hidden="true">›</span>
           <div class="box-title"><span class="badge step">3.4</span> runLogCollector.startNode() + chargeContext.enterWith() <span class="badge cross">cross</span></div>
           <div class="box-desc">Abre <code>RunLogNode</code> hierárquico e entra em contexto de cobrança do nó (async-local storage)</div>
@@ -1132,7 +1155,7 @@
         </a>
         <div class="arrow">↓</div>
 
-        <a href="passo-3-4-cancellation.html" class="box backend clickable-node" id="step-3-cancel">
+        <a href="passos/passo-3-4-cancellation.html" class="box backend clickable-node" id="step-3-cancel">
           <span class="click-chevron" aria-hidden="true">›</span>
           <div class="box-title">Cancellation check <span class="badge new">novo pós-doc</span></div>
           <div class="box-desc">Feature flag <code>NODE_CANCEL_IN_FLIGHT_FLAG</code>. Se <code>cancelWatch.wasAborted()</code> → <code>finishCancelledNode()</code> e break do loop</div>
@@ -1145,7 +1168,7 @@
         </a>
         <div class="arrow">↓</div>
 
-        <a href="passo-3-5.html" class="box decision clickable-node" id="step-3-5">
+        <a href="passos/passo-3-5.html" class="box decision clickable-node" id="step-3-5">
           <span class="click-chevron" aria-hidden="true">›</span>
           <div class="box-title"><span class="badge step">3.5</span> Dispatch: isTemporalNode(type) OR isWorkerRoutedIntegration(node)?</div>
           <div class="box-desc">
@@ -1311,8 +1334,27 @@
                 <span class="leg">sqlQuerier (legacy)<br>(4479)</span>
                 <span class="leg">mcpNode</span>
               </div>
-              <em style="font-size:10px;color:#64748B">Tipos sem dispatch (dados inline): varInputNode, GLOBAL_STARTER, OUTPUT</em>
+              <em style="font-size:10px;color:#64748B">
+                Nós sem handler no dispatch:
+                <br>• <code>varInputNode</code> — <strong>tem</strong> lógica, mas executada em <a href="passos/passo-1-8.html" style="color:#3B82F6;text-decoration:underline">1.8 antes do loop</a> (upload S3 + OCR + propagação via arestas), <em>não</em> em Fase 3
+                <br>• <code>outputController</code>/<code>outputObjectNode</code>/<code>varOutputNode</code> — atravessam o loop como no-op; só têm lógica no passo <a href="passos/passo-4-6.html" style="color:#3B82F6;text-decoration:underline">4.6</a> (<code>persistInputNodeData</code>)
+                <br>• <code>comment</code>/<code>label</code>/<code>group</code> — puramente visuais; passam pelo scheduler como no-op silencioso (ver <em>whitelist prefetch</em> em flux.service.ts:1418-1420)
+                <br>• <code>GLOBAL_STARTER</code> — usado como <code>source</code> do <code>flowGlobalEdge</code> no <code>buildSchedulerState</code>
+              </em>
             </div>
+          </div>
+
+          <div class="box cross" style="width:100%;margin-top:8px">
+            <div class="box-title">
+              🔁 OCR re-execuções dentro de sub-flows
+              <span class="badge new">omitido no doc</span>
+            </div>
+            <div class="box-desc">
+              Quando <code>nodesBox</code> / <code>libraryNode</code> / <code>fluxBox</code> executam um sub-flow, o mesmo mecanismo de <code>varInputNode</code>+OCR
+              (<a href="passos/passo-1-8.html" style="color:#6B21A8;text-decoration:underline">passo 1.8</a>) roda <strong>de novo</strong> pra resolver os inputs do sub-flow, usando <code>callerData.textData</code> / <code>fileLinkData</code> em vez de <code>body.variableInputs</code>.
+              <br>Cada nível de aninhamento paga o custo de extração/OCR novamente.
+            </div>
+            <div class="box-file">flux.service.ts:5464-5533 (nodesBox), 5819+ (libraryNode/fluxBox)</div>
           </div>
           <div class="arrow">↓</div>
 
@@ -1367,7 +1409,7 @@
       <div class="converge">↓ ambos convergem ↓</div>
 
       <div class="flow-column">
-        <a href="passo-3-6.html" class="box backend clickable-node" id="step-3-6">
+        <a href="passos/passo-3-6.html" class="box backend clickable-node" id="step-3-6">
           <span class="click-chevron" aria-hidden="true">›</span>
           <div class="box-title"><span class="badge step">3.6</span> updateSchemaWithNodeOutput() <span class="badge ess">essencial</span></div>
           <div class="box-desc">Deixa output visível para próximos nós como <code>{{nodeLabel}}</code></div>
@@ -1376,7 +1418,7 @@
         </a>
         <div class="arrow">↓</div>
 
-        <a href="passo-3-7.html" class="box cross clickable-node" id="step-3-7">
+        <a href="passos/passo-3-7.html" class="box cross clickable-node" id="step-3-7">
           <span class="click-chevron" aria-hidden="true">›</span>
           <div class="box-title"><span class="badge step">3.7</span> Contabilidade token/custo por nó <span class="badge cross">cross (billing)</span></div>
           <div class="box-desc"><code>genericTokensBefore/After</code> + <code>onUpdateTokens</code> callback</div>
@@ -1385,7 +1427,7 @@
         </a>
         <div class="arrow">↓</div>
 
-        <a href="passo-3-8.html" class="box backend clickable-node" id="step-3-8">
+        <a href="passos/passo-3-8.html" class="box backend clickable-node" id="step-3-8">
           <span class="click-chevron" aria-hidden="true">›</span>
           <div class="box-title"><span class="badge step">3.8</span> Tratamento de erro por nó <span class="badge ess">essencial</span></div>
           <div class="box-desc">
@@ -1396,7 +1438,7 @@
         </a>
         <div class="arrow">↓</div>
 
-        <a href="passo-3-9.html" class="box cross clickable-node" id="step-3-9">
+        <a href="passos/passo-3-9.html" class="box cross clickable-node" id="step-3-9">
           <span class="click-chevron" aria-hidden="true">›</span>
           <div class="box-title"><span class="badge step">3.9</span> runLogCollector.endNode() <span class="badge cross">cross</span></div>
           <div class="box-desc">Fecha o RunLogNode com output/tokens/cost/status</div>
@@ -1405,7 +1447,7 @@
         </a>
         <div class="arrow">↓</div>
 
-        <a href="passo-3-10.html" class="box redis clickable-node" id="step-3-10">
+        <a href="passos/passo-3-10.html" class="box redis clickable-node" id="step-3-10">
           <span class="click-chevron" aria-hidden="true">›</span>
           <div class="box-title"><span class="badge step">3.10</span> Notificação WebSocket <span class="badge cross">cross</span></div>
           <div class="box-desc">Envia iteração + <code>finalResult</code> + <code>reason</code> ao browser (via chatbotSocketByRun)</div>
@@ -1414,7 +1456,7 @@
         </a>
         <div class="arrow">↓</div>
 
-        <a href="passo-3-11.html" class="box backend clickable-node" id="step-3-11">
+        <a href="passos/passo-3-11.html" class="box backend clickable-node" id="step-3-11">
           <span class="click-chevron" aria-hidden="true">›</span>
           <div class="box-title"><span class="badge step">3.11</span> Avanço do DAG <span class="badge ess">essencial</span></div>
           <div class="box-desc"><code>markCompleted(schedState, id)</code> ou <code>completeCondition(schedState, id, handle)</code> (nó de condição)</div>
@@ -1428,7 +1470,7 @@
     </div>
   </div>
 
-  <hr class="phase-sep">
+ 
 
   <!-- ================================================== -->
   <!-- FASE 4 — FINALIZAÇÃO -->
@@ -1441,7 +1483,7 @@
     </div>
 
     <div class="flow-column">
-      <a href="passo-4-1.html" class="box cross clickable-node" id="step-4-1">
+      <a href="passos/passo-4-1.html" class="box cross clickable-node" id="step-4-1">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title"><span class="badge step">4.1</span> Detecção de nós não-processados <span class="badge cross">cross</span></div>
         <div class="box-desc">Warning se sobrar nó fora de <code>completed</code> ou <code>dead</code>. Loga error com IDs.</div>
@@ -1450,7 +1492,7 @@
       </a>
       <div class="arrow">↓</div>
 
-      <a href="passo-4-2.html" class="box cross clickable-node" id="step-4-2">
+      <a href="passos/passo-4-2.html" class="box cross clickable-node" id="step-4-2">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title"><span class="badge step">4.2</span> Coleta de nós com erro</div>
         <div class="box-desc">Filtra nós com <code>errorMessage</code>/<code>errorStatusCode</code>; extrai primeira mensagem</div>
@@ -1459,7 +1501,7 @@
       </a>
       <div class="arrow">↓</div>
 
-      <a href="passo-4-3.html" class="box db clickable-node" id="step-4-3">
+      <a href="passos/passo-4-3.html" class="box db clickable-node" id="step-4-3">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title"><span class="badge step">4.3</span> flowLogsService.createLog() <span class="badge cross">cross</span></div>
         <div class="box-desc">INSERT em <code>execution_logs</code>: status, error_message, spent_tokens, cost, run_type</div>
@@ -1468,7 +1510,7 @@
       </a>
       <div class="arrow">↓</div>
 
-      <a href="passo-4-4.html" class="box db clickable-node" id="step-4-4">
+      <a href="passos/passo-4-4.html" class="box db clickable-node" id="step-4-4">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title"><span class="badge step">4.4</span> RunLogCollector.finalize() + spaceRunLogsService.flushNow()</div>
         <div class="box-desc">Grava trace completo em <code>space_run_logs</code> (imediato, não schedulado)</div>
@@ -1477,7 +1519,7 @@
       </a>
       <div class="arrow">↓</div>
 
-      <a href="passo-4-5.html" class="box backend clickable-node" id="step-4-5">
+      <a href="passos/passo-4-5.html" class="box backend clickable-node" id="step-4-5">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title"><span class="badge step">4.5</span> Preparação de erro amigável <span class="badge ess">essencial</span></div>
         <div class="box-desc">Constrói string: <code>nodeError = 'Execution failed at node "..." — ...'</code></div>
@@ -1486,7 +1528,7 @@
       </a>
       <div class="arrow">↓</div>
 
-      <a href="passo-4-6.html" class="box db clickable-node" id="step-4-6">
+      <a href="passos/passo-4-6.html" class="box db clickable-node" id="step-4-6">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title"><span class="badge step">4.6</span> persistInputNodeData() para outputObjectNode <span class="badge ess">essencial</span></div>
         <div class="box-desc">Persiste text/textData dos nós de saída</div>
@@ -1495,7 +1537,7 @@
       </a>
       <div class="arrow">↓</div>
 
-      <a href="passo-4-7.html" class="box external clickable-node" id="step-4-7">
+      <a href="passos/passo-4-7.html" class="box external clickable-node" id="step-4-7">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title"><span class="badge step">4.7</span> Emails + callbacks HTTP <span class="badge cross">cross</span></div>
         <div class="box-desc">
@@ -1506,7 +1548,7 @@
       </a>
       <div class="arrow">↓</div>
 
-      <a href="passo-4-8.html" class="box db clickable-node" id="step-4-8">
+      <a href="passos/passo-4-8.html" class="box db clickable-node" id="step-4-8">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title"><span class="badge step">4.8</span> Atualização de chat <span class="badge ess">essencial (modo chat)</span></div>
         <div class="box-desc"><code>sessionStateService.appendEntries()</code> + ChatLog save para fluxObject/nodesBox com chat</div>
@@ -1515,7 +1557,7 @@
       </a>
       <div class="arrow">↓</div>
 
-      <a href="passo-4-9.html" class="box backend clickable-node" id="step-4-9">
+      <a href="passos/passo-4-9.html" class="box backend clickable-node" id="step-4-9">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title"><span class="badge step">4.9</span> Retorno ao chamador <span class="badge ess">essencial</span></div>
         <div class="box-desc"><code>{ message[], nodeError, totalTokensUsed, totalCost }</code></div>
@@ -1525,7 +1567,7 @@
     </div>
   </div>
 
-  <hr class="phase-sep">
+ 
 
   <!-- ================================================== -->
   <!-- CATCH + CLEANUP -->
@@ -1537,7 +1579,7 @@
       <div class="section-desc">Passos 32–33 do doc</div>
     </div>
     <div class="flow-column">
-      <a href="passo-5-1.html" class="box cross clickable-node" id="step-5-1">
+      <a href="passos/passo-5-1.html" class="box cross clickable-node" id="step-5-1">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title"><span class="badge step">5.1</span> catch { ... } — top-level <span class="badge cross">cross</span></div>
         <div class="box-desc">Finaliza <code>RunLog</code> em erro, cria <code>FlowLog</code> com status de erro, re-lança exception</div>
@@ -1545,7 +1587,7 @@
         <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (finalize error + Winston hint + createLog + throw)</span><span class="click-hint-arrow">→</span></div>
       </a>
       <div class="arrow">↓</div>
-      <a href="passo-5-2.html" class="box backend clickable-node" id="step-5-2">
+      <a href="passos/passo-5-2.html" class="box backend clickable-node" id="step-5-2">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title"><span class="badge step">5.2</span> mcpRunStatusService.markFinished() (se veio da fila) <span class="badge cross">cross</span></div>
         <div class="box-desc">Registra tokens/cost/durationMs no MCP tracking</div>
@@ -1553,7 +1595,7 @@
         <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (markRunning + markFinished + mcp_run_status)</span><span class="click-hint-arrow">→</span></div>
       </a>
       <div class="arrow">↓</div>
-      <a href="passo-5-3.html" class="box backend clickable-node" id="step-5-3">
+      <a href="passos/passo-5-3.html" class="box backend clickable-node" id="step-5-3">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title"><span class="badge step">5.3</span> Cleanup do socket do chatbot</div>
         <div class="box-desc"><code>delete chatbotSocketByRun[runId]</code> no <code>finally</code></div>
@@ -1563,7 +1605,7 @@
     </div>
   </div>
 
-  <hr class="phase-sep">
+ 
 
   <!-- ================================================== -->
   <!-- FASE 5 — CROSS-CUTTING -->
@@ -1613,84 +1655,6 @@
       </div>
     </div>
   </div>
-
-  <hr class="phase-sep">
-
-  <!-- ================================================== -->
-  <!-- RESUMO -->
-  <!-- ================================================== -->
-  <div class="section">
-    <div class="section-header">
-      <div class="section-number">✓</div>
-      <div class="section-title">Resumo — o que já foi migrado e o que falta</div>
-    </div>
-    <div class="branch">
-      <div class="lane temporal">
-        <div class="lane-title">Já executando no Worker <span class="badge migrated">migrado</span></div>
-        <div class="handlers-list" style="font-size:11px">
-          <span class="mig">commandTextNode</span>
-          <span class="mig">scripting</span>
-          <span class="mig">apiCaller</span>
-          <span class="mig">mathFunction</span>
-          <span class="mig">counterNode</span>
-          <span class="mig">outputController</span>
-          <span class="mig">sqlQuerier</span>
-          <span class="mig">audioReaderNode*</span>
-          <span class="mig">thirdParty:stripe</span>
-          <span class="mig">thirdParty:wordpress</span>
-          <span class="mig">thirdParty:slack</span>
-          <span class="mig">thirdParty:notion</span>
-          <span class="mig">thirdParty:zapier</span>
-          <span class="mig">thirdParty:hubspot (pull)</span>
-        </div>
-        <div style="font-size:11px;color:#065F46;margin-top:8px">
-          * audioReaderNode existe no worker mas backend ainda tem versão inline (7911) para casos específicos
-        </div>
-      </div>
-      <div class="lane inline">
-        <div class="lane-title">Ainda inline no Backend <span class="badge legacy">falta migrar</span></div>
-        <div class="handlers-list" style="font-size:11px">
-          <span class="leg">voiceBoxNode (TTS)</span>
-          <span class="leg">imageGenerator</span>
-          <span class="leg">commandContentNode</span>
-          <span class="leg">webSearch</span>
-          <span class="leg">webCrawling</span>
-          <span class="leg">pullData</span>
-          <span class="leg">pushData</span>
-          <span class="leg">conditionNode</span>
-          <span class="leg">arrayNode (loop)</span>
-          <span class="leg">nodesBox</span>
-          <span class="leg">libraryNode</span>
-          <span class="leg">fluxBox</span>
-          <span class="leg">varInputNode / varOutputNode</span>
-          <span class="leg">reportBuilder</span>
-          <span class="leg">fluxObject / fluxBox</span>
-          <span class="leg">objectCaller</span>
-          <span class="leg">mcpNode</span>
-          <span class="leg">thirdParty (não-migrados)</span>
-        </div>
-        <div style="font-size:11px;color:#991B1B;margin-top:8px">
-          <strong>+ Scheduler DAG (buildSchedulerState)</strong>
-          <br><strong>+ Substitution engine</strong> (57 sync sites, mutação in-memory)
-          <br><strong>+ Loop condition/arrayNode logic</strong> (completeCondition, DEAD_HANDLE, loopIterationContext)
-          <br><strong>+ RunLogCollector hierárquico</strong>
-          <br><strong>+ chargeContext</strong> async-local storage
-          <br><strong>+ SessionStateService</strong> (chat)
-          <br><strong>+ Todo o loop nó-a-nó</strong> em <code>FluxService.apiV2</code>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="note" style="margin-top:32px">
-    <strong>Observações críticas para o plano de migração:</strong>
-    <br>• Backend continua sendo <em>orquestrador único</em> — worker é executor de nó isolado.
-    <br>• Cada nó Temporal é uma round-trip <strong>síncrona</strong> (BLOCKING WAIT) — sem paralelismo entre irmãos.
-    <br>• Path Temporal resolve o problema de JSONB gordo; path inline continua gravando <code>previewResponses</code>/<code>contentData</code>.
-    <br>• Nenhum fallback backend↔worker: node type ausente no worker quebra com "not supported".
-    <br>• <code>processAgent</code> workflow no worker está <strong>stub</strong> (comentado): DAG scheduling nunca migrou.
-  </div>
-
 
 </div>
 </body>

@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Passo 3.4 — runLogCollector.startNode() + chargeContext | Detalhamento</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F1F5F9; color: #0F172A; margin: 0; padding: 32px 24px 80px; line-height: 1.4; }
+  .container { max-width: 1500px; margin: 0 auto; }
+  .page-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; padding: 12px 16px; background: white; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); flex-wrap: wrap; }
+  .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748B; }
+  .breadcrumb a { color: #3B82F6; text-decoration: none; font-weight: 500; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #CBD5E1; }
+  .back-btn { display: inline-flex; align-items: center; gap: 6px; background: #0F172A; color: white; padding: 8px 14px; border-radius: 8px; text-decoration: none; font-size: 12.5px; font-weight: 600; }
+  .page-header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+  .page-header .icon { font-size: 32px; }
+  .page-header h1 { margin: 0; font-size: 26px; color: #0F172A; letter-spacing: -0.4px; }
+  .page-sub { color: #64748B; font-size: 13px; margin-bottom: 24px; padding-left: 46px; }
+  .page-sub code { background: #E2E8F0; padding: 1px 6px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; color: #334155; }
+  .overview-mini { background: white; padding: 16px 18px; border-radius: 10px; margin-bottom: 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .overview-mini-title { font-size: 12px; font-weight: 700; color: #334155; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px; }
+  .overview-chain { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .overview-chip { background: #F8FAFC; padding: 6px 12px; border-radius: 6px; border-left: 3px solid #3B82F6; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; font-weight: 600; color: #0F172A; text-decoration: none; display: inline-block; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+  .overview-chip .lbl { display: block; font-size: 9.5px; color: #64748B; font-weight: 500; margin-bottom: 2px; font-family: inherit; text-transform: uppercase; letter-spacing: 0.5px; }
+  .overview-sep { color: #94A3B8; font-size: 18px; font-weight: bold; }
+  .box { background: white; border-radius: 8px; padding: 9px 13px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 4px solid #94A3B8; width: 100%; max-width: 100%; }
+  .box.backend    { border-left-color: #3B82F6; }
+  .box.worker     { border-left-color: #10B981; }
+  .box.db         { border-left-color: #F59E0B; }
+  .box.redis      { border-left-color: #EF4444; }
+  .box.s3         { border-left-color: #8B5CF6; }
+  .box.external   { border-left-color: #64748B; }
+  .box.decision { border-left-color: #EAB308; background: #FEFCE8; }
+  .box.cross { border-left-color: #A855F7; background: #FAF5FF; }
+  .box-title { font-weight: 600; font-size: 12.5px; color: #0F172A; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .box-desc { font-size: 11.5px; color: #475569; }
+  .box-file { font-size: 10px; color: #94A3B8; font-family: 'SF Mono', Menlo, Consolas, monospace; margin-top: 3px; word-break: break-all; }
+  .box code { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; background: #F1F5F9; padding: 1px 4px; border-radius: 3px; color: #334155; word-break: break-word; }
+  .box-desc code { word-break: break-word; }
+  .badge { display: inline-block; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; }
+  .badge.migrated { background: #D1FAE5; color: #065F46; }
+  .badge.legacy   { background: #FEE2E2; color: #991B1B; }
+  .badge.mixed    { background: #FEF3C7; color: #92400E; }
+  .badge.step     { background: #E0E7FF; color: #3730A3; font-size: 10px; }
+  .badge.cross    { background: #F3E8FF; color: #6B21A8; }
+  .arrow { color: #64748B; font-size: 22px; line-height: 1; margin: 1px 0; text-align: center; }
+  .fn-card { margin-top: 28px; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .fn-card-header { background: linear-gradient(to right, #0F172A, #1E293B); color: white; padding: 14px 20px 14px 44px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; cursor: pointer; position: relative; user-select: none; transition: background 0.15s; }
+  .fn-card-header .fn-title { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+  .fn-card-header .fn-title code { background: rgba(255,255,255,0.15); padding: 3px 8px; border-radius: 4px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 13px; }
+  .fn-card-header .fn-loc { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; color: #CBD5E1; }
+  .fn-card-header:hover { background: linear-gradient(to right, #1E293B, #334155); }
+  .fn-card-header::before {
+    content: "▾";
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+    font-size: 14px;
+    transition: transform 0.2s ease;
+    line-height: 1;
+  }
+  .fn-card.collapsed .fn-card-header::before {
+    transform: translateY(-50%) rotate(-90deg);
+  }
+  .fn-card.collapsed .fn-card-body { display: none; }
+  .fn-card-body { padding: 20px; }
+  .fn-signature { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; background: #F1F5F9; padding: 8px 12px; border-radius: 6px; color: #334155; margin-bottom: 16px; overflow-x: auto; }
+  .fn-purpose { font-size: 13px; color: #475569; margin-bottom: 12px; padding: 10px 14px; background: #EFF6FF; border-left: 3px solid #3B82F6; border-radius: 6px; }
+  .fn-friendly { font-size: 13px; color: #334155; margin-bottom: 20px; padding: 12px 14px 12px 44px; background: #F0FDF4; border-left: 3px solid #10B981; border-radius: 6px; position: relative; line-height: 1.55; }
+  .fn-friendly::before { content: "💬"; position: absolute; left: 14px; top: 10px; font-size: 18px; }
+  .fn-friendly strong { color: #065F46; }
+
+  /* Step-level friendly summary (page-wide, appears after page-sub) */
+  .step-friendly {
+    font-size: 13.5px;
+    color: #334155;
+    margin-bottom: 28px;
+    padding: 16px 18px 16px 52px;
+    background: #F0FDF4;
+    border-left: 4px solid #10B981;
+    border-radius: 10px;
+    position: relative;
+    line-height: 1.6;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.08);
+  }
+  .step-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 18px;
+    top: 14px;
+    font-size: 22px;
+  }
+  .step-friendly-title {
+    font-weight: 700;
+    color: #065F46;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 8px;
+  }
+  .step-friendly ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .step-friendly li {
+    margin-bottom: 6px;
+  }
+  .step-friendly li:last-child {
+    margin-bottom: 0;
+  }
+  .step-friendly strong {
+    color: #065F46;
+  }
+  .step-friendly code {
+    background: #DCFCE7;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: #065F46;
+  }
+  .step-friendly em {
+    color: #047857;
+    font-style: italic;
+  }
+
+  .fn-body-cols { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr); gap: 20px; }
+  @media (max-width: 900px) { .fn-body-cols { grid-template-columns: 1fr; } }
+  .fn-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .fn-asides { display: flex; flex-direction: column; gap: 12px; }
+  .aside { background: #FEF3C7; border-left: 4px solid #F59E0B; border-radius: 6px; padding: 10px 12px; font-size: 11.5px; color: #78350F; }
+  .aside.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .aside.warn { background: #FEE2E2; border-left-color: #EF4444; color: #991B1B; }
+  .aside.helper { background: #F3E8FF; border-left-color: #A855F7; color: #6B21A8; }
+  .aside-title { font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+  .aside code { background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 10.5px; word-break: break-word; }
+  .cascade { background: #FEFCE8; border: 1px dashed #EAB308; border-radius: 8px; padding: 12px; margin: 6px 0; }
+  .cascade-title { font-size: 11px; font-weight: 700; color: #713F12; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .cascade-step { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; padding: 6px 8px; background: white; border-radius: 6px; margin-bottom: 4px; font-size: 11.5px; }
+  .cascade-step .cond { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; color: #334155; }
+  .cascade-step .result { font-weight: 700; font-size: 10.5px; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+  .cascade-step .result.pass  { background: #D1FAE5; color: #065F46; }
+  .cascade-step .result.deny  { background: #FEE2E2; color: #991B1B; }
+  .cascade-step .result.next  { background: #E0E7FF; color: #3730A3; }
+  .cascade-step .result.call  { background: #FEF3C7; color: #78350F; }
+  .cascade-num { background: #EAB308; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+  .nested-flow { margin: 6px 0; padding: 12px; background: #F0FDF4; border: 1px dashed #10B981; border-radius: 8px; }
+  .nested-flow-title { font-size: 10.5px; font-weight: 700; color: #065F46; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .code-block { background: #0F172A; color: #E2E8F0; padding: 12px 16px; border-radius: 6px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; line-height: 1.6; overflow-x: auto; margin: 6px 0; }
+  .code-block .k { color: #93C5FD; }
+  .code-block .s { color: #86EFAC; }
+  .code-block .c { color: #64748B; font-style: italic; }
+  .code-block .t { color: #FDE68A; }
+  .note { background: #FEF3C7; border-left: 4px solid #F59E0B; padding: 12px 16px; border-radius: 6px; font-size: 12.5px; color: #78350F; margin: 20px 0; }
+  .note.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .note code { background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; }
+  .page-footer-nav { margin-top: 48px; padding: 16px; background: white; border-radius: 10px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .field-table { width: 100%; border-collapse: collapse; font-size: 11px; margin: 8px 0; }
+  .field-table th { text-align: left; padding: 6px 8px; background: #F1F5F9; color: #334155; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; font-size: 10px; border-bottom: 1px solid #CBD5E1; }
+  .field-table td { padding: 5px 8px; border-bottom: 1px solid #F1F5F9; vertical-align: top; }
+  .field-table td:first-child { font-family: 'SF Mono', Menlo, Consolas, monospace; color: #0F172A; font-weight: 600; white-space: nowrap; font-size: 10.5px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-nav">
+    <div class="breadcrumb">
+      <a href="../index.html">📋 Execução de Agente</a>
+      <span class="sep">›</span>
+      <span>Passo 3.4 — Detalhamento</span>
+    </div>
+    <a href="../index.html#step-3-4" class="back-btn">← Voltar ao diagrama</a>
+  </div>
+
+  <div class="page-header">
+    <span class="icon">🧾</span>
+    <h1>Passo 3.4 — runLogCollector.startNode() + chargeContext.enterWith()</h1>
+  </div>
+  <div class="page-sub">
+    Bloco em <code>flux.service.ts:3263-3316</code>. Duas coisas em paralelo: (1) <strong>abre um RunLogNode</strong> hierárquico no coletor pra rastrear a execução; (2) <strong>entra em contexto de cobrança</strong> via AsyncLocalStorage pra que qualquer serviço chamado abaixo consiga cobrar tokens/custo no nó certo sem receber execId/nodeId por argumento.
+  </div>
+
+  <!-- Step friendly summary -->
+  <div class="step-friendly">
+    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <ul>
+      <li><strong>Coloca o crachá invisível de cobrança:</strong> <code>chargeContext.enterWith({ execId, nodeId })</code> injeta esses ids na <em>AsyncLocalStorage</em> — qualquer <code>await</code> abaixo (LLM, HTTP, DB) consegue ler o contexto sem receber por argumento. É o mecanismo central de bilhetagem por nó.</li>
+      <li><strong>Abre a pasta do nó no log hierárquico:</strong> <code>runLogCollector.startNode(...)</code> cria um <code>RunLogNode</code> novo com status <code>in_progress</code>, redige segredos (<code>apiKey</code>, <code>Authorization</code>) e empurra no <code>nodesBucket</code> — um ponteiro que muda por contexto (root, library, loop, sub-flow) e produz hierarquia sem esforço.</li>
+      <li><strong>Sub-run anchors delegam o log:</strong> <code>fluxBox</code> e <code>libraryNode</code> pulam o <code>startNode</code> (<code>genericRunLogNode = null</code>) — o handler deles cria um <code>subRun</code> aninhado próprio com toda a hierarquia interna. Evita registro duplicado na timeline.</li>
+      <li><strong>Trace uniforme via <code>recordLegacyNodeStart</code>:</strong> pra nós que <em>não</em> vão pelo Temporal, insere row com status running em <code>node_executions</code> — garante que a tabela de audit trail cubra os dois paths (inline e worker). Vira dead code quanto mais tipos migram.</li>
+      <li><strong>Debounce nas gravações:</strong> <code>spaceRunLogsService.scheduleUpsert</code> agrupa rajadas de <code>flushRoot</code> num único UPSERT (setTimeout keyed por processId) — sem isso, um run com 100 nós faria 200+ writes. No fim do run, <code>flushNow</code> força o write final.</li>
+      <li><strong>Saída:</strong> <code>chargeContext</code> ativa, <code>genericRunLogNode</code> vivo no coletor (ou <code>null</code> pra anchors), 1 INSERT em <code>node_executions</code> pra legacy, 1 UPSERT debounced em <code>space_run_logs</code>. Cross-cutting — não executa o nó, prepara <em>observabilidade e billing</em>.</li>
+    </ul>
+  </div>
+
+  <div class="note info">
+    <strong>Contexto:</strong> este passo é <em>cross-cutting</em> — não faz parte da lógica de execução do nó em si, mas prepara <strong>observabilidade</strong> e <strong>bilhetagem</strong> antes do handler rodar. Também aqui é feito o <code>recordLegacyNodeStart</code> pra nós que <em>não</em> vão pelo Temporal (INSERT em <code>node_executions</code> com status running) — garantindo audit trail uniforme entre paths.
+  </div>
+
+  <!-- Overview chain -->
+  <div class="overview-mini">
+    <div class="overview-mini-title">Cadeia de operações em 3.4</div>
+    <div class="overview-chain">
+      <a href="#fn-a" class="overview-chip"><span class="lbl">A</span>chargeContext.enterWith</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>isSubRunAnchorNode gate</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>runLogCollector.startNode</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>recordLegacyNodeStart (condicional)</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-e" class="overview-chip"><span class="lbl">E</span>spaceRunLogsService.scheduleUpsert (autoflush)</a>
+    </div>
+    <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
+      Resultado: <code>chargeContext.getStore()</code> retorna <code>{ execId, nodeId }</code> pra qualquer chamada async abaixo. <code>genericRunLogNode</code> vive na hierarquia do coletor (ou é null pra anchors de sub-run). <code>node_executions</code> ganha uma row de status running pra nós legacy.
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION A: chargeContext.enterWith -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-a">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#EAB308;color:white">A</span>
+        <code>chargeContext.enterWith({ execId, nodeId })</code>
+      </div>
+      <div class="fn-loc">product/charge-context.ts:1-8 · flux.service.ts:3263-3266</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        chargeContext = new AsyncLocalStorage&lt;ChargeContext&gt;() · interface ChargeContext { execId?: string; nodeId?: string; }
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Injeta <code>{ execId, nodeId }</code> no <em>async context</em> do Node.js. Qualquer chamada assíncrona feita dentro do <code>try</code> abaixo (LLM, HTTP, DB) que chame <code>chargeContext.getStore()</code> recebe esses valores <strong>sem precisar passar por argumento</strong>. É o mecanismo central de bilhetagem por nó.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> é o <em>crachá invisível</em> que o funcionário coloca antes de começar a trabalhar — quem precisar saber "quem tá fazendo esse trabalho agora?" só olha pro crachá, ninguém precisa perguntar. Tecnicamente é <code>AsyncLocalStorage</code>, um recurso nativo do Node.js que carrega dados através de <em>async chains</em> sem poluir assinaturas de função. Antes do handler rodar, o loop chama <code>chargeContext.enterWith({ execId, nodeId })</code> — pronto, todo <code>await</code> feito dentro daquele contexto (chamada de LLM, HTTP externo, query TypeORM) enxerga esses valores via <code>chargeContext.getStore()</code>. Isso é <strong>essencial pra billing</strong>: quando o <code>AnthropicService</code> ou o <code>OpenAIService</code> vai cobrar tokens, ele nem sabe que tá rodando dentro de um agente — só chama <code>updateTokens(delta)</code>. O <code>ProductService</code> lê o contexto, extrai <code>execId+nodeId</code> e insere em <code>token_transactions</code> com metadata correta. Sem ALS, cada método provider precisaria receber esses ids por argumento explícito — e como esses services são compartilhados com rotas API públicas, isso poluiria a assinatura toda. Ponto de fragilidade: <code>enterWith</code> <em>não</em> é auto-limpo — se algum callback assíncrono escapar do try do nó, ele continua vendo o contexto antigo. Não acontece em prática (o try engloba tudo), mas é o tipo de coisa que quebra silenciosamente se o refactor não for cuidadoso.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="code-block">
+<span class="c">// product/charge-context.ts</span>
+<span class="k">import</span> { <span class="t">AsyncLocalStorage</span> } <span class="k">from</span> <span class="s">'async_hooks'</span>;
+
+<span class="k">export interface</span> <span class="t">ChargeContext</span> {
+  execId?: string;
+  nodeId?: string;
+}
+
+<span class="k">export const</span> chargeContext = <span class="k">new</span> <span class="t">AsyncLocalStorage</span>&lt;<span class="t">ChargeContext</span>&gt;();
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">A1</span> enterWith no início do try</div>
+            <div class="box-desc">
+              <code>chargeContext.enterWith({ execId: runLogProcessId, nodeId: node.id })</code>. Diferente de <code>.run(store, fn)</code>, o <code>enterWith</code> injeta no async chain <em>atual</em> sem envelope. Vale até o próximo <code>enterWith</code> ou fim do async context.
+            </div>
+            <div class="box-file">flux.service.ts:3263-3266</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="nested-flow">
+            <div class="nested-flow-title">↳ Consumo em ProductService.updateTokens — product.service.ts:1013-1015</div>
+            <div class="box backend">
+              <div class="box-desc">
+                <code>const ctx = chargeContext.getStore()</code>. Extrai <code>execId, nodeId</code> pra:
+                <br>• INSERT em <code>token_transactions</code> com <code>metadata: { execId, nodeId }</code>
+                <br>• Idempotência de cobrança (mesmo execId+nodeId+delta = mesmo record)
+                <br>• Agregação posterior via <code>sumChargesByExecution(execId, nodeId)</code> em 3.7/T6
+              </div>
+              <div class="box-file">product/product.service.ts:1013-1015</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Por que AsyncLocalStorage e não parâmetro?</div>
+            Passar <code>execId+nodeId</code> por argumento em <em>toda</em> chamada de LLM/HTTP/DB seria assinatura poluída. Provider services (Anthropic, OpenAI, etc.) são compartilhados por rotas API e por execução de agente — não podem ter esse contexto no signature.
+            <br><br>ALS resolve: contexto lexical num async chain sem envenenar interfaces.
+          </div>
+
+          <div class="aside warn">
+            <div class="aside-title">⚠️ enterWith não é "escopado"</div>
+            Diferente de <code>.run(store, fn)</code>, o <code>enterWith</code> não é auto-limpo quando o try termina. Se o próximo nó também chamar <code>.enterWith</code>, o valor é sobrescrito — o que é ok pra este uso. Mas se algum callback assíncrono <em>escapar</em> do try (não deveria acontecer, mas...) ele continua vendo o contexto antigo.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 nodeCancelContext usa o mesmo pattern</div>
+            Logo abaixo, linha 3268: <code>nodeCancelContext.enterWith(cancelWatch.entry)</code>. Também ALS, também injeta contexto pra que interceptors de fetch/axios possam abortar. Ver <a href="passo-3-4-cancellation.html">detalhamento do Cancellation check</a>.
+          </div>
+
+          <div class="aside">
+            <div class="aside-title">📎 Sub-runs (fluxBox, libraryNode) reentram</div>
+            Quando um nó container dispara um sub-flow, o loop nested faz seu próprio <code>enterWith</code> com o novo nodeId dos nós de dentro. Voltando pro parent, o contexto do parent precisa ser restaurado — hoje isso é feito pela cadeia async natural (o parent segue seu próprio async context).
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION B: isSubRunAnchorNode -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-b">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#3B82F6;color:white">B</span>
+        <code>isSubRunAnchorNode = (fluxBox | libraryNode)</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:3286-3295</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        const isSubRunAnchorNode = node.type === 'fluxBox' || node.type === 'libraryNode';
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Decide se o coletor deve criar um <code>RunLogNode</code> "achatado" ou pular. Nós container (<code>fluxBox</code>, <code>libraryNode</code>) delegam a criação do log pro handler deles, que chama <code>startFlowCallerSubRun</code>/<code>startLibrarySubRun</code> — cria um documento aninhado próprio com toda a hierarquia interna.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> é uma <em>peneira</em> pra evitar log duplicado. <code>fluxBox</code> e <code>libraryNode</code> são nós "container" — eles não fazem trabalho próprio, disparam <strong>outro agente inteiro</strong> internamente. Se o coletor criasse um <code>RunLogNode</code> simples aqui (o container) e depois o handler desses tipos criasse um <code>subRun</code> completo com toda a hierarquia do agente filho, o timeline da UI ficaria com <em>dois registros pro mesmo container</em>: um raso e um profundo — confuso. A solução: pra esses tipos, o coletor pula (<code>genericRunLogNode = null</code>) e delega a criação do log pro próprio handler, que via <code>startFlowCallerSubRun</code> constrói um <code>RunLogDocument</code> aninhado com todos os nós internos do sub-flow. Efeito colateral do <code>null</code>: o passo 3.9 (<code>endNode</code>) também é skipado — o handler é responsável por finalizar seu próprio sub-log. Também é o único lugar do loop com "conhecimento hardcoded" sobre esses dois tipos específicos — deveria idealmente ser uma flag no metadata do node type, não uma comparação inline. Refactor pequeno mas simbólico da direção da migração.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="code-block">
+<span class="k">const</span> isSubRunAnchorNode =
+  node.type === <span class="s">'fluxBox'</span> || node.type === <span class="s">'libraryNode'</span>;
+
+genericRunLogNode = isSubRunAnchorNode
+  ? <span class="k">null</span>
+  : (runLogCollector?.<span class="t">startNode</span>({
+      nodeId: node.id,
+      nodeType: node.type,
+      label: node.data?.label,
+      settings: processedNode.data,
+    }) ?? <span class="k">null</span>);
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="cascade">
+            <div class="cascade-title">🪜 Anchor vs nó comum</div>
+            <div class="cascade-step">
+              <span class="cascade-num">1</span>
+              <span class="cond">type in { fluxBox, libraryNode }</span>
+              <span class="result deny">genericRunLogNode = null (handler cria)</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">2</span>
+              <span class="cond">runLogCollector é falsy (nested run)</span>
+              <span class="result deny">genericRunLogNode = null</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">3</span>
+              <span class="cond">tipo comum + coletor presente</span>
+              <span class="result call">startNode() cria RunLogNode simples</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Por que sub-runs pulam startNode?</div>
+            <code>fluxBox</code> e <code>libraryNode</code> executam um <em>outro agente inteiro</em> internamente. Criar um <code>RunLogNode</code> flat aqui e depois um <code>subRun</code> completo lá dentro dobraria a informação e confundiria a UI da timeline.
+            <br><br>O handler desses tipos (<code>flux.service.ts:4350, 4394</code>) usa <code>runLogCollector.startFlowCallerSubRun(...)</code> pra criar um <code>RunLogDocument</code> aninhado no lugar.
+          </div>
+
+          <div class="aside">
+            <div class="aside-title">📎 Ordem entre substitution e startNode</div>
+            A ordem importa: <code>processedNode.data</code> (já resolvido) é o que vai pra <code>settings</code> do <code>RunLogNode</code>. Assim, o timeline mostra <em>input real</em> que o handler recebeu, não o template com <code>{{...}}</code>.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 Optional chaining nos dois lados</div>
+            <code>runLogCollector?.startNode(...) ?? null</code>. Cobre 2 casos:
+            <br>• collector desabilitado (feature gate — retorna null internamente)
+            <br>• collector ausente inteiro (run nested sem forward do collector)
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION C: RunLogCollector.startNode -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-c">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#10B981;color:white">C</span>
+        <code>RunLogCollector.startNode(params)</code>
+      </div>
+      <div class="fn-loc">space_run_logs/run-log-collector.ts:319-335</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        startNode(params: StartNodeParams): RunLogNode | null
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Cria um <code>RunLogNode</code> novo, redige segredos de <code>settings</code>/<code>input</code>, faz <code>push</code> no bucket ativo (<code>nodesBucket</code> — que aponta pra <code>rootDoc.nodes</code> OU pra <code>parentNode.innerSteps</code> se dentro de um loop/library), e dispara flush pro banco.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> é o <em>escrivão</em> que abre uma pasta pro nó atual na "árvore do run". Cada agente executando tem um <code>RunLogDocument</code> raiz — um JSON com todos os nós que rodaram, seus tempos, tokens, custos, aninhamento (sub-runs, loops). O escrivão preenche a capa da pasta agora (timestamp de início, tipo, label, input já resolvido, status <em>in_progress</em>), redige credenciais sensíveis (<code>redactSecrets</code> troca <code>apiKey</code>, <code>Authorization</code>, <code>password</code> por <code>[REDACTED]</code>) e empurra pra pilha ativa. O <em>pulo do gato</em> é o <code>nodesBucket</code> — um ponteiro que muda conforme o contexto: se tá no run raiz, aponta pra <code>rootDoc.nodes</code>; se tá dentro de um <code>libraryNode</code>, aponta pra <code>innerSteps</code> daquele parent; se tá numa iteração de <code>arrayNode</code>, também aponta pra <code>innerSteps</code>; se é um sub-flow (<code>fluxBox</code>), aponta pra um documento novo. Só trocar o ponteiro faz o mesmo <code>startNode</code> gerar hierarquia certa em qualquer contexto. Depois do <code>push</code>, chama <code>flushRoot</code> que dispara <code>spaceRunLogsService.scheduleUpsert</code> — o log vai pro banco de forma <em>debounced</em>, sem hammering. Se o run crashar antes de <code>endNode</code>, esse registro fica com <code>status='in_progress'</code> pra sempre — indicador visual de run interrompido.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="code-block">
+<span class="t">startNode</span>(params: StartNodeParams): RunLogNode | <span class="k">null</span> {
+  <span class="k">if</span> (!<span class="k">this</span>.enabled) <span class="k">return</span> <span class="k">null</span>;
+  <span class="k">const</span> node: RunLogNode = {
+    nodeId: params.nodeId,
+    nodeType: params.nodeType,
+    label: params.label,
+    startedAt: <span class="k">new</span> <span class="t">Date</span>().<span class="t">toISOString</span>(),
+    endedAt: <span class="s">''</span>,
+    durationMs: <span class="s">0</span>,
+    status: <span class="s">'in_progress'</span>,
+    settings: <span class="t">redactSecrets</span>(params.settings),
+    input: <span class="t">redactSecrets</span>(params.input),
+  };
+  <span class="k">this</span>.nodesBucket.<span class="t">push</span>(node);
+  <span class="k">this</span>.<span class="t">flushRoot</span>();
+  <span class="k">return</span> node;
+}
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">C1</span> nodesBucket — o ponteiro que muda por contexto</div>
+            <div class="box-desc">
+              <table class="field-table">
+                <tr><th>Contexto</th><th>nodesBucket aponta pra</th></tr>
+                <tr><td>root</td><td><code>rootDoc.nodes</code> (documento raiz)</td></tr>
+                <tr><td>library sub-run</td><td><code>parentNode.innerSteps</code> (dentro do library)</td></tr>
+                <tr><td>loop body</td><td><code>parentNode.innerSteps</code> (iteração do arrayNode)</td></tr>
+                <tr><td>flow caller sub-run</td><td><code>subDoc.nodes</code> (documento aninhado)</td></tr>
+              </table>
+            </div>
+            <div class="box-file">run-log-collector.ts:200, 248, 252, 277</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">C2</span> Interface RunLogNode</div>
+            <div class="box-desc">
+              20+ campos. Início: <code>nodeId</code>, <code>nodeType</code>, <code>label</code>, <code>startedAt</code>, <code>endedAt</code>, <code>durationMs</code>, <code>status</code> (<code>'success' | 'error' | 'in_progress'</code>).
+              <br>Erro: <code>errorMessage</code>, <code>errorDevMessage</code>, <code>errorCategory</code>, <code>errorField</code>.
+              <br>Contabilidade: <code>tokens</code>, <code>cost</code>.
+              <br>I/O: <code>settings</code>, <code>input</code>, <code>output</code>, <code>rawResponse</code>.
+              <br>Metadados: <code>attempts</code>, <code>modelId</code>, <code>modelProvider</code>, <code>execId</code>.
+              <br>Hierarquia: <code>innerSteps: RunLogNode[]</code>, <code>subRun: RunLogDocument</code>.
+            </div>
+            <div class="box-file">space_run_logs/types/run-log.types.ts:5-29</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 redactSecrets antes de persistir</div>
+            <code>redactSecrets(settings)</code> percorre o objeto e substitui campos como <code>apiKey</code>, <code>password</code>, <code>authToken</code>, <code>Authorization</code> por strings placeholder tipo <code>[REDACTED]</code>. Isso <em>antes</em> do log ir pro banco — evita vazar credentials em <code>space_run_logs</code>.
+          </div>
+
+          <div class="aside">
+            <div class="aside-title">📎 status='in_progress'</div>
+            Cria com status pendente. <code>endNode</code> (passo 3.9) atualiza pra <code>'success'</code> ou <code>'error'</code> conforme o outcome. Se o run crashar antes de <code>endNode</code>, o registro fica <code>in_progress</code> — indicador de <em>run interrompido</em> na timeline.
+          </div>
+
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Push com referência viva</div>
+            O <code>push</code> insere a <em>referência</em> do objeto no array. Quando <code>endNode</code> em 3.9 chama <code>runLogCollector.endNode(genericRunLogNode, ...)</code>, ele muta o mesmo objeto — o array já contém a atualização. Sem re-lookup necessário.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 flushRoot() ao final</div>
+            <code>this.flushRoot()</code> chama o callback <code>flush</code> registrado em <code>CollectorInit</code>. Nas configurações padrão, esse callback é <code>spaceRunLogsService.scheduleUpsert(...)</code> — que debounce-a o insert em <code>space_run_logs</code>.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION D: recordLegacyNodeStart -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-d">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#EF4444;color:white">D</span>
+        <code>recordLegacyNodeStart({ ... })</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:1842-1870, 3299-3316</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        await this.recordLegacyNodeStart({ execId, nodeId, flowId, type, input, userId, sessionId, flowVersionHistoryId, runKind, runType, runId });
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Grava row em <code>node_executions</code> com status running <em>apenas</em> pra nós que <strong>não</strong> vão pelo Temporal (isTemporalNode=false) <em>e não</em> são worker-routed integrations. Por que? Trace uniforme — <code>node_executions</code> vira o audit trail canônico de todos os nós, independente do path.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> é uma <em>ponte de trace</em> pros nós que ficaram pra trás na migração. Nós Temporal já ganham row em <code>node_executions</code> naturalmente (o passo T2 dentro do <code>processNodeViaTemporal</code> faz isso — com <code>metadata.workflowId</code> populado). Mas quando um <code>conditionNode</code> ou <code>arrayNode</code> roda inline, sem worker, se ninguém escrevesse nada em <code>node_executions</code>, o audit trail ficaria "furado" — analytics, replay, timeline de UI perderiam registro desses nós. Essa função existe pra <em>preencher esse buraco</em>: pra nós legacy, insere uma row com <code>execId, flowId, nodeId, type, input, userId, sessionId, runKind='agent', runType, runId</code>, <em>sem</em> workflowId (marcador de "esse rodou inline"). O input passa por <code>serializeWithClaimCheck</code> — se &gt;256KB, vai pra S3 e a row grava só um <code>{__claimRef}</code>. Depois, quando o nó termina, <code>recordInApiNodeError</code> (linhas 4593-4720) fecha o ciclo escrevendo <code>outputData</code>, status e errorMessage. Ela é bonita porque é <strong>dead code em progresso</strong> — quanto mais tipos forem migrados pro worker, menos ela é chamada. Quando <em>tudo</em> for pro Temporal, ela vira 100% obsoleta e pode ser removida. É um bom termômetro do estado da migração: se ainda importa muito, tem trabalho pela frente.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="code-block">
+<span class="k">if</span> (
+  !<span class="k">this</span>.<span class="t">isTemporalNode</span>(node.type) &&
+  !<span class="t">isWorkerRoutedIntegration</span>(processedNode)
+) {
+  <span class="k">await</span> <span class="k">this</span>.<span class="t">recordLegacyNodeStart</span>({
+    execId: runLogProcessId,
+    nodeId: node.id,
+    flowId,
+    type: node.type,
+    input: processedNode.data,
+    userId: user.id,
+    sessionId: sessionId || <span class="s">'default'</span>,
+    flowVersionHistoryId,
+    runKind: <span class="s">'agent'</span>,
+    runType,
+    runId: runLogProcessId,
+  });
+}
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box db">
+            <div class="box-title"><span class="badge step">D1</span> INSERT em node_executions (status implícito running)</div>
+            <div class="box-desc">
+              Row com <code>execId, flowId, nodeId, type, input, userId, sessionId, runKind='agent', runType, runId</code>. Sem <code>workflowId</code> (esse campo só é preenchido pra runs Temporal).
+              <br><br>Input passa por <code>serializeWithClaimCheck</code> — se &gt;256KB, vai pra S3 e a row grava um <code>{__claimRef: 's3://...'}</code>. Mesmo padrão do path Temporal.
+            </div>
+            <div class="box-file">flux.service.ts:1842-1870</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Por que trace uniforme?</div>
+            Analytics, replay, debug — todos querem uma tabela única de execuções. Se só nós Temporal aparecessem, um agente com mix de textGenerator (Temporal) e conditionNode (inline) teria histórico "furado".
+            <br><br>Também é o que permite o UI de execution log mostrar todos os passos numa timeline consistente.
+          </div>
+
+          <div class="aside">
+            <div class="aside-title">📎 Quem escreve o "finish" desses rows?</div>
+            <code>recordInApiNodeError</code> (linha 3303, 4593-4720) escreve o resultado de nós legacy — status='FAILED'/'COMPLETED', outputData, errorMessage. Não é o worker (path Temporal usa <code>persistNodeSuccess</code>).
+          </div>
+
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Async não-espera é tentador</div>
+            O <code>await</code> aqui atrasa o dispatch. Em nós rápidos (condition, math) esse INSERT vira ~5-10ms de latência por nó. Não é elegível pra remover porque o UPDATE seguinte precisa dessa row existir.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 Diferença pro path Temporal</div>
+            No path Temporal, o INSERT em <code>node_executions</code> é feito por <code>createNodeExecution</code> dentro de <code>processNodeViaTemporal</code> (passo T2) — <em>com</em> <code>metadata.workflowId</code> populado. Aqui (legacy) o INSERT é sem workflow — indica execução inline no próprio processo do backend.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION E: spaceRunLogsService.scheduleUpsert -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-e">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#A855F7;color:white">E</span>
+        <code>spaceRunLogsService.scheduleUpsert (autoflush)</code>
+      </div>
+      <div class="fn-loc">space_run_logs/space_run_logs.service.ts:92-120</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        scheduleUpsert(params: { spaceId; rootFlowId; doc: RunLogDocument }): void
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Callback registrado no <code>runLogCollector</code>. Cada <code>flushRoot</code> (disparado por startNode/endNode/finalize) agenda um UPSERT debounced em <code>space_run_logs</code>. Sem debounce, um run com 100 nós faria 200+ writes; com debounce, agrupa mudanças recentes num único write.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> é o <em>timer da secretária</em> que evita reimprimir a mesma pilha de papel 200 vezes. O coletor <em>quer</em> gravar rápido no banco pra UI ver a timeline atualizada em quase-tempo-real. Mas cada <code>startNode</code>/<code>endNode</code> disparando UPSERT direto faria uma rajada absurda de writes num run com muitos nós. A solução: cada chamada de <code>flushRoot</code> vira <code>scheduleUpsert(doc)</code>, que faz <code>setTimeout(FLUSH_DEBOUNCE_MS)</code> e guarda o timer num Map por <code>processId</code>. Se outra chamada chegar antes do timer disparar, <em>cancela</em> o anterior e reinicia — só grava quando fica quieto por N ms. Rajadas de mudança viram 1 write. Padrão simples de debounce. No fim do run (passo 4.4), <code>runLogCollector.finalize()</code> chama <code>spaceRunLogsService.flushNow(processId)</code> — força write imediato, garantindo que o registro final tá no banco antes do backend responder. O risco: se o backend crashar entre o último flush e o finalize, o batch em andamento se perde — o log fica congelado no penúltimo estado, com nós ainda em <code>in_progress</code>. É <em>otimização, não correção</em> — se remover, semântica não muda, só custo aumenta. Pode ser adiado no plano de migração.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box db">
+            <div class="box-title"><span class="badge step">E1</span> Debounce map keyed by processId</div>
+            <div class="box-desc">
+              <code>this.pendingFlushes: Map&lt;processId, { timer, spaceId, rootFlowId, doc }&gt;</code>. Cada chamada:
+              <br>1. Clear timer anterior (se existir)
+              <br>2. <code>setTimeout(FLUSH_DEBOUNCE_MS, () =&gt; upsert(doc))</code>
+              <br>3. Guarda o novo timer no map
+              <br><br>Efeito: só grava se ficar quieto por N ms. Rajadas de atualização (start+end de vários nós) viram 1 write.
+            </div>
+            <div class="box-file">space_run_logs.service.ts:92-120</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box db">
+            <div class="box-title"><span class="badge step">E2</span> UPSERT com JSONB completo</div>
+            <div class="box-desc">
+              INSERT ... ON CONFLICT (processId) DO UPDATE. O <code>doc</code> inteiro (JSONB) é serializado — inclui todos os <code>RunLogNode</code>, seus <code>innerSteps</code>, seus <code>subRun</code> aninhados. Em runs grandes esse JSONB pode ficar com megas.
+            </div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 flushNow em 4.4</div>
+            No fim do run (Fase 4 passo 4.4), <code>runLogCollector.finalize()</code> chama <code>spaceRunLogsService.flushNow(processId)</code> — cancela debounce e força write imediato. Garante que o registro final está no banco antes do backend retornar.
+          </div>
+
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Se o run crashar, debounce perde</div>
+            Se o backend crashar entre startNode e finalize, o último batch de mudanças (que ainda tava no timer) some. Fica registrado em <code>space_run_logs</code> só o estado do último <em>flush efetivo</em>.
+            <br><br>Em prática significa: crash log pode ficar com nó em <code>in_progress</code> mesmo depois de terminar — não é reconstitutível sem replay.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 Uma row por processId</div>
+            <code>space_run_logs</code> tem PK <code>processId</code> — o run inteiro vira uma única row com JSONB gigante. UI de timeline lê essa row inteira. Escalar pra runs muito grandes vai virar um problema de tamanho de row / query time.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="note info" style="margin-top:32px">
+    <strong>Resumo — o que sai de 3.4:</strong>
+    <br>• <code>chargeContext.getStore()</code> agora retorna <code>{ execId, nodeId }</code> pra qualquer service assíncrono chamado abaixo
+    <br>• <code>genericRunLogNode</code> — RunLogNode com <code>status='in_progress'</code> vivo no coletor (null pra fluxBox/libraryNode)
+    <br>• <code>space_run_logs</code> ganhou um flush agendado (debounced) refletindo o novo nó
+    <br>• <code>node_executions</code> ganhou uma row com input resolvido pra nós legacy (não vale pra Temporal)
+    <br>• 1 INSERT (só pra legacy), 1 UPSERT debounced
+  </div>
+
+  <div class="note">
+    <strong>Observações para migração:</strong>
+    <br>• <code>chargeContext</code> depende de <strong>single-process</strong> — no worker, o handler roda em outro processo/máquina e não vê a ALS do backend. O worker cobra via HTTP <code>/worker/charge-tokens</code> (W7) passando execId/nodeId <em>explícitos</em> — pattern superior que o backend pode adotar também.
+    <br>• <code>RunLogCollector</code> hierárquico com <code>innerSteps</code>/<code>subRun</code> é <strong>parte essencial</strong> da UX (timeline aninhada). Migração precisa preservar. Como o coletor vive no processo do backend, a migração pro worker envolve serializar RunLogNode pra o backend agregar — ou expor um serviço centralizado.
+    <br>• O <code>redactSecrets</code> é o único ponto onde credenciais são higienizadas antes de log. Qualquer refactor precisa manter esse hook — vazar em <code>space_run_logs</code> é evento de segurança.
+    <br>• Debounce de <code>scheduleUpsert</code> é otimização, não correção — se remover, a semântica não muda, só o custo. Pode ficar de fora do MVP da migração.
+    <br>• <code>recordLegacyNodeStart</code> só existe pra manter parity com Temporal. Quando <em>tudo</em> for pro worker, essa função vira dead code — bom sinal do progresso da migração.
+    <br>• É <strong>essencial e cross-cutting</strong> — deve ser tratado como <em>subsistema</em> no plano de migração, não como parte do handler de nó individual.
+  </div>
+
+  <div class="page-footer-nav">
+    <a href="../index.html#step-3-4" class="back-btn">← Voltar ao diagrama principal</a>
+  </div>
+
+</div>
+<script>
+(function() {
+  function toggle(card) {
+    if (card) card.classList.toggle('collapsed');
+  }
+  function expand(card) {
+    if (card && card.classList.contains('collapsed')) card.classList.remove('collapsed');
+  }
+  document.querySelectorAll('.fn-card-header').forEach(function(header) {
+    header.addEventListener('click', function(e) {
+      if (e.target.closest('a')) return;
+      toggle(header.parentElement);
+    });
+  });
+  document.querySelectorAll('a[href^="#fn-"]').forEach(function(link) {
+    link.addEventListener('click', function() {
+      var id = link.getAttribute('href').slice(1);
+      expand(document.getElementById(id));
+    });
+  });
+  if (window.location.hash && window.location.hash.startsWith('#fn-')) {
+    expand(document.querySelector(window.location.hash));
+  }
+  window.addEventListener('hashchange', function() {
+    if (window.location.hash.startsWith('#fn-')) {
+      expand(document.querySelector(window.location.hash));
+    }
+  });
+})();
+</script>
+</body>
+</html>
