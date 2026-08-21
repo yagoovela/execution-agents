@@ -38,7 +38,7 @@
 <a href="#fn-e" class="overview-chip"><span class="lbl">E</span>Callback consolidado</a>
 </div></div>
 
-<div class="fn-card" id="fn-a">
+<div class="fn-card collapsed" id="fn-a">
 <div class="fn-card-header"><div class="fn-title"><span class="badge step" style="background:#EAB308;color:white">A</span><code>Coleta emails, urls, anexos</code></div><div class="fn-loc">flux.service.ts:4917-5007</div></div>
 <div class="fn-card-body">
 <div class="fn-signature">Por outputObjectNode: agrega types ['emails', 'subject', 'text', 'urls']; extrai URLs de textData/uploadedFiles; baixa anexos via axios; monta files[]</div>
@@ -58,7 +58,7 @@
 <div class="aside helper"><div class="aside-title">🔧 Regex de URL</div><code>/https?:\/\/[^\s]+/gi</code> — pega tudo depois de <code>http(s)://</code> até whitespace. Simples e funcional pra URLs comuns; pode incluir trailing chars indesejados (vírgula, parênteses).</div>
 </div></div></div></div>
 
-<div class="fn-card" id="fn-b">
+<div class="fn-card collapsed" id="fn-b">
 <div class="fn-card-header"><div class="fn-title"><span class="badge step" style="background:#3B82F6;color:white">B</span><code>Redis dedup duplo (24h + 90s)</code></div><div class="fn-loc">flux.service.ts:5030-5076</div></div>
 <div class="fn-card-body">
 <div class="fn-signature">emailDedupeKey = `email-sent:${flowId}:${nodeId}:${runId}` (24h NX) · emailContentDedupeKey = `email-content:${flowId}:${nodeId}:${sha256(emails+subject+text)}` (90s NX)</div>
@@ -84,7 +84,7 @@
 <div class="aside warn"><div class="aside-title">⚠️ 24h TTL é longo</div>Se usuário editar o agente e re-executar com mesma config em 24h, o dedup por runId nem pega (runId é único). Mas se o mesmo run for retentado por Bull, dedup funciona. Boa cobertura pra retry, não pra "resubmit intencional".</div>
 </div></div></div></div>
 
-<div class="fn-card" id="fn-c">
+<div class="fn-card collapsed" id="fn-c">
 <div class="fn-card-header"><div class="fn-title"><span class="badge step" style="background:#10B981;color:white">C</span><code>Email dispatch (3 providers)</code></div><div class="fn-loc">flux.service.ts:5077-5125</div></div>
 <div class="fn-card-body">
 <div class="fn-signature">if (useFromPersonalGmail) mailService.sendGmailEmail(...); else if (useFromMicrosoft) microsoftMailService.sendMail(...); else mailService.sendMail(...) /* SendGrid default */;</div>
@@ -105,7 +105,7 @@
 <div class="aside warn"><div class="aside-title">⚠️ Erro throwa</div>Se envio falha em qualquer provider, <code>throw new Error(...)</code> — propaga pro caller. Aborta o restante da fase 4 (webhook dessa nó, callback consolidado) porque tá dentro do <code>Promise.all</code>. Ideal seria isolar.</div>
 </div></div></div></div>
 
-<div class="fn-card" id="fn-d">
+<div class="fn-card collapsed" id="fn-d">
 <div class="fn-card-header"><div class="fn-title"><span class="badge step" style="background:#8B5CF6;color:white">D</span><code>Webhook per-node (fire-and-log)</code></div><div class="fn-loc">flux.service.ts:5128-5161</div></div>
 <div class="fn-card-body">
 <div class="fn-signature">nodeCallbackUrl = data.callbackUrlInputData?.[0]?.text || data.callbackUrl || data.webhookUrl; if (nodeCallbackUrl && !isDuplicateOfRequestCallback) { await axios.post(url, { text }, { timeout: 10000 }); }</div>
@@ -132,7 +132,7 @@
 <div class="aside warn"><div class="aside-title">⚠️ Sem retry</div>Falha 1× = falha permanente pra essa entrega. Pode virar issue de reliability. Ideal seria retry + dead-letter queue.</div>
 </div></div></div></div>
 
-<div class="fn-card" id="fn-e">
+<div class="fn-card collapsed" id="fn-e">
 <div class="fn-card-header"><div class="fn-title"><span class="badge step" style="background:#EF4444;color:white">E</span><code>Callback consolidado do request</code></div><div class="fn-loc">flux.service.ts:5164-5196</div></div>
 <div class="fn-card-body">
 <div class="fn-signature">if (requestCallbackUrl) { axios.post(url, { success, error, flowId, sessionId, totalTokensUsed, totalCost, outputs: [{ outputId, text }] }, { timeout: 10000 }).catch(logError);</div>

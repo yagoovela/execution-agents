@@ -99,7 +99,7 @@
 
 <div class="note info"><strong>Contexto:</strong> MCP (Model Context Protocol) é uma layer separada — permite outros LLMs chamarem o Flux como tool. Cada chamada MCP dispara um job Bull; esse tracking permite analytics de "quantos runs de MCP rodaram", latência, error rate por token MCP. Fora do main path do FluxService — vive no processor.</div>
 
-<div class="fn-card">
+<div class="fn-card collapsed">
 <div class="fn-card-header"><div class="fn-title"><span class="badge step" style="background:#EAB308;color:white">A</span><code>markRunning (setup — passo 1.1)</code></div><div class="fn-loc">apiV2Job.processor.ts:48-50</div></div>
 <div class="fn-card-body">
 <div class="fn-signature">if (params.mcpTracking) { await this.mcpRunStatusService.markRunning(processId); }</div>
@@ -118,7 +118,7 @@
 <div class="aside info"><div class="aside-title">🎯 mcpTracking flag</div>Vem no request quando endpoint é MCP-specific. Se false ou ausente, todo o tracking MCP é skipado — outros run_types não pagam esse custo.</div>
 </div></div></div></div>
 
-<div class="fn-card">
+<div class="fn-card collapsed">
 <div class="fn-card-header"><div class="fn-title"><span class="badge step" style="background:#3B82F6;color:white">B</span><code>markFinished (success path)</code></div><div class="fn-loc">apiV2Job.processor.ts:58-67</div></div>
 <div class="fn-card-body">
 <div class="fn-signature">await this.mcpRunStatusService.markFinished({ id: processId, status: result.nodeError ? 'error' : 'completed', tokens: result.totalTokensUsed, cost: result.totalCost, durationMs: Date.now() - startedAt, errorMessage: result.nodeError ?? null })</div>
@@ -143,7 +143,7 @@
 <div class="aside"><div class="aside-title">📎 nodeError vs error crash</div>Se agente falhou por handler bug (fail-fast em 3.8), <code>nodeError</code> é string mas <code>apiV2</code> retornou normalmente. Se agente crashou catastrófico (5.1), <code>apiV2</code> lançou — vai pro fn C.</div>
 </div></div></div></div>
 
-<div class="fn-card">
+<div class="fn-card collapsed">
 <div class="fn-card-header"><div class="fn-title"><span class="badge step" style="background:#10B981;color:white">C</span><code>markFinished (error path)</code></div><div class="fn-loc">apiV2Job.processor.ts:80-88</div></div>
 <div class="fn-card-body">
 <div class="fn-signature">catch (error) { if (params.mcpTracking) { await mcpRunStatusService.markFinished({ id: processId, status: 'error', tokens: 0, cost: 0, durationMs, errorMessage: error.message }); } throw error; }</div>
@@ -171,7 +171,7 @@
 <div class="aside info"><div class="aside-title">🎯 Re-throw pra Bull</div>Sem <code>throw error</code>, Bull acharia job = OK (returned nothing). Precisa propagar pra retry logic funcionar.</div>
 </div></div></div></div>
 
-<div class="fn-card">
+<div class="fn-card collapsed">
 <div class="fn-card-header"><div class="fn-title"><span class="badge step" style="background:#8B5CF6;color:white">D</span><code>Tabela mcp_run_status</code></div><div class="fn-loc">mcp/entities/mcp-run-status.entity.ts</div></div>
 <div class="fn-card-body">
 <div class="fn-signature">@Entity('mcp_run_status') class McpRunStatus { id: string PK; status: 'pending' | 'in_progress' | 'completed' | 'error'; tokens: number; cost: number; durationMs: number; errorMessage: string; startedAt, endedAt: Date; }</div>
