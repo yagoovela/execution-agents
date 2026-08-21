@@ -122,9 +122,13 @@
   }
   .fn-card-header {
     background: linear-gradient(to right, #0F172A, #1E293B);
-    color: white; padding: 14px 20px;
+    color: white; padding: 14px 20px 14px 44px;
     display: flex; align-items: center; justify-content: space-between;
     flex-wrap: wrap; gap: 10px;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    transition: background 0.15s;
   }
   .fn-card-header .fn-title { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
   .fn-card-header .fn-title code {
@@ -134,6 +138,22 @@
   .fn-card-header .fn-loc {
     font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; color: #CBD5E1;
   }
+  .fn-card-header:hover { background: linear-gradient(to right, #1E293B, #334155); }
+  .fn-card-header::before {
+    content: "▾";
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+    font-size: 14px;
+    transition: transform 0.2s ease;
+    line-height: 1;
+  }
+  .fn-card.collapsed .fn-card-header::before {
+    transform: translateY(-50%) rotate(-90deg);
+  }
+  .fn-card.collapsed .fn-card-body { display: none; }
   .fn-card-body { padding: 20px; }
 
   .fn-signature {
@@ -157,6 +177,60 @@
     content: "💬"; position: absolute; left: 14px; top: 10px; font-size: 18px;
   }
   .fn-friendly strong { color: #065F46; }
+
+  /* Step-level friendly summary (page-wide, appears after page-sub) */
+  .step-friendly {
+    font-size: 13.5px;
+    color: #334155;
+    margin-bottom: 28px;
+    padding: 16px 18px 16px 52px;
+    background: #F0FDF4;
+    border-left: 4px solid #10B981;
+    border-radius: 10px;
+    position: relative;
+    line-height: 1.6;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.08);
+  }
+  .step-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 18px;
+    top: 14px;
+    font-size: 22px;
+  }
+  .step-friendly-title {
+    font-weight: 700;
+    color: #065F46;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 8px;
+  }
+  .step-friendly ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .step-friendly li {
+    margin-bottom: 6px;
+  }
+  .step-friendly li:last-child {
+    margin-bottom: 0;
+  }
+  .step-friendly strong {
+    color: #065F46;
+  }
+  .step-friendly code {
+    background: #DCFCE7;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: #065F46;
+  }
+  .step-friendly em {
+    color: #047857;
+    font-style: italic;
+  }
 
   .fn-body-cols {
     display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr); gap: 20px;
@@ -283,6 +357,18 @@
   </div>
   <div class="page-sub">
     Bloco em <code>flux.service.ts:3227</code> (condição do <code>while</code>) e <code>scheduler.ts:295-308</code> (função). O scheduler devolve o próximo nó pronto pra executar — <strong>in-degree zero</strong> nas arestas ativas, respeitando branches mortos por <code>completeCondition</code>.
+  </div>
+
+  <!-- Step friendly summary -->
+  <div class="step-friendly">
+    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <ul>
+      <li><strong>Chama o próximo da fila:</strong> o loop principal pergunta <code>nextReady(state)</code> e recebe o <em>id</em> do próximo nó pronto — <code>shift()</code> FIFO na fila <code>ready</code>, sem prioridade nem justiça.</li>
+      <li><strong>Descarta senha repetida ou morta:</strong> antes de entregar um id, confere 3 listas — <code>dead</code> (branch podado), <code>completed</code> (já rodou), <code>scheduled</code> (dedupe de duplicatas na fila) — e pula silenciosamente qualquer id que caia numa delas.</li>
+      <li><strong>Painel de controle é o <code>SchedulerState</code>:</strong> um struct in-memory com Sets/Maps que guarda todo o DAG do run — nós, dependências, contadores de predecessores (normais e gating), arestas condicionais. É <em>portável</em> (TypeScript puro) mas <em>frágil</em> (se o backend cai, some inteiro).</li>
+      <li><strong>Feedback loop via <code>markCompleted</code> e <code>completeCondition</code>:</strong> quando um nó termina, o "secretário" resolve dependências dos vizinhos e empurra pra <code>ready</code> quem ficou com 0 pendências; para bifurcações, o "juiz" mata os handles não-tomados (inclusive o sentinel <code>DEAD_HANDLE</code> em caso de erro fatal).</li>
+      <li><strong>Saída:</strong> <code>scheduledId</code> — o próximo <code>nodeId</code> pra Fase 3 processar, ou <code>null</code> quando a fila secou e o loop passa pra Fase 4. Zero I/O, 100% in-memory.</li>
+    </ul>
   </div>
 
   <div class="note info">
@@ -662,5 +748,35 @@
   </div>
 
 </div>
+<script>
+(function() {
+  function toggle(card) {
+    if (card) card.classList.toggle('collapsed');
+  }
+  function expand(card) {
+    if (card && card.classList.contains('collapsed')) card.classList.remove('collapsed');
+  }
+  document.querySelectorAll('.fn-card-header').forEach(function(header) {
+    header.addEventListener('click', function(e) {
+      if (e.target.closest('a')) return;
+      toggle(header.parentElement);
+    });
+  });
+  document.querySelectorAll('a[href^="#fn-"]').forEach(function(link) {
+    link.addEventListener('click', function() {
+      var id = link.getAttribute('href').slice(1);
+      expand(document.getElementById(id));
+    });
+  });
+  if (window.location.hash && window.location.hash.startsWith('#fn-')) {
+    expand(document.querySelector(window.location.hash));
+  }
+  window.addEventListener('hashchange', function() {
+    if (window.location.hash.startsWith('#fn-')) {
+      expand(document.querySelector(window.location.hash));
+    }
+  });
+})();
+</script>
 </body>
 </html>

@@ -44,7 +44,23 @@
   .badge.cross { background: #F3E8FF; color: #6B21A8; }
   .arrow { color: #64748B; font-size: 22px; line-height: 1; margin: 1px 0; text-align: center; }
   .fn-card { margin-top: 28px; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
-  .fn-card-header { background: linear-gradient(to right, #0F172A, #1E293B); color: white; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  .fn-card-header { background: linear-gradient(to right, #0F172A, #1E293B); color: white; padding: 14px 20px 14px 44px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; cursor: pointer; position: relative; user-select: none; transition: background 0.15s; gap: 10px; }
+  .fn-card-header:hover { background: linear-gradient(to right, #1E293B, #334155); }
+  .fn-card-header::before {
+    content: "▾";
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+    font-size: 14px;
+    transition: transform 0.2s ease;
+    line-height: 1;
+  }
+  .fn-card.collapsed .fn-card-header::before {
+    transform: translateY(-50%) rotate(-90deg);
+  }
+  .fn-card.collapsed .fn-card-body { display: none; }
   .fn-card-header .fn-title { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
   .fn-card-header .fn-title code { background: rgba(255,255,255,0.15); padding: 3px 8px; border-radius: 4px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 13px; }
   .fn-card-header .fn-loc { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; color: #CBD5E1; }
@@ -54,6 +70,60 @@
   .fn-friendly { font-size: 13px; color: #334155; margin-bottom: 20px; padding: 12px 14px 12px 44px; background: #F0FDF4; border-left: 3px solid #10B981; border-radius: 6px; position: relative; line-height: 1.55; }
   .fn-friendly::before { content: "💬"; position: absolute; left: 14px; top: 10px; font-size: 18px; }
   .fn-friendly strong { color: #065F46; }
+
+  /* Step-level friendly summary (page-wide, appears after page-sub) */
+  .step-friendly {
+    font-size: 13.5px;
+    color: #334155;
+    margin-bottom: 28px;
+    padding: 16px 18px 16px 52px;
+    background: #F0FDF4;
+    border-left: 4px solid #10B981;
+    border-radius: 10px;
+    position: relative;
+    line-height: 1.6;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.08);
+  }
+  .step-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 18px;
+    top: 14px;
+    font-size: 22px;
+  }
+  .step-friendly-title {
+    font-weight: 700;
+    color: #065F46;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 8px;
+  }
+  .step-friendly ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .step-friendly li {
+    margin-bottom: 6px;
+  }
+  .step-friendly li:last-child {
+    margin-bottom: 0;
+  }
+  .step-friendly strong {
+    color: #065F46;
+  }
+  .step-friendly code {
+    background: #DCFCE7;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: #065F46;
+  }
+  .step-friendly em {
+    color: #047857;
+    font-style: italic;
+  }
   .fn-body-cols { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr); gap: 20px; }
   @media (max-width: 900px) { .fn-body-cols { grid-template-columns: 1fr; } }
   .fn-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
@@ -87,6 +157,19 @@
 
   <div class="page-header"><span class="icon">💰</span><h1>Passo 3.7 — Contabilidade token/custo por nó</h1></div>
   <div class="page-sub">Bloco em <code>flux.service.ts:2280-2283</code> (closure), <code>3248-3249</code> (snapshot antes), <code>3296-3297</code> (2ª leitura), <code>4537-4546</code> (delta no endNode). Sem tabela, sem service — pura aritmética em variáveis globais do run + closure de mutação.</div>
+
+  <!-- Step friendly summary -->
+  <div class="step-friendly">
+    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <ul>
+      <li><strong>Contabiliza gasto de tokens e custo por nó:</strong> pura aritmética em cima de variáveis globais do run (<code>totalTokensUsed</code>, <code>totalCost</code>). Sem service, sem tabela — só duas variáveis vivendo no escopo do <code>apiV2()</code>.</li>
+      <li><strong>Closure <code>onUpdateTokens</code> pra path legacy:</strong> uma "caixinha de troco" passada como arg pros handlers legacy (LLM, imagem, áudio, embedding); cada handler grita <code>onUpdateTokens(delta, cost)</code> e a closure soma nos acumuladores. Funciona porque Node.js é single-threaded — sem lock, sem race.</li>
+      <li><strong>Delta por nó via snapshot antes/depois:</strong> no início do <code>try</code> do nó, guarda <code>genericTokensBefore = totalTokensUsed</code>; depois do handler, calcula delta = valor atual − snapshot. O delta vai pro <code>RunLogNode</code> em 3.9. Robusto <em>enquanto</em> não há paralelismo entre nós.</li>
+      <li><strong>AsyncLocalStorage pra propagação implícita:</strong> <code>chargeContext</code> injeta <code>{ execId, nodeId }</code> na ALS antes do handler; quando o <code>ProductService.updateTokens</code> (compartilhado com API pública) insere row em <code>token_transactions</code>, ele consulta a ALS pra saber a qual nó atribuir a cobrança.</li>
+      <li><strong>Path Temporal usa HTTP + SUM no banco:</strong> handlers no worker não podem tocar a closure (outro processo); então cobram via <code>/worker/charge-tokens</code>, e o backend, no retorno de <code>processNodeViaTemporal</code>, chama <code>sumChargesByExecution(execId, nodeId)</code> pra agregar do banco e somar em <code>totalTokensUsed</code>. Overhead per-node de HTTP+SQL, mas garante consistência entre paths.</li>
+      <li><strong>Saída:</strong> <code>totalTokensUsed</code>/<code>totalCost</code> refletindo consumo pós-nó; delta atribuído ao <code>RunLogNode</code>; row em <code>token_transactions</code> gravada como audit trail; <em>dois</em> mecanismos convergindo numa única fonte de verdade em memória.</li>
+    </ul>
+  </div>
 
   <div class="note info"><strong>Contexto:</strong> billing é cross-cutting (memória <code>[[project_execution_architecture]]</code>). O <em>total</em> do run vive em <code>totalTokensUsed</code>/<code>totalCost</code> — mutados por callback quando chamadas de LLM/API/embedding cobram tokens. Já o <em>delta por nó</em> é calculado por diferença antes/depois. Duas fontes possíveis: (i) handlers legacy chamam <code>onUpdateTokens(delta, cost)</code> direto; (ii) handlers Temporal cobram via HTTP <code>/worker/charge-tokens</code> e depois <code>sumChargesByExecution(execId, nodeId)</code> agrega do banco.</div>
 
@@ -268,5 +351,35 @@ nodeId = nodeId ?? chargeCtx?.nodeId ?? <span class="k">null</span>;
 
   <div class="page-footer-nav"><a href="index.html#step-3-7" class="back-btn">← Voltar ao diagrama principal</a></div>
 </div>
+<script>
+(function() {
+  function toggle(card) {
+    if (card) card.classList.toggle('collapsed');
+  }
+  function expand(card) {
+    if (card && card.classList.contains('collapsed')) card.classList.remove('collapsed');
+  }
+  document.querySelectorAll('.fn-card-header').forEach(function(header) {
+    header.addEventListener('click', function(e) {
+      if (e.target.closest('a')) return;
+      toggle(header.parentElement);
+    });
+  });
+  document.querySelectorAll('a[href^="#fn-"]').forEach(function(link) {
+    link.addEventListener('click', function() {
+      var id = link.getAttribute('href').slice(1);
+      expand(document.getElementById(id));
+    });
+  });
+  if (window.location.hash && window.location.hash.startsWith('#fn-')) {
+    expand(document.querySelector(window.location.hash));
+  }
+  window.addEventListener('hashchange', function() {
+    if (window.location.hash.startsWith('#fn-')) {
+      expand(document.querySelector(window.location.hash));
+    }
+  });
+})();
+</script>
 </body>
 </html>

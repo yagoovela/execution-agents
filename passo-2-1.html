@@ -108,9 +108,13 @@
   }
   .fn-card-header {
     background: linear-gradient(to right, #0F172A, #1E293B);
-    color: white; padding: 14px 20px;
+    color: white; padding: 14px 20px 14px 44px;
     display: flex; align-items: center; justify-content: space-between;
     flex-wrap: wrap; gap: 10px;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    transition: background 0.15s;
   }
   .fn-card-header .fn-title {
     font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px;
@@ -123,6 +127,22 @@
     font-family: 'SF Mono', Menlo, Consolas, monospace;
     font-size: 11px; color: #CBD5E1;
   }
+  .fn-card-header:hover { background: linear-gradient(to right, #1E293B, #334155); }
+  .fn-card-header::before {
+    content: "▾";
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+    font-size: 14px;
+    transition: transform 0.2s ease;
+    line-height: 1;
+  }
+  .fn-card.collapsed .fn-card-header::before {
+    transform: translateY(-50%) rotate(-90deg);
+  }
+  .fn-card.collapsed .fn-card-body { display: none; }
   .fn-card-body { padding: 20px; }
   .fn-signature {
     font-family: 'SF Mono', Menlo, Consolas, monospace;
@@ -153,6 +173,60 @@
   }
   .fn-friendly strong {
     color: #065F46;
+  }
+
+  /* Step-level friendly summary (page-wide, appears after page-sub) */
+  .step-friendly {
+    font-size: 13.5px;
+    color: #334155;
+    margin-bottom: 28px;
+    padding: 16px 18px 16px 52px;
+    background: #F0FDF4;
+    border-left: 4px solid #10B981;
+    border-radius: 10px;
+    position: relative;
+    line-height: 1.6;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.08);
+  }
+  .step-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 18px;
+    top: 14px;
+    font-size: 22px;
+  }
+  .step-friendly-title {
+    font-weight: 700;
+    color: #065F46;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 8px;
+  }
+  .step-friendly ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .step-friendly li {
+    margin-bottom: 6px;
+  }
+  .step-friendly li:last-child {
+    margin-bottom: 0;
+  }
+  .step-friendly strong {
+    color: #065F46;
+  }
+  .step-friendly code {
+    background: #DCFCE7;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: #065F46;
+  }
+  .step-friendly em {
+    color: #047857;
+    font-style: italic;
   }
   .fn-body-cols {
     display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr); gap: 20px;
@@ -267,6 +341,18 @@
   </div>
   <div class="page-sub">
     Bloco em <code>scheduler.ts:152-293</code> (planOrder: 412-425). Constrói o estado do scheduler DAG que vai reger o loop principal: classifica arestas em <em>control / condition / data / global</em>, calcula alcançabilidade a partir do starter, remove backedges (ciclos), monta contadores de predecessores e devolve a fila inicial de nós prontos (<code>ready</code>).
+  </div>
+
+  <!-- Step friendly summary -->
+  <div class="step-friendly">
+    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <ul>
+      <li><strong>Etiqueta cada aresta do canvas:</strong> passa por todas as ligações entre nós e coloca um rótulo (<code>global</code>, <code>control</code>, <code>condition</code>, <code>data</code>) que diz <em>se aquela aresta bloqueia execução ou não</em>.</li>
+      <li><strong>Descobre quem entra na festa:</strong> partindo do starter, calcula o <code>Set</code> de nós <em>reachable</em> — quem não estiver nele fica dormindo o run inteiro, mesmo desenhado no canvas.</li>
+      <li><strong>Remove ciclos do grafo:</strong> um DFS com coloring (branco/cinza/preto) identifica as <em>backedges</em> (típico de <code>arrayNode</code> que volta pro início) e as ignora, pra não travar os contadores de predecessores.</li>
+      <li><strong>Monta o "painel de controle" do loop:</strong> pra cada nó, calcula quantos predecessores tem no total e quantos são <em>gates</em> (control+condition), inicializa contadores em zero e popula o <code>ready[]</code> só com nós de in-degree 0.</li>
+      <li><strong>Saída:</strong> um <code>SchedulerState</code> mutável de 12 campos (<code>ready</code>, <code>forwardDeps</code>, <code>conditionEdges</code>, contadores, sets vazios de <code>completed/dead/scheduled</code>) que o loop da Fase 3 vai consumir — puro CPU, zero I/O, <code>O(V+E)</code>.</li>
+    </ul>
   </div>
 
   <div class="note info">
@@ -676,5 +762,35 @@
   </div>
 
 </div>
+<script>
+(function() {
+  function toggle(card) {
+    if (card) card.classList.toggle('collapsed');
+  }
+  function expand(card) {
+    if (card && card.classList.contains('collapsed')) card.classList.remove('collapsed');
+  }
+  document.querySelectorAll('.fn-card-header').forEach(function(header) {
+    header.addEventListener('click', function(e) {
+      if (e.target.closest('a')) return;
+      toggle(header.parentElement);
+    });
+  });
+  document.querySelectorAll('a[href^="#fn-"]').forEach(function(link) {
+    link.addEventListener('click', function() {
+      var id = link.getAttribute('href').slice(1);
+      expand(document.getElementById(id));
+    });
+  });
+  if (window.location.hash && window.location.hash.startsWith('#fn-')) {
+    expand(document.querySelector(window.location.hash));
+  }
+  window.addEventListener('hashchange', function() {
+    if (window.location.hash.startsWith('#fn-')) {
+      expand(document.querySelector(window.location.hash));
+    }
+  });
+})();
+</script>
 </body>
 </html>

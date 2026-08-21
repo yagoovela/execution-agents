@@ -219,12 +219,16 @@
   .fn-card-header {
     background: linear-gradient(to right, #0F172A, #1E293B);
     color: white;
-    padding: 14px 20px;
+    padding: 14px 20px 14px 44px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 10px;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    transition: background 0.15s;
   }
   .fn-card-header .fn-title {
     font-size: 16px;
@@ -245,6 +249,22 @@
     font-size: 11px;
     color: #CBD5E1;
   }
+  .fn-card-header:hover { background: linear-gradient(to right, #1E293B, #334155); }
+  .fn-card-header::before {
+    content: "▾";
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+    font-size: 14px;
+    transition: transform 0.2s ease;
+    line-height: 1;
+  }
+  .fn-card.collapsed .fn-card-header::before {
+    transform: translateY(-50%) rotate(-90deg);
+  }
+  .fn-card.collapsed .fn-card-body { display: none; }
   .fn-card-body { padding: 20px; }
 
   .fn-signature {
@@ -286,6 +306,60 @@
   }
   .fn-friendly strong {
     color: #065F46;
+  }
+
+  /* Step-level friendly summary (page-wide, appears after page-sub) */
+  .step-friendly {
+    font-size: 13.5px;
+    color: #334155;
+    margin-bottom: 28px;
+    padding: 16px 18px 16px 52px;
+    background: #F0FDF4;
+    border-left: 4px solid #10B981;
+    border-radius: 10px;
+    position: relative;
+    line-height: 1.6;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.08);
+  }
+  .step-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 18px;
+    top: 14px;
+    font-size: 22px;
+  }
+  .step-friendly-title {
+    font-weight: 700;
+    color: #065F46;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 8px;
+  }
+  .step-friendly ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .step-friendly li {
+    margin-bottom: 6px;
+  }
+  .step-friendly li:last-child {
+    margin-bottom: 0;
+  }
+  .step-friendly strong {
+    color: #065F46;
+  }
+  .step-friendly code {
+    background: #DCFCE7;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: #065F46;
+  }
+  .step-friendly em {
+    color: #047857;
+    font-style: italic;
   }
 
   .fn-body-cols {
@@ -512,6 +586,18 @@
   </div>
   <div class="page-sub">
     Bloco em <code>flux.service.ts:2620-2643</code>. Se o flow tem algum <code>pullData</code>/<code>pushData</code> com <code>provider = 'google'</code> <em>e</em> o usuário tem <code>googleRefreshToken</code>, troca o refresh token por um <code>access_token</code> fresco e guarda numa variável local que os handlers de pullData/pushData vão consumir na Fase 3.
+  </div>
+
+  <!-- Step friendly summary -->
+  <div class="step-friendly">
+    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <ul>
+      <li><strong>Vê se vale a pena ligar pro Google:</strong> varre os nós procurando algum <code>pullData</code>/<code>pushData</code> com provider Google — a maioria dos agentes não usa, então esse vigia economiza uma chamada de rede. Nodes antigos sem <code>provider</code> caem no default <code>'google'</code>.</li>
+      <li><strong>Passa pelo porteiro duplo:</strong> só entra no refresh se <em>ambos</em> os cartões estiverem carimbados — o user tem <code>googleRefreshToken</code> guardado E o flow tem nó Google. Se um faltar, <code>access_token</code> nasce <code>''</code> e o passo é pulado em silêncio.</li>
+      <li><strong>Troca o refresh token por access token:</strong> instancia um <code>OAuth2Client</code> novinho (por run, sem pool) com clientId, clientSecret e redirectUri, chama <code>setCredentials</code> local e faz o POST bloqueante em <code>oauth2.googleapis.com/token</code>. Só o <code>access_token</code> é aproveitado — <code>expiry_date</code> e cia vão pro lixo.</li>
+      <li><strong>Sem try/catch, sem log estruturado:</strong> se o Google recusar (token revogado, quota), a exceção sobe e <strong>derruba o run inteiro</strong>, mesmo que 90% dos nós não sejam Google. Zero observabilidade sobre sucesso/falha. Também cuida da variável de ambiente <code>GOOGLE_LOGIN_CLIENT_SECRECT</code> (o typo é obrigatório).</li>
+      <li><strong>Saída:</strong> variável local <code>access_token</code> (string Bearer válida por ~1h ou <code>''</code> se o gate fechou), capturada por closure e passada como <code>accessToken</code> pros handlers de <code>pullData</code>/<code>pushData</code> na Fase 3 — inclusive dentro de <code>arrayNode</code>. Se o token vier vazio, os handlers batem no Google e ganham 401 no meio da execução.</li>
+    </ul>
   </div>
 
   <div class="note info">
@@ -897,5 +983,35 @@ access_token = token.credentials.access_token;
   </div>
 
 </div>
+<script>
+(function() {
+  function toggle(card) {
+    if (card) card.classList.toggle('collapsed');
+  }
+  function expand(card) {
+    if (card && card.classList.contains('collapsed')) card.classList.remove('collapsed');
+  }
+  document.querySelectorAll('.fn-card-header').forEach(function(header) {
+    header.addEventListener('click', function(e) {
+      if (e.target.closest('a')) return;
+      toggle(header.parentElement);
+    });
+  });
+  document.querySelectorAll('a[href^="#fn-"]').forEach(function(link) {
+    link.addEventListener('click', function() {
+      var id = link.getAttribute('href').slice(1);
+      expand(document.getElementById(id));
+    });
+  });
+  if (window.location.hash && window.location.hash.startsWith('#fn-')) {
+    expand(document.querySelector(window.location.hash));
+  }
+  window.addEventListener('hashchange', function() {
+    if (window.location.hash.startsWith('#fn-')) {
+      expand(document.querySelector(window.location.hash));
+    }
+  });
+})();
+</script>
 </body>
 </html>

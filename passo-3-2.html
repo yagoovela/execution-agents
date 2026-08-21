@@ -46,16 +46,87 @@
   .badge.cross    { background: #F3E8FF; color: #6B21A8; }
   .arrow { color: #64748B; font-size: 22px; line-height: 1; margin: 1px 0; text-align: center; }
   .fn-card { margin-top: 28px; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
-  .fn-card-header { background: linear-gradient(to right, #0F172A, #1E293B); color: white; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+  .fn-card-header { background: linear-gradient(to right, #0F172A, #1E293B); color: white; padding: 14px 20px 14px 44px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; cursor: pointer; position: relative; user-select: none; transition: background 0.15s; }
   .fn-card-header .fn-title { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
   .fn-card-header .fn-title code { background: rgba(255,255,255,0.15); padding: 3px 8px; border-radius: 4px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 13px; }
   .fn-card-header .fn-loc { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; color: #CBD5E1; }
+  .fn-card-header:hover { background: linear-gradient(to right, #1E293B, #334155); }
+  .fn-card-header::before {
+    content: "▾";
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+    font-size: 14px;
+    transition: transform 0.2s ease;
+    line-height: 1;
+  }
+  .fn-card.collapsed .fn-card-header::before {
+    transform: translateY(-50%) rotate(-90deg);
+  }
+  .fn-card.collapsed .fn-card-body { display: none; }
   .fn-card-body { padding: 20px; }
   .fn-signature { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; background: #F1F5F9; padding: 8px 12px; border-radius: 6px; color: #334155; margin-bottom: 16px; overflow-x: auto; }
   .fn-purpose { font-size: 13px; color: #475569; margin-bottom: 12px; padding: 10px 14px; background: #EFF6FF; border-left: 3px solid #3B82F6; border-radius: 6px; }
   .fn-friendly { font-size: 13px; color: #334155; margin-bottom: 20px; padding: 12px 14px 12px 44px; background: #F0FDF4; border-left: 3px solid #10B981; border-radius: 6px; position: relative; line-height: 1.55; }
   .fn-friendly::before { content: "💬"; position: absolute; left: 14px; top: 10px; font-size: 18px; }
   .fn-friendly strong { color: #065F46; }
+
+  /* Step-level friendly summary (page-wide, appears after page-sub) */
+  .step-friendly {
+    font-size: 13.5px;
+    color: #334155;
+    margin-bottom: 28px;
+    padding: 16px 18px 16px 52px;
+    background: #F0FDF4;
+    border-left: 4px solid #10B981;
+    border-radius: 10px;
+    position: relative;
+    line-height: 1.6;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.08);
+  }
+  .step-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 18px;
+    top: 14px;
+    font-size: 22px;
+  }
+  .step-friendly-title {
+    font-weight: 700;
+    color: #065F46;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 8px;
+  }
+  .step-friendly ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .step-friendly li {
+    margin-bottom: 6px;
+  }
+  .step-friendly li:last-child {
+    margin-bottom: 0;
+  }
+  .step-friendly strong {
+    color: #065F46;
+  }
+  .step-friendly code {
+    background: #DCFCE7;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: #065F46;
+  }
+  .step-friendly em {
+    color: #047857;
+    font-style: italic;
+  }
+
   .fn-body-cols { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr); gap: 20px; }
   @media (max-width: 900px) { .fn-body-cols { grid-template-columns: 1fr; } }
   .fn-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
@@ -107,6 +178,18 @@
   </div>
   <div class="page-sub">
     Bloco em <code>flux.service.ts:3240-3278</code>. Recupera o objeto <code>node</code> completo (com data mutada por passos anteriores) do array <code>myUpdatedNodes</code>, marca o id como processado e prepara o cache local <code>responses</code> (últimas 10 preview responses).
+  </div>
+
+  <!-- Step friendly summary -->
+  <div class="step-friendly">
+    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <ul>
+      <li><strong>Abre a pasta viva do funcionário:</strong> o scheduler entregou só um <code>id</code> em 3.1 — agora <code>myUpdatedNodes.find</code> devolve o <em>node inteiro</em>, como <strong>referência viva</strong> do array, com todas as mutações que handlers anteriores já fizeram (schema, contentData, previewResponses).</li>
+      <li><strong>Skip silencioso se sumiu:</strong> se o <code>find</code> não achar (bug latente sem repro), o loop <em>não crasha</em> — <code>if (node) { ... }</code> engole o caso e pula pra próxima iteração. Custo é <code>O(n)</code> por nó — em agentes com 1000+ nós vira quadrático.</li>
+      <li><strong>Carimba o ponto e tira foto dos contadores:</strong> <code>processedNodeIds.add(id)</code> vira audit trail pra Fase 4.1; <code>genericTokensBefore/genericCostBefore</code> guardam snapshot dos acumuladores globais pra calcular o <em>delta desse nó</em> depois em 3.9; <code>nodeStartedAtMs</code> marca o timer pra <code>durationMs</code>.</li>
+      <li><strong>Clona o carrossel de preview responses:</strong> lê <code>node.data.previewResponses</code> pra um array local com até 10 itens (ring buffer com bug <code>=== 10</code> em vez de <code>&gt;= 10</code>). Só handlers <em>legacy</em> usam esse cache — path Temporal persiste em <code>node_executions</code>.</li>
+      <li><strong>Saída:</strong> <code>node</code> (ref viva), <code>responses</code> (array local), snapshots de tokens/cost e timer de duração — tudo pronto pro dispatch em 3.5. Zero I/O.</li>
+    </ul>
   </div>
 
   <div class="note info">
@@ -395,5 +478,35 @@ lastExecutedNodeId = id;
   </div>
 
 </div>
+<script>
+(function() {
+  function toggle(card) {
+    if (card) card.classList.toggle('collapsed');
+  }
+  function expand(card) {
+    if (card && card.classList.contains('collapsed')) card.classList.remove('collapsed');
+  }
+  document.querySelectorAll('.fn-card-header').forEach(function(header) {
+    header.addEventListener('click', function(e) {
+      if (e.target.closest('a')) return;
+      toggle(header.parentElement);
+    });
+  });
+  document.querySelectorAll('a[href^="#fn-"]').forEach(function(link) {
+    link.addEventListener('click', function() {
+      var id = link.getAttribute('href').slice(1);
+      expand(document.getElementById(id));
+    });
+  });
+  if (window.location.hash && window.location.hash.startsWith('#fn-')) {
+    expand(document.querySelector(window.location.hash));
+  }
+  window.addEventListener('hashchange', function() {
+    if (window.location.hash.startsWith('#fn-')) {
+      expand(document.querySelector(window.location.hash));
+    }
+  });
+})();
+</script>
 </body>
 </html>
