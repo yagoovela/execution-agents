@@ -1,0 +1,892 @@
+<title>B7 — Batch processing as a durable workflow</title>
+<style>
+
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #F1F5F9;
+    color: #0F172A;
+    margin: 0;
+    padding: 32px 24px 80px;
+    line-height: 1.4;
+  }
+  .container { max-width: 1500px; margin: 0 auto; }
+
+  /* Top nav */
+  .page-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    flex-wrap: wrap;
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #64748B;
+  }
+  .breadcrumb a {
+    color: #3B82F6;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #CBD5E1; }
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #0F172A;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+
+  /* Page header */
+  .page-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 8px;
+  }
+  .page-header .icon { font-size: 32px; }
+  .page-header h1 {
+    margin: 0;
+    font-size: 26px;
+    color: #0F172A;
+    letter-spacing: -0.4px;
+  }
+  .page-sub {
+    color: #64748B;
+    font-size: 13px;
+    margin-bottom: 24px;
+    padding-left: 46px;
+  }
+  .page-sub code {
+    background: #E2E8F0;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 12px;
+    color: #334155;
+  }
+
+  /* Overview chain */
+  .overview-mini {
+    background: white;
+    padding: 16px 18px;
+    border-radius: 10px;
+    margin-bottom: 28px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .overview-mini-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 12px;
+  }
+  .overview-chain {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .overview-chip {
+    background: #F8FAFC;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border-left: 3px solid #3B82F6;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #0F172A;
+    text-decoration: none;
+    display: inline-block;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+  .overview-chip .lbl {
+    display: block;
+    font-size: 9.5px;
+    color: #64748B;
+    font-weight: 500;
+    margin-bottom: 2px;
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .overview-sep { color: #94A3B8; font-size: 18px; font-weight: bold; }
+
+  /* Boxes */
+  .box {
+    background: white;
+    border-radius: 8px;
+    padding: 9px 13px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border-left: 4px solid #94A3B8;
+    width: 100%;
+    max-width: 100%;
+  }
+  .box.backend    { border-left-color: #3B82F6; }
+  .box.worker     { border-left-color: #10B981; }
+  .box.db         { border-left-color: #F59E0B; }
+  .box.redis      { border-left-color: #EF4444; }
+  .box.s3         { border-left-color: #8B5CF6; }
+  .box.external   { border-left-color: #64748B; }
+  .box.decision { border-left-color: #EAB308; background: #FEFCE8; }
+  .box.cross { border-left-color: #A855F7; background: #FAF5FF; }
+
+  .box-title {
+    font-weight: 600;
+    font-size: 12.5px;
+    color: #0F172A;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .box-desc { font-size: 11.5px; color: #475569; }
+  .box-file {
+    font-size: 10px;
+    color: #94A3B8;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    margin-top: 3px;
+    word-break: break-all;
+  }
+  .box code {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    background: #F1F5F9;
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: #334155;
+    word-break: break-word;
+  }
+  .box-desc code { word-break: break-word; }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .badge.migrated { background: #D1FAE5; color: #065F46; }
+  .badge.legacy   { background: #FEE2E2; color: #991B1B; }
+  .badge.mixed    { background: #FEF3C7; color: #92400E; }
+  .badge.step     { background: #E0E7FF; color: #3730A3; font-size: 10px; }
+  .badge.cross    { background: #F3E8FF; color: #6B21A8; }
+
+  /* Arrows */
+  .arrow {
+    color: #64748B;
+    font-size: 22px;
+    line-height: 1;
+    margin: 1px 0;
+    text-align: center;
+  }
+  .converge { text-align: center; color: #64748B; font-size: 22px; margin: 6px 0; }
+
+  /* Function card */
+  .fn-card {
+    margin-top: 28px;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .fn-card-header {
+    background: linear-gradient(to right, #0F172A, #1E293B);
+    color: white;
+    padding: 14px 20px 14px 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .fn-card-header .fn-title {
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .fn-card-header .fn-title code {
+    background: rgba(255,255,255,0.15);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 13px;
+  }
+  .fn-card-header .fn-loc {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #CBD5E1;
+  }
+  .fn-card-header:hover { background: linear-gradient(to right, #1E293B, #334155); }
+  .fn-card-header::before {
+    content: "▾";
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+    font-size: 14px;
+    transition: transform 0.2s ease;
+    line-height: 1;
+  }
+  .fn-card.collapsed .fn-card-header::before {
+    transform: translateY(-50%) rotate(-90deg);
+  }
+  .fn-card.collapsed .fn-card-body { display: none; }
+  .fn-card-body { padding: 20px; }
+
+  .fn-signature {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    background: #F1F5F9;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: #334155;
+    margin-bottom: 16px;
+    overflow-x: auto;
+  }
+  .fn-purpose {
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    background: #EFF6FF;
+    border-left: 3px solid #3B82F6;
+    border-radius: 6px;
+  }
+  .fn-friendly {
+    font-size: 13px;
+    color: #334155;
+    margin-bottom: 20px;
+    padding: 12px 14px 12px 44px;
+    background: #F0FDF4;
+    border-left: 3px solid #10B981;
+    border-radius: 6px;
+    position: relative;
+    line-height: 1.55;
+  }
+  .fn-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 14px;
+    top: 10px;
+    font-size: 18px;
+  }
+  .fn-friendly strong {
+    color: #065F46;
+  }
+
+  /* Step-level friendly summary (page-wide, appears after page-sub) */
+  .step-friendly {
+    font-size: 13.5px;
+    color: #334155;
+    margin-bottom: 28px;
+    padding: 16px 18px 16px 52px;
+    background: #F0FDF4;
+    border-left: 4px solid #10B981;
+    border-radius: 10px;
+    position: relative;
+    line-height: 1.6;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.08);
+  }
+  .step-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 18px;
+    top: 14px;
+    font-size: 22px;
+  }
+  .step-friendly-title {
+    font-weight: 700;
+    color: #065F46;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 8px;
+  }
+  .step-friendly ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .step-friendly li {
+    margin-bottom: 6px;
+  }
+  .step-friendly li:last-child {
+    margin-bottom: 0;
+  }
+  .step-friendly strong {
+    color: #065F46;
+  }
+  .step-friendly code {
+    background: #DCFCE7;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: #065F46;
+  }
+  .step-friendly em {
+    color: #047857;
+    font-style: italic;
+  }
+
+  .fn-body-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 900px) {
+    .fn-body-cols { grid-template-columns: 1fr; }
+  }
+  .fn-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .fn-asides {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Aside panels */
+  .aside {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 11.5px;
+    color: #78350F;
+  }
+  .aside.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .aside.warn { background: #FEE2E2; border-left-color: #EF4444; color: #991B1B; }
+  .aside.helper { background: #F3E8FF; border-left-color: #A855F7; color: #6B21A8; }
+  .aside-title {
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .aside code {
+    background: rgba(255,255,255,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    word-break: break-word;
+  }
+
+  /* Cascade */
+  .cascade {
+    background: #FEFCE8;
+    border: 1px dashed #EAB308;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 6px 0;
+  }
+  .cascade-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #713F12;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .cascade-step {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 8px;
+    background: white;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    font-size: 11.5px;
+  }
+  .cascade-step .cond {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #334155;
+  }
+  .cascade-step .result {
+    font-weight: 700;
+    font-size: 10.5px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .cascade-step .result.pass  { background: #D1FAE5; color: #065F46; }
+  .cascade-step .result.deny  { background: #FEE2E2; color: #991B1B; }
+  .cascade-step .result.next  { background: #E0E7FF; color: #3730A3; }
+  .cascade-step .result.call  { background: #FEF3C7; color: #78350F; }
+  .cascade-num {
+    background: #EAB308;
+    color: white;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* Nested sub-flow */
+  .nested-flow {
+    margin: 6px 0;
+    padding: 12px;
+    background: #F0FDF4;
+    border: 1px dashed #10B981;
+    border-radius: 8px;
+  }
+  .nested-flow-title {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #065F46;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  /* Code block */
+  .code-block {
+    background: #0F172A;
+    color: #E2E8F0;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 6px 0;
+  }
+  .code-block .k { color: #93C5FD; }
+  .code-block .s { color: #86EFAC; }
+  .code-block .c { color: #64748B; font-style: italic; }
+  .code-block .t { color: #FDE68A; }
+
+  /* Notes */
+  .note {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    color: #78350F;
+    margin: 20px 0;
+  }
+  .note.info {
+    background: #EFF6FF;
+    border-left-color: #3B82F6;
+    color: #1E3A8A;
+  }
+  .note code {
+    background: rgba(255,255,255,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+  }
+
+  .page-footer-nav {
+    margin-top: 48px;
+    padding: 16px;
+    background: white;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .field-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin: 8px 0;
+  }
+  .field-table th {
+    text-align: left;
+    padding: 6px 8px;
+    background: #F1F5F9;
+    color: #334155;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    font-size: 10px;
+    border-bottom: 1px solid #CBD5E1;
+  }
+  .field-table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid #F1F5F9;
+    vertical-align: top;
+  }
+  .field-table td:first-child {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    color: #0F172A;
+    font-weight: 600;
+    white-space: nowrap;
+    font-size: 10.5px;
+  }
+
+    .code-block{white-space:pre-wrap;word-break:normal;overflow-wrap:anywhere}
+    .ba{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 4px}
+    @media(max-width:820px){.ba{grid-template-columns:1fr}}
+    .ba>div{border-radius:8px;padding:12px 14px;font-size:12px;line-height:1.62}
+    .ba .now{background:#FEF2F2;border-left:3px solid #EF4444;color:#450A0A}
+    .ba .nxt{background:#ECFDF5;border-left:3px solid #10B981;color:#052E16}
+    .ba h5{margin:0 0 7px;font-size:10px;letter-spacing:.8px;text-transform:uppercase;font-weight:800;opacity:.75}
+    .ba code{background:rgba(0,0,0,.06);padding:1px 4px;border-radius:3px}
+    .topic-nav{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 26px}
+    .topic-nav a{font-size:11px;padding:5px 11px;border-radius:20px;background:#fff;border:1px solid #CBD5E1;
+                 color:#334155;text-decoration:none}
+    .topic-nav a:hover{border-color:#3B82F6;color:#1E40AF}
+
+
+    /* padroniza o topo pelo complemento */
+    .top-nav{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+             max-width:1500px;margin:0 auto 20px;padding:0 4px}
+    .back-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:#fff;color:#334155;
+              text-decoration:none;border-radius:8px;border:1px solid #CBD5E1;font-size:12.5px;font-weight:600;
+              box-shadow:0 1px 3px rgba(0,0,0,.06);transition:transform .15s,background .15s}
+    .back-btn:hover{background:#EFF6FF;transform:translateY(-1px)}
+    .page-nav{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-start;background:transparent;
+              box-shadow:none;padding:18px 0 0;margin-top:26px;border-top:1px solid #E2E8F0}
+    .lang-sw{display:inline-flex;border:1px solid #CBD5E1;border-radius:8px;overflow:hidden;background:#fff;
+             box-shadow:0 1px 3px rgba(0,0,0,.06)}
+    .lang-sw button{font-family:'SF Mono',Menlo,monospace;font-size:11px;font-weight:700;letter-spacing:.5px;
+             padding:8px 12px;background:transparent;color:#64748B;border:0;cursor:pointer}
+    .lang-sw button+button{border-left:1px solid #E2E8F0}
+    .lang-sw button[aria-pressed="true"]{background:#0F172A;color:#fff}
+    .lang-sw button:focus-visible{outline:2px solid #3B82F6;outline-offset:2px}
+
+
+/* ---------- task page ---------- */
+body{background:#F1F5F9;color:#0F172A;margin:0;padding:28px 24px 72px;line-height:1.45;
+     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+.container{max-width:1500px;margin:0 auto}
+
+.hero{background:linear-gradient(135deg,#0F172A 0%,#1E293B 60%,#312E81 100%);color:#fff;
+      border-radius:16px;padding:26px 30px 24px;margin-bottom:18px;position:relative;overflow:hidden}
+.hero::after{content:'';position:absolute;right:-60px;top:-60px;width:260px;height:260px;
+      background:radial-gradient(circle,rgba(99,102,241,.35),transparent 70%);pointer-events:none}
+.hero .kicker{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.hero .code{font-family:'SF Mono',Menlo,monospace;font-size:13px;font-weight:700;letter-spacing:1px;
+      background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);color:#fff;
+      padding:5px 12px;border-radius:7px}
+.hero .st{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+      padding:5px 11px;border-radius:7px;border:1px solid;display:inline-flex;align-items:center;gap:6px}
+.hero .st::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor}
+.hero .st.st-planned{background:rgba(148,163,184,.18);border-color:rgba(203,213,225,.45);color:#CBD5E1}
+.hero .st.st-blocked{background:rgba(220,38,38,.2);border-color:rgba(248,113,113,.5);color:#FCA5A5}
+.hero .st.st-doing{background:rgba(59,130,246,.22);border-color:rgba(147,197,253,.5);color:#BFDBFE}
+.hero .st.st-review{background:rgba(245,158,11,.22);border-color:rgba(252,211,77,.5);color:#FDE68A}
+.hero .st.st-shipped{background:rgba(16,185,129,.24);border-color:rgba(110,231,183,.5);color:#A7F3D0}
+.hero .st.st-dropped{background:rgba(100,116,139,.18);border-color:rgba(148,163,184,.4);color:#94A3B8;
+      text-decoration:line-through}
+.hero .stnote{margin-top:12px;font-size:12.5px;line-height:1.6;color:#CBD5E1;
+      background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
+      border-left:3px solid #6366F1;border-radius:8px;padding:9px 13px;max-width:88ch}
+.hero .stnote b{color:#fff}
+.hero .wv{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+      padding:5px 11px;border-radius:7px;background:rgba(239,68,68,.22);border:1px solid rgba(248,113,113,.5);color:#FCA5A5}
+.hero h1{margin:0 0 12px;font-size:29px;line-height:1.22;letter-spacing:-.6px;font-weight:700;max-width:30ch}
+.hero .goal{font-size:15px;line-height:1.6;color:#CBD5E1;max-width:78ch;border-left:3px solid #6366F1;padding-left:14px}
+.hero .goal b{color:#fff;font-weight:600}
+.hero-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px;position:relative;z-index:2}
+.hero-links a{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
+      text-decoration:none;color:#E2E8F0;background:rgba(255,255,255,.09);
+      border:1px solid rgba(255,255,255,.16);padding:7px 13px;border-radius:8px}
+.hero-links a:hover{background:rgba(255,255,255,.17);color:#fff}
+
+.glance{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:20px}
+.gl{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px 16px;
+    border-top:3px solid #94A3B8;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.gl.crit{border-top-color:#DC2626}.gl.dep{border-top-color:#3B82F6}
+.gl.wave{border-top-color:#8B5CF6}.gl.ship{border-top-color:#059669}
+.gl .k{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#94A3B8;margin-bottom:7px}
+.gl .v{font-size:16px;font-weight:700;color:#0F172A;line-height:1.25;margin-bottom:5px}
+.gl .n{font-size:11.5px;color:#64748B;line-height:1.5}
+
+.lede{background:#fff;border:1px solid #E2E8F0;border-left:4px solid #DC2626;border-radius:12px;
+      padding:18px 22px;margin-bottom:22px;font-size:14.5px;line-height:1.7;color:#334155;
+      box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.lede strong{color:#0F172A}
+.lede p{margin:0 0 10px}.lede p:last-child{margin:0}
+
+.sec-label{display:flex;align-items:center;gap:11px;margin:30px 0 14px}
+.sec-label .n{width:25px;height:25px;border-radius:7px;background:#0F172A;color:#fff;flex:none;
+      display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+.sec-label h2{margin:0;font-size:17px;font-weight:700;color:#0F172A;letter-spacing:-.25px}
+.sec-label .rule{flex:1;height:1px;background:#E2E8F0}
+
+.entry-table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;
+      border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;font-size:12.5px;
+      box-shadow:0 1px 3px rgba(15,23,42,.05);margin-bottom:8px}
+.entry-table th{background:#0F172A;color:#fff;text-align:left;padding:11px 14px;font-size:10.5px;
+      font-weight:700;text-transform:uppercase;letter-spacing:.6px}
+.entry-table td{padding:12px 14px;border-bottom:1px solid #F1F5F9;vertical-align:top;color:#334155;line-height:1.55}
+.entry-table tr:last-child td{border-bottom:0}
+.entry-table tr:hover td{background:#F8FAFC}
+.entry-table td.rt{font-family:'SF Mono',Menlo,monospace;font-size:11.5px;font-weight:600;color:#0F172A;white-space:nowrap}
+.entry-table td.rt.lbl{font-family:inherit;font-size:12.5px;white-space:normal}
+.pill{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;
+      letter-spacing:.2px;white-space:nowrap}
+.pill.no{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA}
+.pill.weak{background:#FEF3C7;color:#92400E;border:1px solid #FDE68A}
+.pill.ok{background:#D1FAE5;color:#065F46;border:1px solid #A7F3D0}
+
+.part{background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;margin-bottom:16px;
+      box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.part-head{background:linear-gradient(to right,#0F172A,#1E293B);color:#fff;padding:14px 20px;
+      display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.part-head .num{width:26px;height:26px;border-radius:7px;background:rgba(255,255,255,.15);
+      border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;
+      font-size:12px;font-weight:700;flex:none}
+.part-head .t{font-size:15px;font-weight:600;letter-spacing:-.15px}
+.part-head .loc{margin-left:auto;font-family:'SF Mono',Menlo,monospace;font-size:10.5px;
+      color:#94A3B8;background:rgba(0,0,0,.28);padding:4px 9px;border-radius:6px}
+.part-body{padding:20px 22px}
+.purpose{font-size:14px;line-height:1.65;color:#0F172A;font-weight:500;
+      border-left:3px solid #6366F1;padding-left:13px;margin-bottom:16px}
+.part-body p{margin:0 0 12px;font-size:13.5px;line-height:1.72;color:#334155}
+.part-body p:last-child{margin-bottom:0}
+.part-body strong{color:#0F172A;font-weight:650}
+.part-body code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1.5px 5px;border-radius:4px;
+      font-family:'SF Mono',Menlo,monospace;font-size:11.5px;color:#0F172A}
+.part-body ul{margin:10px 0 14px;padding-left:0;list-style:none}
+.part-body ul li{position:relative;padding-left:20px;margin-bottom:9px;font-size:13.5px;
+      line-height:1.7;color:#334155}
+.part-body ul li::before{content:'';position:absolute;left:5px;top:9px;width:6px;height:6px;
+      border-radius:50%;background:#94A3B8}
+.code-block{white-space:pre-wrap;word-break:break-word}
+
+.ba{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0 4px}
+@media(max-width:900px){.ba{grid-template-columns:1fr}}
+.ba>div{border-radius:10px;padding:14px 16px;font-size:13px;line-height:1.65}
+.ba .now{background:#FEF2F2;border:1px solid #FECACA;color:#7F1D1D}
+.ba .nxt{background:#ECFDF5;border:1px solid #A7F3D0;color:#065F46}
+.ba h5{margin:0 0 8px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+      display:flex;align-items:center;gap:6px}
+.ba .now h5{color:#B91C1C}.ba .nxt h5{color:#047857}
+.ba code{background:rgba(255,255,255,.75);border:1px solid rgba(0,0,0,.07);padding:1px 5px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:11px}
+.ba p{margin:0 0 9px;font-size:13px;line-height:1.65}
+.ba p:last-child{margin:0}
+
+.callout{border-radius:10px;padding:14px 17px;margin:15px 0 4px;font-size:13px;line-height:1.7}
+.callout .ct{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px}
+.callout.decide{background:#EFF6FF;border:1px solid #BFDBFE;color:#1E3A8A}
+.callout.decide .ct{color:#1D4ED8}
+.callout.mig{background:#FFFBEB;border:1px solid #FDE68A;color:#78350F}
+.callout.mig .ct{color:#B45309}
+.callout p{margin:0 0 9px}.callout p:last-child{margin:0}
+.callout code{background:rgba(255,255,255,.7);border:1px solid rgba(0,0,0,.07);padding:1px 5px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:11px}
+
+.vcard{background:#fff;border:1px solid #FECACA;border-radius:14px;overflow:hidden;margin-bottom:16px;
+      box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.vcard-head{background:linear-gradient(to right,#7F1D1D,#B91C1C);color:#fff;padding:13px 20px;
+      font-size:15px;font-weight:600;display:flex;align-items:center;gap:10px}
+.vcard-body{padding:18px 22px}
+.vitem{display:grid;grid-template-columns:auto 1fr;gap:13px;padding:13px 0;border-bottom:1px solid #F1F5F9}
+.vitem:first-child{padding-top:0}
+.vitem:last-child{border-bottom:0;padding-bottom:0}
+.vitem .vn{width:24px;height:24px;border-radius:7px;background:#FEE2E2;color:#B91C1C;flex:none;
+      display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:1px}
+.vitem.req .vn{background:#B91C1C;color:#fff}
+.vitem .vt{font-size:13px;font-weight:700;color:#0F172A;margin-bottom:4px;display:flex;
+      align-items:center;gap:8px;flex-wrap:wrap}
+.vitem .vt .req-tag{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+      background:#B91C1C;color:#fff;padding:2px 7px;border-radius:20px}
+.vitem .vd{font-size:13px;line-height:1.68;color:#475569}
+.vitem .vd code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1px 5px;border-radius:4px;
+      font-family:'SF Mono',Menlo,monospace;font-size:11px}
+.vitem .vd strong{color:#0F172A}
+
+.done{background:linear-gradient(135deg,#064E3B,#047857);color:#fff;border-radius:14px;
+      padding:20px 24px;margin-bottom:16px}
+.done .dt{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+      color:#6EE7B7;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.done .dd{font-size:14.5px;line-height:1.72;color:#ECFDF5}
+.done .dd strong{color:#fff;font-weight:650}
+.done .dd code{background:rgba(255,255,255,.17);border:1px solid rgba(255,255,255,.28);padding:1.5px 6px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:12px;color:#fff}
+.hero .goal code{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);padding:1px 5px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:12.5px;color:#fff}
+.lede code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1.5px 5px;border-radius:4px;
+      font-family:'SF Mono',Menlo,monospace;font-size:12px;color:#0F172A}
+.lede em{font-style:italic;color:#0F172A}
+
+.filesbox{background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;
+      box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.filesbox-head{background:linear-gradient(to right,#334155,#475569);color:#fff;padding:12px 20px;
+      font-size:14px;font-weight:600;display:flex;align-items:center;gap:9px}
+.filesbox-body{padding:16px 20px;display:flex;flex-wrap:wrap;gap:8px}
+.fchip{font-family:'SF Mono',Menlo,monospace;font-size:11.5px;background:#F8FAFC;color:#334155;
+      border:1px solid #E2E8F0;border-left:3px solid #64748B;padding:7px 11px;border-radius:7px;line-height:1.4}
+.fchip.new{border-left-color:#059669;background:#F0FDF4;color:#065F46}
+
+.page-footer-nav{display:flex;justify-content:space-between;gap:12px;margin-top:26px;flex-wrap:wrap}
+.page-footer-nav a{display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid #E2E8F0;
+      color:#334155;padding:11px 17px;border-radius:9px;text-decoration:none;font-size:12.5px;font-weight:600;
+      box-shadow:0 1px 2px rgba(15,23,42,.05)}
+.page-footer-nav a:hover{border-color:#94A3B8;color:#0F172A}
+
+
+/* ---------- decisions ---------- */
+.dec{background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;margin-bottom:14px;
+     box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.dec>summary{list-style:none;cursor:pointer;padding:15px 20px;display:flex;align-items:flex-start;
+     gap:13px;background:linear-gradient(to right,#1E1B4B,#312E81);color:#fff}
+.dec>summary::-webkit-details-marker{display:none}
+.dec>summary:hover{background:linear-gradient(to right,#312E81,#3730A3)}
+.dec>summary:focus-visible{outline:2px solid #A5B4FC;outline-offset:-2px}
+.dec .chev{flex:none;width:22px;height:22px;border-radius:6px;background:rgba(255,255,255,.15);
+     border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;
+     font-size:11px;transition:transform .18s ease;margin-top:1px}
+.dec[open] .chev{transform:rotate(90deg)}
+.dec .dq{flex:1;min-width:0}
+.dec .dq .lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+     color:#A5B4FC;margin-bottom:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dec .dq .q{font-size:15px;font-weight:600;line-height:1.45;letter-spacing:-.15px}
+.dec .dq .q code{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.26);
+     padding:1px 6px;border-radius:5px;font-family:'SF Mono',Menlo,monospace;font-size:13px;
+     font-weight:600;color:#E0E7FF}
+.dstat{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+     padding:2.5px 8px;border-radius:20px;white-space:nowrap}
+.dstat.open{background:#F59E0B;color:#451A03}
+.dstat.rec{background:#38BDF8;color:#082F49}
+.dstat.set{background:#34D399;color:#022C22}
+.dec .dq .lbl .planid{font-family:'SF Mono',Menlo,monospace;font-size:9.5px;font-weight:700;
+     letter-spacing:.3px;color:#C7D2FE;background:rgba(255,255,255,.1);
+     border:1px solid rgba(255,255,255,.2);padding:2px 7px;border-radius:20px}
+.dec-body{padding:18px 20px 20px;background:#FAFAFF}
+.dec-intro{font-size:13px;line-height:1.7;color:#334155;margin-bottom:16px}
+.dec-intro strong{color:#0F172A}
+.dec-intro code{background:#EEF2FF;border:1px solid #C7D2FE;padding:1.5px 5px;border-radius:4px;
+     font-family:'SF Mono',Menlo,monospace;font-size:11.5px;color:#3730A3}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px}
+.opt{background:#fff;border:1px solid #E2E8F0;border-radius:11px;padding:0;overflow:hidden;
+     display:flex;flex-direction:column;position:relative}
+.opt.pick{border-color:#6366F1;box-shadow:0 0 0 2px rgba(99,102,241,.16)}
+.opt.no{opacity:.82}
+.opt-h{padding:12px 15px;display:flex;align-items:flex-start;gap:10px;background:#F8FAFC;
+     border-bottom:1px solid #E2E8F0}
+.opt.pick .opt-h{background:#EEF2FF;border-bottom-color:#C7D2FE}
+.opt.no .opt-h{background:#FEF2F2;border-bottom-color:#FECACA}
+.opt-h .ltr{width:23px;height:23px;border-radius:6px;background:#334155;color:#fff;flex:none;
+     display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;margin-top:1px}
+.opt.pick .opt-h .ltr{background:#4F46E5}
+.opt.no .opt-h .ltr{background:#B91C1C}
+.opt-h .on{font-size:13.5px;font-weight:700;color:#0F172A;line-height:1.35}
+.opt-h .tag{margin-left:auto;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+     padding:3px 8px;border-radius:20px;white-space:nowrap;margin-top:2px}
+.opt.pick .opt-h .tag{background:#4F46E5;color:#fff}
+.opt.no .opt-h .tag{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA}
+.opt-b{padding:13px 15px 14px;flex:1;display:flex;flex-direction:column;gap:11px}
+.opt-how{font-size:12.5px;line-height:1.6;color:#475569}
+.opt-how code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1px 4px;border-radius:3px;
+     font-family:'SF Mono',Menlo,monospace;font-size:11px;color:#0F172A;word-break:break-all}
+.opt-l{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px}
+.opt-l li{position:relative;padding-left:20px;font-size:12.5px;line-height:1.55;color:#334155}
+.opt-l li::before{position:absolute;left:0;top:0;font-size:12px;font-weight:700}
+.opt-l li.p::before{content:'✓';color:#059669}
+.opt-l li.c::before{content:'✕';color:#DC2626}
+.opt-cost{margin-top:auto;display:flex;gap:7px;flex-wrap:wrap;padding-top:4px}
+.cst{font-size:10px;font-weight:600;padding:4px 8px;border-radius:6px;background:#F1F5F9;
+     color:#475569;border:1px solid #E2E8F0;line-height:1.3}
+.cst b{font-weight:700;color:#0F172A}
+.cst.hi{background:#FEF3C7;border-color:#FDE68A;color:#78350F}
+.cst.hi b{color:#78350F}
+.cst.lo{background:#ECFDF5;border-color:#A7F3D0;color:#065F46}
+.cst.lo b{color:#065F46}
+.dec-rec{margin-top:15px;background:#EEF2FF;border:1px solid #C7D2FE;border-left:4px solid #4F46E5;
+     border-radius:10px;padding:14px 17px;font-size:13px;line-height:1.7;color:#312E81}
+.dec-rec .rt{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+     color:#4F46E5;margin-bottom:7px}
+.dec-rec strong{color:#1E1B4B}
+.dec-rec code{background:rgba(255,255,255,.75);border:1px solid #C7D2FE;padding:1.5px 5px;
+     border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:11.5px}
+.dec-rec p{margin:0 0 9px}.dec-rec p:last-child{margin:0}
+.dec-who{margin-top:11px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+     font-size:11.5px;color:#64748B}
+.dec-who .wk{font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:.5px;font-size:9.5px}
+.dec-who .wv2{background:#fff;border:1px solid #E2E8F0;padding:4px 10px;border-radius:20px;font-weight:600;color:#334155}
+
+</style>
+<div class="container">
+<div class="top-nav"><a href="index.html" class="back-btn"><span>←</span> <span data-en="Timeline" data-pt="Timeline">Timeline</span></a><div class="lang-sw" role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">EN-US</button><button type="button" data-lang="pt" aria-pressed="false">PT-BR</button></div></div>
+<div class="hero"><div class="kicker"><span class="code">B7</span><span class="wv" data-en="wave 5" data-pt="onda 5">wave 5</span><span class="st st-planned" data-en="Planned" data-pt="Planejada">Planned</span></div><h1 data-en="Batch processing as a durable workflow" data-pt="Processamento em lote como workflow durável">Batch processing as a durable workflow</h1><div class="goal" data-en="A CSV batch &lt;b&gt;survives a deploy&lt;/b&gt;, and stops being a detached loop inside an API process." data-pt="Um lote de CSV &lt;b&gt;sobrevive a um deploy&lt;/b&gt;, e deixa de ser um laço solto dentro de um processo da API.">A CSV batch <b>survives a deploy</b>, and stops being a detached loop inside an API process.</div><div class="hero-links"><a href="../complemento/fase-1.html"><span data-en="Where this lands in the flow →" data-pt="Onde isto entra no fluxo →">Where this lands in the flow →</span></a><a href="index.html#w5"><span data-en="Other tasks in wave 5 →" data-pt="Outras tasks da onda 5 →">Other tasks in wave 5 →</span></a><a href="task-C1.html"><span data-en="Next: C1 — Retire the inline paths and the cross-node writes →" data-pt="Próxima: C1 — Aposentar os caminhos inline e as escritas cross-node →">Next: C1 — Retire the inline paths and the cross-node writes →</span></a></div></div>
+<div class="glance"><div class="gl crit"><div class="k" data-en="Severity" data-pt="Severidade">Severity</div><div class="v" data-en="High" data-pt="Alta">High</div><div class="n" data-en="&lt;strong&gt;A thousand-row CSV is a thousand full runs from one API-key call.&lt;/strong&gt; Review §11.2." data-pt="&lt;strong&gt;Um CSV de mil linhas é mil runs completos a partir de uma chamada com chave de API.&lt;/strong&gt; Review §11.2."><strong>A thousand-row CSV is a thousand full runs from one API-key call.</strong> Review §11.2.</div></div><div class="gl dep"><div class="k" data-en="Depends on" data-pt="Depende de">Depends on</div><div class="v" data-en="B4 · S3" data-pt="B4 · S3">B4 · S3</div><div class="n" data-en="&lt;code&gt;B4&lt;/code&gt; so there is a flow workflow to invoke; &lt;code&gt;S3&lt;/code&gt; because a batch is the largest multiplier of a missing cost ceiling." data-pt="&lt;code&gt;B4&lt;/code&gt; para haver um workflow de fluxo a invocar; &lt;code&gt;S3&lt;/code&gt; porque um lote é o maior multiplicador de um teto de custo ausente."><code>B4</code> so there is a flow workflow to invoke; <code>S3</code> because a batch is the largest multiplier of a missing cost ceiling.</div></div><div class="gl wave"><div class="k" data-en="Wave" data-pt="Onda">Wave</div><div class="v" data-en="Wave 5" data-pt="Onda 5">Wave 5</div><div class="n" data-en="It lands after the ceilings exist, because it is the thing that multiplies every one of them." data-pt="Entra depois de os tetos existirem, porque é justamente o que multiplica todos eles.">It lands after the ceilings exist, because it is the thing that multiplies every one of them.</div></div><div class="gl ship"><div class="k" data-en="Blast radius today" data-pt="Raio de impacto hoje">Blast radius today</div><div class="v" data-en="A deploy kills it" data-pt="Um deploy mata o lote">A deploy kills it</div><div class="n" data-en="The batch stalls at &lt;code&gt;lastProcessedLine&lt;/code&gt; with a &lt;strong&gt;non-terminal status&lt;/strong&gt;, and nothing resumes it." data-pt="O lote trava em &lt;code&gt;lastProcessedLine&lt;/code&gt; com um &lt;strong&gt;status não terminal&lt;/strong&gt;, e nada o retoma.">The batch stalls at <code>lastProcessedLine</code> with a <strong>non-terminal status</strong>, and nothing resumes it.</div></div></div>
+<div class="lede" data-en="&lt;p&gt;&lt;code&gt;/flux/batch-process&lt;/code&gt; calls &lt;code&gt;this.processBatch(...).catch(...)&lt;/code&gt; (&lt;code&gt;flux.controller.ts:560&lt;/code&gt;) — &lt;strong&gt;unawaited&lt;/strong&gt;. The request returns immediately and the work continues &lt;strong&gt;detached inside the backend process&lt;/strong&gt;.&lt;/p&gt;&lt;p&gt;&lt;code&gt;processBatch&lt;/code&gt; (&lt;code&gt;:574–706&lt;/code&gt;) is a sequential &lt;code&gt;for&lt;/code&gt; loop over CSV rows. Per row it re-reads the batch, re-reads the row record, runs a &lt;strong&gt;complete flow&lt;/strong&gt; via &lt;code&gt;await this.fluxService.apiV2(…)&lt;/code&gt;, writes the output, re-reads the batch and saves the pointer — &lt;strong&gt;four to five database round trips on bookkeeping before the run itself&lt;/strong&gt;.&lt;/p&gt;" data-pt="&lt;p&gt;O &lt;code&gt;/flux/batch-process&lt;/code&gt; chama &lt;code&gt;this.processBatch(...).catch(...)&lt;/code&gt; (&lt;code&gt;flux.controller.ts:560&lt;/code&gt;) — &lt;strong&gt;sem await&lt;/strong&gt;. A requisição retorna na hora e o trabalho continua &lt;strong&gt;solto dentro do processo do backend&lt;/strong&gt;.&lt;/p&gt;&lt;p&gt;O &lt;code&gt;processBatch&lt;/code&gt; (&lt;code&gt;:574–706&lt;/code&gt;) é um laço &lt;code&gt;for&lt;/code&gt; sequencial sobre as linhas do CSV. Por linha ele relê o lote, relê o registro da linha, roda um &lt;strong&gt;fluxo completo&lt;/strong&gt; via &lt;code&gt;await this.fluxService.apiV2(…)&lt;/code&gt;, escreve a saída, relê o lote e salva o ponteiro — &lt;strong&gt;quatro a cinco idas e voltas de banco em contabilidade antes do run em si&lt;/strong&gt;.&lt;/p&gt;"><p><code>/flux/batch-process</code> calls <code>this.processBatch(...).catch(...)</code> (<code>flux.controller.ts:560</code>) — <strong>unawaited</strong>. The request returns immediately and the work continues <strong>detached inside the backend process</strong>.</p><p><code>processBatch</code> (<code>:574–706</code>) is a sequential <code>for</code> loop over CSV rows. Per row it re-reads the batch, re-reads the row record, runs a <strong>complete flow</strong> via <code>await this.fluxService.apiV2(…)</code>, writes the output, re-reads the batch and saves the pointer — <strong>four to five database round trips on bookkeeping before the run itself</strong>.</p></div>
+<div class="sec-label"><span class="n">1</span><h2 data-en="Three consequences a workflow fixes for free" data-pt="Três consequências que um workflow corrige de graça">Three consequences a workflow fixes for free</h2><span class="rule"></span></div>
+<table class="entry-table"><thead><tr><th><span data-en="Consequence" data-pt="Consequência">Consequence</span></th><th><span data-en="Today" data-pt="Hoje">Today</span></th><th><span data-en="With a workflow" data-pt="Com um workflow">With a workflow</span></th></tr></thead><tbody>
+<tr><td class="rt lbl"><span data-en="No durability" data-pt="Sem durabilidade">No durability</span></td><td><span class="pill no"><span data-en="A deploy, restart or scale-down mid-batch kills the loop silently" data-pt="Um deploy, restart ou scale-down no meio do lote mata o laço em silêncio">A deploy, restart or scale-down mid-batch kills the loop silently</span></span></td><td><span class="pill ok"><span data-en="The batch is workflow state, so a restart is not an event it can notice" data-pt="O lote é estado de workflow, então um restart não é um evento que ele consiga perceber">The batch is workflow state, so a restart is not an event it can notice</span></span></td></tr>
+<tr><td class="rt lbl"><span data-en="No parallelism" data-pt="Sem paralelismo">No parallelism</span></td><td><span class="pill no"><span data-en="And no safe way to add it while it is a loop in a request handler" data-pt="E nenhuma forma segura de adicionar enquanto for um laço num handler de requisição">And no safe way to add it while it is a loop in a request handler</span></span></td><td><span class="pill ok"><span data-en="One child workflow per row, with a concurrency cap that is a number rather than an accident" data-pt="Um child workflow por linha, com um teto de concorrência que é um número e não um acidente">One child workflow per row, with a concurrency cap that is a number rather than an accident</span></span></td></tr>
+<tr><td class="rt lbl"><span data-en="It multiplies every missing ceiling" data-pt="Multiplica todo teto ausente">It multiplies every missing ceiling</span></td><td><span class="pill no"><span data-en="A thousand rows = a thousand runs, against no rate limit, no per-run cost ceiling and no per-tenant cap" data-pt="Mil linhas = mil runs, sem rate limit, sem teto de custo por run e sem teto por tenant">A thousand rows = a thousand runs, against no rate limit, no per-run cost ceiling and no per-tenant cap</span></span></td><td><span class="pill ok"><span data-en="&lt;code&gt;S7&lt;/code&gt; limits admission, &lt;code&gt;S3&lt;/code&gt; stops the batch at the tenant ceiling with the completed rows kept" data-pt="A &lt;code&gt;S7&lt;/code&gt; limita a admissão, a &lt;code&gt;S3&lt;/code&gt; para o lote no teto do tenant com as linhas concluídas preservadas"><code>S7</code> limits admission, <code>S3</code> stops the batch at the tenant ceiling with the completed rows kept</span></span></td></tr>
+</tbody></table>
+<div class="sec-label"><span class="n">2</span><h2 data-en="The decisions this task needs" data-pt="As decisões que esta task precisa">The decisions this task needs</h2><span class="rule"></span></div>
+<div class="lede" style="border-left-color:#6366F1"><div data-en="One call, and the spec asks for it directly: with a workflow, a stall becomes either an automatic continuation or a visible failure — &lt;em&gt;decide which, and make sure the status endpoint reflects it honestly.&lt;/em&gt;" data-pt="Uma decisão, e a spec a pede diretamente: com um workflow, uma parada vira ou uma continuação automática ou uma falha visível — &lt;em&gt;decida qual, e garanta que o endpoint de status reflita isso com honestidade.&lt;/em&gt;">One call, and the spec asks for it directly: with a workflow, a stall becomes either an automatic continuation or a visible failure — <em>decide which, and make sure the status endpoint reflects it honestly.</em></div></div>
+<details class="dec" open><summary><span class="chev">▸</span><span class="dq"><span class="lbl"><span data-en="Decision B7-a" data-pt="Decisão B7-a">Decision B7-a</span><span class="dstat rec"><span data-en="Recommended — confirm" data-pt="Recomendada — confirmar">Recommended — confirm</span></span></span><span class="q" data-en="When a batch stalls, does the workflow continue automatically or fail visibly?" data-pt="Quando um lote trava, o workflow continua automaticamente ou falha de forma visível?">When a batch stalls, does the workflow continue automatically or fail visibly?</span></span></summary><div class="dec-body"><div class="dec-intro" data-en="Today a stalled batch &lt;strong&gt;needs someone to notice&lt;/strong&gt;: the loop dies with the process, the row pointer stops moving, and the status column keeps claiming the batch is running. A workflow removes the silence — but it does not by itself decide &lt;em&gt;which&lt;/em&gt; non-silent answer the customer gets. The constraint that binds every option below: &lt;strong&gt;the existing &lt;code&gt;/batch-process/:id/status&lt;/code&gt; must reflect the choice honestly&lt;/strong&gt;, because a non-terminal status that will never move again is the exact defect being fixed." data-pt="Hoje um lote travado &lt;strong&gt;precisa que alguém perceba&lt;/strong&gt;: o laço morre com o processo, o ponteiro de linha para de andar, e a coluna de status continua afirmando que o lote está rodando. Um workflow remove o silêncio — mas ele sozinho não decide &lt;em&gt;qual&lt;/em&gt; resposta não silenciosa o cliente recebe. A restrição que amarra todas as opções abaixo: &lt;strong&gt;o &lt;code&gt;/batch-process/:id/status&lt;/code&gt; existente precisa refletir a escolha com honestidade&lt;/strong&gt;, porque um status não terminal que nunca mais vai mudar é exatamente o defeito sendo corrigido.">Today a stalled batch <strong>needs someone to notice</strong>: the loop dies with the process, the row pointer stops moving, and the status column keeps claiming the batch is running. A workflow removes the silence — but it does not by itself decide <em>which</em> non-silent answer the customer gets. The constraint that binds every option below: <strong>the existing <code>/batch-process/:id/status</code> must reflect the choice honestly</strong>, because a non-terminal status that will never move again is the exact defect being fixed.</div><div class="opts"><div class="opt"><div class="opt-h"><span class="ltr">A</span><span class="on"><span data-en="Automatic continuation, always" data-pt="Continuação automática, sempre">Automatic continuation, always</span></span></div><div class="opt-b"><div class="opt-how" data-en="The workflow retries the row and carries on. A deploy, a restart or a provider blip is invisible to the customer." data-pt="O workflow tenta a linha de novo e segue. Um deploy, um restart ou uma oscilação de provedor é invisível para o cliente.">The workflow retries the row and carries on. A deploy, a restart or a provider blip is invisible to the customer.</div><ul class="opt-l"><li class="p" data-en="Durability is the whole reason this task exists — a deploy stops being a data-loss event" data-pt="Durabilidade é a razão inteira desta task existir — um deploy deixa de ser um evento de perda de dado">Durability is the whole reason this task exists — a deploy stops being a data-loss event</li><li class="p" data-en="The customer never has to know that the platform restarted underneath their batch" data-pt="O cliente nunca precisa saber que a plataforma reiniciou por baixo do lote dele">The customer never has to know that the platform restarted underneath their batch</li><li class="c" data-en="A row that fails for a &lt;strong&gt;real&lt;/strong&gt; reason — a bad CSV cell, a revoked credential — retries silently, and the batch takes hours with nobody told" data-pt="Uma linha que falha por um motivo &lt;strong&gt;real&lt;/strong&gt; — uma célula ruim do CSV, uma credencial revogada — repete em silêncio, e o lote leva horas sem ninguém ser avisado">A row that fails for a <strong>real</strong> reason — a bad CSV cell, a revoked credential — retries silently, and the batch takes hours with nobody told</li><li class="c" data-en="Every retried row is &lt;strong&gt;a full flow run that costs money&lt;/strong&gt;; without a bound, retrying is how a batch becomes an invoice" data-pt="Toda linha repetida é &lt;strong&gt;um run completo de fluxo que custa dinheiro&lt;/strong&gt;; sem um limite, repetir é como um lote vira uma fatura">Every retried row is <strong>a full flow run that costs money</strong>; without a bound, retrying is how a batch becomes an invoice</li></ul><div class="opt-cost"><span class="cst "><span data-en="Client sees: &lt;b&gt;a batch that is slow, not failed&lt;/b&gt;" data-pt="Cliente vê: &lt;b&gt;um lote lento, não falho&lt;/b&gt;">Client sees: <b>a batch that is slow, not failed</b></span></span><span class="cst hi"><span data-en="Ours: &lt;b&gt;silent cost, no signal&lt;/b&gt;" data-pt="Nosso: &lt;b&gt;custo silencioso, sem sinal&lt;/b&gt;">Ours: <b>silent cost, no signal</b></span></span></div></div></div><div class="opt"><div class="opt-h"><span class="ltr">B</span><span class="on"><span data-en="A visible failed workflow" data-pt="Um workflow que falha visivelmente">A visible failed workflow</span></span></div><div class="opt-b"><div class="opt-how" data-en="The batch stops, the workflow is failed, and the status endpoint names the row it stopped on. A human decides what happens next." data-pt="O lote para, o workflow fica com falha, e o endpoint de status nomeia a linha em que parou. Uma pessoa decide o que acontece a seguir.">The batch stops, the workflow is failed, and the status endpoint names the row it stopped on. A human decides what happens next.</div><ul class="opt-l"><li class="p" data-en="Nothing is hidden — the state is terminal and it is true" data-pt="Nada fica escondido — o estado é terminal e é verdadeiro">Nothing is hidden — the state is terminal and it is true</li><li class="p" data-en="A bad CSV is diagnosed at the row that is bad, instead of at the end of a long silence" data-pt="Um CSV ruim é diagnosticado na linha ruim, em vez de no fim de um longo silêncio">A bad CSV is diagnosed at the row that is bad, instead of at the end of a long silence</li><li class="c" data-en="It recreates today&amp;#x27;s stall with a better label — and &lt;strong&gt;the point of the workflow was that nobody should have to notice&lt;/strong&gt;" data-pt="Recria a parada de hoje com um rótulo melhor — e &lt;strong&gt;o ponto do workflow era que ninguém precisasse perceber&lt;/strong&gt;">It recreates today&#x27;s stall with a better label — and <strong>the point of the workflow was that nobody should have to notice</strong></li><li class="c" data-en="A deploy in the middle of a legitimate batch becomes a customer-visible failure, which is a regression, not a fix" data-pt="Um deploy no meio de um lote legítimo vira uma falha visível ao cliente, o que é regressão e não correção">A deploy in the middle of a legitimate batch becomes a customer-visible failure, which is a regression, not a fix</li></ul><div class="opt-cost"><span class="cst hi"><span data-en="Client effort: &lt;b&gt;restart the batch by hand&lt;/b&gt;" data-pt="Esforço do cliente: &lt;b&gt;reiniciar o lote na mão&lt;/b&gt;">Client effort: <b>restart the batch by hand</b></span></span><span class="cst lo"><span data-en="Ours: &lt;b&gt;nothing hidden&lt;/b&gt;" data-pt="Nosso: &lt;b&gt;nada escondido&lt;/b&gt;">Ours: <b>nothing hidden</b></span></span></div></div></div><div class="opt pick"><div class="opt-h"><span class="ltr">C</span><span class="on"><span data-en="Bounded continuation, then a visible failure" data-pt="Continuação limitada, depois falha visível">Bounded continuation, then a visible failure</span></span><span class="tag"><span data-en="recommended" data-pt="recomendada">recommended</span></span></div><div class="opt-b"><div class="opt-how" data-en="Infrastructure stalls resume automatically. A row that keeps failing is retried a bounded number of times, then the batch fails with &lt;strong&gt;that row named&lt;/strong&gt; and every completed row preserved." data-pt="Paradas de infraestrutura retomam sozinhas. Uma linha que insiste em falhar é repetida um número limitado de vezes, e então o lote falha com &lt;strong&gt;aquela linha nomeada&lt;/strong&gt; e toda linha concluída preservada.">Infrastructure stalls resume automatically. A row that keeps failing is retried a bounded number of times, then the batch fails with <strong>that row named</strong> and every completed row preserved.</div><ul class="opt-l"><li class="p" data-en="It separates the two failures that A and B confuse: &lt;strong&gt;the platform restarted&lt;/strong&gt; is not &lt;strong&gt;this row is broken&lt;/strong&gt;" data-pt="Separa as duas falhas que a A e a B confundem: &lt;strong&gt;a plataforma reiniciou&lt;/strong&gt; não é &lt;strong&gt;esta linha está quebrada&lt;/strong&gt;">It separates the two failures that A and B confuse: <strong>the platform restarted</strong> is not <strong>this row is broken</strong></li><li class="p" data-en="The retry bound is what stops retries from becoming an unbounded cost — it is the same shape as every other ceiling in this epic" data-pt="O limite de retry é o que impede a repetição de virar custo ilimitado — é o mesmo formato de todo outro teto deste épico">The retry bound is what stops retries from becoming an unbounded cost — it is the same shape as every other ceiling in this epic</li><li class="p" data-en="It maps onto Temporal&amp;#x27;s retry policy rather than being hand-rolled bookkeeping" data-pt="Mapeia na política de retry do Temporal em vez de virar contabilidade escrita à mão">It maps onto Temporal&#x27;s retry policy rather than being hand-rolled bookkeeping</li><li class="c" data-en="The bound is a number somebody has to choose, and the honest default is not obvious before the first real batch fails" data-pt="O limite é um número que alguém precisa escolher, e o padrão honesto não é óbvio antes de o primeiro lote real falhar">The bound is a number somebody has to choose, and the honest default is not obvious before the first real batch fails</li><li class="c" data-en="Two terminal shapes to represent in the status endpoint instead of one" data-pt="Duas formas terminais para representar no endpoint de status em vez de uma">Two terminal shapes to represent in the status endpoint instead of one</li></ul><div class="opt-cost"><span class="cst lo"><span data-en="Client sees: &lt;b&gt;the failing row, by name&lt;/b&gt;" data-pt="Cliente vê: &lt;b&gt;a linha que falha, pelo nome&lt;/b&gt;">Client sees: <b>the failing row, by name</b></span></span><span class="cst "><span data-en="Ours: &lt;b&gt;a retry bound to choose&lt;/b&gt;" data-pt="Nosso: &lt;b&gt;um limite de retry a escolher&lt;/b&gt;">Ours: <b>a retry bound to choose</b></span></span></div></div></div></div><div class="dec-rec"><span class="rt" data-en="Our recommendation" data-pt="Nossa recomendação">Our recommendation</span><div data-en="&lt;p&gt;&lt;strong&gt;C.&lt;/strong&gt; A and B are each right about one half: a stall caused by &lt;em&gt;us&lt;/em&gt; should heal, and a failure caused by &lt;em&gt;the data&lt;/em&gt; should be seen. Treating them as one event is what produces either a silent bill or a customer-visible failure for a deploy nobody asked about.&lt;/p&gt;&lt;p&gt;Whichever is chosen, the honesty requirement is not optional: &lt;strong&gt;&lt;code&gt;/batch-process/:id/status&lt;/code&gt; must be terminal when the batch is over and must name the row when it failed.&lt;/strong&gt; A status that says &lt;em&gt;running&lt;/em&gt; forever is the defect this task exists to remove, and a workflow can reproduce it just as easily.&lt;/p&gt;" data-pt="&lt;p&gt;&lt;strong&gt;C.&lt;/strong&gt; A e B estão certas cada uma sobre uma metade: uma parada causada por &lt;em&gt;nós&lt;/em&gt; deveria se curar, e uma falha causada pelo &lt;em&gt;dado&lt;/em&gt; deveria ser vista. Tratar as duas como um evento só é o que produz ou uma conta silenciosa ou uma falha visível ao cliente por causa de um deploy sobre o qual ninguém perguntou.&lt;/p&gt;&lt;p&gt;Seja qual for a escolha, o requisito de honestidade não é opcional: &lt;strong&gt;o &lt;code&gt;/batch-process/:id/status&lt;/code&gt; precisa ser terminal quando o lote acabou e precisa nomear a linha quando falhou.&lt;/strong&gt; Um status que diz &lt;em&gt;rodando&lt;/em&gt; para sempre é o defeito que esta task existe para remover, e um workflow reproduz isso com a mesma facilidade.&lt;/p&gt;"><p><strong>C.</strong> A and B are each right about one half: a stall caused by <em>us</em> should heal, and a failure caused by <em>the data</em> should be seen. Treating them as one event is what produces either a silent bill or a customer-visible failure for a deploy nobody asked about.</p><p>Whichever is chosen, the honesty requirement is not optional: <strong><code>/batch-process/:id/status</code> must be terminal when the batch is over and must name the row when it failed.</strong> A status that says <em>running</em> forever is the defect this task exists to remove, and a workflow can reproduce it just as easily.</p></div></div><div class="dec-who"><span class="wk"><span data-en="Who decides" data-pt="Quem decide">Who decides</span></span><span class="wv2"><span data-en="Engineering" data-pt="Engenharia">Engineering</span></span><span class="wv2"><span data-en="Product owns what the status endpoint says" data-pt="Produto define o que o endpoint de status diz">Product owns what the status endpoint says</span></span></div></div></details>
+<div class="sec-label"><span class="n">3</span><h2 data-en="What the task does, in three parts" data-pt="O que a task faz, em três partes">What the task does, in three parts</h2><span class="rule"></span></div>
+<div class="part"><div class="part-head"><span class="num">1</span><span class="t"><span data-en="One child workflow per row, and the pointer becomes state" data-pt="Um child workflow por linha, e o ponteiro vira estado">One child workflow per row, and the pointer becomes state</span></span><span class="loc">flux.controller.ts:560, 574–706</span></div><div class="part-body"><div class="purpose" data-en="Replace a detached loop with a durable one, and let the per-row bookkeeping collapse because the loop can finally trust its own memory." data-pt="Substituir um laço solto por um durável, e deixar a contabilidade por linha desaparecer porque o laço finalmente pode confiar na própria memória.">Replace a detached loop with a durable one, and let the per-row bookkeeping collapse because the loop can finally trust its own memory.</div><div data-en="&lt;p&gt;The shape is a batch workflow with &lt;strong&gt;one child workflow per row&lt;/strong&gt;, a &lt;strong&gt;concurrency cap&lt;/strong&gt;, and the row pointer held as &lt;strong&gt;workflow state&lt;/strong&gt; rather than a column that is re-read every iteration. &lt;code&gt;continueAsNew&lt;/code&gt; goes at a row boundary — a large CSV is exactly the case that exhausts workflow history (review §4.1).&lt;/p&gt;&lt;p&gt;The per-row bookkeeping today looks like this, before the run itself:&lt;/p&gt;" data-pt="&lt;p&gt;O formato é um workflow de lote com &lt;strong&gt;um child workflow por linha&lt;/strong&gt;, um &lt;strong&gt;teto de concorrência&lt;/strong&gt;, e o ponteiro de linha mantido como &lt;strong&gt;estado do workflow&lt;/strong&gt; em vez de uma coluna relida a cada iteração. O &lt;code&gt;continueAsNew&lt;/code&gt; vai numa fronteira de linha — um CSV grande é exatamente o caso que esgota o histórico de workflow (review §4.1).&lt;/p&gt;&lt;p&gt;A contabilidade por linha hoje é assim, antes do run em si:&lt;/p&gt;"><p>The shape is a batch workflow with <strong>one child workflow per row</strong>, a <strong>concurrency cap</strong>, and the row pointer held as <strong>workflow state</strong> rather than a column that is re-read every iteration. <code>continueAsNew</code> goes at a row boundary — a large CSV is exactly the case that exhausts workflow history (review §4.1).</p><p>The per-row bookkeeping today looks like this, before the run itself:</p></div><div class="code-block" data-en="per row:  re-read the batch  -&gt;  re-read the row record  -&gt;  apiV2(...)  -&gt;  write the output  -&gt;  re-read the batch  -&gt;  save the pointer" data-pt="por linha:  reler o lote  -&gt;  reler o registro da linha  -&gt;  apiV2(...)  -&gt;  escrever a saida  -&gt;  reler o lote  -&gt;  salvar o ponteiro">per row:  re-read the batch  -&gt;  re-read the row record  -&gt;  apiV2(...)  -&gt;  write the output  -&gt;  re-read the batch  -&gt;  save the pointer</div><div data-en="&lt;p&gt;&lt;strong&gt;That re-reading exists because the loop cannot trust its own memory across a restart.&lt;/strong&gt; A workflow can — which is why the collapse is a consequence of the change rather than a separate optimisation. The claim in the spec is four to five round trips per row: &lt;strong&gt;prove it or correct it&lt;/strong&gt;.&lt;/p&gt;" data-pt="&lt;p&gt;&lt;strong&gt;Essa releitura existe porque o laço não pode confiar na própria memória entre reinícios.&lt;/strong&gt; Um workflow pode — por isso o encolhimento é consequência da mudança e não uma otimização separada. A afirmação da spec é de quatro a cinco idas e voltas por linha: &lt;strong&gt;prove ou corrija&lt;/strong&gt;.&lt;/p&gt;"><p><strong>That re-reading exists because the loop cannot trust its own memory across a restart.</strong> A workflow can — which is why the collapse is a consequence of the change rather than a separate optimisation. The claim in the spec is four to five round trips per row: <strong>prove it or correct it</strong>.</p></div><div class="ba"><div class="now"><h5>⚠ <span data-en="How it is today" data-pt="Como está hoje">How it is today</span></h5><p data-en="An unawaited &lt;code&gt;for&lt;/code&gt; loop inside a request handler. Its progress lives in a column it re-reads because it cannot trust anything else." data-pt="Um laço &lt;code&gt;for&lt;/code&gt; sem await dentro de um handler de requisição. O progresso dele vive numa coluna que ele relê porque não pode confiar em mais nada.">An unawaited <code>for</code> loop inside a request handler. Its progress lives in a column it re-reads because it cannot trust anything else.</p></div><div class="nxt"><h5>✓ <span data-en="How it will be" data-pt="Como fica">How it will be</span></h5><p data-en="A durable workflow with one child per row, a concurrency cap, and the pointer in workflow state — with &lt;code&gt;continueAsNew&lt;/code&gt; at a row boundary so a large CSV cannot exhaust the history." data-pt="Um workflow durável com um filho por linha, um teto de concorrência, e o ponteiro no estado do workflow — com &lt;code&gt;continueAsNew&lt;/code&gt; numa fronteira de linha para um CSV grande não esgotar o histórico.">A durable workflow with one child per row, a concurrency cap, and the pointer in workflow state — with <code>continueAsNew</code> at a row boundary so a large CSV cannot exhaust the history.</p></div></div></div></div>
+<div class="part"><div class="part-head"><span class="num">2</span><span class="t"><span data-en="The progress columns keep their meaning" data-pt="As colunas de progresso mantêm seu significado">The progress columns keep their meaning</span></span><span class="loc">back/src/entities/batch_processing_file*.ts</span></div><div class="part-body"><div class="purpose" data-en="The workflow becomes the writer of the surface the customer already watches — it does not replace it with a new one." data-pt="O workflow vira o escritor da superfície que o cliente já acompanha — não a substitui por uma nova.">The workflow becomes the writer of the surface the customer already watches — it does not replace it with a new one.</div><div data-en="&lt;p&gt;&lt;code&gt;lastProcessedLine&lt;/code&gt; and the batch status columns stay, and they stay updated. They are the &lt;strong&gt;customer-facing progress surface&lt;/strong&gt;, and the existing status and download endpoints read them. What changes is who writes them: the workflow, instead of a loop that re-read them to remember where it was.&lt;/p&gt;&lt;p&gt;This is what keeps the task revertible. The columns are the contract; the loop behind them is an implementation detail that this task replaces.&lt;/p&gt;" data-pt="&lt;p&gt;O &lt;code&gt;lastProcessedLine&lt;/code&gt; e as colunas de status do lote permanecem, e permanecem atualizados. Eles são a &lt;strong&gt;superfície de progresso voltada ao cliente&lt;/strong&gt;, e os endpoints existentes de status e de download os leem. O que muda é quem os escreve: o workflow, em vez de um laço que os relia para lembrar onde estava.&lt;/p&gt;&lt;p&gt;É isso que mantém a task reversível. As colunas são o contrato; o laço por trás delas é detalhe de implementação que esta task substitui.&lt;/p&gt;"><p><code>lastProcessedLine</code> and the batch status columns stay, and they stay updated. They are the <strong>customer-facing progress surface</strong>, and the existing status and download endpoints read them. What changes is who writes them: the workflow, instead of a loop that re-read them to remember where it was.</p><p>This is what keeps the task revertible. The columns are the contract; the loop behind them is an implementation detail that this task replaces.</p></div><div class="ba"><div class="now"><h5>⚠ <span data-en="How it is today" data-pt="Como está hoje">How it is today</span></h5><p data-en="The columns are both the progress surface &lt;em&gt;and&lt;/em&gt; the loop&amp;#x27;s memory, which is why they are re-read four to five times per row." data-pt="As colunas são ao mesmo tempo a superfície de progresso &lt;em&gt;e&lt;/em&gt; a memória do laço, e é por isso que são relidas quatro a cinco vezes por linha.">The columns are both the progress surface <em>and</em> the loop&#x27;s memory, which is why they are re-read four to five times per row.</p></div><div class="nxt"><h5>✓ <span data-en="How it will be" data-pt="Como fica">How it will be</span></h5><p data-en="The columns are only the progress surface. The workflow remembers where it is, and writes them because the customer reads them." data-pt="As colunas são apenas a superfície de progresso. O workflow lembra onde está, e as escreve porque o cliente as lê.">The columns are only the progress surface. The workflow remembers where it is, and writes them because the customer reads them.</p></div></div><div class="callout mig"><span class="ct" data-en="Out of scope" data-pt="Fora de escopo">Out of scope</span><div data-en="&lt;p&gt;Changing the CSV format, the input mapping to &lt;code&gt;varInputNode&lt;/code&gt;s, or the output shape. A row-for-row output comparison against a pre-change run is what proves it.&lt;/p&gt;" data-pt="&lt;p&gt;Mudar o formato do CSV, o mapeamento de entrada para os &lt;code&gt;varInputNode&lt;/code&gt;s, ou o formato de saída. Uma comparação de saída linha a linha contra um run anterior à mudança é o que prova isso.&lt;/p&gt;"><p>Changing the CSV format, the input mapping to <code>varInputNode</code>s, or the output shape. A row-for-row output comparison against a pre-change run is what proves it.</p></div></div></div></div>
+<div class="part"><div class="part-head"><span class="num">3</span><span class="t"><span data-en="Stop becomes cancellation" data-pt="Parar vira cancelamento">Stop becomes cancellation</span></span><span class="loc">flux.controller.ts:513–517, 710–800</span></div><div class="part-body"><div class="purpose" data-en="Honour the stop endpoint through workflow cancellation, which reaches the rows already in flight." data-pt="Honrar o endpoint de parada via cancelamento de workflow, que alcança as linhas já em voo.">Honour the stop endpoint through workflow cancellation, which reaches the rows already in flight.</div><div data-en="&lt;p&gt;Today &lt;code&gt;/batch-process/:id/stop&lt;/code&gt; &lt;strong&gt;sets a flag the loop checks&lt;/strong&gt;. That means a row already running finishes, and a loop that has already died never checks anything at all — stop on a stalled batch does nothing visible.&lt;/p&gt;&lt;p&gt;Through workflow cancellation, stop reaches the batch workflow &lt;em&gt;and&lt;/em&gt; the row children already in flight. &lt;strong&gt;This is strictly better than today&lt;/strong&gt;, and it is the same mechanism &lt;code&gt;E2&lt;/code&gt; aligns the rest of the system on.&lt;/p&gt;" data-pt="&lt;p&gt;Hoje o &lt;code&gt;/batch-process/:id/stop&lt;/code&gt; &lt;strong&gt;liga uma flag que o laço checa&lt;/strong&gt;. Isso significa que uma linha já em execução termina, e um laço que já morreu nunca checa nada — parar um lote travado não faz nada visível.&lt;/p&gt;&lt;p&gt;Via cancelamento de workflow, o stop alcança o workflow do lote &lt;em&gt;e&lt;/em&gt; os filhos de linha já em voo. &lt;strong&gt;Isto é estritamente melhor que hoje&lt;/strong&gt;, e é o mesmo mecanismo no qual a &lt;code&gt;E2&lt;/code&gt; alinha o resto do sistema.&lt;/p&gt;"><p>Today <code>/batch-process/:id/stop</code> <strong>sets a flag the loop checks</strong>. That means a row already running finishes, and a loop that has already died never checks anything at all — stop on a stalled batch does nothing visible.</p><p>Through workflow cancellation, stop reaches the batch workflow <em>and</em> the row children already in flight. <strong>This is strictly better than today</strong>, and it is the same mechanism <code>E2</code> aligns the rest of the system on.</p></div><div class="ba"><div class="now"><h5>⚠ <span data-en="How it is today" data-pt="Como está hoje">How it is today</span></h5><p data-en="Stop sets a flag. In-flight rows run to completion, and a batch whose loop has already died ignores stop entirely." data-pt="O stop liga uma flag. Linhas em voo rodam até o fim, e um lote cujo laço já morreu ignora o stop por completo.">Stop sets a flag. In-flight rows run to completion, and a batch whose loop has already died ignores stop entirely.</p></div><div class="nxt"><h5>✓ <span data-en="How it will be" data-pt="Como fica">How it will be</span></h5><p data-en="Stop cancels the workflow, which cancels the row children in flight, and the batch reaches a &lt;strong&gt;terminal&lt;/strong&gt; status the endpoint can report." data-pt="O stop cancela o workflow, que cancela os filhos de linha em voo, e o lote chega a um status &lt;strong&gt;terminal&lt;/strong&gt; que o endpoint consegue reportar.">Stop cancels the workflow, which cancels the row children in flight, and the batch reaches a <strong>terminal</strong> status the endpoint can report.</p></div></div></div></div>
+<div class="sec-label"><span class="n">4</span><h2 data-en="How it is proved" data-pt="Como se prova">How it is proved</h2><span class="rule"></span></div>
+<div class="vcard"><div class="vcard-head">🔬 <span data-en="Verification" data-pt="Verificação">Verification</span></div><div class="vcard-body"><div class="vitem req"><div class="vn">1</div><div><div class="vt"><span data-en="Negative control — restart it mid-run" data-pt="Controle negativo — reinicie no meio">Negative control — restart it mid-run</span><span class="req-tag"><span data-en="required" data-pt="obrigatório">required</span></span></div><div class="vd" data-en="Start a batch, &lt;strong&gt;restart the backend mid-run, and confirm the batch stalls on &lt;code&gt;main&lt;/code&gt;&lt;/strong&gt; — that is today&amp;#x27;s behaviour and it should be seen once, by the person doing the work. Then confirm the workflow version resumes and completes." data-pt="Inicie um lote, &lt;strong&gt;reinicie o backend no meio e confirme que o lote trava na &lt;code&gt;main&lt;/code&gt;&lt;/strong&gt; — esse é o comportamento de hoje e ele deve ser visto uma vez, por quem está fazendo o trabalho. Depois confirme que a versão com workflow retoma e conclui.">Start a batch, <strong>restart the backend mid-run, and confirm the batch stalls on <code>main</code></strong> — that is today&#x27;s behaviour and it should be seen once, by the person doing the work. Then confirm the workflow version resumes and completes.</div></div></div>
+<div class="vitem req"><div class="vn">2</div><div><div class="vt"><span data-en="Cost-ceiling interaction" data-pt="Interação com o teto de custo">Cost-ceiling interaction</span><span class="req-tag"><span data-en="required" data-pt="obrigatório">required</span></span></div><div class="vd" data-en="Run a batch whose total &lt;strong&gt;would exceed the tenant&amp;#x27;s budget&lt;/strong&gt; and confirm &lt;code&gt;S3&lt;/code&gt; stops it at the ceiling, with the partially-completed rows &lt;strong&gt;recorded rather than lost&lt;/strong&gt;." data-pt="Rode um lote cujo total &lt;strong&gt;ultrapassaria o orçamento do tenant&lt;/strong&gt; e confirme que a &lt;code&gt;S3&lt;/code&gt; o para no teto, com as linhas parcialmente concluídas &lt;strong&gt;registradas em vez de perdidas&lt;/strong&gt;.">Run a batch whose total <strong>would exceed the tenant&#x27;s budget</strong> and confirm <code>S3</code> stops it at the ceiling, with the partially-completed rows <strong>recorded rather than lost</strong>.</div></div></div>
+<div class="vitem"><div class="vn">3</div><div><div class="vt"><span data-en="Stop mid-batch, and land on a terminal status" data-pt="Parar no meio, e terminar num status terminal">Stop mid-batch, and land on a terminal status</span></div><div class="vd" data-en="Stop a running batch and confirm the &lt;strong&gt;in-flight rows cancel&lt;/strong&gt; and the status is terminal — not a status that will simply never move again." data-pt="Pare um lote em execução e confirme que as &lt;strong&gt;linhas em voo são canceladas&lt;/strong&gt; e que o status é terminal — não um status que simplesmente nunca mais vai mudar.">Stop a running batch and confirm the <strong>in-flight rows cancel</strong> and the status is terminal — not a status that will simply never move again.</div></div></div>
+<div class="vitem"><div class="vn">4</div><div><div class="vt"><span data-en="Row-for-row output comparison" data-pt="Comparação de saída linha a linha">Row-for-row output comparison</span></div><div class="vd" data-en="Compare the outputs against a pre-change run of the same CSV, row for row. The CSV format, the input mapping and the output shape are all out of scope, so any difference is a defect and not a design choice." data-pt="Compare as saídas contra um run anterior à mudança com o mesmo CSV, linha a linha. O formato do CSV, o mapeamento de entrada e o formato de saída estão fora de escopo, então qualquer diferença é defeito e não escolha de projeto.">Compare the outputs against a pre-change run of the same CSV, row for row. The CSV format, the input mapping and the output shape are all out of scope, so any difference is a defect and not a design choice.</div></div></div>
+<div class="vitem"><div class="vn">5</div><div><div class="vt"><span data-en="Measure the bookkeeping reduction" data-pt="Medir a redução da contabilidade">Measure the bookkeeping reduction</span></div><div class="vd" data-en="Queries per row, before and after. &lt;strong&gt;The claim in this task is four to five round trips; prove it or correct it.&lt;/strong&gt; A number nobody measured is the kind of claim that gets repeated for years." data-pt="Consultas por linha, antes e depois. &lt;strong&gt;A afirmação desta task é de quatro a cinco idas e voltas; prove ou corrija.&lt;/strong&gt; Um número que ninguém mediu é o tipo de afirmação que se repete por anos.">Queries per row, before and after. <strong>The claim in this task is four to five round trips; prove it or correct it.</strong> A number nobody measured is the kind of claim that gets repeated for years.</div></div></div>
+</div></div>
+<div class="done"><span class="dt" data-en="✓  Done when" data-pt="✓  Pronto quando">✓  Done when</span><div class="dd" data-en="A batch &lt;strong&gt;survives a restart and resumes&lt;/strong&gt;; &lt;code&gt;lastProcessedLine&lt;/code&gt; and the status columns still tell the truth and reach a &lt;strong&gt;terminal&lt;/strong&gt; state; stop cancels the rows in flight; outputs match a pre-change run row for row; and the bookkeeping reduction is &lt;strong&gt;measured, not asserted&lt;/strong&gt;." data-pt="Um lote &lt;strong&gt;sobrevive a um restart e retoma&lt;/strong&gt;; o &lt;code&gt;lastProcessedLine&lt;/code&gt; e as colunas de status continuam dizendo a verdade e chegam a um estado &lt;strong&gt;terminal&lt;/strong&gt;; o stop cancela as linhas em voo; as saídas batem linha a linha com um run anterior à mudança; e a redução de contabilidade é &lt;strong&gt;medida, não afirmada&lt;/strong&gt;.">A batch <strong>survives a restart and resumes</strong>; <code>lastProcessedLine</code> and the status columns still tell the truth and reach a <strong>terminal</strong> state; stop cancels the rows in flight; outputs match a pre-change run row for row; and the bookkeeping reduction is <strong>measured, not asserted</strong>.</div></div>
+<div class="filesbox"><div class="filesbox-head">📂 <span data-en="Files this task touches" data-pt="Arquivos que esta task toca">Files this task touches</span></div><div class="filesbox-body"><span class="fchip">back/src/app-api/flux/flux.controller.ts:513–517, 560, 574–706, 710–800</span><span class="fchip">back/src/entities/batch_processing_file*.ts</span><span class="fchip new">new batch workflow in the worker</span></div></div>
+<div class="page-footer-nav"><a href="task-B6.html"><span data-en="← B6 — Control flow and sub-flows in the workflow" data-pt="← B6 — Controle de fluxo e sub-fluxos no workflow">← B6 — Control flow and sub-flows in the workflow</span></a><a href="task-C1.html"><span data-en="Next: C1 — Retire the inline paths and the cross-node writes →" data-pt="Próxima: C1 — Aposentar os caminhos inline e as escritas cross-node →">Next: C1 — Retire the inline paths and the cross-node writes →</span></a></div>
+</div>
+<script>
+(function(){
+  var n=document.querySelectorAll('[data-en]'),b=document.querySelectorAll('.lang-sw button');
+  function apply(l){
+    n.forEach(function(el){var v=el.getAttribute('data-'+l); if(v===null)return; el.innerHTML=v;});
+    b.forEach(function(x){x.setAttribute('aria-pressed',String(x.getAttribute('data-lang')===l))});
+    document.documentElement.lang = l==='pt' ? 'pt-BR' : 'en';
+    try{localStorage.setItem('flux-lang',l)}catch(e){}
+  }
+  b.forEach(function(x){x.addEventListener('click',function(){apply(x.getAttribute('data-lang'))})});
+  var saved=null; try{saved=localStorage.getItem('flux-lang')}catch(e){}
+  apply(saved==='pt'?'pt':'en');
+})();
+</script>

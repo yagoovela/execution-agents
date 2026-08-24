@@ -1,0 +1,893 @@
+<title>D1 — Developer documentation</title>
+<style>
+
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #F1F5F9;
+    color: #0F172A;
+    margin: 0;
+    padding: 32px 24px 80px;
+    line-height: 1.4;
+  }
+  .container { max-width: 1500px; margin: 0 auto; }
+
+  /* Top nav */
+  .page-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    flex-wrap: wrap;
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #64748B;
+  }
+  .breadcrumb a {
+    color: #3B82F6;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #CBD5E1; }
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #0F172A;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+
+  /* Page header */
+  .page-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 8px;
+  }
+  .page-header .icon { font-size: 32px; }
+  .page-header h1 {
+    margin: 0;
+    font-size: 26px;
+    color: #0F172A;
+    letter-spacing: -0.4px;
+  }
+  .page-sub {
+    color: #64748B;
+    font-size: 13px;
+    margin-bottom: 24px;
+    padding-left: 46px;
+  }
+  .page-sub code {
+    background: #E2E8F0;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 12px;
+    color: #334155;
+  }
+
+  /* Overview chain */
+  .overview-mini {
+    background: white;
+    padding: 16px 18px;
+    border-radius: 10px;
+    margin-bottom: 28px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .overview-mini-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 12px;
+  }
+  .overview-chain {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .overview-chip {
+    background: #F8FAFC;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border-left: 3px solid #3B82F6;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #0F172A;
+    text-decoration: none;
+    display: inline-block;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+  .overview-chip .lbl {
+    display: block;
+    font-size: 9.5px;
+    color: #64748B;
+    font-weight: 500;
+    margin-bottom: 2px;
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .overview-sep { color: #94A3B8; font-size: 18px; font-weight: bold; }
+
+  /* Boxes */
+  .box {
+    background: white;
+    border-radius: 8px;
+    padding: 9px 13px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border-left: 4px solid #94A3B8;
+    width: 100%;
+    max-width: 100%;
+  }
+  .box.backend    { border-left-color: #3B82F6; }
+  .box.worker     { border-left-color: #10B981; }
+  .box.db         { border-left-color: #F59E0B; }
+  .box.redis      { border-left-color: #EF4444; }
+  .box.s3         { border-left-color: #8B5CF6; }
+  .box.external   { border-left-color: #64748B; }
+  .box.decision { border-left-color: #EAB308; background: #FEFCE8; }
+  .box.cross { border-left-color: #A855F7; background: #FAF5FF; }
+
+  .box-title {
+    font-weight: 600;
+    font-size: 12.5px;
+    color: #0F172A;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .box-desc { font-size: 11.5px; color: #475569; }
+  .box-file {
+    font-size: 10px;
+    color: #94A3B8;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    margin-top: 3px;
+    word-break: break-all;
+  }
+  .box code {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    background: #F1F5F9;
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: #334155;
+    word-break: break-word;
+  }
+  .box-desc code { word-break: break-word; }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .badge.migrated { background: #D1FAE5; color: #065F46; }
+  .badge.legacy   { background: #FEE2E2; color: #991B1B; }
+  .badge.mixed    { background: #FEF3C7; color: #92400E; }
+  .badge.step     { background: #E0E7FF; color: #3730A3; font-size: 10px; }
+  .badge.cross    { background: #F3E8FF; color: #6B21A8; }
+
+  /* Arrows */
+  .arrow {
+    color: #64748B;
+    font-size: 22px;
+    line-height: 1;
+    margin: 1px 0;
+    text-align: center;
+  }
+  .converge { text-align: center; color: #64748B; font-size: 22px; margin: 6px 0; }
+
+  /* Function card */
+  .fn-card {
+    margin-top: 28px;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .fn-card-header {
+    background: linear-gradient(to right, #0F172A, #1E293B);
+    color: white;
+    padding: 14px 20px 14px 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .fn-card-header .fn-title {
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .fn-card-header .fn-title code {
+    background: rgba(255,255,255,0.15);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 13px;
+  }
+  .fn-card-header .fn-loc {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #CBD5E1;
+  }
+  .fn-card-header:hover { background: linear-gradient(to right, #1E293B, #334155); }
+  .fn-card-header::before {
+    content: "▾";
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+    font-size: 14px;
+    transition: transform 0.2s ease;
+    line-height: 1;
+  }
+  .fn-card.collapsed .fn-card-header::before {
+    transform: translateY(-50%) rotate(-90deg);
+  }
+  .fn-card.collapsed .fn-card-body { display: none; }
+  .fn-card-body { padding: 20px; }
+
+  .fn-signature {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    background: #F1F5F9;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: #334155;
+    margin-bottom: 16px;
+    overflow-x: auto;
+  }
+  .fn-purpose {
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    background: #EFF6FF;
+    border-left: 3px solid #3B82F6;
+    border-radius: 6px;
+  }
+  .fn-friendly {
+    font-size: 13px;
+    color: #334155;
+    margin-bottom: 20px;
+    padding: 12px 14px 12px 44px;
+    background: #F0FDF4;
+    border-left: 3px solid #10B981;
+    border-radius: 6px;
+    position: relative;
+    line-height: 1.55;
+  }
+  .fn-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 14px;
+    top: 10px;
+    font-size: 18px;
+  }
+  .fn-friendly strong {
+    color: #065F46;
+  }
+
+  /* Step-level friendly summary (page-wide, appears after page-sub) */
+  .step-friendly {
+    font-size: 13.5px;
+    color: #334155;
+    margin-bottom: 28px;
+    padding: 16px 18px 16px 52px;
+    background: #F0FDF4;
+    border-left: 4px solid #10B981;
+    border-radius: 10px;
+    position: relative;
+    line-height: 1.6;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.08);
+  }
+  .step-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 18px;
+    top: 14px;
+    font-size: 22px;
+  }
+  .step-friendly-title {
+    font-weight: 700;
+    color: #065F46;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 8px;
+  }
+  .step-friendly ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .step-friendly li {
+    margin-bottom: 6px;
+  }
+  .step-friendly li:last-child {
+    margin-bottom: 0;
+  }
+  .step-friendly strong {
+    color: #065F46;
+  }
+  .step-friendly code {
+    background: #DCFCE7;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: #065F46;
+  }
+  .step-friendly em {
+    color: #047857;
+    font-style: italic;
+  }
+
+  .fn-body-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 900px) {
+    .fn-body-cols { grid-template-columns: 1fr; }
+  }
+  .fn-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .fn-asides {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Aside panels */
+  .aside {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 11.5px;
+    color: #78350F;
+  }
+  .aside.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .aside.warn { background: #FEE2E2; border-left-color: #EF4444; color: #991B1B; }
+  .aside.helper { background: #F3E8FF; border-left-color: #A855F7; color: #6B21A8; }
+  .aside-title {
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .aside code {
+    background: rgba(255,255,255,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    word-break: break-word;
+  }
+
+  /* Cascade */
+  .cascade {
+    background: #FEFCE8;
+    border: 1px dashed #EAB308;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 6px 0;
+  }
+  .cascade-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #713F12;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .cascade-step {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 8px;
+    background: white;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    font-size: 11.5px;
+  }
+  .cascade-step .cond {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #334155;
+  }
+  .cascade-step .result {
+    font-weight: 700;
+    font-size: 10.5px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .cascade-step .result.pass  { background: #D1FAE5; color: #065F46; }
+  .cascade-step .result.deny  { background: #FEE2E2; color: #991B1B; }
+  .cascade-step .result.next  { background: #E0E7FF; color: #3730A3; }
+  .cascade-step .result.call  { background: #FEF3C7; color: #78350F; }
+  .cascade-num {
+    background: #EAB308;
+    color: white;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* Nested sub-flow */
+  .nested-flow {
+    margin: 6px 0;
+    padding: 12px;
+    background: #F0FDF4;
+    border: 1px dashed #10B981;
+    border-radius: 8px;
+  }
+  .nested-flow-title {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #065F46;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  /* Code block */
+  .code-block {
+    background: #0F172A;
+    color: #E2E8F0;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 6px 0;
+  }
+  .code-block .k { color: #93C5FD; }
+  .code-block .s { color: #86EFAC; }
+  .code-block .c { color: #64748B; font-style: italic; }
+  .code-block .t { color: #FDE68A; }
+
+  /* Notes */
+  .note {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    color: #78350F;
+    margin: 20px 0;
+  }
+  .note.info {
+    background: #EFF6FF;
+    border-left-color: #3B82F6;
+    color: #1E3A8A;
+  }
+  .note code {
+    background: rgba(255,255,255,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+  }
+
+  .page-footer-nav {
+    margin-top: 48px;
+    padding: 16px;
+    background: white;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .field-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin: 8px 0;
+  }
+  .field-table th {
+    text-align: left;
+    padding: 6px 8px;
+    background: #F1F5F9;
+    color: #334155;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    font-size: 10px;
+    border-bottom: 1px solid #CBD5E1;
+  }
+  .field-table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid #F1F5F9;
+    vertical-align: top;
+  }
+  .field-table td:first-child {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    color: #0F172A;
+    font-weight: 600;
+    white-space: nowrap;
+    font-size: 10.5px;
+  }
+
+    .code-block{white-space:pre-wrap;word-break:normal;overflow-wrap:anywhere}
+    .ba{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 4px}
+    @media(max-width:820px){.ba{grid-template-columns:1fr}}
+    .ba>div{border-radius:8px;padding:12px 14px;font-size:12px;line-height:1.62}
+    .ba .now{background:#FEF2F2;border-left:3px solid #EF4444;color:#450A0A}
+    .ba .nxt{background:#ECFDF5;border-left:3px solid #10B981;color:#052E16}
+    .ba h5{margin:0 0 7px;font-size:10px;letter-spacing:.8px;text-transform:uppercase;font-weight:800;opacity:.75}
+    .ba code{background:rgba(0,0,0,.06);padding:1px 4px;border-radius:3px}
+    .topic-nav{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 26px}
+    .topic-nav a{font-size:11px;padding:5px 11px;border-radius:20px;background:#fff;border:1px solid #CBD5E1;
+                 color:#334155;text-decoration:none}
+    .topic-nav a:hover{border-color:#3B82F6;color:#1E40AF}
+
+
+    /* padroniza o topo pelo complemento */
+    .top-nav{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+             max-width:1500px;margin:0 auto 20px;padding:0 4px}
+    .back-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:#fff;color:#334155;
+              text-decoration:none;border-radius:8px;border:1px solid #CBD5E1;font-size:12.5px;font-weight:600;
+              box-shadow:0 1px 3px rgba(0,0,0,.06);transition:transform .15s,background .15s}
+    .back-btn:hover{background:#EFF6FF;transform:translateY(-1px)}
+    .page-nav{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-start;background:transparent;
+              box-shadow:none;padding:18px 0 0;margin-top:26px;border-top:1px solid #E2E8F0}
+    .lang-sw{display:inline-flex;border:1px solid #CBD5E1;border-radius:8px;overflow:hidden;background:#fff;
+             box-shadow:0 1px 3px rgba(0,0,0,.06)}
+    .lang-sw button{font-family:'SF Mono',Menlo,monospace;font-size:11px;font-weight:700;letter-spacing:.5px;
+             padding:8px 12px;background:transparent;color:#64748B;border:0;cursor:pointer}
+    .lang-sw button+button{border-left:1px solid #E2E8F0}
+    .lang-sw button[aria-pressed="true"]{background:#0F172A;color:#fff}
+    .lang-sw button:focus-visible{outline:2px solid #3B82F6;outline-offset:2px}
+
+
+/* ---------- task page ---------- */
+body{background:#F1F5F9;color:#0F172A;margin:0;padding:28px 24px 72px;line-height:1.45;
+     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+.container{max-width:1500px;margin:0 auto}
+
+.hero{background:linear-gradient(135deg,#0F172A 0%,#1E293B 60%,#312E81 100%);color:#fff;
+      border-radius:16px;padding:26px 30px 24px;margin-bottom:18px;position:relative;overflow:hidden}
+.hero::after{content:'';position:absolute;right:-60px;top:-60px;width:260px;height:260px;
+      background:radial-gradient(circle,rgba(99,102,241,.35),transparent 70%);pointer-events:none}
+.hero .kicker{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.hero .code{font-family:'SF Mono',Menlo,monospace;font-size:13px;font-weight:700;letter-spacing:1px;
+      background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);color:#fff;
+      padding:5px 12px;border-radius:7px}
+.hero .st{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+      padding:5px 11px;border-radius:7px;border:1px solid;display:inline-flex;align-items:center;gap:6px}
+.hero .st::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor}
+.hero .st.st-planned{background:rgba(148,163,184,.18);border-color:rgba(203,213,225,.45);color:#CBD5E1}
+.hero .st.st-blocked{background:rgba(220,38,38,.2);border-color:rgba(248,113,113,.5);color:#FCA5A5}
+.hero .st.st-doing{background:rgba(59,130,246,.22);border-color:rgba(147,197,253,.5);color:#BFDBFE}
+.hero .st.st-review{background:rgba(245,158,11,.22);border-color:rgba(252,211,77,.5);color:#FDE68A}
+.hero .st.st-shipped{background:rgba(16,185,129,.24);border-color:rgba(110,231,183,.5);color:#A7F3D0}
+.hero .st.st-dropped{background:rgba(100,116,139,.18);border-color:rgba(148,163,184,.4);color:#94A3B8;
+      text-decoration:line-through}
+.hero .stnote{margin-top:12px;font-size:12.5px;line-height:1.6;color:#CBD5E1;
+      background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
+      border-left:3px solid #6366F1;border-radius:8px;padding:9px 13px;max-width:88ch}
+.hero .stnote b{color:#fff}
+.hero .wv{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+      padding:5px 11px;border-radius:7px;background:rgba(239,68,68,.22);border:1px solid rgba(248,113,113,.5);color:#FCA5A5}
+.hero h1{margin:0 0 12px;font-size:29px;line-height:1.22;letter-spacing:-.6px;font-weight:700;max-width:30ch}
+.hero .goal{font-size:15px;line-height:1.6;color:#CBD5E1;max-width:78ch;border-left:3px solid #6366F1;padding-left:14px}
+.hero .goal b{color:#fff;font-weight:600}
+.hero-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px;position:relative;z-index:2}
+.hero-links a{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
+      text-decoration:none;color:#E2E8F0;background:rgba(255,255,255,.09);
+      border:1px solid rgba(255,255,255,.16);padding:7px 13px;border-radius:8px}
+.hero-links a:hover{background:rgba(255,255,255,.17);color:#fff}
+
+.glance{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:20px}
+.gl{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px 16px;
+    border-top:3px solid #94A3B8;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.gl.crit{border-top-color:#DC2626}.gl.dep{border-top-color:#3B82F6}
+.gl.wave{border-top-color:#8B5CF6}.gl.ship{border-top-color:#059669}
+.gl .k{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#94A3B8;margin-bottom:7px}
+.gl .v{font-size:16px;font-weight:700;color:#0F172A;line-height:1.25;margin-bottom:5px}
+.gl .n{font-size:11.5px;color:#64748B;line-height:1.5}
+
+.lede{background:#fff;border:1px solid #E2E8F0;border-left:4px solid #DC2626;border-radius:12px;
+      padding:18px 22px;margin-bottom:22px;font-size:14.5px;line-height:1.7;color:#334155;
+      box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.lede strong{color:#0F172A}
+.lede p{margin:0 0 10px}.lede p:last-child{margin:0}
+
+.sec-label{display:flex;align-items:center;gap:11px;margin:30px 0 14px}
+.sec-label .n{width:25px;height:25px;border-radius:7px;background:#0F172A;color:#fff;flex:none;
+      display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+.sec-label h2{margin:0;font-size:17px;font-weight:700;color:#0F172A;letter-spacing:-.25px}
+.sec-label .rule{flex:1;height:1px;background:#E2E8F0}
+
+.entry-table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;
+      border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;font-size:12.5px;
+      box-shadow:0 1px 3px rgba(15,23,42,.05);margin-bottom:8px}
+.entry-table th{background:#0F172A;color:#fff;text-align:left;padding:11px 14px;font-size:10.5px;
+      font-weight:700;text-transform:uppercase;letter-spacing:.6px}
+.entry-table td{padding:12px 14px;border-bottom:1px solid #F1F5F9;vertical-align:top;color:#334155;line-height:1.55}
+.entry-table tr:last-child td{border-bottom:0}
+.entry-table tr:hover td{background:#F8FAFC}
+.entry-table td.rt{font-family:'SF Mono',Menlo,monospace;font-size:11.5px;font-weight:600;color:#0F172A;white-space:nowrap}
+.entry-table td.rt.lbl{font-family:inherit;font-size:12.5px;white-space:normal}
+.pill{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;
+      letter-spacing:.2px;white-space:nowrap}
+.pill.no{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA}
+.pill.weak{background:#FEF3C7;color:#92400E;border:1px solid #FDE68A}
+.pill.ok{background:#D1FAE5;color:#065F46;border:1px solid #A7F3D0}
+
+.part{background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;margin-bottom:16px;
+      box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.part-head{background:linear-gradient(to right,#0F172A,#1E293B);color:#fff;padding:14px 20px;
+      display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.part-head .num{width:26px;height:26px;border-radius:7px;background:rgba(255,255,255,.15);
+      border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;
+      font-size:12px;font-weight:700;flex:none}
+.part-head .t{font-size:15px;font-weight:600;letter-spacing:-.15px}
+.part-head .loc{margin-left:auto;font-family:'SF Mono',Menlo,monospace;font-size:10.5px;
+      color:#94A3B8;background:rgba(0,0,0,.28);padding:4px 9px;border-radius:6px}
+.part-body{padding:20px 22px}
+.purpose{font-size:14px;line-height:1.65;color:#0F172A;font-weight:500;
+      border-left:3px solid #6366F1;padding-left:13px;margin-bottom:16px}
+.part-body p{margin:0 0 12px;font-size:13.5px;line-height:1.72;color:#334155}
+.part-body p:last-child{margin-bottom:0}
+.part-body strong{color:#0F172A;font-weight:650}
+.part-body code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1.5px 5px;border-radius:4px;
+      font-family:'SF Mono',Menlo,monospace;font-size:11.5px;color:#0F172A}
+.part-body ul{margin:10px 0 14px;padding-left:0;list-style:none}
+.part-body ul li{position:relative;padding-left:20px;margin-bottom:9px;font-size:13.5px;
+      line-height:1.7;color:#334155}
+.part-body ul li::before{content:'';position:absolute;left:5px;top:9px;width:6px;height:6px;
+      border-radius:50%;background:#94A3B8}
+.code-block{white-space:pre-wrap;word-break:break-word}
+
+.ba{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0 4px}
+@media(max-width:900px){.ba{grid-template-columns:1fr}}
+.ba>div{border-radius:10px;padding:14px 16px;font-size:13px;line-height:1.65}
+.ba .now{background:#FEF2F2;border:1px solid #FECACA;color:#7F1D1D}
+.ba .nxt{background:#ECFDF5;border:1px solid #A7F3D0;color:#065F46}
+.ba h5{margin:0 0 8px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+      display:flex;align-items:center;gap:6px}
+.ba .now h5{color:#B91C1C}.ba .nxt h5{color:#047857}
+.ba code{background:rgba(255,255,255,.75);border:1px solid rgba(0,0,0,.07);padding:1px 5px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:11px}
+.ba p{margin:0 0 9px;font-size:13px;line-height:1.65}
+.ba p:last-child{margin:0}
+
+.callout{border-radius:10px;padding:14px 17px;margin:15px 0 4px;font-size:13px;line-height:1.7}
+.callout .ct{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px}
+.callout.decide{background:#EFF6FF;border:1px solid #BFDBFE;color:#1E3A8A}
+.callout.decide .ct{color:#1D4ED8}
+.callout.mig{background:#FFFBEB;border:1px solid #FDE68A;color:#78350F}
+.callout.mig .ct{color:#B45309}
+.callout p{margin:0 0 9px}.callout p:last-child{margin:0}
+.callout code{background:rgba(255,255,255,.7);border:1px solid rgba(0,0,0,.07);padding:1px 5px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:11px}
+
+.vcard{background:#fff;border:1px solid #FECACA;border-radius:14px;overflow:hidden;margin-bottom:16px;
+      box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.vcard-head{background:linear-gradient(to right,#7F1D1D,#B91C1C);color:#fff;padding:13px 20px;
+      font-size:15px;font-weight:600;display:flex;align-items:center;gap:10px}
+.vcard-body{padding:18px 22px}
+.vitem{display:grid;grid-template-columns:auto 1fr;gap:13px;padding:13px 0;border-bottom:1px solid #F1F5F9}
+.vitem:first-child{padding-top:0}
+.vitem:last-child{border-bottom:0;padding-bottom:0}
+.vitem .vn{width:24px;height:24px;border-radius:7px;background:#FEE2E2;color:#B91C1C;flex:none;
+      display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:1px}
+.vitem.req .vn{background:#B91C1C;color:#fff}
+.vitem .vt{font-size:13px;font-weight:700;color:#0F172A;margin-bottom:4px;display:flex;
+      align-items:center;gap:8px;flex-wrap:wrap}
+.vitem .vt .req-tag{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+      background:#B91C1C;color:#fff;padding:2px 7px;border-radius:20px}
+.vitem .vd{font-size:13px;line-height:1.68;color:#475569}
+.vitem .vd code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1px 5px;border-radius:4px;
+      font-family:'SF Mono',Menlo,monospace;font-size:11px}
+.vitem .vd strong{color:#0F172A}
+
+.done{background:linear-gradient(135deg,#064E3B,#047857);color:#fff;border-radius:14px;
+      padding:20px 24px;margin-bottom:16px}
+.done .dt{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+      color:#6EE7B7;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.done .dd{font-size:14.5px;line-height:1.72;color:#ECFDF5}
+.done .dd strong{color:#fff;font-weight:650}
+.done .dd code{background:rgba(255,255,255,.17);border:1px solid rgba(255,255,255,.28);padding:1.5px 6px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:12px;color:#fff}
+.hero .goal code{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);padding:1px 5px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:12.5px;color:#fff}
+.lede code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1.5px 5px;border-radius:4px;
+      font-family:'SF Mono',Menlo,monospace;font-size:12px;color:#0F172A}
+.lede em{font-style:italic;color:#0F172A}
+
+.filesbox{background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;
+      box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.filesbox-head{background:linear-gradient(to right,#334155,#475569);color:#fff;padding:12px 20px;
+      font-size:14px;font-weight:600;display:flex;align-items:center;gap:9px}
+.filesbox-body{padding:16px 20px;display:flex;flex-wrap:wrap;gap:8px}
+.fchip{font-family:'SF Mono',Menlo,monospace;font-size:11.5px;background:#F8FAFC;color:#334155;
+      border:1px solid #E2E8F0;border-left:3px solid #64748B;padding:7px 11px;border-radius:7px;line-height:1.4}
+.fchip.new{border-left-color:#059669;background:#F0FDF4;color:#065F46}
+
+.page-footer-nav{display:flex;justify-content:space-between;gap:12px;margin-top:26px;flex-wrap:wrap}
+.page-footer-nav a{display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid #E2E8F0;
+      color:#334155;padding:11px 17px;border-radius:9px;text-decoration:none;font-size:12.5px;font-weight:600;
+      box-shadow:0 1px 2px rgba(15,23,42,.05)}
+.page-footer-nav a:hover{border-color:#94A3B8;color:#0F172A}
+
+
+/* ---------- decisions ---------- */
+.dec{background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;margin-bottom:14px;
+     box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.dec>summary{list-style:none;cursor:pointer;padding:15px 20px;display:flex;align-items:flex-start;
+     gap:13px;background:linear-gradient(to right,#1E1B4B,#312E81);color:#fff}
+.dec>summary::-webkit-details-marker{display:none}
+.dec>summary:hover{background:linear-gradient(to right,#312E81,#3730A3)}
+.dec>summary:focus-visible{outline:2px solid #A5B4FC;outline-offset:-2px}
+.dec .chev{flex:none;width:22px;height:22px;border-radius:6px;background:rgba(255,255,255,.15);
+     border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;
+     font-size:11px;transition:transform .18s ease;margin-top:1px}
+.dec[open] .chev{transform:rotate(90deg)}
+.dec .dq{flex:1;min-width:0}
+.dec .dq .lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+     color:#A5B4FC;margin-bottom:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dec .dq .q{font-size:15px;font-weight:600;line-height:1.45;letter-spacing:-.15px}
+.dec .dq .q code{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.26);
+     padding:1px 6px;border-radius:5px;font-family:'SF Mono',Menlo,monospace;font-size:13px;
+     font-weight:600;color:#E0E7FF}
+.dstat{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+     padding:2.5px 8px;border-radius:20px;white-space:nowrap}
+.dstat.open{background:#F59E0B;color:#451A03}
+.dstat.rec{background:#38BDF8;color:#082F49}
+.dstat.set{background:#34D399;color:#022C22}
+.dec .dq .lbl .planid{font-family:'SF Mono',Menlo,monospace;font-size:9.5px;font-weight:700;
+     letter-spacing:.3px;color:#C7D2FE;background:rgba(255,255,255,.1);
+     border:1px solid rgba(255,255,255,.2);padding:2px 7px;border-radius:20px}
+.dec-body{padding:18px 20px 20px;background:#FAFAFF}
+.dec-intro{font-size:13px;line-height:1.7;color:#334155;margin-bottom:16px}
+.dec-intro strong{color:#0F172A}
+.dec-intro code{background:#EEF2FF;border:1px solid #C7D2FE;padding:1.5px 5px;border-radius:4px;
+     font-family:'SF Mono',Menlo,monospace;font-size:11.5px;color:#3730A3}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px}
+.opt{background:#fff;border:1px solid #E2E8F0;border-radius:11px;padding:0;overflow:hidden;
+     display:flex;flex-direction:column;position:relative}
+.opt.pick{border-color:#6366F1;box-shadow:0 0 0 2px rgba(99,102,241,.16)}
+.opt.no{opacity:.82}
+.opt-h{padding:12px 15px;display:flex;align-items:flex-start;gap:10px;background:#F8FAFC;
+     border-bottom:1px solid #E2E8F0}
+.opt.pick .opt-h{background:#EEF2FF;border-bottom-color:#C7D2FE}
+.opt.no .opt-h{background:#FEF2F2;border-bottom-color:#FECACA}
+.opt-h .ltr{width:23px;height:23px;border-radius:6px;background:#334155;color:#fff;flex:none;
+     display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;margin-top:1px}
+.opt.pick .opt-h .ltr{background:#4F46E5}
+.opt.no .opt-h .ltr{background:#B91C1C}
+.opt-h .on{font-size:13.5px;font-weight:700;color:#0F172A;line-height:1.35}
+.opt-h .tag{margin-left:auto;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+     padding:3px 8px;border-radius:20px;white-space:nowrap;margin-top:2px}
+.opt.pick .opt-h .tag{background:#4F46E5;color:#fff}
+.opt.no .opt-h .tag{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA}
+.opt-b{padding:13px 15px 14px;flex:1;display:flex;flex-direction:column;gap:11px}
+.opt-how{font-size:12.5px;line-height:1.6;color:#475569}
+.opt-how code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1px 4px;border-radius:3px;
+     font-family:'SF Mono',Menlo,monospace;font-size:11px;color:#0F172A;word-break:break-all}
+.opt-l{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px}
+.opt-l li{position:relative;padding-left:20px;font-size:12.5px;line-height:1.55;color:#334155}
+.opt-l li::before{position:absolute;left:0;top:0;font-size:12px;font-weight:700}
+.opt-l li.p::before{content:'✓';color:#059669}
+.opt-l li.c::before{content:'✕';color:#DC2626}
+.opt-cost{margin-top:auto;display:flex;gap:7px;flex-wrap:wrap;padding-top:4px}
+.cst{font-size:10px;font-weight:600;padding:4px 8px;border-radius:6px;background:#F1F5F9;
+     color:#475569;border:1px solid #E2E8F0;line-height:1.3}
+.cst b{font-weight:700;color:#0F172A}
+.cst.hi{background:#FEF3C7;border-color:#FDE68A;color:#78350F}
+.cst.hi b{color:#78350F}
+.cst.lo{background:#ECFDF5;border-color:#A7F3D0;color:#065F46}
+.cst.lo b{color:#065F46}
+.dec-rec{margin-top:15px;background:#EEF2FF;border:1px solid #C7D2FE;border-left:4px solid #4F46E5;
+     border-radius:10px;padding:14px 17px;font-size:13px;line-height:1.7;color:#312E81}
+.dec-rec .rt{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+     color:#4F46E5;margin-bottom:7px}
+.dec-rec strong{color:#1E1B4B}
+.dec-rec code{background:rgba(255,255,255,.75);border:1px solid #C7D2FE;padding:1.5px 5px;
+     border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:11.5px}
+.dec-rec p{margin:0 0 9px}.dec-rec p:last-child{margin:0}
+.dec-who{margin-top:11px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+     font-size:11.5px;color:#64748B}
+.dec-who .wk{font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:.5px;font-size:9.5px}
+.dec-who .wv2{background:#fff;border:1px solid #E2E8F0;padding:4px 10px;border-radius:20px;font-weight:600;color:#334155}
+
+</style>
+<div class="container">
+<div class="top-nav"><a href="index.html" class="back-btn"><span>←</span> <span data-en="Timeline" data-pt="Timeline">Timeline</span></a><div class="lang-sw" role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">EN-US</button><button type="button" data-lang="pt" aria-pressed="false">PT-BR</button></div></div>
+<div class="hero"><div class="kicker"><span class="code">D1</span><span class="wv" data-en="wave 3" data-pt="onda 3">wave 3</span><span class="st st-planned" data-en="Planned" data-pt="Planejada">Planned</span></div><h1 data-en="Developer documentation" data-pt="Documentação para desenvolvedor">Developer documentation</h1><div class="goal" data-en="A developer who has never touched the worker can &lt;b&gt;add a node type correctly&lt;/b&gt;, and a developer debugging a run can &lt;b&gt;find where it went wrong&lt;/b&gt;." data-pt="Um desenvolvedor que nunca tocou no worker consegue &lt;b&gt;adicionar um tipo de node corretamente&lt;/b&gt;, e um que está depurando um run consegue &lt;b&gt;achar onde deu errado&lt;/b&gt;.">A developer who has never touched the worker can <b>add a node type correctly</b>, and a developer debugging a run can <b>find where it went wrong</b>.</div><div class="hero-links"><a href="../complemento/fase-6.html"><span data-en="Where this lands in the flow →" data-pt="Onde isto entra no fluxo →">Where this lands in the flow →</span></a><a href="index.html#w3"><span data-en="Other tasks in wave 3 →" data-pt="Outras tasks da onda 3 →">Other tasks in wave 3 →</span></a><a href="task-B1.html"><span data-en="Next: B1 — One reference per execution, not per node →" data-pt="Próxima: B1 — Uma referência por execução, não por node →">Next: B1 — One reference per execution, not per node →</span></a></div></div>
+<div class="glance"><div class="gl crit"><div class="k" data-en="Failure mode" data-pt="Modo de falha">Failure mode</div><div class="v" data-en="Invisible in review" data-pt="Invisível na revisão">Invisible in review</div><div class="n" data-en="Seven load-bearing layers. Miss one and you get a node that appears to run and does nothing — obvious only at runtime." data-pt="Sete camadas estruturais. Esqueça uma e você tem um node que parece rodar e não faz nada — óbvio só em execução.">Seven load-bearing layers. Miss one and you get a node that appears to run and does nothing — obvious only at runtime.</div></div><div class="gl dep"><div class="k" data-en="Depends on" data-pt="Depende de">Depends on</div><div class="v" data-en="Nothing" data-pt="Nada">Nothing</div><div class="n" data-en="It runs alongside the whole epic: each A-task updates it, this task builds the frame and keeps it honest." data-pt="Roda junto com o épico inteiro: cada task do trilho A a atualiza, esta task monta a estrutura e a mantém honesta.">It runs alongside the whole epic: each A-task updates it, this task builds the frame and keeps it honest.</div></div><div class="gl wave"><div class="k" data-en="Wave" data-pt="Onda">Wave</div><div class="v" data-en="Wave 3 · continuous" data-pt="Onda 3 · contínua">Wave 3 · continuous</div><div class="n" data-en="Each node&amp;#x27;s page is part of &lt;em&gt;its own&lt;/em&gt; done — PLAN §3.4 point 7. This task does not backfill them at the end." data-pt="A página de cada node faz parte do done &lt;em&gt;dele&lt;/em&gt; — PLAN §3.4 ponto 7. Esta task não preenche isso no fim.">Each node&#x27;s page is part of <em>its own</em> done — PLAN §3.4 point 7. This task does not backfill them at the end.</div></div><div class="gl ship"><div class="k" data-en="Starting point" data-pt="Ponto de partida">Starting point</div><div class="v" data-en="An audit, not a blank page" data-pt="Uma auditoria, não uma página em branco">An audit, not a blank page</div><div class="n" data-en="&lt;code&gt;docs/worker/&lt;/code&gt; is already populated — and it describes a system &lt;strong&gt;more migrated than the one that runs&lt;/strong&gt;." data-pt="O &lt;code&gt;docs/worker/&lt;/code&gt; já está povoado — e descreve um sistema &lt;strong&gt;mais migrado do que o que roda&lt;/strong&gt;."><code>docs/worker/</code> is already populated — and it describes a system <strong>more migrated than the one that runs</strong>.</div></div></div>
+<div class="lede" data-en="&lt;p&gt;The registration chain is &lt;strong&gt;seven layers and all of them are load-bearing&lt;/strong&gt;: module, enum entry, &lt;code&gt;temporal.module.ts&lt;/code&gt;, &lt;code&gt;activities.service.ts&lt;/code&gt;, the &lt;code&gt;worker.service.ts&lt;/code&gt; binding, the &lt;code&gt;workflows/configs.ts&lt;/code&gt; proxy, and the &lt;code&gt;process-single-node.workflow.ts&lt;/code&gt; case.&lt;/p&gt;&lt;p&gt;Miss one and you get &lt;strong&gt;a node that appears to run and does nothing&lt;/strong&gt;, or a workflow that throws &lt;code&gt;&quot;Node type X not supported&quot;&lt;/code&gt; from the default branch. That failure is &lt;em&gt;invisible in review&lt;/em&gt; and obvious only at runtime — which is exactly why this is a task and not a README line.&lt;/p&gt;" data-pt="&lt;p&gt;A cadeia de registro tem &lt;strong&gt;sete camadas e todas são estruturais&lt;/strong&gt;: módulo, entrada no enum, &lt;code&gt;temporal.module.ts&lt;/code&gt;, &lt;code&gt;activities.service.ts&lt;/code&gt;, o binding em &lt;code&gt;worker.service.ts&lt;/code&gt;, o proxy em &lt;code&gt;workflows/configs.ts&lt;/code&gt;, e o case em &lt;code&gt;process-single-node.workflow.ts&lt;/code&gt;.&lt;/p&gt;&lt;p&gt;Esqueça uma e você tem &lt;strong&gt;um node que parece rodar e não faz nada&lt;/strong&gt;, ou um workflow que lança &lt;code&gt;&quot;Node type X not supported&quot;&lt;/code&gt; pelo ramo default. Essa falha é &lt;em&gt;invisível na revisão&lt;/em&gt; e óbvia só em execução — que é exatamente o motivo de isto ser uma task, e não uma linha de README.&lt;/p&gt;"><p>The registration chain is <strong>seven layers and all of them are load-bearing</strong>: module, enum entry, <code>temporal.module.ts</code>, <code>activities.service.ts</code>, the <code>worker.service.ts</code> binding, the <code>workflows/configs.ts</code> proxy, and the <code>process-single-node.workflow.ts</code> case.</p><p>Miss one and you get <strong>a node that appears to run and does nothing</strong>, or a workflow that throws <code>"Node type X not supported"</code> from the default branch. That failure is <em>invisible in review</em> and obvious only at runtime — which is exactly why this is a task and not a README line.</p></div>
+<div class="sec-label"><span class="n">1</span><h2 data-en="What already exists — and why the first job is an audit" data-pt="O que já existe — e por que o primeiro trabalho é uma auditoria">What already exists — and why the first job is an audit</h2><span class="rule"></span></div>
+<table class="entry-table"><thead><tr><th><span data-en="Where" data-pt="Onde">Where</span></th><th><span data-en="Pages that exist today" data-pt="Páginas que existem hoje">Pages that exist today</span></th><th><span data-en="What the audit has to answer" data-pt="O que a auditoria precisa responder">What the audit has to answer</span></th></tr></thead><tbody>
+<tr><td class="rt lbl"><span data-en="Top level" data-pt="Nível raiz">Top level</span></td><td><span data-en="&lt;code&gt;overview.mdx&lt;/code&gt;, &lt;code&gt;development.mdx&lt;/code&gt;, &lt;code&gt;environment-variables.mdx&lt;/code&gt;" data-pt="&lt;code&gt;overview.mdx&lt;/code&gt;, &lt;code&gt;development.mdx&lt;/code&gt;, &lt;code&gt;environment-variables.mdx&lt;/code&gt;"><code>overview.mdx</code>, <code>development.mdx</code>, <code>environment-variables.mdx</code></span></td><td><span data-en="Does each page describe &lt;strong&gt;production&lt;/strong&gt;, a &lt;strong&gt;branch&lt;/strong&gt;, or an &lt;strong&gt;intention&lt;/strong&gt;?" data-pt="Cada página descreve a &lt;strong&gt;produção&lt;/strong&gt;, um &lt;strong&gt;branch&lt;/strong&gt;, ou uma &lt;strong&gt;intenção&lt;/strong&gt;?">Does each page describe <strong>production</strong>, a <strong>branch</strong>, or an <strong>intention</strong>?</span></td></tr>
+<tr><td class="rt lbl"><span data-en="&lt;code&gt;activities/&lt;/code&gt;" data-pt="&lt;code&gt;activities/&lt;/code&gt;"><code>activities/</code></span></td><td><span data-en="&lt;code&gt;charge-tokens&lt;/code&gt;, &lt;code&gt;generate-file&lt;/code&gt;, &lt;code&gt;validate-model-access&lt;/code&gt;, &lt;code&gt;notify-status&lt;/code&gt;, &lt;code&gt;generate-execution-logs&lt;/code&gt;, &lt;code&gt;get-info-database&lt;/code&gt;, &lt;code&gt;node-execution-error&lt;/code&gt;" data-pt="&lt;code&gt;charge-tokens&lt;/code&gt;, &lt;code&gt;generate-file&lt;/code&gt;, &lt;code&gt;validate-model-access&lt;/code&gt;, &lt;code&gt;notify-status&lt;/code&gt;, &lt;code&gt;generate-execution-logs&lt;/code&gt;, &lt;code&gt;get-info-database&lt;/code&gt;, &lt;code&gt;node-execution-error&lt;/code&gt;"><code>charge-tokens</code>, <code>generate-file</code>, <code>validate-model-access</code>, <code>notify-status</code>, <code>generate-execution-logs</code>, <code>get-info-database</code>, <code>node-execution-error</code></span></td><td><span data-en="Same question — and note that &lt;code&gt;store-payload&lt;/code&gt; and &lt;code&gt;get-payload&lt;/code&gt;, the claim check, have &lt;strong&gt;no page at all&lt;/strong&gt;." data-pt="Mesma pergunta — e note que &lt;code&gt;store-payload&lt;/code&gt; e &lt;code&gt;get-payload&lt;/code&gt;, o claim check, &lt;strong&gt;não têm página nenhuma&lt;/strong&gt;.">Same question — and note that <code>store-payload</code> and <code>get-payload</code>, the claim check, have <strong>no page at all</strong>.</span></td></tr>
+<tr><td class="rt lbl"><span data-en="&lt;code&gt;node/&lt;/code&gt;" data-pt="&lt;code&gt;node/&lt;/code&gt;"><code>node/</code></span></td><td><span data-en="&lt;code&gt;api-caller&lt;/code&gt;, &lt;code&gt;audio-transcriber&lt;/code&gt;, &lt;code&gt;counter&lt;/code&gt;, &lt;code&gt;display-box&lt;/code&gt;, &lt;code&gt;large-memory-dynamic-pod&lt;/code&gt;, &lt;code&gt;math-function&lt;/code&gt;, &lt;code&gt;mcp&lt;/code&gt;, &lt;code&gt;scripting&lt;/code&gt;, &lt;code&gt;sql-querier&lt;/code&gt;, &lt;code&gt;text-generator&lt;/code&gt;" data-pt="&lt;code&gt;api-caller&lt;/code&gt;, &lt;code&gt;audio-transcriber&lt;/code&gt;, &lt;code&gt;counter&lt;/code&gt;, &lt;code&gt;display-box&lt;/code&gt;, &lt;code&gt;large-memory-dynamic-pod&lt;/code&gt;, &lt;code&gt;math-function&lt;/code&gt;, &lt;code&gt;mcp&lt;/code&gt;, &lt;code&gt;scripting&lt;/code&gt;, &lt;code&gt;sql-querier&lt;/code&gt;, &lt;code&gt;text-generator&lt;/code&gt;"><code>api-caller</code>, <code>audio-transcriber</code>, <code>counter</code>, <code>display-box</code>, <code>large-memory-dynamic-pod</code>, <code>math-function</code>, <code>mcp</code>, <code>scripting</code>, <code>sql-querier</code>, <code>text-generator</code></span></td><td><span class="pill no"><span data-en="Documents types the back does not route" data-pt="Documenta tipos que o back não roteia">Documents types the back does not route</span></span></td></tr>
+<tr><td class="rt lbl"><span data-en="&lt;code&gt;pt-br/&lt;/code&gt;" data-pt="&lt;code&gt;pt-br/&lt;/code&gt;"><code>pt-br/</code></span></td><td><span data-en="Only &lt;code&gt;environment-variables.mdx&lt;/code&gt;" data-pt="Só &lt;code&gt;environment-variables.mdx&lt;/code&gt;">Only <code>environment-variables.mdx</code></span></td><td><span class="pill no"><span data-en="The pt-br side is a stub" data-pt="O lado pt-br é um esboço">The pt-br side is a stub</span></span></td></tr>
+</tbody></table>
+<div class="lede" style="border-left-color:#6366F1"><div data-en="The spec leaves &lt;strong&gt;no open decision&lt;/strong&gt; here — the six subjects, the two languages and the Mintlify convention are all settled. What it leaves is an &lt;em&gt;obligation&lt;/em&gt;: the audit comes first, because a page that confidently describes a system we do not run is worse than a missing page." data-pt="A spec &lt;strong&gt;não deixa decisão em aberto&lt;/strong&gt; aqui — os seis assuntos, os dois idiomas e a convenção Mintlify estão todos definidos. O que ela deixa é uma &lt;em&gt;obrigação&lt;/em&gt;: a auditoria vem primeiro, porque uma página que descreve com segurança um sistema que não rodamos é pior que uma página ausente.">The spec leaves <strong>no open decision</strong> here — the six subjects, the two languages and the Mintlify convention are all settled. What it leaves is an <em>obligation</em>: the audit comes first, because a page that confidently describes a system we do not run is worse than a missing page.</div></div>
+<div class="sec-label"><span class="n">2</span><h2 data-en="What the task does: the audit, then six subjects" data-pt="O que a task faz: a auditoria, e depois seis assuntos">What the task does: the audit, then six subjects</h2><span class="rule"></span></div>
+<div class="part"><div class="part-head"><span class="num">1</span><span class="t"><span data-en="The audit — production, branch, or intention" data-pt="A auditoria — produção, branch, ou intenção">The audit — production, branch, or intention</span></span><span class="loc">docs/worker/**</span></div><div class="part-body"><div class="purpose" data-en="Establish, page by page, which system each existing page is actually describing." data-pt="Estabelecer, página a página, qual sistema cada página existente de fato descreve.">Establish, page by page, which system each existing page is actually describing.</div><div data-en="&lt;p&gt;This is not greenfield. &lt;code&gt;docs/worker/&lt;/code&gt; is populated and must be &lt;strong&gt;audited and extended, not recreated&lt;/strong&gt;. Two gaps are visible from the listing alone: the &lt;code&gt;node/&lt;/code&gt; pages document types the back does not route — &lt;code&gt;sql-querier&lt;/code&gt; and &lt;code&gt;audio-transcriber&lt;/code&gt; are &lt;code&gt;A3&lt;/code&gt;&amp;#x27;s &lt;strong&gt;stranded modules&lt;/strong&gt; — and &lt;code&gt;pt-br/&lt;/code&gt; contains only &lt;code&gt;environment-variables.mdx&lt;/code&gt;.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;So the docs already describe a system more migrated than the one that runs.&lt;/strong&gt; The spec also lists &lt;code&gt;mcp&lt;/code&gt; among them; the re-validation of 2026-08-24 records that &lt;code&gt;mcpNode&lt;/code&gt; shipped completely, which moved that page from &lt;em&gt;intention&lt;/em&gt; to &lt;em&gt;production&lt;/em&gt; without anyone editing it. That is exactly the drift the audit exists to catch — in both directions.&lt;/p&gt;" data-pt="&lt;p&gt;Isto não é terreno vazio. O &lt;code&gt;docs/worker/&lt;/code&gt; está povoado e precisa ser &lt;strong&gt;auditado e estendido, não recriado&lt;/strong&gt;. Duas lacunas aparecem só na listagem: as páginas de &lt;code&gt;node/&lt;/code&gt; documentam tipos que o back não roteia — &lt;code&gt;sql-querier&lt;/code&gt; e &lt;code&gt;audio-transcriber&lt;/code&gt; são os &lt;strong&gt;módulos encalhados&lt;/strong&gt; da &lt;code&gt;A3&lt;/code&gt; — e o &lt;code&gt;pt-br/&lt;/code&gt; tem só o &lt;code&gt;environment-variables.mdx&lt;/code&gt;.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;Ou seja: a documentação já descreve um sistema mais migrado do que o que roda.&lt;/strong&gt; A spec também lista o &lt;code&gt;mcp&lt;/code&gt; entre eles; a re-validação de 2026-08-24 registra que o &lt;code&gt;mcpNode&lt;/code&gt; foi entregue por completo, o que moveu aquela página de &lt;em&gt;intenção&lt;/em&gt; para &lt;em&gt;produção&lt;/em&gt; sem ninguém editá-la. É exatamente esse desvio que a auditoria existe para pegar — nos dois sentidos.&lt;/p&gt;"><p>This is not greenfield. <code>docs/worker/</code> is populated and must be <strong>audited and extended, not recreated</strong>. Two gaps are visible from the listing alone: the <code>node/</code> pages document types the back does not route — <code>sql-querier</code> and <code>audio-transcriber</code> are <code>A3</code>&#x27;s <strong>stranded modules</strong> — and <code>pt-br/</code> contains only <code>environment-variables.mdx</code>.</p><p><strong>So the docs already describe a system more migrated than the one that runs.</strong> The spec also lists <code>mcp</code> among them; the re-validation of 2026-08-24 records that <code>mcpNode</code> shipped completely, which moved that page from <em>intention</em> to <em>production</em> without anyone editing it. That is exactly the drift the audit exists to catch — in both directions.</p></div><div class="ba"><div class="now"><h5>⚠ <span data-en="How it is today" data-pt="Como está hoje">How it is today</span></h5><p data-en="A reader cannot tell whether a page describes production, a branch or a plan — and two of the documented node types are not routed by the back at all." data-pt="Um leitor não sabe dizer se uma página descreve produção, um branch ou um plano — e dois dos tipos documentados não são roteados pelo back.">A reader cannot tell whether a page describes production, a branch or a plan — and two of the documented node types are not routed by the back at all.</p></div><div class="nxt"><h5>✓ <span data-en="How it will be" data-pt="Como fica">How it will be</span></h5><p data-en="Every page states which of the three it describes, and the audit result is &lt;strong&gt;recorded&lt;/strong&gt; — that record is part of the definition of done." data-pt="Cada página declara qual das três descreve, e o resultado da auditoria fica &lt;strong&gt;registrado&lt;/strong&gt; — esse registro faz parte da definição de pronto.">Every page states which of the three it describes, and the audit result is <strong>recorded</strong> — that record is part of the definition of done.</p></div></div><div class="callout mig"><span class="ct" data-en="Not to be confused with decision D1" data-pt="Não confundir com a decisão D1">Not to be confused with decision D1</span><div data-en="&lt;p&gt;This page is &lt;strong&gt;task &lt;code&gt;D1&lt;/code&gt;&lt;/strong&gt; — developer documentation. &lt;strong&gt;Decision &lt;code&gt;D1&lt;/code&gt;&lt;/strong&gt; in &lt;code&gt;PLAN.md&lt;/code&gt; §7 is a different thing entirely: shared package versus copy-port for the scheduler and the substitution service. It belongs to &lt;code&gt;B2&lt;/code&gt; and it gates &lt;strong&gt;Wave 4&lt;/strong&gt;.&lt;/p&gt;&lt;p&gt;Same letter, unrelated subjects. Anyone writing about either should say which one they mean.&lt;/p&gt;" data-pt="&lt;p&gt;Esta página é a &lt;strong&gt;task &lt;code&gt;D1&lt;/code&gt;&lt;/strong&gt; — documentação para desenvolvedor. A &lt;strong&gt;decisão &lt;code&gt;D1&lt;/code&gt;&lt;/strong&gt; no &lt;code&gt;PLAN.md&lt;/code&gt; §7 é outra coisa: pacote compartilhado versus porte-cópia para o scheduler e o serviço de substituição. Ela pertence à &lt;code&gt;B2&lt;/code&gt; e trava a &lt;strong&gt;Onda 4&lt;/strong&gt;.&lt;/p&gt;&lt;p&gt;Mesma letra, assuntos sem relação. Quem escrever sobre qualquer uma delas deve dizer de qual está falando.&lt;/p&gt;"><p>This page is <strong>task <code>D1</code></strong> — developer documentation. <strong>Decision <code>D1</code></strong> in <code>PLAN.md</code> §7 is a different thing entirely: shared package versus copy-port for the scheduler and the substitution service. It belongs to <code>B2</code> and it gates <strong>Wave 4</strong>.</p><p>Same letter, unrelated subjects. Anyone writing about either should say which one they mean.</p></div></div></div></div>
+<div class="part"><div class="part-head"><span class="num">2</span><span class="t"><span data-en="Node execution lifecycle" data-pt="Ciclo de vida da execução de um node">Node execution lifecycle</span></span><span class="loc" data-en="the published pipeline artifacts" data-pt="os artefatos publicados do pipeline">the published pipeline artifacts</span></div><div class="part-body"><div class="purpose" data-en="Give the person debugging a run one page that names every stop along the path." data-pt="Dar a quem depura um run uma página que nomeia cada parada do caminho.">Give the person debugging a run one page that names every stop along the path.</div><div data-en="&lt;p&gt;The path a run takes: entry endpoint, &lt;code&gt;node_executions&lt;/code&gt;, the Temporal dispatch, &lt;code&gt;fetchNodeRow&lt;/code&gt;, execute, &lt;code&gt;persistNodeSuccess&lt;/code&gt;, Redis, socket.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;This is already drawn.&lt;/strong&gt; Reuse the published pipeline diagrams as the diagram source rather than describing them again in prose — a prose copy of a diagram is a second thing to keep in sync.&lt;/p&gt;" data-pt="&lt;p&gt;O caminho que um run percorre: endpoint de entrada, &lt;code&gt;node_executions&lt;/code&gt;, o dispatch do Temporal, &lt;code&gt;fetchNodeRow&lt;/code&gt;, execução, &lt;code&gt;persistNodeSuccess&lt;/code&gt;, Redis, socket.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;Isso já está desenhado.&lt;/strong&gt; Reaproveite os diagramas publicados do pipeline como fonte, em vez de descrevê-los de novo em prosa — uma cópia em prosa de um diagrama é mais uma coisa para manter sincronizada.&lt;/p&gt;"><p>The path a run takes: entry endpoint, <code>node_executions</code>, the Temporal dispatch, <code>fetchNodeRow</code>, execute, <code>persistNodeSuccess</code>, Redis, socket.</p><p><strong>This is already drawn.</strong> Reuse the published pipeline diagrams as the diagram source rather than describing them again in prose — a prose copy of a diagram is a second thing to keep in sync.</p></div><div class="ba"><div class="now"><h5>⚠ <span data-en="How it is today" data-pt="Como está hoje">How it is today</span></h5><p data-en="The listing above has no lifecycle page, so the order of the stops is reconstructed from code by whoever needs it, each time." data-pt="A listagem acima não tem página de ciclo de vida, então a ordem das paradas é reconstruída a partir do código por quem precisa, toda vez.">The listing above has no lifecycle page, so the order of the stops is reconstructed from code by whoever needs it, each time.</p></div><div class="nxt"><h5>✓ <span data-en="How it will be" data-pt="Como fica">How it will be</span></h5><p data-en="One page, reusing the published diagrams, &lt;strong&gt;with the commit SHA stated on it&lt;/strong&gt; so a reader knows what it was true of." data-pt="Uma página, reaproveitando os diagramas publicados, &lt;strong&gt;com o SHA do commit declarado nela&lt;/strong&gt;, para o leitor saber de quando aquilo era verdade.">One page, reusing the published diagrams, <strong>with the commit SHA stated on it</strong> so a reader knows what it was true of.</p></div></div></div></div>
+<div class="part"><div class="part-head"><span class="num">3</span><span class="t"><span data-en="How to add a node type — the seven layers" data-pt="Como adicionar um tipo de node — as sete camadas">How to add a node type — the seven layers</span></span><span class="loc" data-en="the registration chain" data-pt="a cadeia de registro">the registration chain</span></div><div class="part-body"><div class="purpose" data-en="Turn the chain into something a person follows while working, with the failure each omission produces." data-pt="Transformar a cadeia em algo que a pessoa segue enquanto trabalha, com a falha que cada omissão produz.">Turn the chain into something a person follows while working, with the failure each omission produces.</div><div data-en="&lt;p&gt;The seven layers, &lt;strong&gt;in order&lt;/strong&gt;, each with the failure its omission produces. Written as a &lt;strong&gt;checklist someone can follow while working&lt;/strong&gt;, not as an essay — the reader is mid-task with an editor open, not reading for background.&lt;/p&gt;&lt;p&gt;The two failures to name explicitly are the ones the chain actually produces: a node that &lt;em&gt;appears to run and does nothing&lt;/em&gt;, and &lt;code&gt;&quot;Node type X not supported&quot;&lt;/code&gt; thrown from the default branch of the workflow.&lt;/p&gt;" data-pt="&lt;p&gt;As sete camadas, &lt;strong&gt;em ordem&lt;/strong&gt;, cada uma com a falha que sua omissão produz. Escrita como &lt;strong&gt;checklist que alguém segue enquanto trabalha&lt;/strong&gt;, não como ensaio — o leitor está no meio da task com o editor aberto, não lendo para se informar.&lt;/p&gt;&lt;p&gt;As duas falhas a nomear explicitamente são as que a cadeia de fato produz: um node que &lt;em&gt;parece rodar e não faz nada&lt;/em&gt;, e o &lt;code&gt;&quot;Node type X not supported&quot;&lt;/code&gt; lançado pelo ramo default do workflow.&lt;/p&gt;"><p>The seven layers, <strong>in order</strong>, each with the failure its omission produces. Written as a <strong>checklist someone can follow while working</strong>, not as an essay — the reader is mid-task with an editor open, not reading for background.</p><p>The two failures to name explicitly are the ones the chain actually produces: a node that <em>appears to run and does nothing</em>, and <code>"Node type X not supported"</code> thrown from the default branch of the workflow.</p></div><div class="ba"><div class="now"><h5>⚠ <span data-en="How it is today" data-pt="Como está hoje">How it is today</span></h5><p data-en="Seven load-bearing steps live in the heads of the people who have done it, and the omission is invisible until runtime." data-pt="Sete passos estruturais vivem na cabeça de quem já fez, e a omissão é invisível até a execução.">Seven load-bearing steps live in the heads of the people who have done it, and the omission is invisible until runtime.</p></div><div class="nxt"><h5>✓ <span data-en="How it will be" data-pt="Como fica">How it will be</span></h5><p data-en="A checklist with the failure attached to each step, tested by someone who had never done it before." data-pt="Um checklist com a falha ligada a cada passo, testado por alguém que nunca tinha feito aquilo.">A checklist with the failure attached to each step, tested by someone who had never done it before.</p></div></div></div></div>
+<div class="part"><div class="part-head"><span class="num">4</span><span class="t"><span data-en="Callback reference and error taxonomy" data-pt="Referência de callbacks e taxonomia de erros">Callback reference and error taxonomy</span></span><span class="loc" data-en="/worker/* callbacks · NodeError subclasses" data-pt="callbacks /worker/* · subclasses de NodeError">/worker/* callbacks · NodeError subclasses</span></div><div class="part-body"><div class="purpose" data-en="Document the two contracts a node author gets wrong most expensively." data-pt="Documentar os dois contratos que o autor de um node erra do jeito mais caro.">Document the two contracts a node author gets wrong most expensively.</div><div data-en="&lt;p&gt;&lt;strong&gt;Callbacks:&lt;/strong&gt; &lt;code&gt;/worker/store-payload&lt;/code&gt;, &lt;code&gt;/worker/get-payload&lt;/code&gt;, &lt;code&gt;/worker/validate-model-access&lt;/code&gt;, &lt;code&gt;/worker/charge-tokens&lt;/code&gt;, &lt;code&gt;/worker/generate-file&lt;/code&gt;, plus whatever &lt;code&gt;A7&lt;/code&gt; adds. Request, response, &lt;strong&gt;when to use, and when not to&lt;/strong&gt;. The first two — the claim check — have no page in the listing above at all.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;Errors:&lt;/strong&gt; &lt;code&gt;UserConfigError&lt;/code&gt;, &lt;code&gt;IntegrationError&lt;/code&gt;, &lt;code&gt;ProviderError&lt;/code&gt;, &lt;code&gt;TimeoutError&lt;/code&gt;, &lt;code&gt;SystemError&lt;/code&gt; — which to throw when, and &lt;strong&gt;what each does to retries&lt;/strong&gt;. Getting this wrong makes &lt;em&gt;a user&amp;#x27;s typo retry for thirty minutes&lt;/em&gt;, which is the sort of defect that looks like an outage and bills like one.&lt;/p&gt;" data-pt="&lt;p&gt;&lt;strong&gt;Callbacks:&lt;/strong&gt; &lt;code&gt;/worker/store-payload&lt;/code&gt;, &lt;code&gt;/worker/get-payload&lt;/code&gt;, &lt;code&gt;/worker/validate-model-access&lt;/code&gt;, &lt;code&gt;/worker/charge-tokens&lt;/code&gt;, &lt;code&gt;/worker/generate-file&lt;/code&gt;, mais o que a &lt;code&gt;A7&lt;/code&gt; acrescentar. Requisição, resposta, &lt;strong&gt;quando usar e quando não usar&lt;/strong&gt;. Os dois primeiros — o claim check — não têm página nenhuma na listagem acima.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;Erros:&lt;/strong&gt; &lt;code&gt;UserConfigError&lt;/code&gt;, &lt;code&gt;IntegrationError&lt;/code&gt;, &lt;code&gt;ProviderError&lt;/code&gt;, &lt;code&gt;TimeoutError&lt;/code&gt;, &lt;code&gt;SystemError&lt;/code&gt; — qual lançar quando, e &lt;strong&gt;o que cada um faz com os retries&lt;/strong&gt;. Errar isso faz &lt;em&gt;o erro de digitação de um usuário ser retentado por trinta minutos&lt;/em&gt;, que é o tipo de defeito que parece queda e cobra como tal.&lt;/p&gt;"><p><strong>Callbacks:</strong> <code>/worker/store-payload</code>, <code>/worker/get-payload</code>, <code>/worker/validate-model-access</code>, <code>/worker/charge-tokens</code>, <code>/worker/generate-file</code>, plus whatever <code>A7</code> adds. Request, response, <strong>when to use, and when not to</strong>. The first two — the claim check — have no page in the listing above at all.</p><p><strong>Errors:</strong> <code>UserConfigError</code>, <code>IntegrationError</code>, <code>ProviderError</code>, <code>TimeoutError</code>, <code>SystemError</code> — which to throw when, and <strong>what each does to retries</strong>. Getting this wrong makes <em>a user&#x27;s typo retry for thirty minutes</em>, which is the sort of defect that looks like an outage and bills like one.</p></div><div class="ba"><div class="now"><h5>⚠ <span data-en="How it is today" data-pt="Como está hoje">How it is today</span></h5><p data-en="The claim-check callbacks are undocumented, and the retry consequence of each error class is folklore." data-pt="Os callbacks do claim check não estão documentados, e a consequência de retry de cada classe de erro é folclore.">The claim-check callbacks are undocumented, and the retry consequence of each error class is folklore.</p></div><div class="nxt"><h5>✓ <span data-en="How it will be" data-pt="Como fica">How it will be</span></h5><p data-en="Both are reference pages: every callback with its request and response, every error class with what it does to retries." data-pt="Os dois viram páginas de referência: cada callback com requisição e resposta, cada classe de erro com o que faz com os retries.">Both are reference pages: every callback with its request and response, every error class with what it does to retries.</p></div></div></div></div>
+<div class="part"><div class="part-head"><span class="num">5</span><span class="t"><span data-en="Persistence contract — and why parallelism is safe" data-pt="Contrato de persistência — e por que o paralelismo é seguro">Persistence contract — and why parallelism is safe</span></span><span class="loc" data-en="own-row writes · JSONB merge · claim check above 256 KB" data-pt="escrita na própria linha · merge JSONB · claim check acima de 256 KB">own-row writes · JSONB merge · claim check above 256 KB</span></div><div class="part-body"><div class="purpose" data-en="Write down the property the whole parallel plan rests on, before Wave 5 depends on it being understood." data-pt="Registrar a propriedade em que todo o plano paralelo se apoia, antes de a Onda 5 depender de ela ser entendida.">Write down the property the whole parallel plan rests on, before Wave 5 depends on it being understood.</div><div data-en="&lt;p&gt;Own-row writes only, the JSONB merge, and the claim check above 256 KB — &lt;strong&gt;and why this is what makes parallelism safe&lt;/strong&gt;. A node author who writes into another node&amp;#x27;s row breaks a guarantee they never knew they had, and the failure appears much later, in a parallel run, as a lost update.&lt;/p&gt;" data-pt="&lt;p&gt;Escritas apenas na própria linha, o merge de JSONB, e o claim check acima de 256 KB — &lt;strong&gt;e por que é isso que torna o paralelismo seguro&lt;/strong&gt;. Um autor de node que escreve na linha de outro node quebra uma garantia que nem sabia ter, e a falha aparece bem depois, num run paralelo, como uma atualização perdida.&lt;/p&gt;"><p>Own-row writes only, the JSONB merge, and the claim check above 256 KB — <strong>and why this is what makes parallelism safe</strong>. A node author who writes into another node&#x27;s row breaks a guarantee they never knew they had, and the failure appears much later, in a parallel run, as a lost update.</p></div><div class="ba"><div class="now"><h5>⚠ <span data-en="How it is today" data-pt="Como está hoje">How it is today</span></h5><p data-en="The rule exists in the code and in the review, and a new node module can violate it without anyone noticing until a parallel run." data-pt="A regra existe no código e na review, e um módulo de node novo pode violá-la sem ninguém notar até um run paralelo.">The rule exists in the code and in the review, and a new node module can violate it without anyone noticing until a parallel run.</p></div><div class="nxt"><h5>✓ <span data-en="How it will be" data-pt="Como fica">How it will be</span></h5><p data-en="The rule is stated with its reason, so the person about to break it reads why the shortcut is not one." data-pt="A regra está declarada com o motivo, para que quem vai quebrá-la leia por que o atalho não é atalho.">The rule is stated with its reason, so the person about to break it reads why the shortcut is not one.</p></div></div></div></div>
+<div class="part"><div class="part-head"><span class="num">6</span><span class="t"><span data-en="Running and debugging locally" data-pt="Rodar e depurar localmente">Running and debugging locally</span></span><span class="loc">docker-compose.devdb.yaml · Temporal · node_executions</span></div><div class="part-body"><div class="purpose" data-en="Get a developer from “it did not work” to the actual failure without asking someone who already knows." data-pt="Levar um desenvolvedor de “não funcionou” até a falha real sem perguntar a quem já sabe.">Get a developer from “it did not work” to the actual failure without asking someone who already knows.</div><div data-en="&lt;p&gt;The &lt;code&gt;docker-compose.devdb.yaml&lt;/code&gt; stack, finding a run in Temporal, reading &lt;code&gt;node_executions&lt;/code&gt;, and the worker&amp;#x27;s log surface. &lt;code&gt;development.mdx&lt;/code&gt; exists; the listing carries no page for the other three, which are exactly the steps someone needs at the moment a node silently does nothing.&lt;/p&gt;" data-pt="&lt;p&gt;A stack do &lt;code&gt;docker-compose.devdb.yaml&lt;/code&gt;, achar um run no Temporal, ler o &lt;code&gt;node_executions&lt;/code&gt;, e a superfície de log do worker. O &lt;code&gt;development.mdx&lt;/code&gt; existe; a listagem não tem página para os outros três, que são justamente os passos necessários no momento em que um node não faz nada em silêncio.&lt;/p&gt;"><p>The <code>docker-compose.devdb.yaml</code> stack, finding a run in Temporal, reading <code>node_executions</code>, and the worker&#x27;s log surface. <code>development.mdx</code> exists; the listing carries no page for the other three, which are exactly the steps someone needs at the moment a node silently does nothing.</p></div><div class="ba"><div class="now"><h5>⚠ <span data-en="How it is today" data-pt="Como está hoje">How it is today</span></h5><p data-en="Debugging a local run is passed on verbally, so the newest person is the slowest at exactly the failure that is hardest to see." data-pt="Depurar um run local é passado boca a boca, então a pessoa mais nova é a mais lenta justamente na falha mais difícil de ver.">Debugging a local run is passed on verbally, so the newest person is the slowest at exactly the failure that is hardest to see.</p></div><div class="nxt"><h5>✓ <span data-en="How it will be" data-pt="Como fica">How it will be</span></h5><p data-en="One page: bring the stack up, find the run, read the row, read the log. In &lt;strong&gt;en and pt-br&lt;/strong&gt;, like every other page here." data-pt="Uma página: subir a stack, achar o run, ler a linha, ler o log. Em &lt;strong&gt;en e pt-br&lt;/strong&gt;, como toda página daqui.">One page: bring the stack up, find the run, read the row, read the log. In <strong>en and pt-br</strong>, like every other page here.</p></div></div></div></div>
+<div class="sec-label"><span class="n">3</span><h2 data-en="How it is proved" data-pt="Como se prova">How it is proved</h2><span class="rule"></span></div>
+<div class="vcard"><div class="vcard-head">🔬 <span data-en="Verification" data-pt="Verificação">Verification</span></div><div class="vcard-body"><div class="vitem req"><div class="vn">1</div><div><div class="vt"><span data-en="Negative control — and it is a real one here" data-pt="Controle negativo — e aqui ele é de verdade">Negative control — and it is a real one here</span><span class="req-tag"><span data-en="required" data-pt="obrigatório">required</span></span></div><div class="vd" data-en="Have someone who has &lt;strong&gt;not&lt;/strong&gt; done it add a trivial node type following &lt;strong&gt;only the page&lt;/strong&gt;. If they produce a node that &lt;em&gt;silently does nothing&lt;/em&gt;, the page is wrong — that is the failure to look for, because it is the one the seven-layer chain actually produces. &lt;strong&gt;Record what they hit.&lt;/strong&gt;" data-pt="Peça a alguém que &lt;strong&gt;nunca&lt;/strong&gt; fez para adicionar um tipo de node trivial seguindo &lt;strong&gt;só a página&lt;/strong&gt;. Se essa pessoa produzir um node que &lt;em&gt;não faz nada em silêncio&lt;/em&gt;, a página está errada — é essa a falha a procurar, porque é a que a cadeia de sete camadas de fato produz. &lt;strong&gt;Registre onde a pessoa travou.&lt;/strong&gt;">Have someone who has <strong>not</strong> done it add a trivial node type following <strong>only the page</strong>. If they produce a node that <em>silently does nothing</em>, the page is wrong — that is the failure to look for, because it is the one the seven-layer chain actually produces. <strong>Record what they hit.</strong></div></div></div>
+<div class="vitem req"><div class="vn">2</div><div><div class="vt"><span data-en="Every reference resolves, and the SHA is stated" data-pt="Toda referência resolve, e o SHA está declarado">Every reference resolves, and the SHA is stated</span><span class="req-tag"><span data-en="required" data-pt="obrigatório">required</span></span></div><div class="vd" data-en="Every file path and line reference is checked against the current code at the time of writing, and the &lt;strong&gt;commit SHA is stated on the lifecycle page&lt;/strong&gt;. A stale line number in documentation is &lt;strong&gt;worse than none&lt;/strong&gt;: it sends the reader to confidently wrong code." data-pt="Todo caminho de arquivo e referência de linha é conferido contra o código atual no momento da escrita, e o &lt;strong&gt;SHA do commit é declarado na página de ciclo de vida&lt;/strong&gt;. Um número de linha desatualizado na documentação é &lt;strong&gt;pior que nenhum&lt;/strong&gt;: manda o leitor para um código errado com confiança.">Every file path and line reference is checked against the current code at the time of writing, and the <strong>commit SHA is stated on the lifecycle page</strong>. A stale line number in documentation is <strong>worse than none</strong>: it sends the reader to confidently wrong code.</div></div></div>
+<div class="vitem"><div class="vn">3</div><div><div class="vt"><span data-en="The audit is recorded, not just performed" data-pt="A auditoria fica registrada, não só feita">The audit is recorded, not just performed</span></div><div class="vd" data-en="Which existing page described &lt;strong&gt;production&lt;/strong&gt; and which did not — written down. The &lt;code&gt;node/&lt;/code&gt; pages for the stranded modules are the ones to state explicitly, in both directions." data-pt="Qual página existente descrevia a &lt;strong&gt;produção&lt;/strong&gt; e qual não descrevia — por escrito. As páginas de &lt;code&gt;node/&lt;/code&gt; dos módulos encalhados são as que precisam ser declaradas explicitamente, nos dois sentidos.">Which existing page described <strong>production</strong> and which did not — written down. The <code>node/</code> pages for the stranded modules are the ones to state explicitly, in both directions.</div></div></div>
+<div class="vitem"><div class="vn">4</div><div><div class="vt"><span data-en="&lt;code&gt;env-vars-sync&lt;/code&gt; if any page documents an env var" data-pt="&lt;code&gt;env-vars-sync&lt;/code&gt; se alguma página documentar variável de ambiente"><code>env-vars-sync</code> if any page documents an env var</span></div><div class="vd" data-en="The skill keeps &lt;code&gt;.env.example&lt;/code&gt;, the audit README and the Mintlify environment pages in step. A documented variable that exists in only one of the three is the next stale page." data-pt="A skill mantém &lt;code&gt;.env.example&lt;/code&gt;, o README da auditoria e as páginas de ambiente do Mintlify em sincronia. Uma variável documentada que existe em só um dos três é a próxima página desatualizada.">The skill keeps <code>.env.example</code>, the audit README and the Mintlify environment pages in step. A documented variable that exists in only one of the three is the next stale page.</div></div></div>
+</div></div>
+<div class="done"><span class="dt" data-en="✓  Done when" data-pt="✓  Pronto quando">✓  Done when</span><div class="dd" data-en="The audit is &lt;strong&gt;recorded&lt;/strong&gt; (which existing page described production and which did not), the six subjects are covered in &lt;strong&gt;en and pt-br&lt;/strong&gt;, &lt;strong&gt;someone unfamiliar has added a node type using only them&lt;/strong&gt;, and every reference resolves. Each A-track task adds its own node&amp;#x27;s page as part of PLAN §3.4 point 7 — &lt;strong&gt;this task does not backfill them at the end&lt;/strong&gt;." data-pt="A auditoria está &lt;strong&gt;registrada&lt;/strong&gt; (qual página existente descrevia a produção e qual não), os seis assuntos estão cobertos em &lt;strong&gt;en e pt-br&lt;/strong&gt;, &lt;strong&gt;alguém sem familiaridade adicionou um tipo de node usando só eles&lt;/strong&gt;, e toda referência resolve. Cada task do trilho A adiciona a página do próprio node como parte do PLAN §3.4 ponto 7 — &lt;strong&gt;esta task não preenche isso no fim&lt;/strong&gt;.">The audit is <strong>recorded</strong> (which existing page described production and which did not), the six subjects are covered in <strong>en and pt-br</strong>, <strong>someone unfamiliar has added a node type using only them</strong>, and every reference resolves. Each A-track task adds its own node&#x27;s page as part of PLAN §3.4 point 7 — <strong>this task does not backfill them at the end</strong>.</div></div>
+<div class="filesbox"><div class="filesbox-head">📂 <span data-en="Files this task touches" data-pt="Arquivos que esta task toca">Files this task touches</span></div><div class="filesbox-body"><span class="fchip">docs/worker/**</span><span class="fchip new">docs/pt-br/worker/**</span><span class="fchip">docs/docs.json (navigation)</span><span class="fchip">the published pipeline artifacts as diagram sources</span><span class="fchip">mintlify-docs-writer agent</span><span class="fchip">env-vars-sync skill</span></div></div>
+<div class="page-footer-nav"><a href="task-A9.html"><span data-en="← A9 — Outbound delivery as activities" data-pt="← A9 — Entrega de saída como activities">← A9 — Outbound delivery as activities</span></a><a href="task-B1.html"><span data-en="Next: B1 — One reference per execution, not per node →" data-pt="Próxima: B1 — Uma referência por execução, não por node →">Next: B1 — One reference per execution, not per node →</span></a></div>
+</div>
+<script>
+(function(){
+  var n=document.querySelectorAll('[data-en]'),b=document.querySelectorAll('.lang-sw button');
+  function apply(l){
+    n.forEach(function(el){var v=el.getAttribute('data-'+l); if(v===null)return; el.innerHTML=v;});
+    b.forEach(function(x){x.setAttribute('aria-pressed',String(x.getAttribute('data-lang')===l))});
+    document.documentElement.lang = l==='pt' ? 'pt-BR' : 'en';
+    try{localStorage.setItem('flux-lang',l)}catch(e){}
+  }
+  b.forEach(function(x){x.addEventListener('click',function(){apply(x.getAttribute('data-lang'))})});
+  var saved=null; try{saved=localStorage.getItem('flux-lang')}catch(e){}
+  apply(saved==='pt'?'pt':'en');
+})();
+</script>

@@ -1,0 +1,1023 @@
+<title>PHASE 3 — Parallel wave loop — detail</title>
+<style>
+
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #F1F5F9;
+    color: #0F172A;
+    margin: 0;
+    padding: 32px 24px 80px;
+    line-height: 1.4;
+  }
+  .container { max-width: 1500px; margin: 0 auto; }
+
+  /* Top nav */
+  .page-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    flex-wrap: wrap;
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #64748B;
+  }
+  .breadcrumb a {
+    color: #3B82F6;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #CBD5E1; }
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #0F172A;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+
+  /* Page header */
+  .page-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 8px;
+  }
+  .page-header .icon { font-size: 32px; }
+  .page-header h1 {
+    margin: 0;
+    font-size: 26px;
+    color: #0F172A;
+    letter-spacing: -0.4px;
+  }
+  .page-sub {
+    color: #64748B;
+    font-size: 13px;
+    margin-bottom: 24px;
+    padding-left: 46px;
+  }
+  .page-sub code {
+    background: #E2E8F0;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 12px;
+    color: #334155;
+  }
+
+  /* Overview chain */
+  .overview-mini {
+    background: white;
+    padding: 16px 18px;
+    border-radius: 10px;
+    margin-bottom: 28px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .overview-mini-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 12px;
+  }
+  .overview-chain {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .overview-chip {
+    background: #F8FAFC;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border-left: 3px solid #3B82F6;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #0F172A;
+    text-decoration: none;
+    display: inline-block;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+  .overview-chip .lbl {
+    display: block;
+    font-size: 9.5px;
+    color: #64748B;
+    font-weight: 500;
+    margin-bottom: 2px;
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .overview-sep { color: #94A3B8; font-size: 18px; font-weight: bold; }
+
+  /* Boxes */
+  .box {
+    background: white;
+    border-radius: 8px;
+    padding: 9px 13px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border-left: 4px solid #94A3B8;
+    width: 100%;
+    max-width: 100%;
+  }
+  .box.backend    { border-left-color: #3B82F6; }
+  .box.worker     { border-left-color: #10B981; }
+  .box.db         { border-left-color: #F59E0B; }
+  .box.redis      { border-left-color: #EF4444; }
+  .box.s3         { border-left-color: #8B5CF6; }
+  .box.external   { border-left-color: #64748B; }
+  .box.decision { border-left-color: #EAB308; background: #FEFCE8; }
+  .box.cross { border-left-color: #A855F7; background: #FAF5FF; }
+
+  .box-title {
+    font-weight: 600;
+    font-size: 12.5px;
+    color: #0F172A;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .box-desc { font-size: 11.5px; color: #475569; }
+  .box-file {
+    font-size: 10px;
+    color: #94A3B8;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    margin-top: 3px;
+    word-break: break-all;
+  }
+  .box code {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    background: #F1F5F9;
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: #334155;
+    word-break: break-word;
+  }
+  .box-desc code { word-break: break-word; }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .badge.migrated { background: #D1FAE5; color: #065F46; }
+  .badge.legacy   { background: #FEE2E2; color: #991B1B; }
+  .badge.mixed    { background: #FEF3C7; color: #92400E; }
+  .badge.step     { background: #E0E7FF; color: #3730A3; font-size: 10px; }
+  .badge.cross    { background: #F3E8FF; color: #6B21A8; }
+
+  /* Arrows */
+  .arrow {
+    color: #64748B;
+    font-size: 22px;
+    line-height: 1;
+    margin: 1px 0;
+    text-align: center;
+  }
+  .converge { text-align: center; color: #64748B; font-size: 22px; margin: 6px 0; }
+
+  /* Function card */
+  .fn-card {
+    margin-top: 28px;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .fn-card-header {
+    background: linear-gradient(to right, #0F172A, #1E293B);
+    color: white;
+    padding: 14px 20px 14px 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .fn-card-header .fn-title {
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .fn-card-header .fn-title code {
+    background: rgba(255,255,255,0.15);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 13px;
+  }
+  .fn-card-header .fn-loc {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #CBD5E1;
+  }
+  .fn-card-header:hover { background: linear-gradient(to right, #1E293B, #334155); }
+  .fn-card-header::before {
+    content: "▾";
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+    font-size: 14px;
+    transition: transform 0.2s ease;
+    line-height: 1;
+  }
+  .fn-card.collapsed .fn-card-header::before {
+    transform: translateY(-50%) rotate(-90deg);
+  }
+  .fn-card.collapsed .fn-card-body { display: none; }
+  .fn-card-body { padding: 20px; }
+
+  .fn-signature {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    background: #F1F5F9;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: #334155;
+    margin-bottom: 16px;
+    overflow-x: auto;
+  }
+  .fn-purpose {
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    background: #EFF6FF;
+    border-left: 3px solid #3B82F6;
+    border-radius: 6px;
+  }
+  .fn-friendly {
+    font-size: 13px;
+    color: #334155;
+    margin-bottom: 20px;
+    padding: 12px 14px 12px 44px;
+    background: #F0FDF4;
+    border-left: 3px solid #10B981;
+    border-radius: 6px;
+    position: relative;
+    line-height: 1.55;
+  }
+  .fn-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 14px;
+    top: 10px;
+    font-size: 18px;
+  }
+  .fn-friendly strong {
+    color: #065F46;
+  }
+
+  /* Step-level friendly summary (page-wide, appears after page-sub) */
+  .step-friendly {
+    font-size: 13.5px;
+    color: #334155;
+    margin-bottom: 28px;
+    padding: 16px 18px 16px 52px;
+    background: #F0FDF4;
+    border-left: 4px solid #10B981;
+    border-radius: 10px;
+    position: relative;
+    line-height: 1.6;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.08);
+  }
+  .step-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 18px;
+    top: 14px;
+    font-size: 22px;
+  }
+  .step-friendly-title {
+    font-weight: 700;
+    color: #065F46;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 8px;
+  }
+  .step-friendly ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .step-friendly li {
+    margin-bottom: 6px;
+  }
+  .step-friendly li:last-child {
+    margin-bottom: 0;
+  }
+  .step-friendly strong {
+    color: #065F46;
+  }
+  .step-friendly code {
+    background: #DCFCE7;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: #065F46;
+  }
+  .step-friendly em {
+    color: #047857;
+    font-style: italic;
+  }
+
+  .fn-body-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 900px) {
+    .fn-body-cols { grid-template-columns: 1fr; }
+  }
+  .fn-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .fn-asides {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Aside panels */
+  .aside {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 11.5px;
+    color: #78350F;
+  }
+  .aside.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .aside.warn { background: #FEE2E2; border-left-color: #EF4444; color: #991B1B; }
+  .aside.helper { background: #F3E8FF; border-left-color: #A855F7; color: #6B21A8; }
+  .aside-title {
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .aside code {
+    background: rgba(255,255,255,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    word-break: break-word;
+  }
+
+  /* Cascade */
+  .cascade {
+    background: #FEFCE8;
+    border: 1px dashed #EAB308;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 6px 0;
+  }
+  .cascade-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #713F12;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .cascade-step {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 8px;
+    background: white;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    font-size: 11.5px;
+  }
+  .cascade-step .cond {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #334155;
+  }
+  .cascade-step .result {
+    font-weight: 700;
+    font-size: 10.5px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .cascade-step .result.pass  { background: #D1FAE5; color: #065F46; }
+  .cascade-step .result.deny  { background: #FEE2E2; color: #991B1B; }
+  .cascade-step .result.next  { background: #E0E7FF; color: #3730A3; }
+  .cascade-step .result.call  { background: #FEF3C7; color: #78350F; }
+  .cascade-num {
+    background: #EAB308;
+    color: white;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* Nested sub-flow */
+  .nested-flow {
+    margin: 6px 0;
+    padding: 12px;
+    background: #F0FDF4;
+    border: 1px dashed #10B981;
+    border-radius: 8px;
+  }
+  .nested-flow-title {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #065F46;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  /* Code block */
+  .code-block {
+    background: #0F172A;
+    color: #E2E8F0;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 6px 0;
+  }
+  .code-block .k { color: #93C5FD; }
+  .code-block .s { color: #86EFAC; }
+  .code-block .c { color: #64748B; font-style: italic; }
+  .code-block .t { color: #FDE68A; }
+
+  /* Notes */
+  .note {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    color: #78350F;
+    margin: 20px 0;
+  }
+  .note.info {
+    background: #EFF6FF;
+    border-left-color: #3B82F6;
+    color: #1E3A8A;
+  }
+  .note code {
+    background: rgba(255,255,255,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+  }
+
+  .page-footer-nav {
+    margin-top: 48px;
+    padding: 16px;
+    background: white;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .field-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin: 8px 0;
+  }
+  .field-table th {
+    text-align: left;
+    padding: 6px 8px;
+    background: #F1F5F9;
+    color: #334155;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    font-size: 10px;
+    border-bottom: 1px solid #CBD5E1;
+  }
+  .field-table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid #F1F5F9;
+    vertical-align: top;
+  }
+  .field-table td:first-child {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    color: #0F172A;
+    font-weight: 600;
+    white-space: nowrap;
+    font-size: 10.5px;
+  }
+
+    .code-block{white-space:pre-wrap;word-break:normal;overflow-wrap:anywhere}
+    .ba{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 4px}
+    @media(max-width:820px){.ba{grid-template-columns:1fr}}
+    .ba>div{border-radius:8px;padding:12px 14px;font-size:12px;line-height:1.62}
+    .ba .now{background:#FEF2F2;border-left:3px solid #EF4444;color:#450A0A}
+    .ba .nxt{background:#ECFDF5;border-left:3px solid #10B981;color:#052E16}
+    .ba h5{margin:0 0 7px;font-size:10px;letter-spacing:.8px;text-transform:uppercase;font-weight:800;opacity:.75}
+    .ba code{background:rgba(0,0,0,.06);padding:1px 4px;border-radius:3px}
+    .topic-nav{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 26px}
+    .topic-nav a{font-size:11px;padding:5px 11px;border-radius:20px;background:#fff;border:1px solid #CBD5E1;
+                 color:#334155;text-decoration:none}
+    .topic-nav a:hover{border-color:#3B82F6;color:#1E40AF}
+
+
+    /* padroniza o topo pelo complemento */
+    .top-nav{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+             max-width:1500px;margin:0 auto 20px;padding:0 4px}
+    .back-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:#fff;color:#334155;
+              text-decoration:none;border-radius:8px;border:1px solid #CBD5E1;font-size:12.5px;font-weight:600;
+              box-shadow:0 1px 3px rgba(0,0,0,.06);transition:transform .15s,background .15s}
+    .back-btn:hover{background:#EFF6FF;transform:translateY(-1px)}
+    .page-nav{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-start;background:transparent;
+              box-shadow:none;padding:18px 0 0;margin-top:26px;border-top:1px solid #E2E8F0}
+    .lang-sw{display:inline-flex;border:1px solid #CBD5E1;border-radius:8px;overflow:hidden;background:#fff;
+             box-shadow:0 1px 3px rgba(0,0,0,.06)}
+    .lang-sw button{font-family:'SF Mono',Menlo,monospace;font-size:11px;font-weight:700;letter-spacing:.5px;
+             padding:8px 12px;background:transparent;color:#64748B;border:0;cursor:pointer}
+    .lang-sw button+button{border-left:1px solid #E2E8F0}
+    .lang-sw button[aria-pressed="true"]{background:#0F172A;color:#fff}
+    .lang-sw button:focus-visible{outline:2px solid #3B82F6;outline-offset:2px}
+
+
+/* ---------- task page ---------- */
+body{background:#F1F5F9;color:#0F172A;margin:0;padding:28px 24px 72px;line-height:1.45;
+     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+.container{max-width:1500px;margin:0 auto}
+
+.hero{background:linear-gradient(135deg,#0F172A 0%,#1E293B 60%,#312E81 100%);color:#fff;
+      border-radius:16px;padding:26px 30px 24px;margin-bottom:18px;position:relative;overflow:hidden}
+.hero::after{content:'';position:absolute;right:-60px;top:-60px;width:260px;height:260px;
+      background:radial-gradient(circle,rgba(99,102,241,.35),transparent 70%);pointer-events:none}
+.hero .kicker{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.hero .code{font-family:'SF Mono',Menlo,monospace;font-size:13px;font-weight:700;letter-spacing:1px;
+      background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);color:#fff;
+      padding:5px 12px;border-radius:7px}
+.hero .wv{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+      padding:5px 11px;border-radius:7px;background:rgba(239,68,68,.22);border:1px solid rgba(248,113,113,.5);color:#FCA5A5}
+.hero h1{margin:0 0 12px;font-size:29px;line-height:1.22;letter-spacing:-.6px;font-weight:700;max-width:30ch}
+.hero .goal{font-size:15px;line-height:1.6;color:#CBD5E1;max-width:78ch;border-left:3px solid #6366F1;padding-left:14px}
+.hero .goal b{color:#fff;font-weight:600}
+.hero-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px;position:relative;z-index:2}
+.hero-links a{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
+      text-decoration:none;color:#E2E8F0;background:rgba(255,255,255,.09);
+      border:1px solid rgba(255,255,255,.16);padding:7px 13px;border-radius:8px}
+.hero-links a:hover{background:rgba(255,255,255,.17);color:#fff}
+
+.glance{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:20px}
+.gl{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px 16px;
+    border-top:3px solid #94A3B8;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.gl.crit{border-top-color:#DC2626}.gl.dep{border-top-color:#3B82F6}
+.gl.wave{border-top-color:#8B5CF6}.gl.ship{border-top-color:#059669}
+.gl .k{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#94A3B8;margin-bottom:7px}
+.gl .v{font-size:16px;font-weight:700;color:#0F172A;line-height:1.25;margin-bottom:5px}
+.gl .n{font-size:11.5px;color:#64748B;line-height:1.5}
+
+.lede{background:#fff;border:1px solid #E2E8F0;border-left:4px solid #DC2626;border-radius:12px;
+      padding:18px 22px;margin-bottom:22px;font-size:14.5px;line-height:1.7;color:#334155;
+      box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.lede strong{color:#0F172A}
+.lede p{margin:0 0 10px}.lede p:last-child{margin:0}
+
+.sec-label{display:flex;align-items:center;gap:11px;margin:30px 0 14px}
+.sec-label .n{width:25px;height:25px;border-radius:7px;background:#0F172A;color:#fff;flex:none;
+      display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+.sec-label h2{margin:0;font-size:17px;font-weight:700;color:#0F172A;letter-spacing:-.25px}
+.sec-label .rule{flex:1;height:1px;background:#E2E8F0}
+
+.entry-table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;
+      border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;font-size:12.5px;
+      box-shadow:0 1px 3px rgba(15,23,42,.05);margin-bottom:8px}
+.entry-table th{background:#0F172A;color:#fff;text-align:left;padding:11px 14px;font-size:10.5px;
+      font-weight:700;text-transform:uppercase;letter-spacing:.6px}
+.entry-table td{padding:12px 14px;border-bottom:1px solid #F1F5F9;vertical-align:top;color:#334155;line-height:1.55}
+.entry-table tr:last-child td{border-bottom:0}
+.entry-table tr:hover td{background:#F8FAFC}
+.entry-table td.rt{font-family:'SF Mono',Menlo,monospace;font-size:11.5px;font-weight:600;color:#0F172A;white-space:nowrap}
+.entry-table td.rt.lbl{font-family:inherit;font-size:12.5px;white-space:normal}
+.pill{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;
+      letter-spacing:.2px;white-space:nowrap}
+.pill.no{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA}
+.pill.weak{background:#FEF3C7;color:#92400E;border:1px solid #FDE68A}
+.pill.ok{background:#D1FAE5;color:#065F46;border:1px solid #A7F3D0}
+
+.part{background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;margin-bottom:16px;
+      box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.part-head{background:linear-gradient(to right,#0F172A,#1E293B);color:#fff;padding:14px 20px;
+      display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.part-head .num{width:26px;height:26px;border-radius:7px;background:rgba(255,255,255,.15);
+      border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;
+      font-size:12px;font-weight:700;flex:none}
+.part-head .t{font-size:15px;font-weight:600;letter-spacing:-.15px}
+.part-head .loc{margin-left:auto;font-family:'SF Mono',Menlo,monospace;font-size:10.5px;
+      color:#94A3B8;background:rgba(0,0,0,.28);padding:4px 9px;border-radius:6px}
+.part-body{padding:20px 22px}
+.purpose{font-size:14px;line-height:1.65;color:#0F172A;font-weight:500;
+      border-left:3px solid #6366F1;padding-left:13px;margin-bottom:16px}
+.part-body p{margin:0 0 12px;font-size:13.5px;line-height:1.72;color:#334155}
+.part-body p:last-child{margin-bottom:0}
+.part-body strong{color:#0F172A;font-weight:650}
+.part-body code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1.5px 5px;border-radius:4px;
+      font-family:'SF Mono',Menlo,monospace;font-size:11.5px;color:#0F172A}
+.part-body ul{margin:10px 0 14px;padding-left:0;list-style:none}
+.part-body ul li{position:relative;padding-left:20px;margin-bottom:9px;font-size:13.5px;
+      line-height:1.7;color:#334155}
+.part-body ul li::before{content:'';position:absolute;left:5px;top:9px;width:6px;height:6px;
+      border-radius:50%;background:#94A3B8}
+.code-block{white-space:pre-wrap;word-break:break-word}
+
+.ba{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0 4px}
+@media(max-width:900px){.ba{grid-template-columns:1fr}}
+.ba>div{border-radius:10px;padding:14px 16px;font-size:13px;line-height:1.65}
+.ba .now{background:#FEF2F2;border:1px solid #FECACA;color:#7F1D1D}
+.ba .nxt{background:#ECFDF5;border:1px solid #A7F3D0;color:#065F46}
+.ba h5{margin:0 0 8px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+      display:flex;align-items:center;gap:6px}
+.ba .now h5{color:#B91C1C}.ba .nxt h5{color:#047857}
+.ba code{background:rgba(255,255,255,.75);border:1px solid rgba(0,0,0,.07);padding:1px 5px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:11px}
+.ba p{margin:0 0 9px;font-size:13px;line-height:1.65}
+.ba p:last-child{margin:0}
+
+.callout{border-radius:10px;padding:14px 17px;margin:15px 0 4px;font-size:13px;line-height:1.7}
+.callout .ct{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px}
+.callout.decide{background:#EFF6FF;border:1px solid #BFDBFE;color:#1E3A8A}
+.callout.decide .ct{color:#1D4ED8}
+.callout.mig{background:#FFFBEB;border:1px solid #FDE68A;color:#78350F}
+.callout.mig .ct{color:#B45309}
+.callout p{margin:0 0 9px}.callout p:last-child{margin:0}
+.callout code{background:rgba(255,255,255,.7);border:1px solid rgba(0,0,0,.07);padding:1px 5px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:11px}
+
+.vcard{background:#fff;border:1px solid #FECACA;border-radius:14px;overflow:hidden;margin-bottom:16px;
+      box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.vcard-head{background:linear-gradient(to right,#7F1D1D,#B91C1C);color:#fff;padding:13px 20px;
+      font-size:15px;font-weight:600;display:flex;align-items:center;gap:10px}
+.vcard-body{padding:18px 22px}
+.vitem{display:grid;grid-template-columns:auto 1fr;gap:13px;padding:13px 0;border-bottom:1px solid #F1F5F9}
+.vitem:first-child{padding-top:0}
+.vitem:last-child{border-bottom:0;padding-bottom:0}
+.vitem .vn{width:24px;height:24px;border-radius:7px;background:#FEE2E2;color:#B91C1C;flex:none;
+      display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:1px}
+.vitem.req .vn{background:#B91C1C;color:#fff}
+.vitem .vt{font-size:13px;font-weight:700;color:#0F172A;margin-bottom:4px;display:flex;
+      align-items:center;gap:8px;flex-wrap:wrap}
+.vitem .vt .req-tag{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+      background:#B91C1C;color:#fff;padding:2px 7px;border-radius:20px}
+.vitem .vd{font-size:13px;line-height:1.68;color:#475569}
+.vitem .vd code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1px 5px;border-radius:4px;
+      font-family:'SF Mono',Menlo,monospace;font-size:11px}
+.vitem .vd strong{color:#0F172A}
+
+.done{background:linear-gradient(135deg,#064E3B,#047857);color:#fff;border-radius:14px;
+      padding:20px 24px;margin-bottom:16px}
+.done .dt{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+      color:#6EE7B7;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.done .dd{font-size:14.5px;line-height:1.72;color:#ECFDF5}
+.done .dd strong{color:#fff;font-weight:650}
+.done .dd code{background:rgba(255,255,255,.17);border:1px solid rgba(255,255,255,.28);padding:1.5px 6px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:12px;color:#fff}
+.hero .goal code{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);padding:1px 5px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:12.5px;color:#fff}
+.lede code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1.5px 5px;border-radius:4px;
+      font-family:'SF Mono',Menlo,monospace;font-size:12px;color:#0F172A}
+.lede em{font-style:italic;color:#0F172A}
+
+.filesbox{background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;
+      box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.filesbox-head{background:linear-gradient(to right,#334155,#475569);color:#fff;padding:12px 20px;
+      font-size:14px;font-weight:600;display:flex;align-items:center;gap:9px}
+.filesbox-body{padding:16px 20px;display:flex;flex-wrap:wrap;gap:8px}
+.fchip{font-family:'SF Mono',Menlo,monospace;font-size:11.5px;background:#F8FAFC;color:#334155;
+      border:1px solid #E2E8F0;border-left:3px solid #64748B;padding:7px 11px;border-radius:7px;line-height:1.4}
+.fchip.new{border-left-color:#059669;background:#F0FDF4;color:#065F46}
+
+.page-footer-nav{display:flex;justify-content:space-between;gap:12px;margin-top:26px;flex-wrap:wrap}
+.page-footer-nav a{display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid #E2E8F0;
+      color:#334155;padding:11px 17px;border-radius:9px;text-decoration:none;font-size:12.5px;font-weight:600;
+      box-shadow:0 1px 2px rgba(15,23,42,.05)}
+.page-footer-nav a:hover{border-color:#94A3B8;color:#0F172A}
+
+
+/* ---------- phase page: same vocabulary as the task pages ---------- */
+.hero .kicker .ico{display:inline-flex;align-items:center;justify-content:center;flex:none;
+      width:38px;height:38px;border-radius:10px;font-size:19px;line-height:1;
+      background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22)}
+.hero h1{max-width:34ch}
+.hero .goal{max-width:92ch}
+.hero .goal code{word-break:break-word}
+.hero-links{margin-top:16px}
+.hero-links a{max-width:100%;overflow-wrap:anywhere}
+
+/* topic cards read like .part */
+.fn-card{margin:0 0 16px;border-radius:14px;border:1px solid #E2E8F0;background:#fff;
+      overflow:hidden;box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.fn-card-header{background:linear-gradient(to right,#0F172A,#1E293B);padding:14px 20px;
+      justify-content:flex-start;align-items:center;gap:12px;flex-wrap:wrap;cursor:default}
+.fn-card-header:hover{background:linear-gradient(to right,#0F172A,#1E293B)}
+.fn-card-header::before{content:none}
+.fn-card-header .fn-title{font-size:15px;font-weight:600;letter-spacing:-.15px;gap:12px;
+      align-items:center;min-width:0;flex:1 1 auto;overflow-wrap:anywhere}
+.fn-card-header .fn-title .badge{width:26px;height:26px;flex:none;padding:0;letter-spacing:0;
+      border-radius:7px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);
+      color:#fff;display:inline-flex;align-items:center;justify-content:center;
+      font-size:12px;font-weight:700}
+.fn-card-header .fn-loc{margin-left:auto;max-width:100%;font-size:10.5px;color:#94A3B8;
+      background:rgba(0,0,0,.28);padding:4px 9px;border-radius:6px;overflow-wrap:anywhere}
+.fn-card-body{padding:20px 22px}
+.fn-purpose{font-size:14px;line-height:1.65;color:#0F172A;font-weight:500;background:none;
+      border:0;border-left:3px solid #6366F1;border-radius:0;padding:0 0 0 13px;margin-bottom:16px}
+.fn-body-cols{grid-template-columns:minmax(0,1.9fr) minmax(0,1fr);gap:18px}
+@media(max-width:1000px){.fn-body-cols{grid-template-columns:1fr}}
+.fn-main{gap:0;min-width:0}
+.fn-asides{gap:11px;min-width:0}
+
+.code-block{white-space:pre-wrap;word-break:normal;overflow-wrap:anywhere;overflow-x:auto;
+      font-size:11.5px;line-height:1.62;padding:13px 16px;border-radius:9px;margin:0}
+
+.ba{margin:16px 0 0}
+.ba .now h5::before{content:'⚠';font-size:11px;line-height:1}
+.ba .nxt h5::before{content:'✓';font-size:11px;line-height:1}
+.ba code{overflow-wrap:anywhere}
+.ba strong{font-weight:650}
+
+/* asides realigned onto the callout tokens */
+.aside{border:1px solid #E2E8F0;border-radius:10px;padding:13px 16px;font-size:12.5px;
+      line-height:1.65;background:#F8FAFC;color:#334155}
+.aside.info{background:#EFF6FF;border-color:#BFDBFE;color:#1E3A8A}
+.aside.warn{background:#FFFBEB;border-color:#FDE68A;color:#78350F}
+.aside.helper{background:#EEF2FF;border-color:#C7D2FE;color:#3730A3}
+.aside-title{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+      margin-bottom:7px}
+.aside.info .aside-title{color:#1D4ED8}
+.aside.warn .aside-title{color:#B45309}
+.aside.helper .aside-title{color:#4F46E5}
+.aside code{background:rgba(255,255,255,.75);border:1px solid rgba(0,0,0,.07);padding:1px 5px;
+      border-radius:4px;font-size:11px;overflow-wrap:anywhere;word-break:normal}
+.aside strong{font-weight:650}
+
+/* footer prev/next */
+.page-footer-nav a.nx{margin-left:auto}
+
+/* page-specific blocks kept, retuned to the new tokens */
+.overview-mini{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:16px 18px;
+      margin-bottom:20px;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.overview-mini-title{font-size:10.5px;letter-spacing:.8px;color:#94A3B8}
+.overview-chain{flex-wrap:wrap;gap:8px}
+.overview-chip{border-radius:9px;border:1px solid #E2E8F0}
+.box{border-radius:10px;border:1px solid #E2E8F0;border-left-width:3px}
+.cascade{background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:13px 15px;margin:12px 0}
+.cascade-title{font-size:10.5px;letter-spacing:.7px;color:#B45309}
+.cascade-step{border-radius:8px;border:1px solid #FDE68A;background:#fff;padding:7px 10px;margin-bottom:6px}
+.cascade-num{border-radius:7px;width:22px;height:22px;background:#B45309}
+.nested-flow{background:#ECFDF5;border:1px solid #A7F3D0;border-radius:10px;padding:13px 15px;margin:12px 0}
+.nested-flow-title{font-size:10.5px;letter-spacing:.7px;color:#047857}
+.field-table{border-collapse:separate;border-spacing:0;background:#fff;border:1px solid #E2E8F0;
+      border-radius:10px;overflow:hidden;font-size:12px;margin:12px 0}
+.field-table th{background:#0F172A;color:#fff;font-size:10px;letter-spacing:.6px;
+      padding:9px 12px;border-bottom:0}
+.field-table td{padding:9px 12px;border-bottom:1px solid #F1F5F9;color:#334155}
+.field-table tr:last-child td{border-bottom:0}
+.note{border-radius:10px;border:1px solid #FDE68A;border-left-width:1px;background:#FFFBEB;
+      padding:13px 16px;color:#78350F}
+.note.info{border-color:#BFDBFE;background:#EFF6FF;color:#1E3A8A}
+</style>
+<div class="container">
+  <div class="top-nav">
+    <a href="../arquitetura-v2-complemento.html" class="back-btn"><span data-en="← Back to the companion" data-pt="← Voltar ao complemento">← Back to the companion</span></a>
+    <div class="lang-sw" role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">EN-US</button><button type="button" data-lang="pt" aria-pressed="false">PT-BR</button></div>
+  </div>
+  <div class="hero">
+    <div class="kicker"><span class="ico">🌊</span></div>
+    <h1><span data-en="PHASE 3 — Parallel wave loop" data-pt="FASE 3 — Loop de ondas paralelas">PHASE 3 — Parallel wave loop</span></h1>
+    <div class="goal"><span data-en="The heart of the v2, and where nearly all of the plan lands." data-pt="O coração da v2, e onde o plano quase todo desemboca.">The heart of the v2, and where nearly all of the plan lands.</span> · <span data-en="each topic carries today&#x27;s code, what it causes, and the target shape" data-pt="cada tópico traz o código de hoje, o que ele causa, e o formato alvo">each topic carries today&#x27;s code, what it causes, and the target shape</span></div>
+    <div class="hero-links"><a href="#seq"><span data-en="Moving the loop and turning on parallelism are" data-pt="Mover o loop e ligar o paralelismo são dois ">Moving the loop and turning on parallelism are</span></a><a href="#conn"><span data-en="The database hits its ceiling before throughpu" data-pt="O banco chega ao teto antes da vazão">The database hits its ceiling before throughpu</span></a><a href="#cost"><span data-en="Nothing limits what a run spends" data-pt="Nada limita o que um run gasta">Nothing limits what a run spends</span></a><a href="#cov"><span data-en="Parallelism is only safe with full coverage" data-pt="O paralelismo só é seguro com cobertura tota">Parallelism is only safe with full coverage</span></a><a href="#notif"><span data-en="Notifications do not cross replicas" data-pt="As notificações não cruzam réplica">Notifications do not cross replicas</span></a></div>
+  </div>
+  
+    <div class="fn-card" id="seq">
+      <div class="fn-card-header">
+        <div class="fn-title"><span class="badge">A</span> <span data-en="Moving the loop and turning on parallelism are two deploys" data-pt="Mover o loop e ligar o paralelismo são dois deploys">Moving the loop and turning on parallelism are two deploys</span></div>
+        <div class="fn-loc">flux.service.ts:507 · 3227 · process-agent.workflow.ts</div>
+      </div>
+      <div class="fn-card-body">
+        <div class="fn-purpose" data-en="Reaching the wave loop without losing the ability to say what broke." data-pt="Chegar ao loop de ondas sem perder a capacidade de dizer o que quebrou.">Reaching the wave loop without losing the ability to say what broke.</div>
+        <div class="fn-body-cols">
+          <div class="fn-main">
+            <div class="code-block" data-en="// today: the back blocks on every node
+const handle = await this.temporalService.client.start(&amp;#x27;processSingleNode&amp;#x27;, {...});
+await handle.result();          // ← accidental back-pressure
+
+// the parallel loop was already written, and commented out:
+// worker/src/modules/temporal/workflows/process-agent.workflow.ts
+//   &amp;quot;It will not be used for the time being; the logic has already been removed.&amp;quot;
+//   in-degree per node · readyToRun · Promise.all" data-pt="// hoje: o back bloqueia em cada node
+const handle = await this.temporalService.client.start(&amp;#x27;processSingleNode&amp;#x27;, {...});
+await handle.result();          // ← contrapressão acidental
+
+// o loop paralelo já foi escrito, e comentado:
+// worker/src/modules/temporal/workflows/process-agent.workflow.ts
+//   &amp;quot;It will not be used for the time being; the logic has already been removed.&amp;quot;
+//   in-degree por node · readyToRun · Promise.all">// today: the back blocks on every node
+const handle = await this.temporalService.client.start(&#x27;processSingleNode&#x27;, {...});
+await handle.result();          // ← accidental back-pressure
+
+// the parallel loop was already written, and commented out:
+// worker/src/modules/temporal/workflows/process-agent.workflow.ts
+//   &quot;It will not be used for the time being; the logic has already been removed.&quot;
+//   in-degree per node · readyToRun · Promise.all</div>
+            <div class="ba">
+              <div class="now"><h5 data-en="How it is today" data-pt="Como está hoje">How it is today</h5><span data-en="Every migrated node is a synchronous round trip with more latency than inline, and with no parallelism between siblings. The wave design already exists in that commented-out file." data-pt="Cada node migrado é um round trip síncrono com mais latência que o inline, e sem paralelismo entre irmãos. O desenho da onda já existe naquele arquivo comentado.">Every migrated node is a synchronous round trip with more latency than inline, and with no parallelism between siblings. The wave design already exists in that commented-out file.</span></div>
+              <div class="nxt"><h5 data-en="How it will be" data-pt="Como ficará">How it will be</h5><span data-en="Ship the graph workflow &lt;strong&gt;sequential first&lt;/strong&gt; — &lt;code&gt;allReady&lt;/code&gt; returning one id is exactly today&#x27;s behaviour. Prove order equivalence over stored flows, node for node. Only then raise the batch size, in a second deploy, gated per flow." data-pt="Subir o workflow do grafo &lt;strong&gt;sequencial primeiro&lt;/strong&gt; — &lt;code&gt;allReady&lt;/code&gt; devolvendo um id é exatamente o comportamento de hoje. Provar equivalência de ordem sobre flows guardados, node a node. Só então subir o tamanho do lote, num segundo deploy, com gate por flow.">Ship the graph workflow <strong>sequential first</strong> — <code>allReady</code> returning one id is exactly today's behaviour. Prove order equivalence over stored flows, node for node. Only then raise the batch size, in a second deploy, gated per flow.</span></div>
+            </div>
+          </div>
+          <div class="fn-asides"><div class="aside info"><div class="aside-title" data-en="Why the order is not optional" data-pt="Por que a ordem não é opcional">Why the order is not optional</div><span data-en="Two changes hide inside “move the graph”: relocating the loop, and letting it dispatch more than one. Together, a rollback cannot say which broke. Apart, each is a flag." data-pt="Duas mudanças escondidas em “mover o grafo”: relocar o loop, e deixá-lo despachar mais de um. Juntas, o rollback não diz qual quebrou. Separadas, cada uma é uma flag.">Two changes hide inside “move the graph”: relocating the loop, and letting it dispatch more than one. Together, a rollback cannot say which broke. Apart, each is a flag.</span></div><div class="aside warn"><div class="aside-title" data-en="The back-pressure goes with it" data-pt="A contrapressão some junto">The back-pressure goes with it</div><span data-en="The blocking wait also stops the back from starting more work. Removing it without the ceilings trades a slow system for an unstable one." data-pt="O bloqueio também impede o back de começar mais trabalho. Removê-lo sem os tetos troca um sistema lento por um instável.">The blocking wait also stops the back from starting more work. Removing it without the ceilings trades a slow system for an unstable one.</span></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="fn-card" id="conn">
+      <div class="fn-card-header">
+        <div class="fn-title"><span class="badge">B</span> <span data-en="The database hits its ceiling before throughput does" data-pt="O banco chega ao teto antes da vazão">The database hits its ceiling before throughput does</span></div>
+        <div class="fn-loc">database.service.ts:13 · worker.service.ts:20-22</div>
+      </div>
+      <div class="fn-card-body">
+        <div class="fn-purpose" data-en="Knowing how many worker replicas this database can take — today nobody does." data-pt="Saber quantas réplicas de worker este banco aguenta — hoje ninguém sabe.">Knowing how many worker replicas this database can take — today nobody does.</div>
+        <div class="fn-body-cols">
+          <div class="fn-main">
+            <div class="code-block" data-en="this.pool = new Pool({ host, port, user, password, database });
+//                     ↑ no max → node-postgres uses 10 per process
+maxConcurrentActivityTaskExecutions: 10" data-pt="this.pool = new Pool({ host, port, user, password, database });
+//                     ↑ sem max → node-postgres usa 10 por processo
+maxConcurrentActivityTaskExecutions: 10">this.pool = new Pool({ host, port, user, password, database });
+//                     ↑ no max → node-postgres uses 10 per process
+maxConcurrentActivityTaskExecutions: 10</div>
+            <div class="ba">
+              <div class="now"><h5 data-en="How it is today" data-pt="Como está hoje">How it is today</h5><span data-en="Each replica can hold ten busy connections, and the total scales linearly with replicas against a &lt;code&gt;max_connections&lt;/code&gt; &lt;strong&gt;shared with the API&lt;/strong&gt;. The failure mode is not slowness, it is &lt;code&gt;too many clients already&lt;/code&gt; on customer requests. No connection proxy appears anywhere in the infrastructure." data-pt="Cada réplica pode segurar dez conexões ocupadas, e o total escala linearmente com réplicas contra um &lt;code&gt;max_connections&lt;/code&gt; &lt;strong&gt;compartilhado com a API&lt;/strong&gt;. O modo de falha não é lentidão, é &lt;code&gt;too many clients already&lt;/code&gt; nas requisições de cliente. Nenhum proxy de conexão aparece na infra.">Each replica can hold ten busy connections, and the total scales linearly with replicas against a <code>max_connections</code> <strong>shared with the API</strong>. The failure mode is not slowness, it is <code>too many clients already</code> on customer requests. No connection proxy appears anywhere in the infrastructure.</span></div>
+              <div class="nxt"><h5 data-en="How it will be" data-pt="Como ficará">How it will be</h5><span data-en="An explicit &lt;code&gt;max&lt;/code&gt;, plus &lt;code&gt;idleTimeoutMillis&lt;/code&gt; and &lt;code&gt;connectionTimeoutMillis&lt;/code&gt;, so a saturated pool fails fast with a clear error instead of hanging the activity until its &lt;code&gt;startToCloseTimeout&lt;/code&gt;. And the arithmetic written down: &lt;code&gt;max_connections&lt;/code&gt; versus API replicas × pool + worker replicas × pool + migrations + operators. That sentence is the deliverable." data-pt="&lt;code&gt;max&lt;/code&gt; explícito, mais &lt;code&gt;idleTimeoutMillis&lt;/code&gt; e &lt;code&gt;connectionTimeoutMillis&lt;/code&gt;, para um pool saturado falhar rápido com erro claro em vez de pendurar a activity até o &lt;code&gt;startToCloseTimeout&lt;/code&gt;. E a aritmética escrita: &lt;code&gt;max_connections&lt;/code&gt; versus réplicas da API × pool + réplicas do worker × pool + migrações + operadores. Essa frase é o entregável.">An explicit <code>max</code>, plus <code>idleTimeoutMillis</code> and <code>connectionTimeoutMillis</code>, so a saturated pool fails fast with a clear error instead of hanging the activity until its <code>startToCloseTimeout</code>. And the arithmetic written down: <code>max_connections</code> versus API replicas × pool + worker replicas × pool + migrations + operators. That sentence is the deliverable.</span></div>
+            </div>
+          </div>
+          <div class="fn-asides"><div class="aside helper"><div class="aside-title" data-en="PgBouncer in transaction mode" data-pt="PgBouncer em transaction mode">PgBouncer in transaction mode</div><span data-en="Decouples replica count from connection count. Transaction mode forbids session state — and &lt;code&gt;pg_advisory_xact_lock&lt;/code&gt; is transaction-scoped, so it survives." data-pt="Desacopla contagem de réplica de contagem de conexão. O modo transação proíbe estado de sessão — e o &lt;code&gt;pg_advisory_xact_lock&lt;/code&gt; é escopado por transação, então sobrevive.">Decouples replica count from connection count. Transaction mode forbids session state — and <code>pg_advisory_xact_lock</code> is transaction-scoped, so it survives.</span></div><div class="aside warn"><div class="aside-title" data-en="It blocks before parallelism" data-pt="Bloqueia antes do paralelismo">It blocks before parallelism</div><span data-en="This gates not only phase 3, but adding any worker replica today." data-pt="Isto trava não só a fase 3, mas adicionar qualquer réplica de worker hoje.">This gates not only phase 3, but adding any worker replica today.</span></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="fn-card" id="cost">
+      <div class="fn-card-header">
+        <div class="fn-title"><span class="badge">C</span> <span data-en="Nothing limits what a run spends" data-pt="Nada limita o que um run gasta">Nothing limits what a run spends</span></div>
+        <div class="fn-loc">product.service.ts:265-284</div>
+      </div>
+      <div class="fn-card-body">
+        <div class="fn-purpose" data-en="Putting the cost ceiling where it keeps working once the worker owns the loop." data-pt="Colocar teto de custo onde ele continue funcionando quando o worker for dono do loop.">Putting the cost ceiling where it keeps working once the worker owns the loop.</div>
+        <div class="fn-body-cols">
+          <div class="fn-main">
+            <div class="code-block" data-en="async assertCompletionCredits(user) {
+  // INTRO → trialTokens &amp;gt; 0 ; otherwise, having a subscription is enough
+  if (userProduct?.product?.type === ProductType.INTRO) {
+    if ((currentUser?.trialTokens ?? 0) &amp;lt;= 0) throw this.insufficientQuotaError();
+  }
+}   // ← boolean gate, not a budget" data-pt="async assertCompletionCredits(user) {
+  // INTRO → trialTokens &amp;gt; 0 ; caso contrário, ter assinatura basta
+  if (userProduct?.product?.type === ProductType.INTRO) {
+    if ((currentUser?.trialTokens ?? 0) &amp;lt;= 0) throw this.insufficientQuotaError();
+  }
+}   // ← portão booleano, não orçamento">async assertCompletionCredits(user) {
+  // INTRO → trialTokens &gt; 0 ; otherwise, having a subscription is enough
+  if (userProduct?.product?.type === ProductType.INTRO) {
+    if ((currentUser?.trialTokens ?? 0) &lt;= 0) throw this.insufficientQuotaError();
+  }
+}   // ← boolean gate, not a budget</div>
+            <div class="ba">
+              <div class="now"><h5 data-en="How it is today" data-pt="Como está hoje">How it is today</h5><span data-en="Per node, &lt;code&gt;getUserProductFromFlow&lt;/code&gt; checks &lt;em&gt;entitlement to a model&lt;/em&gt;, not remaining budget. Charges are recorded after the fact in &lt;code&gt;token_transactions&lt;/code&gt;. Nothing decrements an allowance and nothing aborts a run that has already overspent — on a paid account, the first signal is the invoice." data-pt="Por node, o &lt;code&gt;getUserProductFromFlow&lt;/code&gt; checa &lt;em&gt;direito ao modelo&lt;/em&gt;, não orçamento restante. As cobranças são registradas depois do fato em &lt;code&gt;token_transactions&lt;/code&gt;. Nada decrementa cota e nada aborta um run que já gastou demais — numa conta paga, o primeiro sinal é a fatura.">Per node, <code>getUserProductFromFlow</code> checks <em>entitlement to a model</em>, not remaining budget. Charges are recorded after the fact in <code>token_transactions</code>. Nothing decrements an allowance and nothing aborts a run that has already overspent — on a paid account, the first signal is the invoice.</span></div>
+              <div class="nxt"><h5 data-en="How it will be" data-pt="Como ficará">How it will be</h5><span data-en="A per-run ceiling checked &lt;strong&gt;at charge time&lt;/strong&gt;, in the same call that already records the spend: it is the only place that keeps working with the loop in the worker, and it needs no new plumbing, because &lt;code&gt;/worker/charge-tokens&lt;/code&gt; already carries the &lt;code&gt;execId&lt;/code&gt;. Abort with a typed error carrying the ceiling and the spend, rather than degrading silently." data-pt="Teto por run checado &lt;strong&gt;no momento da cobrança&lt;/strong&gt;, na mesma chamada que já registra o gasto: é o único lugar que segue funcionando com o loop no worker, e não precisa de encanamento novo, porque o &lt;code&gt;/worker/charge-tokens&lt;/code&gt; já carrega o &lt;code&gt;execId&lt;/code&gt;. Abortar com erro tipado carregando o teto e o gasto, em vez de degradar em silêncio.">A per-run ceiling checked <strong>at charge time</strong>, in the same call that already records the spend: it is the only place that keeps working with the loop in the worker, and it needs no new plumbing, because <code>/worker/charge-tokens</code> already carries the <code>execId</code>. Abort with a typed error carrying the ceiling and the spend, rather than degrading silently.</span></div>
+            </div>
+          </div>
+          <div class="fn-asides"><div class="aside warn"><div class="aside-title" data-en="Measure against history" data-pt="Medir contra o histórico">Measure against history</div><span data-en="Compute what the proposed ceiling would have done to &lt;strong&gt;every real stored run&lt;/strong&gt;. Any run that legitimately completed and would be aborted is a false refusal, and that count must be zero before shipping." data-pt="Calcular o que o teto proposto teria feito com &lt;strong&gt;todo run real já armazenado&lt;/strong&gt;. Qualquer run que completou legitimamente e seria abortado é falsa recusa, e a contagem precisa ser zero antes de subir.">Compute what the proposed ceiling would have done to <strong>every real stored run</strong>. Any run that legitimately completed and would be aborted is a false refusal, and that count must be zero before shipping.</span></div><div class="aside info"><div class="aside-title" data-en="The ceiling derives from the plan" data-pt="O teto derivado do plano">The ceiling derives from the plan</div><span data-en="A single number is wrong at both ends of the customer range. A column on the product, with a conservative default and a per-org override." data-pt="Um número único erra nas duas pontas da base de clientes. Coluna no produto, com default conservador e override por org.">A single number is wrong at both ends of the customer range. A column on the product, with a conservative default and a per-org override.</span></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="fn-card" id="cov">
+      <div class="fn-card-header">
+        <div class="fn-title"><span class="badge">D</span> <span data-en="Parallelism is only safe with full coverage" data-pt="O paralelismo só é seguro com cobertura total">Parallelism is only safe with full coverage</span></div>
+        <div class="fn-loc">folw/contants.ts:2018-2062 · persist-node-success.ts:59-63</div>
+      </div>
+      <div class="fn-card-body">
+        <div class="fn-purpose" data-en="Making sure no node in the flow writes into another&#x27;s row while siblings run together." data-pt="Garantir que nenhum node do flow escreva na linha de outro enquanto irmãos rodam juntos.">Making sure no node in the flow writes into another&#x27;s row while siblings run together.</div>
+        <div class="fn-body-cols">
+          <div class="fn-main">
+            <div class="code-block" data-en="// worker: writes into its OWN row
+UPDATE flows_nodes SET data = coalesce(data,&amp;#x27;{}&amp;#x27;::jsonb) || $1::jsonb
+  WHERE node_id = $2 AND flow_id = $3
+
+// back inline: writes into the TARGET&amp;#x27;s row
+addConnectToNodes({ edges, nds, nodeData })  →  modifyData(nodes, targetId, ...)" data-pt="// worker: escreve na PRÓPRIA linha
+UPDATE flows_nodes SET data = coalesce(data,&amp;#x27;{}&amp;#x27;::jsonb) || $1::jsonb
+  WHERE node_id = $2 AND flow_id = $3
+
+// back inline: escreve na linha do ALVO
+addConnectToNodes({ edges, nds, nodeData })  →  modifyData(nodes, targetId, ...)">// worker: writes into its OWN row
+UPDATE flows_nodes SET data = coalesce(data,&#x27;{}&#x27;::jsonb) || $1::jsonb
+  WHERE node_id = $2 AND flow_id = $3
+
+// back inline: writes into the TARGET&#x27;s row
+addConnectToNodes({ edges, nds, nodeData })  →  modifyData(nodes, targetId, ...)</div>
+            <div class="ba">
+              <div class="now"><h5 data-en="How it is today" data-pt="Como está hoje">How it is today</h5><span data-en="All-backend is safe because it is serial. All-worker is safe because every write is own-row. &lt;strong&gt;Mixing the two and running in parallel is a lost update&lt;/strong&gt; — and it shows up rarely and reproduces badly." data-pt="Tudo-no-back é seguro por ser serial. Tudo-no-worker é seguro porque toda escrita é na própria linha. &lt;strong&gt;Misturar os dois e rodar em paralelo é lost update&lt;/strong&gt; — e ele aparece raramente e reproduz mal.">All-backend is safe because it is serial. All-worker is safe because every write is own-row. <strong>Mixing the two and running in parallel is a lost update</strong> — and it shows up rarely and reproduces badly.</span></div>
+              <div class="nxt"><h5 data-en="How it will be" data-pt="Como ficará">How it will be</h5><span data-en="Per-flow eligibility read from the dispatch registry: run in parallel only when &lt;strong&gt;every&lt;/strong&gt; executable node in the flow is a migrated type. If a flow is not eligible, the answer is to migrate the nodes that are missing — never to loosen the check." data-pt="Elegibilidade por flow lida do registro de dispatch: rodar em paralelo só quando &lt;strong&gt;todo&lt;/strong&gt; node executável do flow for de tipo migrado. Se um flow não é elegível, a resposta é migrar os nodes que faltam — nunca afrouxar a checagem.">Per-flow eligibility read from the dispatch registry: run in parallel only when <strong>every</strong> executable node in the flow is a migrated type. If a flow is not eligible, the answer is to migrate the nodes that are missing — never to loosen the check.</span></div>
+            </div>
+          </div>
+          <div class="fn-asides"><div class="aside warn"><div class="aside-title" data-en="The test that justifies the gate" data-pt="O teste que justifica o gate">The test that justifies the gate</div><span data-en="Force an ineligible flow through the parallel path and demonstrate the corruption: two writers on one row, one write disappearing. Without having seen that, nobody keeps the gate strict." data-pt="Forçar um flow inelegível pelo caminho paralelo e demonstrar a corrupção: dois escritores numa linha, uma escrita sumindo. Sem ter visto isso, ninguém mantém o gate estrito.">Force an ineligible flow through the parallel path and demonstrate the corruption: two writers on one row, one write disappearing. Without having seen that, nobody keeps the gate strict.</span></div><div class="aside info"><div class="aside-title" data-en="How much is left" data-pt="Quanto falta">How much is left</div><span data-en="Production dispatches seven types plus nine providers. Track A is what makes the v2&#x27;s premise true." data-pt="Produção despacha sete tipos mais nove providers. O Track A é o que torna a premissa da v2 verdadeira.">Production dispatches seven types plus nine providers. Track A is what makes the v2's premise true.</span></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="fn-card" id="notif">
+      <div class="fn-card-header">
+        <div class="fn-title"><span class="badge">E</span> <span data-en="Notifications do not cross replicas" data-pt="As notificações não cruzam réplica">Notifications do not cross replicas</span></div>
+        <div class="fn-loc">flux.service.ts:2288 · 5293-5307 · gateway.ts:69,76</div>
+      </div>
+      <div class="fn-card-body">
+        <div class="fn-purpose" data-en="Delivering a run event to the right client with more than one backend replica." data-pt="Entregar evento de run para o cliente certo com mais de uma réplica de backend.">Delivering a run event to the right client with more than one backend replica.</div>
+        <div class="fn-body-cols">
+          <div class="fn-main">
+            <div class="code-block" data-en="chatbotSocketByRun[runId] = socketId;   // ← process-local Map
+// worker → Redis → @EventPattern → gateway.emit(...)
+// inline  → gateway.emit(...) directly" data-pt="chatbotSocketByRun[runId] = socketId;   // ← Map local do processo
+// worker → Redis → @EventPattern → gateway.emit(...)
+// inline  → gateway.emit(...) direto">chatbotSocketByRun[runId] = socketId;   // ← process-local Map
+// worker → Redis → @EventPattern → gateway.emit(...)
+// inline  → gateway.emit(...) directly</div>
+            <div class="ba">
+              <div class="now"><h5 data-en="How it is today" data-pt="Como está hoje">How it is today</h5><span data-en="A run whose socket was registered on replica A cannot be notified from replica B. Already broken today, without depending on the migration. And there are two mechanisms — the direct socket and the Redis pub/sub — which will drift." data-pt="Um run cujo socket foi registrado na réplica A não pode ser notificado da réplica B. Já quebrado hoje, sem depender da migração. E existem dois mecanismos — o socket direto e o pub/sub do Redis — que vão divergir.">A run whose socket was registered on replica A cannot be notified from replica B. Already broken today, without depending on the migration. And there are two mechanisms — the direct socket and the Redis pub/sub — which will drift.</span></div>
+              <div class="nxt"><h5 data-en="How it will be" data-pt="Como ficará">How it will be</h5><span data-en="One path only: everything publishes to Redis and the socket layer merely consumes. A Redis adapter for Socket.io, so any replica can deliver to any connected client. And typed statuses — &lt;code&gt;PENDING&lt;/code&gt;, &lt;code&gt;RUNNING&lt;/code&gt;, &lt;code&gt;COMPLETED&lt;/code&gt;, &lt;code&gt;FAILED&lt;/code&gt;, &lt;code&gt;CANCELLED&lt;/code&gt; are free strings on both sides of a process boundary, the worst place for a typo." data-pt="Um caminho só: tudo publica no Redis e a camada de socket apenas consome. Adapter de Redis para o Socket.io, para qualquer réplica entregar a qualquer cliente conectado. E status tipado — &lt;code&gt;PENDING&lt;/code&gt;, &lt;code&gt;RUNNING&lt;/code&gt;, &lt;code&gt;COMPLETED&lt;/code&gt;, &lt;code&gt;FAILED&lt;/code&gt;, &lt;code&gt;CANCELLED&lt;/code&gt; são strings livres dos dois lados de uma fronteira de processo, o pior lugar para um typo.">One path only: everything publishes to Redis and the socket layer merely consumes. A Redis adapter for Socket.io, so any replica can deliver to any connected client. And typed statuses — <code>PENDING</code>, <code>RUNNING</code>, <code>COMPLETED</code>, <code>FAILED</code>, <code>CANCELLED</code> are free strings on both sides of a process boundary, the worst place for a typo.</span></div>
+            </div>
+          </div>
+          <div class="fn-asides"><div class="aside warn"><div class="aside-title" data-en="Before parallelism" data-pt="Antes do paralelismo">Before parallelism</div><span data-en="Parallel dispatch multiplies the event rate. And per-node ordering starts to matter: a &lt;code&gt;RUNNING&lt;/code&gt; cannot arrive after the same node&#x27;s &lt;code&gt;COMPLETED&lt;/code&gt;." data-pt="O dispatch paralelo multiplica a taxa de eventos. E ordenação por node passa a importar: um &lt;code&gt;RUNNING&lt;/code&gt; não pode chegar depois do &lt;code&gt;COMPLETED&lt;/code&gt; do mesmo node.">Parallel dispatch multiplies the event rate. And per-node ordering starts to matter: a <code>RUNNING</code> cannot arrive after the same node's <code>COMPLETED</code>.</span></div></div>
+        </div>
+      </div>
+    </div>
+  <div class="page-footer-nav"><a href="fase-2.html"><span data-en="← PHASE 2 — Workflow bootstrap" data-pt="← FASE 2 — Bootstrap do workflow">← PHASE 2 — Workflow bootstrap</span></a> <a href="fase-3h.html"><span data-en="PHASE 3½ — Special nodes →" data-pt="FASE 3½ — Nós especiais →">PHASE 3½ — Special nodes →</span></a></div>
+</div>
+<script>
+(function(){
+  var n=document.querySelectorAll('[data-en]'),b=document.querySelectorAll('.lang-sw button');
+  function apply(l){
+    n.forEach(function(el){var v=el.getAttribute('data-'+l); if(v===null)return; el.innerHTML=v;});
+    b.forEach(function(x){x.setAttribute('aria-pressed',String(x.getAttribute('data-lang')===l))});
+    document.documentElement.lang = l==='pt' ? 'pt-BR' : 'en';
+    try{localStorage.setItem('flux-lang',l)}catch(e){}
+  }
+  b.forEach(function(x){x.addEventListener('click',function(){apply(x.getAttribute('data-lang'))})});
+  var saved=null; try{saved=localStorage.getItem('flux-lang')}catch(e){}
+  apply(saved==='pt'?'pt':'en');
+})();
+</script>

@@ -1,6 +1,7 @@
 # A2 — Promote the finished modules and providers
 
-**Goal:** get the seven node types that already have worker modules into production. This is
+**Goal:** get the six node types and two integration providers that already have worker modules
+into production. This is
 release work, not engineering — but it is blocked on a branch reconciliation nobody has done.
 
 **Depends on:** A1. **Blocks:** nothing, but it is the cheapest coverage in the epic.
@@ -41,8 +42,8 @@ either re-break production or silently pass.
 
 ## Scope
 
-**In.** Reconcile the two lines, verify each of the seven against PLAN §3.4's seven-point
-definition of done, and ship.
+**In.** Reconcile the two lines, verify each of the six node types and both providers against
+PLAN §3.4's seven-point definition of done, and ship.
 
 **Out.** Any change to what those modules do. If a module fails the definition of done, that
 failure becomes its own task — do not fix it inside the promotion.
@@ -54,16 +55,16 @@ failure becomes its own task — do not fix it inside the promotion.
    code.** `-X ours` is banned here; it produces a clean merge that silently discards a side.
    The `worker-thirdparty-integration-migration/DEV-RECONCILIATION.md` records the policy that
    was already paid for once; follow it.
-2. Verify the merged `nodes.types.ts` has all seven enum entries and each has its full
+2. Verify the merged `nodes.types.ts` has all six enum entries and each has its full
    registration chain (module, activity, binding, proxy, workflow case).
 3. **Verify the back side exists.** A worker module without a registry entry is a stranded module
-   (see A3). For each of the seven, confirm the back actually routes it — and if not, add the
+   (see A3). For each of the six, confirm the back actually routes it — and if not, add the
    registry entry here, behind the flag from PLAN §3.2.
 4. Ship: `develop` → soak → `staging` → soak → PR to `main`.
 
 ## Verification
 
-- **Negative control (required).** For one of the seven, remove its case from
+- **Negative control (required).** For one of the six, remove its case from
   `process-single-node.workflow.ts`, run its spec, and record the failure. The workflow's default
   branch throws "Node type X not supported" — confirm that is what you see, because that is the
   exact failure mode a missing registration produces in production.
