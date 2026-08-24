@@ -84,11 +84,11 @@ to every capacity decision after this point.
 |---|---|
 | `A1` | Every later task writes to this registry; four uncoordinated lists is a tax each of them would otherwise pay |
 | `D2` | An agent following today's guidance produces wrong work **now** — this is not documentation polish |
-| `A2` | Seven node types and three providers are finished and not in production. Cheapest coverage in the epic |
+| `A2` | Six node types and two providers are finished and not in production. Cheapest coverage in the epic |
 | `A3` | Two worker modules nothing routes to — decide whether to finish or delete |
 
 **Exit gate.** A1's behaviour-neutrality table covers every registered type and proves nothing
-changed. A2's seven satisfy the seven-point definition of done. A3 leaves no module with
+changed. A2's six satisfy the seven-point definition of done. A3 leaves no module with
 `workerModule: true` and `dispatch: 'inline'`.
 
 **Rollback.** A1 is behaviour-neutral by construction, so reverting is safe at any point. A2 is a
@@ -242,6 +242,10 @@ Every action from `ARCHITECTURE-REVIEW.md` §7 has a home. Nothing was dropped.
 | 19 | Outbound delivery as retried activities | `A9` | 3 |
 | 20 | CSV batches as durable workflows | `B7` | 5 |
 | 21 | Temporal Schedules for user schedules, locks for framework crons | `S8` part 2 | 1 |
+
+**Re-validated against production on 2026-08-24.** `mcpNode` shipped completely, so the promotion
+queue drops from seven node types to six and from three providers to two. Every safety finding is
+unchanged. No task added, removed or re-sequenced — see analysis §12.
 
 ## Decisions that gate a wave
 

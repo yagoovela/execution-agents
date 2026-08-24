@@ -12,10 +12,10 @@ Four independent lists exist today, none referencing another (analysis §9.2.3):
 
 | List | Where | Contents | Actually governs |
 |---|---|---|---|
-| `isTemporalNode(type)` | `back/src/app-api/flux/flux.service.ts:740` | 6 types | the flow loop **and** `executeSingleNode` |
-| `isWorkerRoutedIntegration(node)` | `back/src/shared/integration/integration-executable-node.ts:38` | provider ∈ {stripe, wordpress, slack, notion, zapier, hubspot, supabase, pinecone} | the same two paths |
-| `MIGRATED_TEMPORAL_NODE_TYPES` | `back/src/temporal/single-node-legacy/legacy-allowlist.ts` | the same 6 | only `/process/single-node-legacy` validation |
-| `PREFETCH_SUPPORTED_NODE_TYPES` | `flux.service.ts:1402–1421` | 18 types | whether a flow may use the prefetch executor |
+| `isTemporalNode(type)` | `back/src/app-api/flux/flux.service.ts:740` | 7 types | the flow loop **and** `executeSingleNode` |
+| `isWorkerRoutedIntegration(node)` | `back/src/shared/integration/integration-executable-node.ts:38` | provider ∈ {stripe, wordpress, slack, notion, zapier, hubspot, supabase, pinecone, mcp} | the same two paths |
+| `MIGRATED_TEMPORAL_NODE_TYPES` | `back/src/temporal/single-node-legacy/legacy-allowlist.ts` | the same 7 | only `/process/single-node-legacy` validation |
+| `PREFETCH_SUPPORTED_NODE_TYPES` | `flux.service.ts:1402–1421` | 17 types | whether a flow may use the prefetch executor |
 | `basedOnType` | `node-reference-substitution.service.ts:25–80` | per node type, which fields a placeholder may reference | whether a node's field can be referenced at all |
 
 `basedOnType` is not a dispatch list, but it is the same failure mode and it is load-bearing for

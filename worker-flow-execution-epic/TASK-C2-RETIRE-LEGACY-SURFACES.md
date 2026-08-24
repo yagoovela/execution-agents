@@ -24,7 +24,7 @@ wake or record it here as knowingly carried until retirement.
 ### 2. The prefetch executor — measure, then decide (D2)
 
 `back/src/app-api/flux/prefetch/` is in production behind `FLUX_EXEC_MEMORY_MODE`, defaulting to
-`legacy`, with an 18-type whitelist that excludes every Temporal type and every control-flow type
+`legacy`, with a 17-type whitelist that excludes every Temporal type and every control-flow type
 (analysis §9.2.1). **Before deciding anything, measure:**
 
 - How many production flows satisfy `canUsePrefetchForFlow`? A whitelist excluding every LLM node

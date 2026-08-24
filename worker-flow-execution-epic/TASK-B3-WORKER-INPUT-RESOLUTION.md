@@ -24,7 +24,7 @@ destination, and move it to the worker side of the boundary.
 ## Scope
 
 **In.** Answer D2 with the measurement from C2 in hand: how many production flows satisfy the
-18-type whitelist, and what the prefetch path actually saved. A flag defaulting to `legacy` whose
+17-type whitelist, and what the prefetch path actually saved. A flag defaulting to `legacy` whose
 whitelist excludes every LLM node and every control-flow node may be shipped but dormant.
 
 **In.** Then either widen and relocate the prefetch executor, or implement resolution in the

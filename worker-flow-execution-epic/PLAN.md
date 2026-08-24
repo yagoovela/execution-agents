@@ -2,7 +2,7 @@
 
 **Status:** proposed 2026-08-21. Analysis this plan is built on:
 `.specs/features/worker-node-migration-analysis/README.md` in the `enhancedai-com/Workflow`
-repository (§1–§11, read against `worker@origin/main` and `back@origin/production`), plus the
+repository (§1–§12, read against `worker@origin/main` and `back@origin/production`), plus the
 published walkthroughs of the execution pipeline and the migration briefing. That analysis is
 **not** copied here — see `README.md` in this folder.
 
@@ -18,7 +18,7 @@ Four goals, in the requester's words, with what each means in this codebase:
 
 | # | Goal | Concretely |
 |---|---|---|
-| G1 | Run as many node types in the worker as possible | Go from **6 dispatched types + 8 integration providers** to full coverage of every node type that has server-side execution (§9.4, §11.1) |
+| G1 | Run as many node types in the worker as possible | Go from **7 dispatched types + 9 integration providers** to full coverage of every node type that has server-side execution (§9.4, §11.1) |
 | G2 | Run the flow itself through the worker, with the execution sequence owned there | Move the DAG scheduler and input resolution out of `FluxService.apiV2()`, replace the blocking per-node round trip with a workflow that dispatches ready nodes as a batch (§7, §9.2) |
 | G3 | Reduce backend dependencies and clean up what was migrated | Delete the inline twins, stop cross-node writes, retire the legacy endpoint, collapse the four dispatch lists into one (§9.2.3, §9.4) |
 | G4 | Clear documentation for developers **and for AI** | A single authoritative node contract, generated where possible, plus Mintlify pages and updated agent guidance (the existing `node-worker-migration` skill is already stale) |
@@ -115,7 +115,7 @@ throttle before adding the ceilings replaces a slow system with an unstable one.
 | Task | Goal | Depends on |
 |---|---|---|
 | [`TASK-A1-DISPATCH-REGISTRY.md`](./TASK-A1-DISPATCH-REGISTRY.md) | Collapse the four uncoordinated "what can the worker run" lists into one derived source | — |
-| [`TASK-A2-PROMOTE-SEVEN.md`](./TASK-A2-PROMOTE-SEVEN.md) | Reconcile the two branch lines and ship the seven finished modules to production | A1 |
+| [`TASK-A2-PROMOTE-SEVEN.md`](./TASK-A2-PROMOTE-SEVEN.md) | Ship the six finished modules and two providers still parked on a chore branch | A1 |
 | [`TASK-A3-STRANDED-MODULES.md`](./TASK-A3-STRANDED-MODULES.md) | Route `sqlQuerier` and `audioReaderNode`, whose worker modules nothing reaches | A1 |
 | [`TASK-A4-REPORT-BUILDER.md`](./TASK-A4-REPORT-BUILDER.md) | Migrate `reportBuilder` — the cheapest node, used to re-validate the template | A1 |
 | [`TASK-A5-IMAGE-FAMILY.md`](./TASK-A5-IMAGE-FAMILY.md) | Migrate `imageGenerator` + `imageReaderNode` over one shared provider layer | A1 |

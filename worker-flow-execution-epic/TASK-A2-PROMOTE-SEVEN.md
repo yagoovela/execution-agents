@@ -7,12 +7,15 @@ release work, not engineering — but it is blocked on a branch reconciliation n
 
 ## Why
 
-Seven types have complete worker modules that are not in production, split across **two branch
-lines that were never reconciled** (analysis §1.2):
+**Updated 2026-08-24.** `mcpNode` shipped: it is in the worker enum, has its `mcp` module, is in
+`isTemporalNode`, is in the legacy allowlist, and `mcp` is a migrated integration provider. It is
+done and out of this task. **Six** node types remain.
+
+Six types have complete worker modules that are not in production, and they are all on **one branch
+that was never merged anywhere** — not `develop`, not `staging` (analysis §12):
 
 | Node type | Worker module | Line |
 |---|---|---|
-| `mcpNode` | `mcp` | reached `origin/develop` |
 | `voiceBoxNode` | `voice-generator` | the merge branch |
 | `webCrawling` | `web-crawling` | the merge branch |
 | `webSearch` | `web-search` | the merge branch |
@@ -20,15 +23,16 @@ lines that were never reconciled** (analysis §1.2):
 | `pullData` | `pull-data` | the merge branch |
 | `pushData` | `push-data` | the merge branch |
 
-`origin/chore/merge-868k8twjb-develop-20260805` carries six of them; `mcpNode` went separately.
-**No single branch contains all seven.**
+`origin/chore/merge-868k8twjb-develop-20260805` carries all six. **The gap widened rather than
+closed:** the `mcpNode` line went all the way to production while these six are still parked on a
+chore branch that has reached no environment. Whatever is blocking that merge has now been blocking
+it while a parallel line shipped past it — worth finding out what, before this task starts.
 
 **There is a second queue, of the same shape** (analysis §10.3). Integration *providers* are
-promoted through the same pipeline, and three are finished on dev and absent from production:
-`clickup`, `quickbooks` and `mcp` — adapters present on `worker@origin/develop`, listed in
-`MIGRATED_INTEGRATION_PROVIDERS` on `back@origin/master`, missing from both production refs. This
-task covers them too; the promotion mechanics are identical and splitting them would mean
-reconciling the same branches twice.
+promoted through the same pipeline. `mcp` shipped on 2026-08-24; **two remain** — `clickup` and
+`quickbooks`, present on `worker@origin/develop` and in `MIGRATED_INTEGRATION_PROVIDERS` on
+`back@origin/master`, absent from both production refs. This task covers them too; the promotion
+mechanics are identical and splitting them would mean reconciling the same branches twice.
 
 **Check staging before shipping.** As of 2026-08-21 `back@origin/staging` still carried the
 pre-release six providers while production carried eight — staging is behind production for this
@@ -69,10 +73,10 @@ failure becomes its own task — do not fix it inside the promotion.
 
 ## Done when
 
-All seven node types are in `main`, the three pending providers are in production, each satisfies
+All six node types are in `main`, the two pending providers are in production, each satisfies
 PLAN §3.4, and the two branch lines no longer exist as divergent heads.
 
 ## Files
 
-`worker/src/modules/nodes/{mcp,voice-generator,web-crawling,web-search,large-memory,pull-data,push-data}/` ·
+`worker/src/modules/nodes/{voice-generator,web-crawling,web-search,large-memory,pull-data,push-data}/` ·
 `worker/src/modules/nodes/nodes.types.ts` · `worker/src/modules/temporal/**` · the A1 registry
