@@ -369,27 +369,27 @@
   </div>
 
   <h1>Validação do DAG</h1>
-  <p class="subtitle">O portão fail-fast entre montar o grafo e come&ccedil;ar a gastar recursos</p>
+  <p class="subtitle">O portão fail-fast entre montar o grafo e come&ccedil;ar a gastar recursos.</p>
 
   <!-- ============================================ -->
   <h2><span class="num">1</span> O que &eacute; essa etapa</h2>
 
   <p>
-    O passo <strong>2.3</strong> (<code>validateDag()</code>) roda logo depois do <a href="algoritmo-dag.html">buildDag (2.2)</a> e antes do loop de ondas paralelas (FASE 3). &Eacute; um passo <strong>puro</strong> &mdash; s&oacute; leitura da estrutura do DAG, sem I/O &mdash; e serve como o &uacute;ltimo ponto onde o workflow pode abortar <em>sem ter gasto nada</em>: nenhuma row em <code>node_executions</code>, nenhum token de LLM, nenhuma chamada externa.
+    O passo <strong>2.3</strong> (<code>validateDag()</code>) roda logo depois do <a href="algoritmo-dag.html">buildDag (2.2)</a> e antes do loop de ondas paralelas (FASE 3). &Eacute; um passo <strong>puro</strong>. S&oacute; leitura da estrutura do DAG, sem I/O. Serve como o &uacute;ltimo ponto onde o workflow pode abortar <em>sem ter gasto nada</em>. Nenhuma linha em <code>node_executions</code>, nenhum token de LLM, nenhuma chamada externa.
   </p>
 
   <p>
-    A regra &eacute; simples: <strong>se o DAG passa aqui, ele s&oacute; pode falhar por motivos de runtime real</strong> (LLM caiu, HTTP 500, timeout). Nunca por dado estrutural inv&aacute;lido. Essa garantia &eacute; o que permite tratar os guards da FASE 3 (deadlock em 3.2, falhas em 3.6) como puramente defensivos.
+    A regra &eacute; simples. <strong>Se o DAG passa aqui, ele s&oacute; pode falhar por motivos de runtime real</strong> (LLM caiu, HTTP 500, timeout). Nunca por dado estrutural inv&aacute;lido. Essa garantia &eacute; o que permite tratar os guards da FASE 3 (deadlock em 3.2, falhas em 3.6) como puramente defensivos.
   </p>
 
   <div class="callout info">
-    <strong>Onde ele mora:</strong> dentro do workflow Temporal, imediatamente ap&oacute;s <code>buildDag(snapshot)</code>. Roda sobre o DAG j&aacute; constru&iacute;do (n&atilde;o sobre o snapshot cru), porque alguns checks precisam da adjacency list e do <code>inDegree</code>, n&atilde;o s&oacute; da topologia bruta.
+    <strong>Onde ele mora:</strong> dentro do workflow Temporal, imediatamente ap&oacute;s <code>buildDag(snapshot)</code>. Roda sobre o DAG j&aacute; constru&iacute;do (n&atilde;o sobre o snapshot cru). Alguns checks precisam da adjacency list e do <code>inDegree</code>, n&atilde;o s&oacute; da topologia bruta.
   </div>
 
   <!-- ============================================ -->
   <h2><span class="num">2</span> O que valida</h2>
 
-  <p>S&atilde;o quatro classes de erro, cada uma pegando uma categoria diferente de bug estrutural. Todas causam <em>fail-fast</em>: o workflow lan&ccedil;a exce&ccedil;&atilde;o non-retryable e vai direto pra FASE 4 (finaliza&ccedil;&atilde;o em modo failed).</p>
+  <p>S&atilde;o quatro classes de erro. Cada uma pega uma categoria diferente de bug estrutural. Todas causam <em>fail-fast</em>. O workflow lan&ccedil;a exce&ccedil;&atilde;o non-retryable e vai direto para a FASE 4 (finaliza&ccedil;&atilde;o em modo failed).</p>
 
   <!-- CHECK 1: CYCLES -->
   <div class="check-card cycle">
@@ -398,7 +398,7 @@
       <span>Ciclos remanescentes</span>
     </div>
     <p style="margin:0">
-      O <a href="algoritmo-dag.html">buildDag (2.2)</a> j&aacute; roda DFS pra detectar e remover back-edges. Mas se algo passou (bug do algoritmo, dado corrompido, grafo malformado que enganou a detec&ccedil;&atilde;o), o resultado &eacute; um ciclo que sobrevive at&eacute; o runtime. Sem essa checagem, o loop de ondas (3.1) nunca conseguiria chegar a <code>inDegree === 0</code> nos n&oacute;s do ciclo &mdash; cairia s&oacute; no <em>deadlock guard</em> de <strong>3.2</strong>, sem contexto do que causou.
+      O <a href="algoritmo-dag.html">buildDag (2.2)</a> j&aacute; roda DFS para detectar e remover back-edges. Se algo passou (bug do algoritmo, dado corrompido, grafo malformado que enganou a detec&ccedil;&atilde;o), o resultado &eacute; um ciclo que sobrevive at&eacute; o runtime. Sem essa checagem, o loop de ondas (3.1) nunca conseguiria chegar a <code>inDegree === 0</code> nos n&oacute;s do ciclo. Cairia s&oacute; no <em>deadlock guard</em> de <strong>3.2</strong>, sem contexto do que causou.
     </p>
 
     <div class="bad-flow">
@@ -406,16 +406,16 @@
       <br>Prompt(NodeA) = "Baseado em {{NodeB.output}}, ..."
       <br>Prompt(NodeB) = "Baseado em {{NodeA.output}}, ..."
       <br><br>
-      <span class="lbl">Detec&ccedil;&atilde;o</span> A &rarr; B e B &rarr; A. buildDag remove uma das back-edges, mas se ambas foram criadas como refs impl&iacute;citas e o crit&eacute;rio de "qual remover" falhou &rarr; ciclo sobra &rarr; validateDag falha com <code>CycleDetectedError({ cycle: [A, B] })</code>.
+      <span class="lbl">Detec&ccedil;&atilde;o</span> A &rarr; B e B &rarr; A. buildDag remove uma das back-edges. Se ambas foram criadas como refs impl&iacute;citas e o crit&eacute;rio de "qual remover" falhou, o ciclo sobra. validateDag falha com <code>CycleDetectedError({ cycle: [A, B] })</code>.
     </div>
 
     <div class="rows">
       <span class="k">Erro lan&ccedil;ado</span>
-      <span class="v"><code>CycleDetectedError</code> &mdash; inclui a lista de n&oacute;s no ciclo pra debug</span>
+      <span class="v"><code>CycleDetectedError</code>. Inclui a lista de n&oacute;s no ciclo para debug.</span>
       <span class="k">Custo evitado</span>
-      <span class="v">Deadlock silencioso descoberto s&oacute; ap&oacute;s tentar executar todas as outras branches do flow</span>
+      <span class="v">Deadlock silencioso descoberto s&oacute; ap&oacute;s tentar executar todas as outras branches do flow.</span>
       <span class="k">Por que aqui</span>
-      <span class="v">S&oacute; d&aacute; pra saber se o DAG &eacute; ac&iacute;clico depois do buildDag &mdash; antes disso a estrutura ainda tem back-edges</span>
+      <span class="v">S&oacute; d&aacute; para saber se o DAG &eacute; ac&iacute;clico depois do buildDag. Antes disso a estrutura ainda tem back-edges.</span>
     </div>
   </div>
 
@@ -423,30 +423,30 @@
   <div class="check-card ref">
     <div class="check-card-title">
       <span class="check-tag ref">2.3.b</span>
-      <span>Refs <code>{{...}}</code> apontando pra n&oacute;s inexistentes</span>
+      <span>Refs <code>{{...}}</code> apontando para n&oacute;s inexistentes</span>
     </div>
     <p style="margin:0">
-      Cen&aacute;rio cl&aacute;ssico: usu&aacute;rio renomeou/deletou um n&oacute; mas outro n&oacute; ainda tem <code>{{OldName.field}}</code> escondido no meio de um prompt de 500 linhas. O buildDag consegue at&eacute; construir um grafo v&aacute;lido (ignora refs sem alvo), mas quando o n&oacute; consumidor rodar em 3.4.1, o <code>substitutePlaceholders</code> vai encontrar a ref &oacute;rf&atilde; e explodir.
+      Cen&aacute;rio cl&aacute;ssico: usu&aacute;rio renomeou/deletou um n&oacute; mas outro n&oacute; ainda tem <code>{{OldName.field}}</code> escondido no meio de um prompt de 500 linhas. O buildDag consegue at&eacute; construir um grafo v&aacute;lido (ignora refs sem alvo). Quando o n&oacute; consumidor rodar em 3.4.1, o <code>substitutePlaceholders</code> vai encontrar a ref &oacute;rf&atilde; e explodir.
     </p>
 
     <div class="bad-flow">
       <span class="lbl">Exemplo</span>
-      <br>Flow tem: Topic, WebSearch, Compare, Article
+      <br>Flow tem: Topic, WebSearch, Compare, Article.
       <br>Usu&aacute;rio deleta <code>WebSearch</code> mas esquece de limpar o prompt do Compare:
       <br>Prompt(Compare) = "Compare {{WebSearch.results}} e {{NewsSearch.results}}"
       <br><br>
-      <span class="lbl">Sem valida&ccedil;&atilde;o</span> Topic roda (5s, custo real), Compare come&ccedil;a a substituir, <code>{{WebSearch.results}}</code> &rarr; <code>undefined</code>, prompt vira lixo, LLM roda com prompt corrompido, cobra token, retorna resposta in&uacute;til.
+      <span class="lbl">Sem valida&ccedil;&atilde;o</span> Topic roda (5s, custo real). Compare come&ccedil;a a substituir. <code>{{WebSearch.results}}</code> vira <code>undefined</code>. Prompt vira lixo. LLM roda com prompt corrompido. Cobra token. Retorna resposta in&uacute;til.
       <br><br>
       <span class="lbl">Com valida&ccedil;&atilde;o</span> <code>InvalidReferenceError({ node: "Compare", brokenRefs: ["WebSearch.results"] })</code> antes de qualquer dispatch.
     </div>
 
     <div class="rows">
       <span class="k">Erro lan&ccedil;ado</span>
-      <span class="v"><code>InvalidReferenceError</code> &mdash; lista qual n&oacute; tem qual ref quebrada</span>
+      <span class="v"><code>InvalidReferenceError</code>. Lista qual n&oacute; tem qual ref quebrada.</span>
       <span class="k">Custo evitado</span>
-      <span class="v">Todas as depend&ecirc;ncias do n&oacute; quebrado rodam &agrave; toa (tokens, tempo, quotas de API externa)</span>
+      <span class="v">Todas as depend&ecirc;ncias do n&oacute; quebrado rodam &agrave; toa (tokens, tempo, quotas de API externa).</span>
       <span class="k">Por que aqui</span>
-      <span class="v">O buildDag j&aacute; escaneou as refs pra criar deps impl&iacute;citas &mdash; s&oacute; falta cruzar a lista de refs com o set de <code>nodeIds</code> existentes. Custo O(refs)</span>
+      <span class="v">O buildDag j&aacute; escaneou as refs para criar deps impl&iacute;citas. S&oacute; falta cruzar a lista de refs com o set de <code>nodeIds</code> existentes. Custo O(refs).</span>
     </div>
   </div>
 
@@ -457,26 +457,26 @@
       <span>Tipos incompat&iacute;veis entre source e target</span>
     </div>
     <p style="margin:0">
-      Cada tipo de n&oacute; declara seus <strong>input handles</strong> (o que ele espera receber) e <strong>output handles</strong> (o que ele produz). Uma aresta liga um output-handle de A a um input-handle de B; se os tipos n&atilde;o batem, o dispatch de B vai receber lixo ou falhar na coer&ccedil;&atilde;o.
+      Cada tipo de n&oacute; declara seus <strong>input handles</strong> (o que ele espera receber) e <strong>output handles</strong> (o que ele produz). Uma aresta liga um output-handle de A a um input-handle de B. Se os tipos n&atilde;o batem, o dispatch de B vai receber lixo ou falhar na coer&ccedil;&atilde;o.
     </p>
 
     <div class="bad-flow">
       <span class="lbl">Exemplo</span>
-      <br>Aresta: <code>PdfExtractor.file_bytes</code> &rarr; <code>TextGenerator.prompt_text</code>
-      <br>Tipos: <code>Binary</code> &rarr; <code>String</code> (incompat&iacute;vel)
+      <br>Aresta: <code>PdfExtractor.file_bytes</code> &rarr; <code>TextGenerator.prompt_text</code>.
+      <br>Tipos: <code>Binary</code> &rarr; <code>String</code> (incompat&iacute;vel).
       <br><br>
-      <span class="lbl">Sem valida&ccedil;&atilde;o</span> A convers&atilde;o silenciosa transforma bin&aacute;rio em <code>[object ArrayBuffer]</code>, LLM roda com prompt corrompido.
+      <span class="lbl">Sem valida&ccedil;&atilde;o</span> A convers&atilde;o silenciosa transforma bin&aacute;rio em <code>[object ArrayBuffer]</code>. LLM roda com prompt corrompido.
       <br><br>
       <span class="lbl">Com valida&ccedil;&atilde;o</span> <code>TypeMismatchError({ edge: [PdfExtractor, TextGenerator], expected: "String", got: "Binary" })</code>.
     </div>
 
     <div class="rows">
       <span class="k">Erro lan&ccedil;ado</span>
-      <span class="v"><code>TypeMismatchError</code> &mdash; identifica a aresta e o mismatch</span>
+      <span class="v"><code>TypeMismatchError</code>. Identifica a aresta e o mismatch.</span>
       <span class="k">Custo evitado</span>
-      <span class="v">Execu&ccedil;&otilde;es LLM com prompts corrompidos, resultados in&uacute;teis cobrados como sucesso</span>
+      <span class="v">Execu&ccedil;&otilde;es LLM com prompts corrompidos. Resultados in&uacute;teis cobrados como sucesso.</span>
       <span class="k">Nota</span>
-      <span class="v">S&oacute; valida arestas <em>expl&iacute;citas</em>. Refs <code>{{...}}</code> t&ecirc;m tipo din&acirc;mico (o valor pode ser qualquer coisa) &mdash; o mismatch delas s&oacute; d&aacute; pra pegar em runtime</span>
+      <span class="v">S&oacute; valida arestas <em>expl&iacute;citas</em>. Refs <code>{{...}}</code> t&ecirc;m tipo din&acirc;mico (o valor pode ser qualquer coisa). O mismatch delas s&oacute; d&aacute; para pegar em runtime.</span>
     </div>
   </div>
 
@@ -487,26 +487,26 @@
       <span>N&oacute;s &oacute;rf&atilde;os essenciais</span>
     </div>
     <p style="margin:0">
-      Alguns tipos de n&oacute; s&atilde;o marcados como <strong>essenciais</strong> &mdash; se est&atilde;o no flow, o run precisa alcan&ccedil;&aacute;-los pra ser considerado v&aacute;lido. Exemplos: <code>outputNode</code>, <code>responseNode</code>, <code>webhookResponse</code>. Se um deles ficou disconectado (ex: usu&aacute;rio deletou a &uacute;ltima aresta que chegava nele), o flow "termina com sucesso" mas n&atilde;o produz sa&iacute;da. Pior que falhar: falhar silenciosamente.
+      Alguns tipos de n&oacute; s&atilde;o marcados como <strong>essenciais</strong>. Se est&atilde;o no flow, a execu&ccedil;&atilde;o precisa alcan&ccedil;&aacute;-los para ser considerada v&aacute;lida. Exemplos: <code>outputNode</code>, <code>responseNode</code>, <code>webhookResponse</code>. Se um deles ficou desconectado (ex: usu&aacute;rio deletou a &uacute;ltima aresta que chegava nele), o flow "termina com sucesso" mas n&atilde;o produz sa&iacute;da. Pior que falhar. Falha silenciosamente.
     </p>
 
     <div class="bad-flow">
       <span class="lbl">Exemplo</span>
-      <br>Flow chatbot: <code>UserMessage &rarr; TextGen &rarr; ResponseNode</code>
+      <br>Flow chatbot: <code>UserMessage &rarr; TextGen &rarr; ResponseNode</code>.
       <br>Usu&aacute;rio deleta a aresta entre TextGen e ResponseNode.
       <br><br>
-      <span class="lbl">Sem valida&ccedil;&atilde;o</span> Run roda, TextGen produz output, ResponseNode &eacute; unreachable &rarr; podado em buildDag &rarr; flow termina "com sucesso" &rarr; cliente n&atilde;o recebe resposta &rarr; usu&aacute;rio v&ecirc; "erro do sistema" sem log de erro real.
+      <span class="lbl">Sem valida&ccedil;&atilde;o</span> Execu&ccedil;&atilde;o roda. TextGen produz sa&iacute;da. ResponseNode &eacute; unreachable, podado em buildDag. Flow termina "com sucesso". Cliente n&atilde;o recebe resposta. Usu&aacute;rio v&ecirc; "erro do sistema" sem log de erro real.
       <br><br>
-      <span class="lbl">Com valida&ccedil;&atilde;o</span> <code>OrphanEssentialNodeError({ nodes: ["ResponseNode"] })</code> &mdash; run falha com erro claro apontando que a resposta n&atilde;o est&aacute; conectada.
+      <span class="lbl">Com valida&ccedil;&atilde;o</span> <code>OrphanEssentialNodeError({ nodes: ["ResponseNode"] })</code>. Execu&ccedil;&atilde;o falha com erro claro apontando que a resposta n&atilde;o est&aacute; conectada.
     </div>
 
     <div class="rows">
       <span class="k">Erro lan&ccedil;ado</span>
-      <span class="v"><code>OrphanEssentialNodeError</code> &mdash; lista n&oacute;s essenciais desconectados</span>
+      <span class="v"><code>OrphanEssentialNodeError</code>. Lista n&oacute;s essenciais desconectados.</span>
       <span class="k">Custo evitado</span>
-      <span class="v">Falha silenciosa &mdash; classe de bug mais dif&iacute;cil de debugar porque n&atilde;o gera log de erro</span>
+      <span class="v">Falha silenciosa. Classe de bug mais dif&iacute;cil de debugar porque n&atilde;o gera log de erro.</span>
       <span class="k">Nota</span>
-      <span class="v">A lista de tipos "essenciais" &eacute; est&aacute;tica, definida por tipo de n&oacute; no registry. N&oacute;s n&atilde;o-essenciais &oacute;rf&atilde;os s&atilde;o s&oacute; podados (skipped), sem falhar</span>
+      <span class="v">A lista de tipos "essenciais" &eacute; est&aacute;tica, definida por tipo de n&oacute; no registry. N&oacute;s n&atilde;o essenciais &oacute;rf&atilde;os s&atilde;o s&oacute; podados (skipped), sem falhar.</span>
     </div>
   </div>
 
@@ -514,11 +514,11 @@
   <h2><span class="num">3</span> Por que dentro do workflow, e n&atilde;o no backend</h2>
 
   <p>
-    Uma pergunta natural: por que n&atilde;o rodar essa valida&ccedil;&atilde;o l&aacute; no <strong>1.2 / 1.3</strong> (backend, antes do enqueue)? Assim o erro voltaria direto pro cliente no HTTP response, sem nem iniciar workflow.
+    Uma pergunta natural: por que n&atilde;o rodar essa valida&ccedil;&atilde;o no <strong>1.2 / 1.3</strong> (backend, antes do enqueue)? Assim o erro voltaria direto para o cliente no HTTP response, sem nem iniciar workflow.
   </p>
 
   <p>
-    A resposta &eacute;: <strong>o backend n&atilde;o tem o DAG</strong>. Ele tem a topologia crua (n&oacute;s e arestas), mas o DAG s&oacute; existe depois do buildDag rodar &mdash; e o buildDag &eacute; que faz o scan de refs, classifica arestas, remove back-edges. Sem DAG, o backend s&oacute; poderia fazer valida&ccedil;&otilde;es superficiais (sintaxe, campos obrigat&oacute;rios). Duplicar a l&oacute;gica do buildDag no backend violaria o princ&iacute;pio "backend s&oacute; enfileira".
+    A resposta &eacute;: <strong>o backend n&atilde;o tem o DAG</strong>. Ele tem a topologia crua (n&oacute;s e arestas). O DAG s&oacute; existe depois do buildDag rodar. O buildDag &eacute; que faz o scan de refs, classifica arestas, remove back-edges. Sem DAG, o backend s&oacute; poderia fazer valida&ccedil;&otilde;es superficiais (sintaxe, campos obrigat&oacute;rios). Duplicar a l&oacute;gica do buildDag no backend violaria o princ&iacute;pio "backend s&oacute; enfileira".
   </p>
 
   <div class="location-table">
@@ -533,28 +533,28 @@
       </thead>
       <tbody>
         <tr>
-          <td>2.3.a &mdash; Ciclos</td>
+          <td>2.3.a. Ciclos.</td>
           <td class="no">N&atilde;o</td>
           <td class="yes">Sim</td>
-          <td>Precisa do buildDag rodar antes pra saber se ainda h&aacute; ciclos ap&oacute;s remo&ccedil;&atilde;o de back-edges</td>
+          <td>Precisa do buildDag rodar antes para saber se ainda h&aacute; ciclos ap&oacute;s remo&ccedil;&atilde;o de back-edges.</td>
         </tr>
         <tr>
-          <td>2.3.b &mdash; Refs quebradas</td>
+          <td>2.3.b. Refs quebradas.</td>
           <td>Parcial</td>
           <td class="yes">Sim</td>
-          <td>Backend poderia fazer scan textual, mas o parser de refs vive no workflow &mdash; duplicar &eacute; risco</td>
+          <td>Backend poderia fazer scan textual. O parser de refs vive no workflow. Duplicar &eacute; risco.</td>
         </tr>
         <tr>
-          <td>2.3.c &mdash; Tipos</td>
+          <td>2.3.c. Tipos.</td>
           <td>Parcial</td>
           <td class="yes">Sim</td>
-          <td>Backend n&atilde;o carrega o registry de tipos &mdash; s&oacute; conhece IDs de nodeType</td>
+          <td>Backend n&atilde;o carrega o registry de tipos. S&oacute; conhece IDs de nodeType.</td>
         </tr>
         <tr>
-          <td>2.3.d &mdash; &Oacute;rf&atilde;os</td>
+          <td>2.3.d. &Oacute;rf&atilde;os.</td>
           <td class="no">N&atilde;o</td>
           <td class="yes">Sim</td>
-          <td>Precisa da lista de <em>reachable</em>, que sai do BFS do buildDag</td>
+          <td>Precisa da lista de <em>reachable</em>, que sai do BFS do buildDag.</td>
         </tr>
       </tbody>
     </table>
@@ -563,8 +563,8 @@
   <div class="callout tip">
     <strong>Benef&iacute;cios colaterais de rodar no workflow:</strong>
     <br>&bull; Roda sobre o <em>snapshot congelado</em> (1.3), n&atilde;o sobre a config viva que o usu&aacute;rio pode ter editado entre a valida&ccedil;&atilde;o e a execu&ccedil;&atilde;o.
-    <br>&bull; &Eacute; idempotente e retryable pelo Temporal &mdash; se o worker cair no meio, replay &eacute; barato (query pura, sem side-effect).
-    <br>&bull; Centraliza a garantia: qualquer path de entrada (os 6 endpoints legados) passa pelo mesmo validador. N&atilde;o d&aacute; pra "burlar" chamando um endpoint alternativo.
+    <br>&bull; &Eacute; idempotente e retryable pelo Temporal. Se o worker cair no meio, replay &eacute; barato (query pura, sem side-effect).
+    <br>&bull; Centraliza a garantia. Qualquer path de entrada (os 6 endpoints legados) passa pelo mesmo validador. N&atilde;o d&aacute; para "burlar" chamando um endpoint alternativo.
   </div>
 
   <!-- ============================================ -->
@@ -578,19 +578,19 @@
         O passo 3.2 checa "<code>readySet.size === 0 && pending.size &gt; 0</code>?" e falha com <code>DeadlockError</code> se sim. A documenta&ccedil;&atilde;o dele diz explicitamente "<em>n&atilde;o deve acontecer com validateDag passando</em>".
       </p>
       <p>
-        Sem o 2.3, o 3.2 seria a linha de defesa <em>prim&aacute;ria</em> contra DAGs quebrados &mdash; e todo deadlock apareceria sem contexto. Com o 2.3 passando, o 3.2 vira defesa <strong>puramente secund&aacute;ria</strong>: se disparar em prod, &eacute; bug do engine (buildDag ou validateDag falharam em cobrir um caso), n&atilde;o do flow do usu&aacute;rio. Isso muda completamente o playbook de debug.
+        Sem o 2.3, o 3.2 seria a linha de defesa <em>prim&aacute;ria</em> contra DAGs quebrados. Todo deadlock apareceria sem contexto. Com o 2.3 passando, o 3.2 vira defesa <strong>puramente secund&aacute;ria</strong>. Se disparar em prod, &eacute; bug do engine (buildDag ou validateDag falharam em cobrir um caso), n&atilde;o do flow do usu&aacute;rio. Isso muda completamente o playbook de debug.
       </p>
     </div>
   </div>
 
   <p>
-    Mesma rela&ccedil;&atilde;o com o <strong>3.4.1</strong> (substitutePlaceholders): sem valida&ccedil;&atilde;o de refs, o erro dele seria comum e ambiguo ("ref quebrada em runtime"). Com valida&ccedil;&atilde;o, se ele falhar, &eacute; porque a ref aponta pra algo que <em>deveria existir mas n&atilde;o est&aacute; no OutputStore</em> &mdash; problema de sequenciamento, n&atilde;o de config. Escopo do bug fica muito menor.
+    Mesma rela&ccedil;&atilde;o com o <strong>3.4.1</strong> (substitutePlaceholders). Sem valida&ccedil;&atilde;o de refs, o erro dele seria comum e amb&iacute;guo ("ref quebrada em runtime"). Com valida&ccedil;&atilde;o, se ele falhar, &eacute; porque a ref aponta para algo que <em>deveria existir mas n&atilde;o est&aacute; no OutputStore</em>. Problema de sequenciamento, n&atilde;o de config. Escopo do bug fica muito menor.
   </p>
 
   <!-- ============================================ -->
   <h2><span class="num">5</span> O que muda com esse passo (com vs sem)</h2>
 
-  <p>Cen&aacute;rio concreto: um flow de agente de pesquisa com 8 n&oacute;s, onde o penultimo n&oacute; tem uma ref quebrada. Comparando os dois caminhos:</p>
+  <p>Cen&aacute;rio concreto: um flow de agente de pesquisa com 8 n&oacute;s, onde o pen&uacute;ltimo n&oacute; tem uma ref quebrada. Comparando os dois caminhos:</p>
 
   <div class="timeline-compare">
 
@@ -601,36 +601,36 @@
       <div class="tl-step">
         <div class="n">1</div>
         <div>
-          Backend enfileira, workflow inicia
-          <span class="cost">~50ms &mdash; sem custo real</span>
+          Backend enfileira, workflow inicia.
+          <span class="cost">~50ms. Sem custo real.</span>
         </div>
       </div>
       <div class="tl-step">
         <div class="n">2</div>
         <div>
-          Ondas 1&ndash;5 rodam OK (buscas, extra&ccedil;&otilde;es, compara&ccedil;&otilde;es)
-          <span class="cost">~45s de execu&ccedil;&atilde;o + ~15k tokens LLM cobrados</span>
+          Ondas 1&ndash;5 rodam OK (buscas, extra&ccedil;&otilde;es, compara&ccedil;&otilde;es).
+          <span class="cost">~45s de execu&ccedil;&atilde;o + ~15k tokens LLM cobrados.</span>
         </div>
       </div>
       <div class="tl-step">
         <div class="n">3</div>
         <div>
-          Wave 6 come&ccedil;a: dispatch do n&oacute; com ref quebrada
-          <span class="cost">INSERT em node_executions (status=running)</span>
+          Wave 6 come&ccedil;a. Dispatch do n&oacute; com ref quebrada.
+          <span class="cost">INSERT em node_executions (status=running).</span>
         </div>
       </div>
       <div class="tl-step">
         <div class="n">4</div>
         <div>
-          substitutePlaceholders explode: <code>{{DeletedNode.x}}</code> = undefined
-          <span class="cost">Alternativa 1: LLM roda com prompt lixo &rarr; mais tokens gastos</span>
+          substitutePlaceholders explode. <code>{{DeletedNode.x}}</code> = undefined.
+          <span class="cost">Alternativa 1: LLM roda com prompt lixo. Mais tokens gastos.</span>
         </div>
       </div>
       <div class="tl-step boom">
         <div class="n">&#9888;</div>
         <div>
-          <strong>Run falha</strong> depois de 45s + $0.30 gastos
-          <br><span class="cost">Callbacks de erro parciais, node_executions inconsistente, usu&aacute;rio v&ecirc; erro sem contexto</span>
+          <strong>Execu&ccedil;&atilde;o falha</strong> depois de 45s + $0.30 gastos.
+          <br><span class="cost">Callbacks de erro parciais. node_executions inconsistente. Usu&aacute;rio v&ecirc; erro sem contexto.</span>
         </div>
       </div>
     </div>
@@ -642,36 +642,36 @@
       <div class="tl-step">
         <div class="n">1</div>
         <div>
-          Backend enfileira, workflow inicia
-          <span class="savings">~50ms &mdash; sem custo real</span>
+          Backend enfileira, workflow inicia.
+          <span class="savings">~50ms. Sem custo real.</span>
         </div>
       </div>
       <div class="tl-step">
         <div class="n">2</div>
         <div>
-          Bootstrap: loadTopology &rarr; buildDag &rarr; <strong>validateDag</strong>
-          <span class="savings">~10ms &mdash; puro, sem I/O</span>
+          Bootstrap: loadTopology &rarr; buildDag &rarr; <strong>validateDag</strong>.
+          <span class="savings">~10ms. Puro, sem I/O.</span>
         </div>
       </div>
       <div class="tl-step saved">
         <div class="n">&#10003;</div>
         <div>
-          <strong>Detecta ref quebrada, aborta imediatamente</strong>
-          <br><span class="savings">flow_executions.status = failed com <code>InvalidReferenceError</code> apontando exatamente qual n&oacute; e qual ref</span>
+          <strong>Detecta ref quebrada. Aborta imediatamente.</strong>
+          <br><span class="savings">flow_executions.status = failed com <code>InvalidReferenceError</code> apontando exatamente qual n&oacute; e qual ref.</span>
         </div>
       </div>
       <div class="tl-step">
         <div class="n">3</div>
         <div>
-          Callback &uacute;nico de erro, usu&aacute;rio v&ecirc; mensagem clara
-          <span class="savings">0 tokens gastos, 0 chamadas externas, 0 rows sujas em node_executions</span>
+          Callback &uacute;nico de erro. Usu&aacute;rio v&ecirc; mensagem clara.
+          <span class="savings">0 tokens gastos, 0 chamadas externas, 0 linhas sujas em node_executions.</span>
         </div>
       </div>
       <div class="tl-step">
         <div class="n">4</div>
         <div>
-          Editor pode destacar visualmente o n&oacute; com a ref quebrada
-          <span class="savings">Diagn&oacute;stico &eacute; imediato porque o erro traz o nodeId</span>
+          Editor pode destacar visualmente o n&oacute; com a ref quebrada.
+          <span class="savings">Diagn&oacute;stico &eacute; imediato porque o erro traz o nodeId.</span>
         </div>
       </div>
     </div>
@@ -679,7 +679,7 @@
   </div>
 
   <div class="callout warn">
-    <strong>Em escala, o efeito &eacute; grande:</strong> em produ&ccedil;&atilde;o com centenas de runs por hora, cada 1% de flows com refs quebradas se traduz em milhares de d&oacute;lares/m&ecirc;s em tokens desperdi&ccedil;ados e p&aacute;ginas de suporte "meu agente rodou mas n&atilde;o me deu resposta". O validateDag paga o pr&oacute;prio custo de implementa&ccedil;&atilde;o rapidamente.
+    <strong>Em escala, o efeito &eacute; grande.</strong> Em produ&ccedil;&atilde;o com centenas de execu&ccedil;&otilde;es por hora, cada 1% de flows com refs quebradas se traduz em milhares de d&oacute;lares/m&ecirc;s em tokens desperdi&ccedil;ados e p&aacute;ginas de suporte "meu agente rodou mas n&atilde;o me deu resposta". O validateDag paga o pr&oacute;prio custo de implementa&ccedil;&atilde;o rapidamente.
   </div>
 
   <!-- ============================================ -->
@@ -690,14 +690,14 @@
   <div class="check-card" style="border-left-color:#94A3B8">
     <h3 style="margin:0 0 6px 0">Cr&eacute;ditos, permiss&otilde;es, acesso a modelos</h3>
     <p style="margin:0">
-      Rodam no 1.2 (backend). N&atilde;o dependem do DAG e falhar cedo (antes de enfileirar) economiza um round-trip ao Temporal.
+      Rodam no 1.2 (backend). N&atilde;o dependem do DAG. Falhar cedo (antes de enfileirar) economiza um round-trip ao Temporal.
     </p>
   </div>
 
   <div class="check-card" style="border-left-color:#94A3B8">
     <h3 style="margin:0 0 6px 0">Valida&ccedil;&atilde;o de valores de placeholders em runtime</h3>
     <p style="margin:0">
-      Ex: prompt tem <code>{{X.y}}</code> onde X existe mas <code>y</code> n&atilde;o est&aacute; no output real. Isso s&oacute; d&aacute; pra saber depois de X executar &mdash; fica no 3.4.1. O validateDag n&atilde;o tenta prever campos de output.
+      Ex: prompt tem <code>{{X.y}}</code> onde X existe mas <code>y</code> n&atilde;o est&aacute; na sa&iacute;da real. Isso s&oacute; d&aacute; para saber depois de X executar. Fica no 3.4.1. O validateDag n&atilde;o tenta prever campos de sa&iacute;da.
     </p>
   </div>
 
@@ -711,7 +711,7 @@
   <div class="check-card" style="border-left-color:#94A3B8">
     <h3 style="margin:0 0 6px 0">Custo estimado / limite de or&ccedil;amento</h3>
     <p style="margin:0">
-      Ortogonal &mdash; se existir, seria um passo 2.3.5 separado (com regras de business, n&atilde;o de estrutura de DAG).
+      Ortogonal. Se existir, seria um passo 2.3.5 separado (com regras de business, n&atilde;o de estrutura de DAG).
     </p>
   </div>
 

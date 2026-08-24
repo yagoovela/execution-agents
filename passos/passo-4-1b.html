@@ -249,18 +249,18 @@
     <h1>Passo 4.1b — Limpeza flow-global.data.logs</h1>
   </div>
   <div class="page-sub">
-    Bloco em <code>flux.service.ts:4851-4855</code>. Cinco linhas. Depois de tudo — do loop, do cancel (4.1a), da checagem de erros — o backend acha o nó <em>flow-global</em> no <code>myUpdatedNodes</code> por <strong>substring de id</strong> e <em>zera</em> o array <code>data.logs</code> in-place. É a última mutação de estado antes da persistência final do array de nós no banco.
+    Bloco em <code>flux.service.ts:4851-4855</code>. Cinco linhas. Depois de tudo (o loop, o cancel de 4.1a, a checagem de erros), o backend localiza o nó <em>flow-global</em> em <code>myUpdatedNodes</code> por substring de id. Zera o array <code>data.logs</code> in-place. É a última mutação de estado antes da persistência final do array de nós no banco.
   </div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
     <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
     <ul>
-      <li><strong>Acha por substring, não por type:</strong> <code>myUpdatedNodes.find(n => n.id.includes('flow-global'))</code>. Não pergunta o <code>type</code>, só olha se o id tem "flow-global" dentro. Existe pra ser resistente a inconsistências entre <code>type: 'globalStarter'</code> e o naming legado <code>flow-global-starter_*</code>.</li>
-      <li><strong>Reseta logs pra array vazio:</strong> se achou e ele tem <code>data</code>, faz <code>globalNode.data.logs = []</code>. <strong>Mutação in-place</strong> — difere do padrão de closure mutation via callback (como <code>onMutateSchema</code>, <code>onMutateObjectCallerData</code> em 1.5).</li>
-      <li><strong>Por que zerar?</strong> Historicamente o node <code>globalStarter</code> acumulava logs de todos os runs em <code>data.logs</code>. Hoje esses logs migraram pra tabela dedicada <code>flow_logs</code> (via <code>flowLogsService.createLog</code>, chamado logo depois em 4869). O array em <code>data.logs</code> virou vestigial — se persistir cheio, ele volta pro DB inflando a row do <code>flows_nodes</code> sem necessidade.</li>
-      <li><strong>Mesmo trecho existe em migração:</strong> <code>internal/services/flow_logs_migration.service.ts:53-65</code> faz um find idêntico (mesma substring) só que <em>lendo</em> os logs pra migrar pra <code>flow_logs</code> — depois disso essa limpeza no fim do run garante que a próxima run não persista uma versão inchada.</li>
-      <li><strong>Downstream:</strong> depois desse reset, mais um <code>addConnectToNodes</code> corre (linha 4934) via <code>currentFlux</code>, depois o array final vai pra persistência via <code>persistNodeDataToLiveRow</code> nos <code>outputObjectNode</code> (linha 4962) — mas <em>não</em> há UPDATE explícito pro <code>flow-global</code> nesse ponto. A limpeza aqui existe mais pro estado em memória (que ainda é usado no runLog collector) do que pro DB.</li>
+      <li><strong>Localiza por substring, não por type.</strong> <code>myUpdatedNodes.find(n => n.id.includes('flow-global'))</code>. Não consulta o <code>type</code>, só verifica se o id contém <code>flow-global</code>. Existe para ser resistente a inconsistências entre <code>type: 'globalStarter'</code> e o naming legado <code>flow-global-starter_*</code>.</li>
+      <li><strong>Reseta logs para array vazio.</strong> Se localizou e o nó tem <code>data</code>, faz <code>globalNode.data.logs = []</code>. Mutação in-place. Difere do padrão de closure mutation via callback (como <code>onMutateSchema</code> ou <code>onMutateObjectCallerData</code> em 1.5).</li>
+      <li><strong>Por que zerar.</strong> Historicamente o nó <code>globalStarter</code> acumulava logs de todas as execuções em <code>data.logs</code>. Hoje esses logs migraram para a tabela dedicada <code>flow_logs</code> via <code>flowLogsService.createLog</code>, chamado logo depois em 4869. O array em <code>data.logs</code> virou vestigial. Se persistir cheio, volta para o banco e infla a linha de <code>flows_nodes</code> sem necessidade.</li>
+      <li><strong>O mesmo trecho existe na migração.</strong> <code>internal/services/flow_logs_migration.service.ts:53-65</code> faz um find idêntico (mesma substring). Só que lê os logs para migrar para <code>flow_logs</code>. Esta limpeza no fim da execução garante que a próxima execução não persista uma versão inchada.</li>
+      <li><strong>Downstream.</strong> Depois desse reset, mais um <code>addConnectToNodes</code> executa (linha 4934) via <code>currentFlux</code>. O array final vai para persistência via <code>persistNodeDataToLiveRow</code> nos <code>outputObjectNode</code> (linha 4962). Não há <code>UPDATE</code> explícito para o <code>flow-global</code> nesse ponto. A limpeza aqui existe mais para o estado em memória (ainda usado no <code>runLogCollector</code>) do que para o banco.</li>
     </ul>
   </div>
 
@@ -275,7 +275,7 @@
       <span class="overview-chip" style="border-left-color:#94A3B8"><span class="lbl">downstream</span>persist implícito</span>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Bloco de 5 linhas. Nenhuma função nova é chamada — só <code>.find()</code> + mutação in-place. A limpeza afeta o array <code>myUpdatedNodes</code> que é usado em várias etapas seguintes.
+      Bloco de 5 linhas. Nenhuma função nova é chamada. Apenas <code>.find()</code> e mutação in-place. A limpeza afeta o array <code>myUpdatedNodes</code> usado em várias etapas seguintes.
     </div>
   </div>
 
@@ -295,10 +295,10 @@
         const globalNode = myUpdatedNodes.find(n =&gt; n.id.includes('flow-global'));
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Localizar o único nó do tipo <em>globalStarter</em> no array de nodes do run, usando uma heurística de <em>substring de id</em> em vez do campo <code>type</code>. É defensivo — em bases antigas ou seeded data pode haver casos onde o <code>type</code> não bate mas o id sim.
+        <strong>Propósito.</strong> Localizar o único nó do tipo <code>globalStarter</code> no array de nodes da execução. Usa uma heurística de substring de id em vez do campo <code>type</code>. É defensivo. Em bases antigas ou seed data pode haver casos em que o <code>type</code> não bate mas o id sim.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> pense nele como um <em>reconhecimento facial pela camiseta em vez do RG</em>. O jeito "certo" seria filtrar por <code>n.type === 'globalStarter'</code>. Só que ao longo dos anos os flows foram criados com convenções diferentes: alguns têm <code>type: 'globalStarter'</code>, outros o id foi só <code>'flow-global-starter_&lt;random&gt;'</code>. A substring garante achar em ambos os casos. Todo id de globalStarter contém a string "flow-global" (formatos típicos: <code>flow-global-starter_0.13579</code>, <code>flow-global-starter_&lt;uuid&gt;</code>). Assim, <em>independentemente</em> do que o type diga, se o id tem "flow-global" no meio, é aquele nó. É a mesma lógica usada na migração de logs em <code>flow_logs_migration.service.ts</code>.
+        <strong>Em resumo.</strong> A alternativa direta seria filtrar por <code>n.type === 'globalStarter'</code>. Ao longo dos anos, os flows foram criados com convenções diferentes. Alguns têm <code>type: 'globalStarter'</code>. Outros mantêm apenas o id no formato <code>flow-global-starter_&lt;random&gt;</code>. A substring garante encontrar em ambos os casos. Todo id de <code>globalStarter</code> contém a string <code>flow-global</code>. Os formatos típicos são <code>flow-global-starter_0.13579</code> ou <code>flow-global-starter_&lt;uuid&gt;</code>. Independentemente do type, se o id contém <code>flow-global</code>, é aquele nó. É a mesma lógica usada na migração de logs em <code>flow_logs_migration.service.ts</code>.
       </div>
 
       <div class="fn-body-cols">
@@ -318,14 +318,14 @@
           <div class="arrow">↓</div>
 
           <div class="box decision">
-            <div class="box-title"><span class="badge step">A2</span> Por que substring e não type?</div>
+            <div class="box-title"><span class="badge step">A2</span> Por que substring e não type</div>
             <div class="box-desc">
               O mesmo padrão aparece em:
-              <br>• <code>flux.service.ts:1506</code> — <code>edges.find(e =&gt; e?.source?.includes?.('flow-global'))</code>
-              <br>• <code>flux.service.ts:2561</code> — <code>edge.source.includes('flow-global-starter')</code>
-              <br>• <code>flux.service.ts:4851</code> — este passo
-              <br>• <code>flow_logs_migration.service.ts:54</code> — <code>node.id?.includes('flow-global')</code>
-              <br><br>Consistência interna: o "entry point" do run <em>sempre</em> é resolvido por substring de id. É o único ponto de rendezvous com sub-string entre backend, mcp e migration.
+              <br>• <code>flux.service.ts:1506</code>. <code>edges.find(e =&gt; e?.source?.includes?.('flow-global'))</code>.
+              <br>• <code>flux.service.ts:2561</code>. <code>edge.source.includes('flow-global-starter')</code>.
+              <br>• <code>flux.service.ts:4851</code>. Este passo.
+              <br>• <code>flow_logs_migration.service.ts:54</code>. <code>node.id?.includes('flow-global')</code>.
+              <br><br>Consistência interna. O entry point da execução sempre é resolvido por substring de id. É o único ponto de rendezvous com sub-string entre backend, MCP e migration.
             </div>
             <div class="box-file">flux.service.ts:1506, 2561, 4851</div>
           </div>
@@ -334,18 +334,18 @@
         <div class="fn-asides">
           <div class="aside warn">
             <div class="aside-title">⚠️ Substring "flow-global" tem falso-positivo latente</div>
-            Se alguém criar um flow com id de nó tipo <code>my-flow-global-var</code> ou <code>flow-global-config</code>, o <code>.find()</code> vai <em>casar com ele em vez do globalStarter</em>. Não bloqueia porque o teste de <code>data.logs</code> em B provavelmente falha, mas é uma armadilha esperando pra explodir se o naming for lax.
+            Se alguém criar um flow com id de nó do tipo <code>my-flow-global-var</code> ou <code>flow-global-config</code>, o <code>.find()</code> casa com ele em vez do <code>globalStarter</code>. Não bloqueia porque a checagem de <code>data.logs</code> em B provavelmente falha. É uma armadilha latente caso o naming seja frouxo.
           </div>
 
           <div class="aside info">
-            <div class="aside-title">🎯 Por que não usar type?</div>
-            Em <code>utils/clean-fluxbot-flow.ts:14-19</code> a mesma limpeza acontece <em>com</em> filtro por <code>node.type === 'globalStarter'</code>. Aqui não. Provável razão: o <code>type</code> pode não estar carregado no <code>myUpdatedNodes</code> em todos os fluxos de código (o array passou por múltiplos <code>addConnectToNodes</code> e mutations).
+            <div class="aside-title">🎯 Por que não usar type</div>
+            Em <code>utils/clean-fluxbot-flow.ts:14-19</code> a mesma limpeza acontece com filtro por <code>node.type === 'globalStarter'</code>. Aqui não. Razão provável. O <code>type</code> pode não estar carregado no <code>myUpdatedNodes</code> em todos os caminhos de código. O array passou por múltiplos <code>addConnectToNodes</code> e mutações.
             <br><br>Substring é o denominador comum mais seguro.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 Constante duplicada</div>
-            <code>mcp-write.service.ts:41</code> tem <code>GLOBAL_STARTER_ID_SUBSTRING = 'flow-global-starter'</code>. Aqui usa o literal <code>'flow-global'</code> (mais curto). Divergência: se um id fosse <code>flow-global-config</code> (sem "starter"), o MCP não confundiria mas este código sim.
+            O <code>mcp-write.service.ts:41</code> tem <code>GLOBAL_STARTER_ID_SUBSTRING = 'flow-global-starter'</code>. Aqui usa o literal <code>'flow-global'</code> (mais curto). Divergência. Se um id fosse <code>flow-global-config</code> (sem <code>starter</code>), o MCP não confundiria, mas este código sim.
           </div>
         </div>
       </div>
@@ -368,10 +368,10 @@
         if (globalNode?.data) { globalNode.data.logs = []; }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Descartar o array <code>data.logs</code> in-place no objeto do <code>globalStarter</code>. Esse array é vestigial — a fonte de verdade dos logs de run migrou pra tabela <code>flow_logs</code>. Se persistir com dados dentro, a próxima leitura do flow traz um payload maior sem valor.
+        <strong>Propósito.</strong> Descartar o array <code>data.logs</code> in-place no objeto do <code>globalStarter</code>. Esse array é vestigial. A fonte de verdade dos logs de execução migrou para a tabela <code>flow_logs</code>. Se persistir com dados dentro, a próxima leitura do flow traz um payload maior sem valor.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> pense nele como <em>esvaziar o lixeirão antes de sair do escritório</em>. O nó <code>globalStarter</code> historicamente carregou um array <code>logs</code> dentro do <code>data</code> — cada run empurrava informação lá. Isso hoje é redundante: os logs oficiais vão pra tabela <code>flow_logs</code> via <code>flowLogsService.createLog</code>, chamado alguns milissegundos depois (linha 4869). Manter o array preenchido significa que, ao persistir o <code>myUpdatedNodes</code> em <code>flows_nodes.data</code>, você duplica dados — inflando a row sem necessidade. Então: acha o nó, checa se tem <code>data</code> (guard defensive), e reatribui <code>logs</code> pra array vazio. É <strong>mutação direta do objeto</strong>, não substituição via callback — o objeto dentro de <code>myUpdatedNodes</code> muda in-place e quem tiver referência a ele vê o novo estado.
+        <strong>Em resumo.</strong> O nó <code>globalStarter</code> historicamente carregava um array <code>logs</code> dentro do <code>data</code>. Cada execução empurrava informação lá. Hoje é redundante. Os logs oficiais vão para a tabela <code>flow_logs</code> via <code>flowLogsService.createLog</code>, chamado alguns milissegundos depois (linha 4869). Manter o array preenchido duplica dados. Ao persistir <code>myUpdatedNodes</code> em <code>flows_nodes.data</code>, a linha infla sem necessidade. A lógica é simples. Localiza o nó, checa se tem <code>data</code> (guard defensivo) e reatribui <code>logs</code> como array vazio. É mutação direta do objeto, não substituição via callback. O objeto dentro de <code>myUpdatedNodes</code> muda in-place. Quem tiver referência a ele vê o novo estado.
       </div>
 
       <div class="fn-body-cols">
@@ -384,7 +384,7 @@
 }
             </div>
             <div class="box-desc">
-              Optional chaining no <code>globalNode</code> — se <code>find</code> não achou (undefined), pula o bloco silenciosamente. Também protege contra <code>data</code> ausente.
+              Optional chaining em <code>globalNode</code>. Se o <code>find</code> não localizou (undefined), pula o bloco silenciosamente. Também protege contra <code>data</code> ausente.
             </div>
             <div class="box-file">flux.service.ts:4853-4855</div>
           </div>
@@ -393,8 +393,8 @@
           <div class="box decision">
             <div class="box-title"><span class="badge step">B2</span> Contraste com padrão de closure mutation</div>
             <div class="box-desc">
-              Diferente de 1.5 (<code>onMutateObjectCallerData</code>) e de 3.5b (<code>onMutateSchema</code>) que usam <em>callbacks</em> reatribuindo referências, aqui é <strong>mutação direta</strong> do objeto contido no array. O item em <code>myUpdatedNodes</code> é o mesmo antes e depois — só o campo interno mudou.
-              <br><br>Isso funciona porque não há closure listening pra "mudanças em <code>data.logs</code>" — o valor só é lido depois pela persistência.
+              Diferente de 1.5 (<code>onMutateObjectCallerData</code>) e de 3.5b (<code>onMutateSchema</code>) que usam callbacks reatribuindo referências. Aqui é mutação direta do objeto contido no array. O item em <code>myUpdatedNodes</code> é o mesmo antes e depois. Apenas o campo interno mudou.
+              <br><br>Funciona porque não há closure escutando mudanças em <code>data.logs</code>. O valor só é lido depois pela persistência.
             </div>
             <div class="box-file">flux.service.ts:4854</div>
           </div>
@@ -403,10 +403,10 @@
           <div class="box db">
             <div class="box-title"><span class="badge step">B3</span> Persistência downstream</div>
             <div class="box-desc">
-              Não há <code>UPDATE flows_nodes</code> explícito pro <code>flow-global</code> nesse ponto do arquivo. A limpeza afeta:
-              <br>• O <code>runLogCollector.finalize({ output: myUpdatedNodes, ... })</code> chamado em 4893 — a versão salva no <code>SpaceRunLog</code> não inclui os logs vestigiais
-              <br>• O <code>currentFlux</code> derivado em 4932-4946 — mantém o array já limpo pro próximo <code>addConnectToNodes</code>
-              <br><br>Se o <code>globalStarter</code> tivesse persist explícito, seria via <code>persistNodeDataToLiveRow</code> como os <code>outputObjectNode</code> em 4962.
+              Não há <code>UPDATE flows_nodes</code> explícito para o <code>flow-global</code> nesse ponto do arquivo. A limpeza afeta:
+              <br>• O <code>runLogCollector.finalize({ output: myUpdatedNodes, ... })</code> chamado em 4893. A versão salva em <code>SpaceRunLog</code> não inclui os logs vestigiais.
+              <br>• O <code>currentFlux</code> derivado em 4932-4946. Mantém o array já limpo para o próximo <code>addConnectToNodes</code>.
+              <br><br>Se o <code>globalStarter</code> tivesse persist explícito, seria via <code>persistNodeDataToLiveRow</code>. É o mesmo caminho dos <code>outputObjectNode</code> em 4962.
             </div>
             <div class="box-file">flux.service.ts:4891-4946, 4962</div>
           </div>
@@ -415,21 +415,21 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 O que era gravado em data.logs</div>
-            Historicamente: array de logs de execução do run. Cada entry tinha <code>runType</code>, timestamp, status, tokens, etc.
-            <br><br>Hoje, na migração (<code>flow_logs_migration.service.ts:65-71</code>), os primeiros 50 são copiados pra tabela <code>flow_logs</code> e a row <em>original</em> em <code>flows_nodes</code> deixa de ser fonte de verdade.
+            Historicamente. Array de logs de execução. Cada entry tinha <code>runType</code>, timestamp, status, tokens, etc.
+            <br><br>Hoje. Na migração (<code>flow_logs_migration.service.ts:65-71</code>), os primeiros 50 são copiados para a tabela <code>flow_logs</code>. A linha original em <code>flows_nodes</code> deixa de ser fonte de verdade.
           </div>
 
           <div class="aside warn">
-            <div class="aside-title">⚠️ Mutação in-place = quebra convenção</div>
-            No mesmo arquivo, o padrão dominante é: <em>arrays são reatribuídos</em> via <code>let</code> + callback. Aqui é a exceção — <code>globalNode.data.logs = []</code> muda o objeto interno do array.
-            <br><br>Se alguém adicionar um observer/watcher pra <code>myUpdatedNodes</code> depois, essa mutação escapa da detecção porque a referência do array pai não muda.
+            <div class="aside-title">⚠️ Mutação in-place quebra a convenção</div>
+            No mesmo arquivo, o padrão dominante é reatribuir arrays via <code>let</code> mais callback. Aqui é a exceção. <code>globalNode.data.logs = []</code> muda o objeto interno do array.
+            <br><br>Se alguém adicionar um observer para <code>myUpdatedNodes</code>, essa mutação escapa da detecção. A referência do array pai não muda.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 Também aparece em cleanFluxbotFlow</div>
             <code>utils/clean-fluxbot-flow.ts:14-19</code>:
             <br><code>if (node.type === 'globalStarter') { node.data.sessions = []; node.data.logs = []; }</code>
-            <br><br>Usado quando um flow é <em>clonado</em> ou compartilhado — evita levar sessions/logs privados. Confirma a intenção: <code>logs</code> não é dado de negócio, é resíduo de run.
+            <br><br>Usado quando um flow é clonado ou compartilhado. Evita levar sessions e logs privados. Confirma a intenção. O <code>logs</code> não é dado de negócio, é resíduo de execução.
           </div>
         </div>
       </div>
@@ -438,18 +438,18 @@
 
   <!-- SUMMARY -->
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo — o que sai de 4.1b:</strong>
-    <br>• <code>myUpdatedNodes</code> com o <code>flow-global</code> tendo <code>data.logs = []</code> (ou intacto se não achou o nó)
-    <br>• Sem side effects em banco, sem WebSocket, sem novas chamadas — só uma mutação in-place
-    <br>• Downstream: <code>runLogCollector.finalize</code>, <code>addConnectToNodes</code> final e persistência dos <code>outputObjectNode</code> partem desse array já limpo
+    <strong>Resumo — o que sai de 4.1b.</strong>
+    <br>• <code>myUpdatedNodes</code> com o <code>flow-global</code> tendo <code>data.logs = []</code>. Intacto quando o nó não foi localizado.
+    <br>• Sem side effects em banco, sem WebSocket, sem novas chamadas. Apenas uma mutação in-place.
+    <br>• Downstream. O <code>runLogCollector.finalize</code>, o <code>addConnectToNodes</code> final e a persistência dos <code>outputObjectNode</code> partem desse array já limpo.
   </div>
 
   <div class="note">
-    <strong>Observações para migração:</strong>
-    <br>• Trivial de replicar no worker. Nenhuma dependência, nenhuma query, sem I/O — só uma mutação num objeto JSON.
-    <br>• Substring como heurística de detecção pode virar constante compartilhada: <code>mcp-write.service.ts</code> já tem <code>GLOBAL_STARTER_ID_SUBSTRING = 'flow-global-starter'</code>. Valeria centralizar em <code>flux/constants.ts</code> pra ambos usarem — o que este passo usa (<code>'flow-global'</code>, mais curto) diverge sutilmente.
-    <br>• Se o array <code>data.logs</code> for definitivamente aposentado (nada lê nem escreve), essa limpeza vira código morto — pode ser removida. Vale investigar histórico de <code>logs.push</code> antes de deletar.
-    <br>• Prioridade: baixíssima. É defesa contra dado vestigial. Se o worker não escrever em <code>data.logs</code> durante a run, esse reset nem precisa acontecer lá.
+    <strong>Observações para migração.</strong>
+    <br>• Trivial de replicar no worker. Nenhuma dependência, nenhuma query, sem I/O. Apenas uma mutação num objeto JSON.
+    <br>• A substring como heurística de detecção pode virar constante compartilhada. O <code>mcp-write.service.ts</code> já tem <code>GLOBAL_STARTER_ID_SUBSTRING = 'flow-global-starter'</code>. Centralizar em <code>flux/constants.ts</code> para ambos usarem faria sentido. Este passo usa <code>'flow-global'</code> (mais curto). Divergência sutil.
+    <br>• Se o array <code>data.logs</code> for definitivamente aposentado (nada lê nem escreve), esta limpeza vira código morto. Pode ser removida. Vale investigar histórico de <code>logs.push</code> antes de deletar.
+    <br>• Prioridade baixíssima. É defesa contra dado vestigial. Se o worker não escrever em <code>data.logs</code> durante a execução, esse reset nem precisa acontecer lá.
   </div>
 
   <!-- FOOTER NAV -->

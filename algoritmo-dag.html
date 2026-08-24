@@ -406,16 +406,16 @@
   </div>
 
   <h1>Algoritmo do DAG</h1>
-  <p class="subtitle">Como o workflow decide o que roda, em que ordem e o que pode rodar em paralelo</p>
+  <p class="subtitle">Como o workflow decide o que roda, em que ordem e o que pode rodar em paralelo.</p>
 
   <!-- ============================================ -->
   <h2><span class="num">1</span> O que é o DAG aqui</h2>
 
   <p>
-    <strong>DAG</strong> (Directed Acyclic Graph) é a estrutura de dados que o workflow constrói uma vez, no início do run (passo 2.2 da <a href="arquitetura-v2.html">arquitetura v2</a>), e usa para dirigir todo o loop de execução da FASE 3.
+    <strong>DAG</strong> (Directed Acyclic Graph) é a estrutura de dados que o workflow constrói uma vez, no início da execução (passo 2.2 da <a href="arquitetura-v2.html">arquitetura v2</a>). Usa para dirigir todo o loop de execução da FASE 3.
   </p>
   <p>
-    A ideia central é simples: <strong>um nó só pode rodar quando todas as coisas de que ele depende já rodaram</strong>. Nós que não dependem uns dos outros podem rodar <strong>em paralelo</strong>. O DAG é a forma matemática de representar essas dependências, e o algoritmo de "ondas topológicas" é a forma de executá-lo maximizando paralelismo.
+    A ideia central é simples. <strong>Um nó só pode rodar quando todas as coisas de que ele depende já rodaram</strong>. Nós que não dependem uns dos outros podem rodar <strong>em paralelo</strong>. O DAG é a forma matemática de representar essas dependências. O algoritmo de "ondas topológicas" é a forma de executá-lo maximizando paralelismo.
   </p>
 
   <div class="callout info">
@@ -425,7 +425,7 @@
   <!-- ============================================ -->
   <h2><span class="num">2</span> Os dois tipos de dependência</h2>
 
-  <p>Aqui está o ponto crítico que a maioria dos DAGs de ferramentas de flow ignoram: <strong>a dependência não vem só das arestas visíveis do canvas</strong>. Ela pode vir também das refs <code>{{...}}</code> escondidas dentro do texto de configuração do nó. O algoritmo precisa considerar os dois.</p>
+  <p>Aqui está o ponto crítico que a maioria dos DAGs de ferramentas de flow ignora. <strong>A dependência não vem só das arestas visíveis do canvas</strong>. Ela pode vir também das refs <code>{{...}}</code> escondidas dentro do texto de configuração do nó. O algoritmo precisa considerar os dois.</p>
 
   <div class="def-card edge">
     <div class="def-card-title">
@@ -436,7 +436,7 @@
       São os "fios" que o usuário desenha ligando nó a nó no editor. Ficam salvos na tabela <code>flows_nodes_edges</code>. Cada aresta tem um <code>source</code>, um <code>target</code> e um <code>type</code> (control, condition, data, side-effect).
     </p>
     <p style="margin:8px 0 0 0">
-      <strong>Toda aresta explícita é dependência</strong> — o nó <code>target</code> não pode começar antes de o <code>source</code> terminar.
+      <strong>Toda aresta explícita é dependência</strong>. O nó <code>target</code> não pode começar antes de o <code>source</code> terminar.
     </p>
   </div>
 
@@ -446,28 +446,28 @@
       <span>Refs <code>{{...}}</code> dentro do texto do nó</span>
     </div>
     <p style="margin:0 0 8px 0">
-      São placeholders que o usuário digita dentro dos campos do nó — prompts de LLM, corpos de requisição HTTP, expressões de script, etc. Nem toda ref é dependência de nó: depende do <em>alvo</em> que ela referencia.
+      São placeholders que o usuário digita dentro dos campos do nó (prompts de LLM, corpos de requisição HTTP, expressões de script, etc.). Nem toda ref é dependência de nó. Depende do <em>alvo</em> que ela referencia.
     </p>
 
     <div class="ref-example">
       <span class="tag">DEP</span>
-      <code>{{TextGen1.output}}</code> — aponta pra saída de outro nó do flow &nbsp;<span class="kind-tag dep">cria dep</span>
+      <code>{{TextGen1.output}}</code>. Aponta para a saída de outro nó do flow. &nbsp;<span class="kind-tag dep">cria dep</span>
     </div>
     <div class="ref-example">
       <span class="tag">DEP</span>
-      <code>{{WebSearch_results}}</code> — mesma coisa via alias humanizado &nbsp;<span class="kind-tag dep">cria dep</span>
+      <code>{{WebSearch_results}}</code>. Mesma coisa via alias humanizado. &nbsp;<span class="kind-tag dep">cria dep</span>
     </div>
     <div class="ref-example">
       <span class="tag no-dep">SEM DEP</span>
-      <code>{{input.body.topic}}</code> — vem do request/trigger, não de um nó &nbsp;<span class="kind-tag no-dep">sem dep</span>
+      <code>{{input.body.topic}}</code>. Vem do request/trigger, não de um nó. &nbsp;<span class="kind-tag no-dep">sem dep</span>
     </div>
     <div class="ref-example">
       <span class="tag no-dep">SEM DEP</span>
-      <code>{{context.user.email}}</code> — vem do contexto global (user/space) &nbsp;<span class="kind-tag no-dep">sem dep</span>
+      <code>{{context.user.email}}</code>. Vem do contexto global (user/space). &nbsp;<span class="kind-tag no-dep">sem dep</span>
     </div>
     <div class="ref-example">
       <span class="tag no-dep">SEM DEP</span>
-      <code>{{env.MY_API_KEY}}</code> — vem de variáveis do workspace &nbsp;<span class="kind-tag no-dep">sem dep</span>
+      <code>{{env.MY_API_KEY}}</code>. Vem de variáveis do workspace. &nbsp;<span class="kind-tag no-dep">sem dep</span>
     </div>
   </div>
 
@@ -489,42 +489,42 @@
           <td><code>node_executions.output_data</code> do nó fonte</td>
         </tr>
         <tr>
-          <td>Input do trigger</td>
+          <td>Entrada do trigger</td>
           <td><code>{{input.body.x}}</code></td>
           <td><span class="kind-tag no-dep">NÃO</span></td>
-          <td>Input do workflow (payload do request)</td>
+          <td>Entrada do workflow (payload do request)</td>
         </tr>
         <tr>
           <td>Contexto global</td>
           <td><code>{{context.user.id}}</code></td>
           <td><span class="kind-tag no-dep">NÃO</span></td>
-          <td>Contexto do run (user, space, session)</td>
+          <td>Contexto da execução (user, space, session)</td>
         </tr>
         <tr>
           <td>Variáveis do workspace</td>
           <td><code>{{env.MY_KEY}}</code></td>
           <td><span class="kind-tag no-dep">NÃO</span></td>
-          <td>Config do workspace / secrets</td>
+          <td>Config do workspace / segredos</td>
         </tr>
         <tr>
           <td>Loop context (arrayNode)</td>
           <td><code>{{item.name}}</code></td>
           <td><span class="kind-tag no-dep">NÃO*</span></td>
-          <td>Iteração corrente do array; *o arrayNode em si é dep, o <code>item</code> não</td>
+          <td>Iteração corrente do array. *O arrayNode em si é dep, o <code>item</code> não é.</td>
         </tr>
       </tbody>
     </table>
   </div>
 
   <div class="callout warn">
-    <strong>Consequência prática:</strong> se o algoritmo só olhasse as arestas, um nó com <code>{{TextGen1.output}}</code> no prompt <em>sem aresta explícita para TextGen1</em> tentaria rodar antes de <code>TextGen1</code>. Resultado: substituição falharia e o run quebraria. Por isso o passo 2.2 <strong>escaneia refs além das arestas</strong>.
+    <strong>Consequência prática:</strong> se o algoritmo só olhasse as arestas, um nó com <code>{{TextGen1.output}}</code> no prompt <em>sem aresta explícita para TextGen1</em> tentaria rodar antes de <code>TextGen1</code>. Resultado: substituição falharia e a execução quebraria. Por isso o passo 2.2 <strong>escaneia refs além das arestas</strong>.
   </div>
 
   <!-- ============================================ -->
   <h2><span class="num">3</span> O algoritmo passo a passo</h2>
 
   <p>
-    Rodando dentro do workflow Temporal, sobre o snapshot congelado no enqueue. Puro, sem I/O — só transformação de dados.
+    Rodando dentro do workflow Temporal, sobre o snapshot congelado no enqueue. Puro, sem I/O. Só transformação de dados.
   </p>
 
   <div class="algo-steps">
@@ -541,9 +541,9 @@
       <div class="algo-content">
         <strong>Processa arestas explícitas</strong>
         <br>Para cada aresta <code>(source, target, type)</code> da topologia:
-        <br>• Adiciona <code>target</code> em <code>adjacency[source]</code>
-        <br>• Incrementa <code>inDegree[target]</code>
-        <br>• Guarda o <code>type</code> pra usar em pruning de <code>conditionNode</code>
+        <br>• Adiciona <code>target</code> em <code>adjacency[source]</code>.
+        <br>• Incrementa <code>inDegree[target]</code>.
+        <br>• Guarda o <code>type</code> para usar em pruning de <code>conditionNode</code>.
       </div>
     </div>
 
@@ -552,10 +552,10 @@
       <div class="algo-content">
         <strong>Escaneia refs <code>{{...}}</code> em cada nó</strong>
         <br>Para cada nó <code>N</code>:
-        <br>• Percorre todos os campos textuais da config (<code>prompt</code>, <code>promptData</code>, <code>textData</code>, <code>contentData</code>, corpos de request, expressões de script, etc.)
-        <br>• Aplica regex <code>/\{\{([^}]+)\}\}/g</code> pra extrair as refs
-        <br>• Para cada ref: descobre o <em>alvo</em>. Se for outro nó do flow (<code>{{X.field}}</code> onde X é um nodeId ou label válido) → adiciona aresta implícita <code>X → N</code> se ainda não existir; incrementa <code>inDegree[N]</code>.
-        <br>• Se for input/context/env → ignora (não cria dep).
+        <br>• Percorre todos os campos textuais da config (<code>prompt</code>, <code>promptData</code>, <code>textData</code>, <code>contentData</code>, corpos de request, expressões de script, etc.).
+        <br>• Aplica regex <code>/\{\{([^}]+)\}\}/g</code> para extrair as refs.
+        <br>• Para cada ref, descobre o <em>alvo</em>. Se for outro nó do flow (<code>{{X.field}}</code> onde X é um nodeId ou label válido), adiciona aresta implícita <code>X → N</code> se ainda não existir. Incrementa <code>inDegree[N]</code>.
+        <br>• Se for input/context/env, ignora. Não cria dep.
       </div>
     </div>
 
@@ -563,8 +563,8 @@
       <div class="algo-num">4</div>
       <div class="algo-content">
         <strong>Detecta e remove back-edges (ciclos)</strong>
-        <br>Roda DFS a partir dos nós de entrada (in-degree=0 antes da remoção). Se um DFS visita um nó já na pilha atual, a aresta que fecha o ciclo é uma back-edge → é <strong>removida</strong> da adjacency e o <code>inDegree</code> do target é decrementado.
-        <br><span style="color:#78350F">Nota: back-edges são normalmente erros de config (ref circular). Em runtime a gente escolhe remover em vez de falhar pra não travar flows que casualmente têm ciclos benignos.</span>
+        <br>Roda DFS a partir dos nós de entrada (in-degree=0 antes da remoção). Se um DFS visita um nó já na pilha atual, a aresta que fecha o ciclo é uma back-edge. É <strong>removida</strong> da adjacency e o <code>inDegree</code> do target é decrementado.
+        <br><span style="color:#78350F">Nota: back-edges são normalmente erros de config (ref circular). Em runtime, optamos por remover em vez de falhar. Evita travar flows que casualmente têm ciclos benignos.</span>
       </div>
     </div>
 
@@ -572,7 +572,7 @@
       <div class="algo-num">5</div>
       <div class="algo-content">
         <strong>Poda nós inalcançáveis</strong>
-        <br>Faz BFS a partir dos nós com <code>inDegree === 0</code> após passo 4. Nós não visitados = unreachable → marca como <code>skipped</code>, tira do <code>pending</code>.
+        <br>Faz BFS a partir dos nós com <code>inDegree === 0</code> após passo 4. Nós não visitados são unreachable. Marca como <code>skipped</code>. Tira do <code>pending</code>.
       </div>
     </div>
 
@@ -580,10 +580,10 @@
       <div class="algo-num">6</div>
       <div class="algo-content">
         <strong>Retorna estruturas imutáveis</strong>
-        <br>• <code>adjacency</code> — final, não muda no run
-        <br>• <code>inDegree</code> — inicial; será decrementado ao longo do run (mas isso é <em>state</em>, não muda a estrutura do DAG)
-        <br>• <code>edgeTypes</code> — pra decisões de condition/side-effect na FASE 3
-        <br>• <code>pending</code> — set inicial de nós a executar (todos menos os skipped)
+        <br>• <code>adjacency</code>. Final, não muda na execução.
+        <br>• <code>inDegree</code>. Inicial. Será decrementado ao longo da execução (mas isso é <em>state</em>, não muda a estrutura do DAG).
+        <br>• <code>edgeTypes</code>. Para decisões de condition/side-effect na FASE 3.
+        <br>• <code>pending</code>. Set inicial de nós a executar (todos menos os skipped).
       </div>
     </div>
   </div>
@@ -615,7 +615,7 @@
   <div class="def-card" style="border-left-color:#3B82F6">
     <div class="def-card-title"><code>Compare</code> <span class="n-type" style="font-size:10px;background:#F1F5F9;padding:2px 6px;border-radius:3px">textGenerator</span></div>
     <p style="margin:0">Prompt = <code>Compare estas fontes:\nWEB: {{WebSearch.results}}\nNEWS: {{NewsSearch.results}}</code></p>
-    <p style="margin:6px 0 0 0"><em>Deps:</em> <span class="kind-tag ref">REF</span> WebSearch <span class="kind-tag ref">REF</span> NewsSearch <span style="color:#991B1B;font-size:11px">(sem edges — só refs!)</span></p>
+    <p style="margin:6px 0 0 0"><em>Deps:</em> <span class="kind-tag ref">REF</span> WebSearch <span class="kind-tag ref">REF</span> NewsSearch <span style="color:#991B1B;font-size:11px">(sem edges, só refs!)</span></p>
   </div>
 
   <div class="def-card" style="border-left-color:#3B82F6">
@@ -693,13 +693,13 @@
   <div class="callout tip">
     <strong>Duas observações importantes:</strong>
     <br><br>
-    <strong>1.</strong> <code>Compare</code> só tem refs, nenhuma aresta explícita — o usuário digitou <code>{{WebSearch.results}}</code> no prompt sem desenhar fios. Mesmo assim, o algoritmo captura essas deps no passo 3 do algoritmo e coloca <code>Compare</code> corretamente na onda 3. Sem esse scan, ele iria pra onda 1 e falharia na substituição.
+    <strong>1.</strong> <code>Compare</code> só tem refs, nenhuma aresta explícita. O usuário digitou <code>{{WebSearch.results}}</code> no prompt sem desenhar fios. Mesmo assim, o algoritmo captura essas deps no passo 3 e coloca <code>Compare</code> corretamente na onda 3. Sem esse scan, ele iria para a onda 1 e falharia na substituição.
     <br><br>
-    <strong>2.</strong> <code>Article</code> tem <code>ref: Topic</code> mesmo estando 3 ondas depois. O algoritmo detecta e adiciona a aresta implícita, mas isso <strong>não afeta a onda</strong> em que <code>Article</code> roda — como já depende de <code>Compare</code> (que depende de <code>WebSearch</code>/<code>NewsSearch</code>, que dependem de <code>Topic</code>), <code>Topic</code> já vai estar completo quando a onda 4 começar. É belt-and-suspenders — a dep é registrada por segurança, sem custo real.
+    <strong>2.</strong> <code>Article</code> tem <code>ref: Topic</code> mesmo estando 3 ondas depois. O algoritmo detecta e adiciona a aresta implícita. Isso <strong>não afeta a onda</strong> em que <code>Article</code> roda. Já depende de <code>Compare</code> (que depende de <code>WebSearch</code>/<code>NewsSearch</code>, que dependem de <code>Topic</code>). <code>Topic</code> já vai estar completo quando a onda 4 começar. É belt-and-suspenders. A dep é registrada por segurança, sem custo real.
   </div>
 
   <!-- ============================================ -->
-  <h2><span class="num">5</span> Trace de execução — onda por onda</h2>
+  <h2><span class="num">5</span> Trace de execução (onda por onda)</h2>
 
   <p>
     Estado inicial após o passo 2.2 rodar:
@@ -737,7 +737,7 @@
     <div class="trace-wave w2">
       <div class="trace-wave-title">
         <span>②</span>
-        <span>Onda 2 — paralelismo real</span>
+        <span>Onda 2. Paralelismo real.</span>
       </div>
       <div class="trace-line"><span class="op">readySet</span> = { <strong>WebSearch, NewsSearch</strong> } &nbsp;<span class="note">// AMBOS com in-degree=0</span></div>
       <div class="trace-line"><span class="op">Promise.all([ dispatch(WebSearch), dispatch(NewsSearch) ])</span> &nbsp;<span class="note">// 2 activities em paralelo!</span></div>
@@ -778,13 +778,13 @@
         <span>✓</span>
         <span>Fim do loop</span>
       </div>
-      <div class="trace-line"><span class="op">readySet</span> = { } &nbsp;<span class="op">pending</span> = { } → <span class="note">sai do loop, vai pra FASE 4 (finalização)</span></div>
+      <div class="trace-line"><span class="op">readySet</span> = { } &nbsp;<span class="op">pending</span> = { } → <span class="note">sai do loop, vai para a FASE 4 (finalização)</span></div>
     </div>
 
   </div>
 
   <div class="callout tip">
-    <strong>Ganho de paralelismo:</strong> se o legacy executasse esse flow em série, o tempo total seria a soma de todos (5 nós × tempo médio). Com ondas paralelas, o tempo total é a soma das <em>ondas</em> — na onda 2, WebSearch e NewsSearch dividem o tempo. Em flows com muitas branches paralelas (agentes de pesquisa multi-fonte, geração de N variações, etc.), o ganho é linear com a largura do grafo.
+    <strong>Ganho de paralelismo:</strong> se o legacy executasse esse flow em série, o tempo total seria a soma de todos (5 nós × tempo médio). Com ondas paralelas, o tempo total é a soma das <em>ondas</em>. Na onda 2, WebSearch e NewsSearch dividem o tempo. Em flows com muitas branches paralelas (agentes de pesquisa multi-fonte, geração de N variações, etc.), o ganho é linear com a largura do grafo.
   </div>
 
   <!-- ============================================ -->
@@ -792,27 +792,27 @@
 
   <h3>Nó condition</h3>
   <p>
-    Um <code>conditionNode</code> tem múltiplos handles de saída (ex: true/false, ou N branches nomeadas). Durante a construção do DAG, todas as arestas de saída viram deps normais. Mas em runtime (FASE 3.5), quando o condition avalia e escolhe UM handle, os outros são marcados como <strong>dead</strong>: os sucessores das arestas mortas têm seu <code>inDegree</code> decrementado como se o predecessor tivesse "completado", mas o output é vazio. Sem isso, sucessores de handles não-tomados ficariam no <code>pending</code> pra sempre.
+    Um <code>conditionNode</code> tem múltiplos handles de saída (ex: true/false, ou N branches nomeadas). Durante a construção do DAG, todas as arestas de saída viram deps normais. Em runtime (FASE 3.5), quando o condition avalia e escolhe UM handle, os outros são marcados como <strong>dead</strong>. Os sucessores das arestas mortas têm seu <code>inDegree</code> decrementado como se o predecessor tivesse "completado", mas a saída é vazia. Sem isso, sucessores de handles não tomados ficariam no <code>pending</code> para sempre.
   </p>
 
   <h3>Nó com efeito colateral independente</h3>
   <p>
-    Certos nós (<code>apiCaller</code>, <code>mcpNode</code>, <code>pushData</code>) rodam pelo <em>efeito</em>, não pelo output. Se o grafo de refs nunca os inclui como dep de ninguém, uma implementação ingênua acharia que eles são "unreachable" e pularia. O algoritmo classifica esse tipo de aresta como <code>side-effect</code> na etapa 2 e os preserva no <code>pending</code> mesmo sem dependentes.
+    Certos nós (<code>apiCaller</code>, <code>mcpNode</code>, <code>pushData</code>) rodam pelo <em>efeito</em>, não pela saída. Se o grafo de refs nunca os inclui como dep de ninguém, uma implementação ingênua acharia que eles são "unreachable" e pularia. O algoritmo classifica esse tipo de aresta como <code>side-effect</code> na etapa 2. Preserva no <code>pending</code> mesmo sem dependentes.
   </p>
 
   <h3>Refs em campos aninhados</h3>
   <p>
-    Refs podem aparecer dentro de arrays, objetos JSON, expressões, etc. O escaneamento (passo 3) precisa ser recursivo em toda a estrutura do <code>node_data</code>. Refs em campos que <em>não</em> são de execução (label, cor, posição no canvas) são ignoradas — o escanner tem uma lista dos campos "executáveis" por tipo de nó.
+    Refs podem aparecer dentro de arrays, objetos JSON, expressões, etc. O escaneamento (passo 3) precisa ser recursivo em toda a estrutura do <code>node_data</code>. Refs em campos que <em>não</em> são de execução (label, cor, posição no canvas) são ignoradas. O escanner tem uma lista dos campos "executáveis" por tipo de nó.
   </p>
 
   <h3>Refs para nó que não existe no snapshot</h3>
   <p>
-    Pode acontecer: usuário renomeou/deletou um nó mas outro nó ainda tem <code>{{OldName.field}}</code>. O passo 2.3 (<code>validateDag</code>) — logo depois do <code>buildDag</code> — falha o run rápido com <code>InvalidReferenceError</code>, apontando qual nó tem qual ref quebrada. Sem <code>validateDag</code>, o run iria até o nó com a ref quebrada, gastaria créditos das dependências, e só quebraria no meio.
+    Pode acontecer. Usuário renomeou/deletou um nó, mas outro nó ainda tem <code>{{OldName.field}}</code>. O passo 2.3 (<code>validateDag</code>), logo depois do <code>buildDag</code>, falha a execução rápido com <code>InvalidReferenceError</code>. Aponta qual nó tem qual ref quebrada. Sem <code>validateDag</code>, a execução iria até o nó com a ref quebrada, gastaria créditos das dependências e só quebraria no meio.
   </p>
 
   <h3>arrayNode (fan-out real)</h3>
   <p>
-    O <code>arrayNode</code> não expande no DAG estático — ele é <strong>um nó só</strong> no grafo. Quando executa (FASE 3.5), dispara um <code>ChildWorkflow</code> que constrói seu próprio DAG para as N iterações do array. O DAG pai vê o arrayNode como uma unidade atômica; a paralelização das iterações é interna ao child workflow. Isso mantém o DAG raiz pequeno mesmo com loops grandes.
+    O <code>arrayNode</code> não expande no DAG estático. É <strong>um nó só</strong> no grafo. Quando executa (FASE 3.5), dispara um <code>ChildWorkflow</code> que constrói seu próprio DAG para as N iterações do array. O DAG pai vê o arrayNode como uma unidade atômica. A paralelização das iterações é interna ao child workflow. Isso mantém o DAG raiz pequeno mesmo com loops grandes.
   </p>
 
   <!-- ============================================ -->

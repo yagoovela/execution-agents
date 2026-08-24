@@ -182,24 +182,24 @@
     <h1>Passo 2.4 — Setup do RunLogCollector (plumbing)</h1>
   </div>
   <div class="page-sub">
-    Bloco em <code>flux.service.ts:2290-2293</code> (init) e <code>3810-3818</code> (startLoopBody dentro do arrayNode). Diferente do 1.4 (que <em>cria</em> o collector via <code>createRoot()</code>), 2.4 é o <strong>plumbing cross-cutting</strong> — como o collector flui através de sub-runs (fluxBox/libraryNode) e iterações de loop (arrayNode).
+    Bloco em <code>flux.service.ts:2290-2293</code> (init) e <code>3810-3818</code> (<code>startLoopBody</code> dentro do <code>arrayNode</code>). Diferente do 1.4, que cria o collector via <code>createRoot()</code>, o 2.4 é o plumbing cross-cutting. Descreve como o collector flui através de sub-runs (<code>fluxBox</code>/<code>libraryNode</code>) e iterações de loop (<code>arrayNode</code>).
   </div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
     <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
     <ul>
-      <li><strong>Decide se abre um "livro de registros" novo ou continua um existente:</strong> se veio um <code>injectedRunLogCollector</code> do parent (sub-run via <code>fluxBox</code>/<code>libraryNode</code>), reusa; senão, deixa <code>null</code> por enquanto e joga a criação pro 1.4. A flag <code>isNestedRunLog</code> gateia 3 comportamentos ao longo do run.</li>
-      <li><strong>Cria o collector root se for top-level e o space logar:</strong> <code>createRoot({...})</code> monta um <code>RunLogDocument</code> em memória e pluga o <code>flushFn</code> no <code>spaceRunLogsService.scheduleUpsert</code>. Se qualquer condição falhar, <code>runLogCollector = null</code> — e o padrão <code>?.</code> em <em>todos</em> os call sites permite operar em "modo silencioso" sem branches.</li>
-      <li><strong>Abre uma <code>RunLogNode</code> a cada iteração do loop:</strong> <code>startNode({ nodeId, nodeType, label, settings })</code> registra o input <em>pós-substituição</em> e devolve um handle usado depois no <code>endNode</code>. Anchor nodes (<code>fluxBox</code>/<code>libraryNode</code>) pulam esse startNode genérico — o handler deles monta a estrutura correta.</li>
-      <li><strong>Especializa o collector dentro de loops (<code>startLoopBody</code>):</strong> quando o run bate num <code>arrayNode</code>, cria um sub-collector cujo <code>nodesBucket</code> aponta pra <code>parentNode.innerSteps</code>. Assim as N iterações viram filhos aninhados do loop no UI, não siblings soltos.</li>
-      <li><strong>Anexa sub-documentos quando <code>fluxBox</code>/<code>libraryNode</code> chamam outro flow:</strong> <code>startFlowCallerSubRun</code> cria um <code>subDoc: RunLogDocument</code> completo e coloca no campo <code>subRun</code> do parent node — herda <code>spaceId</code>/<code>orgId</code> do ancestor e compartilha o <code>flushFn</code>, então tudo grava no <em>mesmo</em> documento raiz físico com estrutura em camadas.</li>
-      <li><strong>Saída:</strong> <code>runLogCollector: RunLogCollector | null</code> pronto pra ser usado pelos handlers da Fase 3, uma árvore <code>RunLogNode</code> se montando em memória a cada evento e sendo flushada via <code>scheduleUpsert</code> — o observability inteiro depende desse plumbing.</li>
+      <li><strong>Decide se abre um documento novo ou continua um existente.</strong> Se veio um <code>injectedRunLogCollector</code> do parent (sub-run via <code>fluxBox</code>/<code>libraryNode</code>), reusa. Senão, deixa <code>null</code> por enquanto e delega a criação para o 1.4. A flag <code>isNestedRunLog</code> gateia três comportamentos ao longo da execução.</li>
+      <li><strong>Cria o collector root se for top-level e o space registra logs.</strong> <code>createRoot({...})</code> monta um <code>RunLogDocument</code> em memória e pluga o <code>flushFn</code> no <code>spaceRunLogsService.scheduleUpsert</code>. Se qualquer condição falhar, <code>runLogCollector = null</code>. O padrão <code>?.</code> em todos os call-sites permite operar em modo silencioso sem branches.</li>
+      <li><strong>Abre um <code>RunLogNode</code> a cada iteração do loop.</strong> <code>startNode({ nodeId, nodeType, label, settings })</code> registra o input pós-substituição e devolve um handle usado depois no <code>endNode</code>. Anchor nodes (<code>fluxBox</code>/<code>libraryNode</code>) pulam esse <code>startNode</code> genérico. O handler deles monta a estrutura correta.</li>
+      <li><strong>Especializa o collector dentro de loops (<code>startLoopBody</code>).</strong> Quando a execução encontra um <code>arrayNode</code>, cria um sub-collector cujo <code>nodesBucket</code> aponta para <code>parentNode.innerSteps</code>. As N iterações viram filhos aninhados do loop no UI, não siblings soltos.</li>
+      <li><strong>Anexa sub-documentos quando <code>fluxBox</code>/<code>libraryNode</code> chamam outro flow.</strong> <code>startFlowCallerSubRun</code> cria um <code>subDoc: RunLogDocument</code> completo e coloca no campo <code>subRun</code> do parent node. Herda <code>spaceId</code> e <code>orgId</code> do ancestor. Compartilha o <code>flushFn</code>. Tudo grava no mesmo documento raiz físico com estrutura em camadas.</li>
+      <li><strong>Saída.</strong> <code>runLogCollector: RunLogCollector | null</code> pronto para os handlers da Fase 3. Uma árvore <code>RunLogNode</code> é montada em memória a cada evento e flushada via <code>scheduleUpsert</code>. O observability inteiro depende desse plumbing.</li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto:</strong> <code>RunLogCollector</code> é a espinha dorsal do observability da execução — captura árvore hierárquica de <code>RunLogNode</code>s por run. Em top-level, é criado em 1.4 via <code>createRoot()</code>; em sub-runs (agente que chama outro agente), é <em>injetado</em> como parâmetro; dentro de loops, é <em>especializado</em> via <code>startLoopBody</code>. Este passo mapeia os 3 modos.
+    <strong>Contexto.</strong> O <code>RunLogCollector</code> é a espinha dorsal do observability da execução. Captura árvore hierárquica de <code>RunLogNode</code>s por execução. Em top-level, é criado em 1.4 via <code>createRoot()</code>. Em sub-runs (agente que chama outro agente), é injetado como parâmetro. Dentro de loops, é especializado via <code>startLoopBody</code>. Este passo mapeia os três modos.
   </div>
 
   <div class="overview-mini">
@@ -216,7 +216,7 @@
       <a href="#fn-e" class="overview-chip"><span class="lbl">E</span>startSubRun (fluxBox/library)</a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado final: uma <em>árvore</em> de <code>RunLogNode</code>s montada em memória (via <code>innerSteps</code> + <code>subRun</code>) que é serializada em <code>run_log_documents</code> pelo <code>spaceRunLogsService</code>.
+      Resultado final. Uma árvore de <code>RunLogNode</code>s montada em memória (via <code>innerSteps</code> e <code>subRun</code>). Serializada em <code>run_log_documents</code> pelo <code>spaceRunLogsService</code>.
     </div>
   </div>
 
@@ -234,10 +234,10 @@
         let runLogCollector: RunLogCollector | null = injectedRunLogCollector ?? null; const isNestedRunLog = !!injectedRunLogCollector;
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Detectar se este <code>apiV2()</code> é um <em>run top-level</em> ou <em>sub-run</em> chamado por outro agente (fluxBox/libraryNode). Sub-runs recebem o collector do pai como parâmetro (<code>injectedRunLogCollector</code>) — logs vão pro documento raiz do pai, não criam documento novo.
+        <strong>Propósito.</strong> Detecta se este <code>apiV2()</code> é execução top-level ou sub-run chamada por outro agente (<code>fluxBox</code>/<code>libraryNode</code>). Sub-runs recebem o collector do pai como parâmetro (<code>injectedRunLogCollector</code>). Os logs vão para o documento raiz do pai, sem criar documento novo.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> pense num <em>cartório</em> que anota tudo que aconteceu numa execução. Essa função é a "recepção" desse cartório — quando alguém chega, ela pergunta: <em>"você é um cliente novo (top-level) ou tá vindo continuar um registro que já foi aberto lá em cima (sub-run)?"</em>. Se um agente <strong>chamou outro</strong> (via fluxBox ou libraryNode), o pai já entregou o "livro de registros" (o collector) na porta — a função só pega esse livro e continua escrevendo nele, e marca <code>isNestedRunLog=true</code> pra avisar o resto do fluxo que já tem alguém cuidando disso. Se não veio ninguém, ela deixa <code>runLogCollector = null</code> por enquanto e joga a criação do livro pra frente (pro passo 1.4).
+        <strong>Em resumo.</strong> Esta função é a recepção do cartório de execução. Ao chegar uma nova execução, verifica se é cliente novo (top-level) ou continuação de um registro aberto acima (sub-run). Se um agente chamou outro (via <code>fluxBox</code> ou <code>libraryNode</code>), o pai já entregou o collector na porta. A função pega esse collector e continua escrevendo nele. Marca <code>isNestedRunLog=true</code> para avisar o resto do fluxo que já tem alguém cuidando disso. Se não veio ninguém, deixa <code>runLogCollector = null</code> por enquanto e delega a criação para o passo 1.4.
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
@@ -259,7 +259,7 @@
             <div class="box-title"><span class="badge step">A1</span> Flag <code>isNestedRunLog</code></div>
             <div class="box-desc">
               <code>const isNestedRunLog = !!injectedRunLogCollector;</code>
-              <br><br>Usada em 3 lugares: gate pro createRoot (não criar se nested), gate pro <code>assertOwnerCanRunFlow</code> (só top-level checa), e passada no <code>shouldWatchCancellation({ isNestedRun })</code> em 2.2-E.
+              <br><br>Usada em três lugares. Gate para <code>createRoot</code> (não criar se nested). Gate para <code>assertOwnerCanRunFlow</code> (só top-level verifica). Passada em <code>shouldWatchCancellation({ isNestedRun })</code> em 2.2-E.
             </div>
             <div class="box-file">flux.service.ts:2293, 2365, 2371, 3186</div>
           </div>
@@ -267,22 +267,22 @@
           <div class="box cross">
             <div class="box-title"><span class="badge step">A2</span> Chamadores que injetam</div>
             <div class="box-desc">
-              <code>fluxBox</code> handler (flux.service.ts:4350) e <code>libraryNode</code> handler (4394) chamam <code>this.apiV2({ ..., injectedRunLogCollector })</code> quando executam o sub-flow. Ambos pegam collector via <code>startLibrarySubRun</code> ou similar (ver Card E).
+              Os handlers de <code>fluxBox</code> (<code>flux.service.ts:4350</code>) e <code>libraryNode</code> (4394) chamam <code>this.apiV2({ ..., injectedRunLogCollector })</code> quando executam o sub-flow. Ambos obtêm collector via <code>startLibrarySubRun</code> ou similar (ver Card E).
             </div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Por que passar collector, não criar de novo?</div>
-            Um agente que chama 3 sub-agents cria 3 sub-documentos (via <code>startFlowCallerSubRun</code>) — mas todos vivem <em>dentro</em> do mesmo documento raiz. UI mostra a hierarquia. Se cada sub-run criasse doc próprio, perderia a árvore.
+            <div class="aside-title">🎯 Por que passar collector e não criar de novo?</div>
+            Um agente que chama três sub-agents cria três sub-documentos (via <code>startFlowCallerSubRun</code>). Todos vivem dentro do mesmo documento raiz. A UI mostra a hierarquia. Se cada sub-run criasse doc próprio, perderia a árvore.
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ Injected pode ser <code>null</code> mesmo pra sub-run</div>
-            Se o parent não tinha logging habilitado (fora de space, ou space sem loggingEnabled), o parent tem <code>runLogCollector = null</code>. Aí ele passa null pro filho, e o filho não vai logar tampouco. Sub-run só loga se parent logava.
+            <div class="aside-title">⚠️ Injected pode ser <code>null</code> mesmo para sub-run</div>
+            Se o parent não tinha logging habilitado (fora de space, ou space sem <code>loggingEnabled</code>), o parent tem <code>runLogCollector = null</code>. Passa null para o filho. O filho não loga. Sub-run só loga se o parent logava.
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 <code>runLogSpaceId</code> — sibling variável</div>
-            <code>let runLogSpaceId = ''</code> — populada em 1.4 quando cria root, herda do parent se nested (via campos do collector).
+            <div class="aside-title">🔧 <code>runLogSpaceId</code>. Variável irmã</div>
+            <code>let runLogSpaceId = ''</code>. Populada em 1.4 quando cria root. Herda do parent se nested (via campos do collector).
           </div>
         </div>
       </div>
@@ -303,10 +303,10 @@
         if (!isNestedRunLog && loggingEnabledForSpace && spaceOwnerId) { runLogCollector = RunLogCollector.createRoot({...}); }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Se é top-level E o space tem <code>loggingEnabled</code>, cria o collector root. Se não, <code>runLogCollector</code> continua null e todos os <code>runLogCollector?.startNode(...)</code> viram no-ops via optional chain.
+        <strong>Propósito.</strong> Se é top-level e o space tem <code>loggingEnabled</code>, cria o collector root. Se não, <code>runLogCollector</code> continua null e todos os <code>runLogCollector?.startNode(...)</code> viram no-ops via optional chain.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> continuando a analogia do cartório — essa aqui é a <em>abertura oficial do livro de registros</em>. Só rola se três condições baterem: (1) é execução top-level, (2) o space tem logging ligado, e (3) tem um dono do space definido. Se tudo passar, chama <code>createRoot()</code> que monta um <code>RunLogDocument</code> zerado em memória e devolve o collector já plugado no <code>scheduleUpsert</code> pra ir salvando no banco. Se falhar, <code>runLogCollector</code> fica <code>null</code> — e aí entra o macete: o resto do código usa <code>runLogCollector?.startNode(...)</code> com <em>optional chain</em>, então tudo continua rodando normal, só que sem gravar log em lugar nenhum. É como ter um "modo silencioso" que não precisa de <code>if</code> em cada chamada.
+        <strong>Em resumo.</strong> Esta etapa é a abertura oficial do documento de execução. Só ocorre se três condições passam. Primeira. É execução top-level. Segunda. O space tem logging ligado. Terceira. Tem dono do space definido. Se tudo passa, chama <code>createRoot()</code>, que monta um <code>RunLogDocument</code> zerado em memória e devolve o collector já plugado no <code>scheduleUpsert</code> para persistir no banco. Se falha, <code>runLogCollector</code> fica <code>null</code>. O resto do código usa <code>runLogCollector?.startNode(...)</code> com optional chain. Tudo continua rodando normalmente, só que sem gravar log. É um modo silencioso que dispensa <code>if</code> em cada chamada.
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
@@ -314,7 +314,7 @@
             <div class="box-title"><span class="badge step">B1</span> Gate condicional</div>
             <div class="box-desc">
               <code>!isNestedRunLog &amp;&amp; loggingEnabledForSpace &amp;&amp; spaceOwnerId</code>
-              <br><br>3 condições. Ver <a href="passo-1-4.html">passo 1.4</a> pro detalhamento completo do gate e da criação.
+              <br><br>Três condições. Ver o <a href="passo-1-4.html">passo 1.4</a> para o detalhamento completo do gate e da criação.
             </div>
             <div class="box-file">flux.service.ts:2371-2386</div>
           </div>
@@ -322,30 +322,30 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">B2</span> <code>RunLogCollector.createRoot(init)</code></div>
             <div class="box-desc">
-              Se <code>init.enabled = false</code>, retorna um collector <strong>disabled</strong> (sem doc, sem flush) — passthrough seguro. Se true, monta <code>RunLogDocument</code> em memória e retorna collector root com <code>flushFn</code> apontando pro <code>spaceRunLogsService.scheduleUpsert</code>.
+              Se <code>init.enabled = false</code>, retorna um collector disabled (sem doc, sem flush). Passthrough seguro. Se true, monta <code>RunLogDocument</code> em memória e retorna collector root com <code>flushFn</code> apontando para <code>spaceRunLogsService.scheduleUpsert</code>.
             </div>
             <div class="box-file">run-log-collector.ts:200-246</div>
           </div>
           <div class="arrow">↓</div>
           <div class="box cross">
-            <div class="box-title"><span class="badge step">B3</span> Passthrough pra downstream</div>
+            <div class="box-title"><span class="badge step">B3</span> Passthrough para downstream</div>
             <div class="box-desc">
-              A partir daqui, todo <code>runLogCollector?.startNode(...)</code> ou <code>?.endNode(...)</code> ou <code>?.finalize(...)</code> funciona: se null → skip; se disabled → método retorna null cedo; se enabled → grava no doc.
+              A partir daqui, todo <code>runLogCollector?.startNode(...)</code>, <code>?.endNode(...)</code> ou <code>?.finalize(...)</code> funciona. Se null, skip. Se disabled, o método retorna null cedo. Se enabled, grava no doc.
             </div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 <code>?.</code> em todos os call sites</div>
-            Convenção rígida — <strong>nunca</strong> chamar <code>runLogCollector.startNode</code> direto. Sempre <code>?.</code>. Isso permite operar com/sem logging sem branches.
+            <div class="aside-title">🎯 <code>?.</code> em todos os call-sites</div>
+            Convenção rígida. Nunca chame <code>runLogCollector.startNode</code> direto. Sempre <code>?.</code>. Permite operar com ou sem logging sem branches.
           </div>
           <div class="aside">
             <div class="aside-title">📎 Enabled = false ainda retorna instância</div>
-            <code>createRoot({ enabled: false })</code> devolve <code>RunLogCollector</code> com <code>enabled=false</code>. Todos os métodos checam e no-op. Diferente de retornar null — permite passar pra sub-runs sem <code>?.</code>.
+            <code>createRoot({ enabled: false })</code> devolve <code>RunLogCollector</code> com <code>enabled=false</code>. Todos os métodos verificam e fazem no-op. Diferente de retornar null. Permite passar para sub-runs sem <code>?.</code>.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 <code>redactSecrets</code></div>
-            <code>startNode</code>/<code>endNode</code>/<code>finalize</code> passam <code>settings</code>/<code>input</code>/<code>output</code> por <code>redactSecrets</code> antes de gravar. Ver <code>utils/redact.ts</code>.
+            <code>startNode</code>, <code>endNode</code> e <code>finalize</code> passam <code>settings</code>, <code>input</code> e <code>output</code> por <code>redactSecrets</code> antes de gravar. Ver <code>utils/redact.ts</code>.
           </div>
         </div>
       </div>
@@ -366,18 +366,18 @@
         genericRunLogNode = isSubRunAnchorNode ? null : (runLogCollector?.startNode({ nodeId, nodeType, label, settings }) ?? null);
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Toda iteração do loop principal abre um <code>RunLogNode</code> (elemento na árvore) — exceto se o nó é <em>anchor de sub-run</em> (<code>fluxBox</code>/<code>libraryNode</code>), que precisa de tratamento especial (Card E).
+        <strong>Propósito.</strong> Toda iteração do loop principal abre um <code>RunLogNode</code> (elemento na árvore). Exceção. Se o nó é anchor de sub-run (<code>fluxBox</code>/<code>libraryNode</code>), precisa de tratamento especial (Card E).
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> aqui o collector vira <em>cadastrador de linha por linha</em> no diário da execução. Toda vez que o loop principal vai rodar um nó, essa chamada abre uma "entrada" nova na árvore com o <code>nodeId</code>, o tipo do nó, o rótulo e as <code>settings</code> já com as substituições <code>{{...}}</code> resolvidas — ou seja, o input <strong>real</strong> que o handler vai enxergar. A função devolve um <em>handle</em> (o <code>genericRunLogNode</code>) que depois vai ser usado no <code>endNode</code> pra fechar a entrada com o resultado. Tem uma exceção: se o nó é um <code>fluxBox</code> ou <code>libraryNode</code> (que dispara sub-execução), pula esse startNode genérico — o handler desses casos monta a estrutura correta com <code>subRun</code> (Card E). Cada push também aciona o flush pra ir salvando de forma incremental.
+        <strong>Em resumo.</strong> Aqui o collector vira cadastrador linha a linha no diário da execução. Toda vez que o loop principal vai rodar um nó, esta chamada abre uma entrada nova na árvore com <code>nodeId</code>, tipo do nó, rótulo e <code>settings</code> já com as substituições <code>{{...}}</code> resolvidas. É o input real que o handler vai enxergar. A função devolve um handle (o <code>genericRunLogNode</code>) usado depois no <code>endNode</code> para fechar a entrada com o resultado. Exceção. Se o nó é <code>fluxBox</code> ou <code>libraryNode</code> (dispara sub-execução), pula esse <code>startNode</code> genérico. O handler desses casos monta a estrutura correta com <code>subRun</code> (Card E). Cada push também aciona o flush para salvar de forma incremental.
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box decision">
-            <div class="box-title"><span class="badge step">C1</span> Skip pra sub-run anchors</div>
+            <div class="box-title"><span class="badge step">C1</span> Skip para sub-run anchors</div>
             <div class="box-desc">
               <code>const isSubRunAnchorNode = node.type === 'fluxBox' || node.type === 'libraryNode'</code>
-              <br><br>Esses tipos não geram <code>startNode</code> genérico — o handler deles chama <code>startLibrarySubRun</code> ou <code>startFlowCallerSubRun</code> que cria a estrutura correta.
+              <br><br>Esses tipos não geram <code>startNode</code> genérico. O handler deles chama <code>startLibrarySubRun</code> ou <code>startFlowCallerSubRun</code>, que cria a estrutura correta.
             </div>
             <div class="box-file">flux.service.ts:3286-3287</div>
           </div>
@@ -392,7 +392,7 @@
 }
             </div>
             <div class="box-desc">
-              Retorna <code>RunLogNode</code> capturado em <code>genericRunLogNode</code>. É o handle que <code>endNode</code> vai usar depois pra fechar a entry.
+              Retorna <code>RunLogNode</code> capturado em <code>genericRunLogNode</code>. É o handle usado depois pelo <code>endNode</code> para fechar a entry.
             </div>
             <div class="box-file">run-log-collector.ts:319-335</div>
           </div>
@@ -400,8 +400,8 @@
           <div class="box cross">
             <div class="box-title"><span class="badge step">C3</span> <code>this.nodesBucket.push(node)</code></div>
             <div class="box-desc">
-              O collector guarda referência à <code>nodesBucket</code> (que é <code>doc.nodes</code> pra root, ou <code>parentNode.innerSteps</code> pra sub-collectors). Push adiciona a entry na árvore.
-              <br><br>Depois: <code>flushRoot()</code> — dispara o <code>scheduleUpsert</code> pra persistir.
+              O collector guarda referência à <code>nodesBucket</code> (que é <code>doc.nodes</code> para root, ou <code>parentNode.innerSteps</code> para sub-collectors). Push adiciona a entry na árvore.
+              <br><br>Depois. <code>flushRoot()</code> dispara o <code>scheduleUpsert</code> para persistir.
             </div>
             <div class="box-file">run-log-collector.ts:332-334</div>
           </div>
@@ -409,16 +409,16 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Ciclo de vida por nó</div>
-            <strong>startNode</strong> → handler executa → <strong>endNode</strong> (com output/tokens/cost/error). Se error, <code>status='error'</code>; senão <code>'success'</code>.
-            <br><br>Duplicate <code>endNode</code> nas linhas 4549-4562 é dead code (ver box do 3.9 no index).
+            <strong>startNode</strong>. Handler executa. <strong>endNode</strong> (com output, tokens, cost, error). Se error, <code>status='error'</code>. Senão, <code>'success'</code>.
+            <br><br>O <code>endNode</code> duplicado nas linhas 4549-4562 é dead code (ver box do 3.9 no index).
           </div>
           <div class="aside warn">
             <div class="aside-title">⚠️ Flush a cada evento</div>
-            Toda <code>startNode</code>/<code>endNode</code>/<code>startLoopBody</code>/etc chama <code>flushRoot()</code>. Isso dispara <code>scheduleUpsert</code> — não faz UPSERT direto, mas agenda. Um flow de 200 nós = 400+ agendamentos. Vale conferir se o schedule tem debounce (provavelmente sim).
+            Toda <code>startNode</code>, <code>endNode</code>, <code>startLoopBody</code>, etc. chama <code>flushRoot()</code>. Isso dispara <code>scheduleUpsert</code>. Não faz UPSERT direto. Agenda. Um flow de 200 nós gera mais de 400 agendamentos. Vale conferir se o schedule tem debounce (provavelmente sim).
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 <code>settings</code> é o node.data pós-substituição</div>
-            Já com <code>{{...}}</code> resolvidos. Isso é o snapshot do que o handler vai receber. Útil pra debugging: mostra o input real, não o template.
+            <div class="aside-title">🔧 <code>settings</code> é o <code>node.data</code> pós-substituição</div>
+            Já com <code>{{...}}</code> resolvidos. É o snapshot do que o handler vai receber. Útil para debugging. Mostra o input real, não o template.
           </div>
         </div>
       </div>
@@ -439,10 +439,10 @@
         const loopRunLogNode = runLogCollector?.startNode({...}); const loopRunLogCollector = runLogCollector?.startLoopBody(loopRunLogNode) ?? runLogCollector;
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Quando o loop principal encontra um <code>arrayNode</code>, cria um <code>RunLogNode</code> especial pro loop e devolve um <em>sub-collector</em> cujas entries vão em <code>innerSteps</code> desse nó. Cada iteração do body é registrada como filho do loop, não como sibling.
+        <strong>Propósito.</strong> Quando o loop principal encontra um <code>arrayNode</code>, cria um <code>RunLogNode</code> especial para o loop e devolve um sub-collector cujas entries vão em <code>innerSteps</code> desse nó. Cada iteração do body é registrada como filho do loop, não como sibling.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> imagine que dentro do diário você tá abrindo uma <em>pasta com sub-abas</em> pra organizar melhor. Quando o run bate num <code>arrayNode</code>, essa função faz duas coisas: primeiro abre um nó "pai" no log dizendo <em>"vou rodar N iterações"</em>; depois entrega um <strong>collector especializado</strong> (o <code>loopRunLogCollector</code>) que, em vez de anotar as coisas ali no nível de cima, vai empilhando tudo dentro do <code>innerSteps</code> desse nó pai. Assim a UI consegue mostrar o loop expansível ("clica aqui pra ver as 50 iterações desse arrayNode"), em vez de despejar tudo numa lista plana gigante. Se o parent estiver desabilitado, cai no fallback e usa o collector normal — nunca quebra.
+        <strong>Em resumo.</strong> Esta etapa abre uma sub-estrutura organizada dentro do diário. Quando a execução encontra um <code>arrayNode</code>, faz duas coisas. Primeiro. Abre um nó pai no log dizendo "vou rodar N iterações". Segundo. Entrega um collector especializado (o <code>loopRunLogCollector</code>) que, em vez de anotar no nível de cima, empilha tudo dentro do <code>innerSteps</code> desse nó pai. Assim a UI mostra o loop expansível ("clique aqui para ver as 50 iterações deste <code>arrayNode</code>"), em vez de despejar tudo em uma lista plana. Se o parent está desabilitado, cai no fallback e usa o collector normal. Não quebra.
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
@@ -457,7 +457,7 @@ runLogCollector?.<span class="t">startNode</span>({
 });
             </div>
             <div class="box-desc">
-              Diferente de startNode normal — passa <code>input: { items: N }</code> pra mostrar o total de iterações que vão rodar.
+              Diferente do <code>startNode</code> normal. Passa <code>input: { items: N }</code> para mostrar o total de iterações que vão rodar.
             </div>
             <div class="box-file">flux.service.ts:3810-3815</div>
           </div>
@@ -465,7 +465,7 @@ runLogCollector?.<span class="t">startNode</span>({
           <div class="box cross">
             <div class="box-title"><span class="badge step">D2</span> <code>startLoopBody(parentNode)</code></div>
             <div class="box-desc">
-              Cria sub-collector kind=<code>'loopBody'</code>. <code>nodesBucket</code> aponta pra <code>parentNode.innerSteps</code>. Compartilha <code>flushFn</code> e <code>rootDocRef</code> — flushes vão pro mesmo doc raiz.
+              Cria sub-collector kind=<code>'loopBody'</code>. <code>nodesBucket</code> aponta para <code>parentNode.innerSteps</code>. Compartilha <code>flushFn</code> e <code>rootDocRef</code>. Os flushes vão para o mesmo doc raiz.
             </div>
             <div class="box-file">run-log-collector.ts:252-275</div>
           </div>
@@ -473,24 +473,24 @@ runLogCollector?.<span class="t">startNode</span>({
           <div class="box backend">
             <div class="box-title"><span class="badge step">D3</span> Loop usa sub-collector</div>
             <div class="box-desc">
-              A partir daqui, iterations do arrayNode passam <code>loopRunLogCollector</code> em vez de <code>runLogCollector</code>. Cada nó do body vira <code>innerSteps</code> do loop, com aninhamento correto.
-              <br><br>Fallback <code>?? runLogCollector</code> se startLoopBody devolveu null (parent desabilitado).
+              A partir daqui, iterações do <code>arrayNode</code> passam <code>loopRunLogCollector</code> em vez de <code>runLogCollector</code>. Cada nó do body vira <code>innerSteps</code> do loop, com aninhamento correto.
+              <br><br>Fallback <code>?? runLogCollector</code> quando <code>startLoopBody</code> devolveu null (parent desabilitado).
             </div>
             <div class="box-file">flux.service.ts:3816-3818</div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Por que sub-collector, não sub-node?</div>
-            Poderia gravar cada iteração como sibling no doc raiz. Mas o schema de <code>RunLogNode.innerSteps</code> permite mostrar UI como árvore: expande arrayNode → vê iterações → cada iteração tem seus nodes. Muito mais legível que lista plana com 200 entries.
+            <div class="aside-title">🎯 Por que sub-collector e não sub-node?</div>
+            Seria possível gravar cada iteração como sibling no doc raiz. Mas o schema de <code>RunLogNode.innerSteps</code> permite exibir a UI como árvore. Expande <code>arrayNode</code>. Vê iterações. Cada iteração tem seus nós. Muito mais legível que uma lista plana com 200 entries.
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ Iterações não distinguidas por índice</div>
-            Todas as iterações apendam em <code>innerSteps</code> — não há campo <code>iterationIndex</code>. Se você abre 3 iterações de 5 nós cada, vê 15 entries seguidas. Ordem preserva ordem de execução mas requer contar mentalmente.
+            <div class="aside-title">⚠️ Iterações sem distinção por índice</div>
+            Todas as iterações fazem append em <code>innerSteps</code>. Não há campo <code>iterationIndex</code>. Ao abrir 3 iterações de 5 nós cada, vê 15 entries seguidas. A ordem preserva a ordem de execução, mas exige contar manualmente.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 <code>startLibrarySubRun</code></div>
-            Mesma coisa, mas kind=<code>'library'</code>. Usado pelo libraryNode handler. Semanticamente idêntico ao loopBody, só muda o rotulo.
+            Mesma coisa, mas kind=<code>'library'</code>. Usado pelo handler de <code>libraryNode</code>. Semanticamente idêntico ao <code>loopBody</code>. Só muda o rótulo.
           </div>
         </div>
       </div>
@@ -511,17 +511,17 @@ runLogCollector?.<span class="t">startNode</span>({
         const sub = runLogCollector?.startFlowCallerSubRun(parentNode, { flowId, flowName, input });
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Quando um <code>fluxBox</code> chama <em>outro flow</em>, cria um <code>subDoc</code> aninhado (não innerSteps — outro documento inteiro). O parent node ganha <code>subRun</code> em vez de <code>innerSteps</code>. UI mostra "este nó rodou este sub-flow inteiro".
+        <strong>Propósito.</strong> Quando um <code>fluxBox</code> chama outro flow, cria um <code>subDoc</code> aninhado (não <code>innerSteps</code>. Um documento inteiro). O parent node ganha <code>subRun</code> em vez de <code>innerSteps</code>. A UI mostra "este nó executou este sub-flow inteiro".
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> se o loop era "abrir uma sub-aba", esse aqui é <em>anexar um documento inteiro dentro do documento principal</em>. Quando um nó <code>fluxBox</code> chama outro agente completo, essa função monta um <code>subDoc</code> novinho (com seus próprios <code>rootFlowId</code>, <code>rootFlowName</code>, <code>nodes: []</code>, etc.) e enfia ele no campo <code>subRun</code> do nó pai. Aí a UI consegue mostrar breadcrumb tipo <em>"Agente A → Agente B → nó X"</em> em vez de misturar tudo no mesmo nível. Detalhes importantes: o <code>processId</code> continua o mesmo (é a mesma execução física), o <code>spaceId</code>/<code>orgId</code> são herdados do ancestor (mesmo que o sub-flow seja de outro space) e tudo continua flushando pro <em>mesmo</em> documento raiz físico no banco — só que estruturado em camadas.
+        <strong>Em resumo.</strong> Se o loop abria uma sub-aba, esta etapa anexa um documento inteiro dentro do documento principal. Quando um nó <code>fluxBox</code> chama outro agente completo, esta função monta um <code>subDoc</code> novo (com <code>rootFlowId</code>, <code>rootFlowName</code>, <code>nodes: []</code>, etc.) e o coloca no campo <code>subRun</code> do nó pai. A UI mostra breadcrumb como "Agente A → Agente B → nó X" em vez de misturar tudo no mesmo nível. O <code>processId</code> permanece o mesmo (é a mesma execução física). <code>spaceId</code> e <code>orgId</code> são herdados do ancestor (mesmo que o sub-flow seja de outro space). Tudo continua flushando para o mesmo documento raiz físico no banco. Só que estruturado em camadas.
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box cross">
-            <div class="box-title"><span class="badge step">E1</span> Anchor node = fluxBox/libraryNode</div>
+            <div class="box-title"><span class="badge step">E1</span> Anchor node é fluxBox ou libraryNode</div>
             <div class="box-desc">
-              Handler abre startNode manualmente (já que 3288 skipou), depois chama <code>startFlowCallerSubRun</code> com o node handle.
+              O handler abre <code>startNode</code> manualmente (o 3288 pulou), depois chama <code>startFlowCallerSubRun</code> com o node handle.
             </div>
           </div>
           <div class="arrow">↓</div>
@@ -545,8 +545,8 @@ runLogCollector?.<span class="t">startNode</span>({
           <div class="box cross">
             <div class="box-title"><span class="badge step">E3</span> <code>parentNode.subRun = subDoc</code></div>
             <div class="box-desc">
-              Muta o parent node pra apontar pro sub-documento. UI/exports enxergam subRun como "este nó executou este sub-flow".
-              <br><br>Cria sub-collector com kind=<code>'flowCaller'</code> e nodesBucket = subDoc.nodes. flushRoot compartilhado — tudo vai pro mesmo doc raiz físico.
+              Muta o parent node para apontar para o sub-documento. UI e exports enxergam <code>subRun</code> como "este nó executou este sub-flow".
+              <br><br>Cria sub-collector com kind=<code>'flowCaller'</code> e <code>nodesBucket = subDoc.nodes</code>. <code>flushRoot</code> compartilhado. Tudo vai para o mesmo doc raiz físico.
             </div>
             <div class="box-file">run-log-collector.ts:303-317</div>
           </div>
@@ -554,16 +554,16 @@ runLogCollector?.<span class="t">startNode</span>({
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 <code>subRun</code> vs <code>innerSteps</code></div>
-            <strong>innerSteps</strong> — nodes filhos do mesmo flow (loops, sub-tasks internas). Compartilha flowId/flowName.
-            <br><br><strong>subRun</strong> — chamou outro flow. Tem próprio <code>rootFlowId</code>/<code>rootFlowName</code>. UI mostra breadcrumb ("Agente A → Agente B → nó X").
+            <strong>innerSteps.</strong> Nós filhos do mesmo flow (loops, sub-tasks internas). Compartilha <code>flowId</code> e <code>flowName</code>.
+            <br><br><strong>subRun.</strong> Chamou outro flow. Tem <code>rootFlowId</code> e <code>rootFlowName</code> próprios. A UI mostra breadcrumb ("Agente A → Agente B → nó X").
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ Herança de campos ancestor</div>
-            <code>subDoc.spaceId = ancestor.spaceId</code> — sub-run herda sempre. Se o sub-flow tá em space diferente do parent, os logs vão pra org/space do parent. Pode não ser o desejado semanticamente, mas mantém a árvore consistente.
+            <div class="aside-title">⚠️ Herança de campos do ancestor</div>
+            <code>subDoc.spaceId = ancestor.spaceId</code>. Sub-run sempre herda. Se o sub-flow está em space diferente do parent, os logs vão para org e space do parent. Pode não ser semanticamente desejado, mas mantém a árvore consistente.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 <code>SubKind</code> enum</div>
-            <code>'library' | 'flowCaller' | 'loopBody'</code>. 3 categorias de sub-collector, cada uma com semântica levemente diferente. FlowCaller cria subRun/subDoc; outras 2 usam innerSteps.
+            <code>'library' | 'flowCaller' | 'loopBody'</code>. Três categorias de sub-collector. Cada uma com semântica ligeiramente diferente. <code>flowCaller</code> cria <code>subRun</code>/<code>subDoc</code>. As outras duas usam <code>innerSteps</code>.
           </div>
         </div>
       </div>
@@ -571,21 +571,21 @@ runLogCollector?.<span class="t">startNode</span>({
   </div>
 
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo — o que sai de 2.4:</strong>
-    <br>• <code>runLogCollector: RunLogCollector | null</code> — pronto pra ser usado por handlers da Fase 3
-    <br>• <code>isNestedRunLog: boolean</code> — flag consumida em 3 gates ao longo do run
-    <br>• Padrão <code>?.</code> em todos os call sites — logging opcional sem branches
-    <br>• Árvore <code>RunLogNode</code> se monta em memória durante o run, flushada via <code>scheduleUpsert</code>
+    <strong>Resumo — o que sai de 2.4.</strong>
+    <br>• <code>runLogCollector: RunLogCollector | null</code>. Pronto para os handlers da Fase 3.
+    <br>• <code>isNestedRunLog: boolean</code>. Flag consumida em três gates ao longo da execução.
+    <br>• Padrão <code>?.</code> em todos os call-sites. Logging opcional sem branches.
+    <br>• Árvore <code>RunLogNode</code> montada em memória durante a execução. Flushada via <code>scheduleUpsert</code>.
   </div>
 
   <div class="note">
-    <strong>Observações para migração:</strong>
-    <br>• <strong>Este é o observability layer</strong> — não é essencial pra execução (loop funciona com collector null), mas é crítico pra debugging/UI/billing.
-    <br>• Worker <em>não</em> tem collector — ele emite eventos via <code>notifyStatusActivity</code> (Redis pub/sub) e escreve em <code>execution_logs</code>. Backend consome esses eventos e reconstrói a árvore no doc raiz.
-    <br>• Sub-runs (fluxBox/libraryNode) só funcionam <strong>síncrono</strong> hoje — passam collector por parâmetro. Se algum dia sub-runs virarem async (worker), o collector precisa serializar via processId + emitir eventos.
-    <br>• <code>startLoopBody</code>/<code>startLibrarySubRun</code> retornam <em>outra instância</em> — cuidado com quem usa qual em Fase 3. Bug clássico: usar <code>runLogCollector</code> em vez de <code>loopRunLogCollector</code> dentro do loop = iterações viram siblings do loop, não filhos.
-    <br>• Flush a cada evento pode virar bottleneck em runs enormes. Debounce/batch no <code>scheduleUpsert</code> ajuda.
-    <br>• Idealmente, RunLogCollector é <em>stateless</em> por chamada — recebe evento, emite pra sink (Redis/DB/nothing). Hoje mantém árvore em memória — replicar isso no worker é complicado.
+    <strong>Observações para migração.</strong>
+    <br>• Este é o observability layer. Não é essencial para a execução (o loop funciona com collector null). Crítico para debugging, UI e billing.
+    <br>• O worker não tem collector. Emite eventos via <code>notifyStatusActivity</code> (Redis pub/sub) e escreve em <code>execution_logs</code>. O backend consome esses eventos e reconstrói a árvore no doc raiz.
+    <br>• Sub-runs (<code>fluxBox</code>/<code>libraryNode</code>) só funcionam síncronos hoje. Passam collector por parâmetro. Se um dia sub-runs virarem async (worker), o collector precisa serializar via <code>processId</code> e emitir eventos.
+    <br>• <code>startLoopBody</code> e <code>startLibrarySubRun</code> retornam outra instância. Atenção com quem usa qual na Fase 3. Bug clássico. Usar <code>runLogCollector</code> em vez de <code>loopRunLogCollector</code> dentro do loop faz iterações virarem siblings do loop, não filhos.
+    <br>• Flush a cada evento pode virar gargalo em execuções grandes. Debounce ou batch no <code>scheduleUpsert</code> ajuda.
+    <br>• Idealmente, <code>RunLogCollector</code> é stateless por chamada. Recebe evento e emite para sink (Redis, DB, nada). Hoje mantém árvore em memória. Replicar isso no worker é complicado.
   </div>
 
   <div class="page-footer-nav">

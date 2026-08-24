@@ -555,18 +555,18 @@
     <h1>Passo 1.3 — Carregamento do flow + permissões</h1>
   </div>
   <div class="page-sub">
-    4 chamadas sequenciais em <code>flux.service.ts:2338-2367</code>. Cada uma é destrinchada abaixo com seu próprio sub-fluxo e services auxiliares.
+    4 chamadas sequenciais em <code>flux.service.ts:2338-2367</code>. Cada uma é detalhada abaixo com o próprio sub-fluxo e os serviços auxiliares.
   </div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
     <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
     <ul>
-      <li><strong>Carrega o "desenho" do agente:</strong> vai no banco puxar o flow com todos os nós, arestas e relações (dono, pasta, empresa, biblioteca), já no formato que o React Flow entende.</li>
-      <li><strong>Decide qual "foto" do agente vai rodar:</strong> se o request pediu uma versão específica, usa ela; se não, cai na versão publicada ou na working copy live. É o que garante que a execução seja <em>reproduzível</em> mesmo se alguém editar o agente no meio.</li>
-      <li><strong>Confere se o usuário pode disparar:</strong> valida se quem apertou "rodar" tem permissão nesse flow (dono, membro ativo de company, template público...). Se não pode, joga <code>HTTP 403</code> na hora.</li>
-      <li><strong>Se for execução top-level, valida o dono da conta:</strong> bloqueia se o dono estiver em plano expirado (Vault/read-only). Sub-flows internos pulam esse gate porque já foi checado lá em cima.</li>
-      <li><strong>Saída:</strong> um objeto <code>Flow</code> completo em memória, com autorização e billing já validados — pronto pro pipeline seguir sem se preocupar com acesso.</li>
+      <li><strong>Carrega o desenho do agente.</strong> Consulta o banco para obter o flow com todos os nós, arestas e relações (dono, pasta, empresa, biblioteca), já no formato que o React Flow entende.</li>
+      <li><strong>Decide qual foto do agente vai executar.</strong> Se o request pediu uma versão específica, usa ela. Caso contrário, cai na versão publicada ou na working copy live. Garante que a execução seja reproduzível mesmo se alguém editar o agente no meio.</li>
+      <li><strong>Confere se o usuário pode disparar.</strong> Valida se quem apertou "rodar" tem permissão nesse flow (dono, membro ativo de company, template público etc.). Se não pode, lança <code>HTTP 403</code> imediatamente.</li>
+      <li><strong>Em execução top-level, valida o dono da conta.</strong> Bloqueia se o dono estiver em plano expirado (Vault ou read-only). Sub-flows internos pulam esse gate. Já foi checado acima.</li>
+      <li><strong>Saída.</strong> Um objeto <code>Flow</code> completo em memória. Autorização e billing já validados. Pronto para o pipeline seguir sem se preocupar com acesso.</li>
     </ul>
   </div>
 
@@ -583,8 +583,8 @@
       <a href="#fn-d" class="overview-chip"><span class="lbl">D · condicional</span>productService.assertOwnerCanRunFlow()</a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Nota: (B) é chamada implicitamente <strong>de dentro</strong> de (A) — o call-site em <code>apiV2()</code> chama (B) uma <em>segunda vez</em> com <code>versionId</code> para persistir <code>flowVersionHistoryId</code> no contexto de execução.
-      (D) só executa se <code>!isNestedRunLog</code> (top-level, não sub-flow de fluxBox/libraryNode).
+      Nota. (B) é chamada implicitamente de dentro de (A). O call-site em <code>apiV2()</code> chama (B) uma segunda vez com <code>versionId</code> para persistir <code>flowVersionHistoryId</code> no contexto de execução.
+      (D) só executa se <code>!isNestedRunLog</code> (top-level, não sub-flow de fluxBox ou libraryNode).
     </div>
   </div>
 
@@ -604,10 +604,10 @@
         async getFlowWithNodesAndEdges(flowId: string, relations?: string[], requestedHistoryId?: string, requestedVersionId?: string): Promise&lt;Flow&gt;
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Carrega o flow e reconstrói <code>.nodes</code>/<code>.edges</code> a partir das tabelas normalizadas (<code>flows_nodes</code>, <code>flows_nodes_edges</code>) no formato flat que o React Flow espera. Escolhe entre snapshot versionado ou live.
+        <strong>Propósito.</strong> Carrega o flow e reconstrói <code>.nodes</code> e <code>.edges</code> a partir das tabelas normalizadas (<code>flows_nodes</code>, <code>flows_nodes_edges</code>) no formato flat que o React Flow espera. Escolhe entre snapshot versionado ou live.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> imagine que alguém clicou em "rodar agente". Essa função é a que <em>monta o agente inteiro</em> pra execução usar. Ela confere se o ID é válido, vai no banco buscar o flow com todas as relações importantes (dono, pasta, empresa, biblioteca), decide se deve carregar a versão "congelada" (deployada/histórico) ou a que está sendo editada agora, puxa a lista de nós e conexões desse snapshot e devolve tudo já traduzido no formato que o React Flow entende. No final, o resto do pipeline recebe um objeto <code>Flow</code> completinho, pronto pra ser executado ou desenhado na tela.
+        <strong>Em resumo.</strong> Quando alguém clica em "rodar agente", esta função monta o agente inteiro para a execução usar. Confere se o ID é válido. Consulta o banco para obter o flow com todas as relações importantes (dono, pasta, empresa, biblioteca). Decide se deve carregar a versão congelada (deployada ou histórico) ou a que está sendo editada agora. Puxa a lista de nós e conexões desse snapshot. Devolve tudo já traduzido no formato que o React Flow entende. O resto do pipeline recebe um objeto <code>Flow</code> completo. Pronto para ser executado ou desenhado na tela.
       </div>
 
       <div class="fn-body-cols">
@@ -615,7 +615,7 @@
           <div class="box decision">
             <div class="box-title"><span class="badge step">A1</span> flowId é UUID válido?</div>
             <div class="box-desc">
-              <code>if (!flowId || !isUuid(flowId))</code> → <strong>throw NotFoundException('Flow not found')</strong>
+              <code>if (!flowId || !isUuid(flowId))</code>. Lança <code>NotFoundException('Flow not found')</code>.
             </div>
             <div class="box-file">linha 43-45</div>
           </div>
@@ -624,8 +624,8 @@
           <div class="box db">
             <div class="box-title"><span class="badge step">A2</span> SELECT flow com relations</div>
             <div class="box-desc">
-              <code>flowRepository.findOne({ where: { id: flowId }, relations })</code>
-              <br>Se <code>!flow</code> → <strong>throw NotFoundException</strong>
+              <code>flowRepository.findOne({ where: { id: flowId }, relations })</code>.
+              <br>Se <code>!flow</code>, lança <code>NotFoundException</code>.
             </div>
             <div class="box-file">linha 47-52</div>
           </div>
@@ -635,7 +635,7 @@
             <div class="nested-flow-title">↳ Chama internamente</div>
             <div class="box backend">
               <div class="box-title"><span class="badge step">A3</span> this.resolveExecutionHistoryId(flow, versionId, historyId) <a href="#fn-b" style="font-size:10px;color:#3B82F6;text-decoration:none;">[ver B ↓]</a></div>
-              <div class="box-desc">Decide qual snapshot dos nós/arestas ler → retorna <code>historyId</code> ou <code>null</code></div>
+              <div class="box-desc">Decide qual snapshot de nós e arestas ler. Retorna <code>historyId</code> ou <code>null</code>.</div>
               <div class="box-file">linha 54-58</div>
             </div>
           </div>
@@ -643,7 +643,7 @@
 
           <div class="box decision">
             <div class="box-title"><span class="badge step">A4</span> historyId != null?</div>
-            <div class="box-desc">Dispatch entre snapshot versionado ou "working copy" (live)</div>
+            <div class="box-desc">Dispatch entre snapshot versionado ou working copy (live).</div>
           </div>
           <div class="arrow">↓</div>
 
@@ -674,7 +674,7 @@
           <div class="converge">↓</div>
 
           <div class="box backend">
-            <div class="box-title"><span class="badge step">A5</span> Converte entities → DTOs React Flow</div>
+            <div class="box-title"><span class="badge step">A5</span> Converte entidades para DTOs React Flow</div>
             <div class="box-desc">
               <code>flow.nodes = nodeEntities.map(toNodeDto)</code><br>
               <code>flow.edges = edgeEntities.map(toEdgeDto)</code>
@@ -685,48 +685,48 @@
 
           <div class="box backend">
             <div class="box-title"><span class="badge step">A6</span> return flow</div>
-            <div class="box-desc">Flow com <code>.nodes</code> e <code>.edges</code> populados no formato React Flow</div>
+            <div class="box-desc">Flow com <code>.nodes</code> e <code>.edges</code> populados no formato React Flow.</div>
           </div>
         </div>
 
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">📎 Relations carregadas no findOne</div>
-            O call-site passa esta lista:
-            <br>• <code>user</code>
-            <br>• <code>folder</code>
-            <br>• <code>folder.spaces</code>
-            <br>• <code>folder.spaces.company</code>
-            <br>• <code>folder.companyUser</code>
-            <br>• <code>folder.companyUser.company</code>
-            <br>• <code>library</code>
-            <br><br>São essas relações que dão o <em>spaceOwnerId</em>, <em>company</em>, <em>ownership</em> e <em>library type</em> usados nos passos seguintes (permissões, RunLogCollector, etc).
+            O call-site passa esta lista.
+            <br><code>user</code>
+            <br><code>folder</code>
+            <br><code>folder.spaces</code>
+            <br><code>folder.spaces.company</code>
+            <br><code>folder.companyUser</code>
+            <br><code>folder.companyUser.company</code>
+            <br><code>library</code>
+            <br><br>Essas relações fornecem o <code>spaceOwnerId</code>, a <code>company</code>, o ownership e o library type usados nos passos seguintes (permissões, RunLogCollector, etc.).
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 findByHistoryId vs findByFlowIdNonVersioned</div>
-            Duas queries triviais no repo:
+            <div class="aside-title">🔧 findByHistoryId versus findByFlowIdNonVersioned</div>
+            Duas queries triviais no repo.
             <br><br>
-            <strong>findByHistoryId</strong> — <code>flow-node.service.ts:360</code>
+            <strong>findByHistoryId</strong>. Em <code>flow-node.service.ts:360</code>.
             <br><code>repo.find({ where: { flowVersionHistory: { id: historyId } } })</code>
             <br><br>
-            <strong>findByFlowIdNonVersioned</strong> — <code>flow-node.service.ts:55</code>
+            <strong>findByFlowIdNonVersioned</strong>. Em <code>flow-node.service.ts:55</code>.
             <br><code>createQueryBuilder → WHERE flow_id = $1 AND flow_version_history_id IS NULL</code>
-            <br><br>Mesma coisa para <code>flowEdgeService</code> em <code>flow-edge.service.ts:23</code> e <code>:154</code>.
+            <br><br>Equivalente para <code>flowEdgeService</code> em <code>flow-edge.service.ts:23</code> e <code>:154</code>.
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 toNodeDto / toEdgeDto</div>
-            Helpers puros (não são services, funções exportadas):
-            <br>• <code>flow-node.service.ts:731</code>
-            <br>• <code>flow-edge.service.ts:308</code>
+            <div class="aside-title">🔧 toNodeDto e toEdgeDto</div>
+            Helpers puros. Não são serviços. São funções exportadas.
+            <br><code>flow-node.service.ts:731</code>
+            <br><code>flow-edge.service.ts:308</code>
             <br><br>
-            Convertem entity normalizada (positionX/Y separados, extras JSONB) → formato flat React Flow (position: {x,y}, extras espalhados no top-level).
+            Convertem entidade normalizada (positionX e positionY separados, extras JSONB) para o formato flat do React Flow (<code>position: {x,y}</code>, extras espalhados no top-level).
           </div>
 
           <div class="aside warn">
             <div class="aside-title">⚠️ Custo de I/O</div>
-            Esta função faz <strong>3 queries</strong> ao Postgres (flow + nodes + edges) por execução de agente. Em agentes grandes (100+ nós), os dois SELECTs de nodes/edges já vêm com o JSONB gordo de <code>flows_nodes.data</code> (o problema de perf).
+            Esta função faz 3 queries ao Postgres (flow, nodes e edges) por execução de agente. Em agentes grandes (100 ou mais nós), os dois SELECTs de nodes e edges já vêm com o JSONB gordo de <code>flows_nodes.data</code>. É o problema de performance.
           </div>
         </div>
       </div>
@@ -749,10 +749,10 @@
         async resolveExecutionHistoryId(flow: Flow, requestedVersionId?: string, requestedHistoryId?: string): Promise&lt;string | null&gt;
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Decide de qual "snapshot" de nós/arestas a execução vai ler — <code>flow_version_history_id</code> (versão congelada) ou <code>null</code> (working copy live). Chamada duas vezes: uma dentro de (A), outra explicitamente pelo <code>apiV2()</code> para gravar <code>flowVersionHistoryId</code> no contexto.
+        <strong>Propósito.</strong> Decide de qual snapshot de nós e arestas a execução vai ler. <code>flow_version_history_id</code> (versão congelada) ou <code>null</code> (working copy live). É chamada duas vezes. Uma dentro de (A). Outra explicitamente pelo <code>apiV2()</code> para gravar <code>flowVersionHistoryId</code> no contexto.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> pense nela como um "árbitro" que responde uma pergunta única: <em>"de qual foto do agente eu vou executar agora?"</em>. Ela vai testando alternativas em ordem — se o flow nem tem versionamento ligado, roda a versão de trabalho atual; se veio um histórico específico no request, usa esse; se veio um versionId, busca o histórico correspondente dele; se o flow tem uma versão marcada como "deployada" (a de produção), usa ela como fallback; caso contrário, roda também a versão live. É o que garante que uma execução seja <strong>reproduzível</strong>: mesmo que alguém edite o agente cinco minutos depois, quem estava executando continua vendo exatamente a foto que começou a rodar.
+        <strong>Em resumo.</strong> A função responde a uma pergunta única. De qual foto do agente a execução vai começar. Testa alternativas em ordem. Se o flow não tem versionamento ligado, executa a versão de trabalho atual. Se veio um histórico específico no request, usa esse. Se veio um versionId, busca o histórico correspondente. Se o flow tem uma versão marcada como deployada (a de produção), usa ela como fallback. Caso contrário, executa também a versão live. Isso garante que a execução seja reproduzível. Mesmo que alguém edite o agente cinco minutos depois, quem estava executando continua vendo exatamente a foto que começou a executar.
       </div>
 
       <div class="fn-body-cols">
@@ -772,12 +772,12 @@
             <div class="cascade-step">
               <span class="cascade-num">3</span>
               <span class="cond"><code>requestedVersionId</code> presente</span>
-              <span class="result call">→ chama flowVersionService.findById</span>
+              <span class="result call">chama flowVersionService.findById</span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">4</span>
               <span class="cond"><code>flow.deployedVersionId</code> presente</span>
-              <span class="result call">→ chama flowVersionService.findById</span>
+              <span class="result call">chama flowVersionService.findById</span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">5</span>
@@ -793,9 +793,9 @@
             <div class="box db">
               <div class="box-title">flowVersionService.findById(versionId)</div>
               <div class="box-desc">
-                <code>flow_version.findOne({ where: { id }, relations: ['flow'] })</code>
-                <br>Se não achou → <strong>throw NotFoundException</strong>
-                <br>Retorna a version → extrai <code>.currentHistoryId</code>
+                <code>flow_version.findOne({ where: { id }, relations: ['flow'] })</code>.
+                <br>Se não achou, lança <code>NotFoundException</code>.
+                <br>Retorna a version. Extrai <code>.currentHistoryId</code>.
               </div>
               <div class="box-file">flow-version.service.ts:17-30</div>
             </div>
@@ -804,31 +804,31 @@
 
           <div class="box backend">
             <div class="box-title">return version.currentHistoryId</div>
-            <div class="box-desc">É esse UUID que amarra os nós/arestas do snapshot congelado</div>
+            <div class="box-desc">É esse UUID que amarra os nós e as arestas do snapshot congelado.</div>
           </div>
         </div>
 
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">💡 Semântica de null</div>
-            Retornar <code>null</code> significa "usa a working copy live" — os nós/arestas com <code>flow_version_history_id IS NULL</code>. É o modo padrão quando o flow não tem version control habilitado.
+            Retornar <code>null</code> significa usar a working copy live. São os nós e as arestas com <code>flow_version_history_id IS NULL</code>. É o modo padrão quando o flow não tem version control habilitado.
           </div>
 
           <div class="aside">
             <div class="aside-title">🎯 3 fontes possíveis de historyId</div>
-            Ordem de precedência:
-            <br>1. <strong>historyId explícito</strong> (só usado internamente pela função A quando A é chamada com <code>requestedHistoryId</code> — em <code>apiV2</code> normalmente é undefined)
-            <br>2. <strong>versionId requisitado</strong> (query param na API)
-            <br>3. <strong>deployedVersionId</strong> do flow (fallback "produção")
+            Ordem de precedência.
+            <br>1. <strong>historyId explícito</strong>. Só é usado internamente pela função A quando A é chamada com <code>requestedHistoryId</code>. Em <code>apiV2</code>, normalmente é <code>undefined</code>.
+            <br>2. <strong>versionId requisitado</strong>. Query param na API.
+            <br>3. <strong>deployedVersionId</strong> do flow. Fallback de produção.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔗 Ligação com o resto do fluxo</div>
             O <code>flowVersionHistoryId</code> resolvido aqui vira uma variável de contexto usada em:
-            <br>• Query de nodes/edges (A4)
-            <br>• Metadata da row de <code>node_executions</code> (T2)
-            <br>• Chave de workflow do Temporal (<code>buildNodeWorkflowId</code>)
-            <br>• Cache de <code>previewResponses</code> (3.2)
+            <br>Query de nodes e edges (A4).
+            <br>Metadata da linha de <code>node_executions</code> (T2).
+            <br>Chave de workflow do Temporal (<code>buildNodeWorkflowId</code>).
+            <br>Cache de <code>previewResponses</code> (3.2).
           </div>
         </div>
       </div>
@@ -851,10 +851,10 @@
         async checkIfUserCanRunFlow(user: User, flow: Flow): Promise&lt;boolean&gt;
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Autorização — verifica se o usuário chamador tem permissão de executar este flow específico. Se retornar <code>false</code>, o call-site em <code>flux.service.ts:2361-2363</code> lança <code>ForbiddenException('You are not authorized to run this flow')</code>.
+        <strong>Propósito.</strong> Autorização. Verifica se o usuário chamador tem permissão para executar este flow específico. Se retorna <code>false</code>, o call-site em <code>flux.service.ts:2361-2363</code> lança <code>ForbiddenException('You are not authorized to run this flow')</code>.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> essa função é o <em>porteiro</em> do agente — ela responde "esse usuário aí que apertou o botão pode mesmo rodar este agente específico?". Funciona como uma sequência de perguntas, e a primeira que der "sim" já libera: (1) é um dos agentes internos da própria plataforma? passa direto; (2) o usuário é o dono do flow? passa; (3) o flow é um template público (SYSTEM library)? passa; (4) o flow pertence a uma company (via space ou companyUser)? aí ela vai no banco confirmar se esse usuário é membro <strong>ativo</strong> dessa company. Se nenhuma das opções bater, retorna <code>false</code> e o backend cospe um HTTP 403 imediato, sem nem chegar na próxima etapa.
+        <strong>Em resumo.</strong> A função é o porteiro do agente. Responde se o usuário que apertou o botão pode executar este agente específico. Funciona como uma sequência de perguntas. A primeira que retorna sim libera. Primeiro, é um dos agentes internos da própria plataforma? Passa direto. Segundo, o usuário é o dono do flow? Passa. Terceiro, o flow é um template público (SYSTEM library)? Passa. Quarto, o flow pertence a uma company (via space ou companyUser)? Consulta o banco para confirmar se esse usuário é membro ativo dessa company. Se nenhuma das opções bate, retorna <code>false</code> e o backend responde HTTP 403 imediato, sem chegar na próxima etapa.
       </div>
 
       <div class="fn-body-cols">
@@ -879,12 +879,12 @@
             <div class="cascade-step">
               <span class="cascade-num">4</span>
               <span class="cond"><code>flow.folder.spaces?.id</code> presente (flow em space)</span>
-              <span class="result call">→ SELECT company_user</span>
+              <span class="result call">SELECT company_user</span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">5</span>
               <span class="cond"><code>flow.folder.companyUser?.id</code> presente (flow em companyUser)</span>
-              <span class="result call">→ SELECT company_user</span>
+              <span class="result call">SELECT company_user</span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">6</span>
@@ -900,41 +900,41 @@
             <div class="box db">
               <div class="box-title">companyUserService.findOne({ user: user.id, company: X })</div>
               <div class="box-desc">
-                Query TypeORM: SELECT company_user WHERE user_id = $1 AND company_id = $2
-                <br>Company vem de <code>flow.folder.spaces.company.id</code> (caso 4) ou <code>flow.folder.companyUser.company.id</code> (caso 5)
+                Query TypeORM. <code>SELECT company_user WHERE user_id = $1 AND company_id = $2</code>.
+                <br>Company vem de <code>flow.folder.spaces.company.id</code> (caso 4) ou <code>flow.folder.companyUser.company.id</code> (caso 5).
               </div>
               <div class="box-file">company_user.service.ts (herda findOne da BaseService)</div>
             </div>
             <div class="arrow">↓</div>
             <div class="box decision">
               <div class="box-title">companyUser?.status === CompanyUserStatus.ACTIVE?</div>
-              <div class="box-desc">Retorna <code>true</code> se for membro ATIVO da company, <code>false</code> se for banido/pendente/removido ou se não existir</div>
+              <div class="box-desc">Retorna <code>true</code> se for membro ativo da company. Retorna <code>false</code> se banido, pendente, removido ou inexistente.</div>
             </div>
           </div>
         </div>
 
         <div class="fn-asides">
           <div class="aside warn">
-            <div class="aside-title">⚠️ Se retornar false...</div>
+            <div class="aside-title">⚠️ Se retornar false</div>
             O call-site imediatamente lança:
-            <br><code>throw new ForbiddenException('You are not authorized to run this flow')</code>
-            <br><br>Ou seja: <strong>quebra a execução com HTTP 403</strong> antes mesmo de chegar em <code>assertOwnerCanRunFlow</code>.
+            <br><code>throw new ForbiddenException('You are not authorized to run this flow')</code>.
+            <br><br>Quebra a execução com HTTP 403 antes mesmo de chegar em <code>assertOwnerCanRunFlow</code>.
             <div style="font-family:monospace;font-size:10px;margin-top:6px">flux.service.ts:2361-2363</div>
           </div>
 
           <div class="aside info">
             <div class="aside-title">🎯 3 modos de autorização</div>
-            <strong>1. Bypass total</strong> — agents especiais de sistema (form builder, summary)
-            <br><strong>2. Owner direto</strong> — user é o dono do flow
-            <br><strong>3. System library</strong> — flow é public template
-            <br><strong>4. Membership de company</strong> — flow em space/companyUser exige status ACTIVE
+            <strong>1. Bypass total.</strong> Agentes especiais de sistema (form builder, summary).
+            <br><strong>2. Owner direto.</strong> O usuário é o dono do flow.
+            <br><strong>3. System library.</strong> O flow é template público.
+            <br><strong>4. Membership de company.</strong> Flow em space ou companyUser exige status ACTIVE.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 Env vars usadas</div>
-            <code>process.env.ID_OF_AGENT_TO_BUILD_FORM</code>
-            <br><code>process.env.ID_OF_AGENT_TO_GENERATE_SUMMARY</code>
-            <br><br>Dois agents internos que a plataforma usa (gera formulários, gera summary de flow). Precisam rodar independente de quem chama.
+            <code>process.env.ID_OF_AGENT_TO_BUILD_FORM</code>.
+            <br><code>process.env.ID_OF_AGENT_TO_GENERATE_SUMMARY</code>.
+            <br><br>Dois agentes internos que a plataforma usa (gera formulários e gera resumo de flow). Precisam executar independentemente de quem chama.
           </div>
         </div>
       </div>
@@ -958,11 +958,11 @@
         async assertOwnerCanRunFlow(flow: Flow): Promise&lt;void&gt;   <span style="color:#94A3B8">// throws se bloqueado</span>
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Billing gate — verifica se o <em>owner do flow</em> (não o caller) tem plano ativo que permite executar agentes. Bloqueia flows cujo dono está em plano Vault (read-only).
-        <br><strong>Chamada apenas se <code>!isNestedRunLog</code></strong> — não é aplicada a flows chamados via <code>fluxBox</code>/<code>libraryNode</code> internamente.
+        <strong>Propósito.</strong> Billing gate. Verifica se o owner do flow (não o caller) tem plano ativo que permite executar agentes. Bloqueia flows cujo dono está em plano Vault (read-only).
+        <br>Chamada apenas se <code>!isNestedRunLog</code>. Não é aplicada a flows chamados via <code>fluxBox</code> ou <code>libraryNode</code> internamente.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> se a (C) era o porteiro do <em>usuário</em>, essa aqui é a <em>régua de faturamento do dono do agente</em>. Ela responde: "beleza, o cara pode rodar, mas quem <em>paga a conta</em> desse flow tem plano ativo pra rodar agentes?". Ela descobre quem é o "admin cobrável" do flow (se estiver numa company, é o admin da company; senão, é o próprio criador), consulta o plano ativo desse admin e, se o plano for do tipo Vault (read-only, típico de assinatura expirada), <strong>bloqueia a execução com 403</strong> mesmo que o caller tenha permissão. Só roda no nível topo da execução — se este flow já é um sub-flow chamado por outro (via fluxBox/libraryNode), pula a checagem porque o billing do dono já foi validado lá em cima.
+        <strong>Em resumo.</strong> Se (C) é o porteiro do usuário, esta função é a régua de faturamento do dono do agente. Responde à pergunta. O responsável pela conta desse flow tem plano ativo para executar agentes? Descobre quem é o admin cobrável do flow. Se está numa company, é o admin da company. Caso contrário, é o próprio criador. Consulta o plano ativo desse admin. Se o plano é do tipo Vault (read-only, típico de assinatura expirada), bloqueia a execução com 403 mesmo que o caller tenha permissão. Só executa no nível topo da execução. Se este flow já é um sub-flow chamado por outro (via fluxBox ou libraryNode), pula a checagem. O billing do dono já foi validado acima.
       </div>
 
       <div class="fn-body-cols">
@@ -971,7 +971,7 @@
             <div class="cascade-title">🪜 Cascata de billing</div>
             <div class="cascade-step">
               <span class="cascade-num">1</span>
-              <span class="cond">flow.id ∈ { agents especiais }</span>
+              <span class="cond">flow.id ∈ { agentes especiais }</span>
               <span class="result pass">return (bypass)</span>
             </div>
             <div class="cascade-step">
@@ -982,7 +982,7 @@
             <div class="cascade-step">
               <span class="cascade-num">3</span>
               <span class="cond">resolve owner</span>
-              <span class="result call">→ selectFlowAdmin(flow)</span>
+              <span class="result call">selectFlowAdmin(flow)</span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">4</span>
@@ -992,7 +992,7 @@
             <div class="cascade-step">
               <span class="cascade-num">5</span>
               <span class="cond">busca plano ativo do owner</span>
-              <span class="result call">→ getActiveProductForOwner</span>
+              <span class="result call">getActiveProductForOwner</span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">6</span>
@@ -1004,17 +1004,17 @@
           <div class="arrow">↓</div>
 
           <div class="nested-flow">
-            <div class="nested-flow-title">↳ selectFlowAdmin(flow) — product.service.ts:138-166</div>
+            <div class="nested-flow-title">↳ selectFlowAdmin(flow). product.service.ts:138-166</div>
             <div class="cascade" style="background:white;border-color:#94A3B8">
               <div class="cascade-step">
                 <span class="cascade-num">1</span>
                 <span class="cond"><code>flow.folder.spaces.company.id</code>?</span>
-                <span class="result call">→ companyUser (ADMIN, ACTIVE)</span>
+                <span class="result call">companyUser (ADMIN, ACTIVE)</span>
               </div>
               <div class="cascade-step">
                 <span class="cascade-num">2</span>
                 <span class="cond"><code>flow.folder.companyUser.company.id</code>?</span>
-                <span class="result call">→ companyUser (ADMIN, ACTIVE)</span>
+                <span class="result call">companyUser (ADMIN, ACTIVE)</span>
               </div>
               <div class="cascade-step">
                 <span class="cascade-num">3</span>
@@ -1023,18 +1023,18 @@
               </div>
             </div>
             <div style="font-size:10.5px;color:#065F46;margin-top:4px">
-              Query: <code>companyUserService.findOne({ company: X, status: ACTIVE, role: ADMIN }, ['user'])</code>
+              Query. <code>companyUserService.findOne({ company: X, status: ACTIVE, role: ADMIN }, ['user'])</code>.
             </div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="nested-flow">
-            <div class="nested-flow-title">↳ getActiveProductForOwner(ownerId) — product.service.ts:330-336</div>
+            <div class="nested-flow-title">↳ getActiveProductForOwner(ownerId). product.service.ts:330-336</div>
             <div class="box db">
               <div class="box-title">userProductService.findOne({ user: ownerId, active: true }, ['product'])</div>
               <div class="box-desc">
-                Query: SELECT user_product JOIN product WHERE user_id = $1 AND active = true
-                <br>Retorna <code>userProduct?.product ?? null</code>
+                Query. <code>SELECT user_product JOIN product WHERE user_id = $1 AND active = true</code>.
+                <br>Retorna <code>userProduct?.product ?? null</code>.
               </div>
             </div>
           </div>
@@ -1043,7 +1043,7 @@
           <div class="box decision">
             <div class="box-title">product.can_run_flows === false?</div>
             <div class="box-desc">
-              Se true → <strong>throw ForbiddenException</strong>:
+              Se <code>true</code>, lança <code>ForbiddenException</code>.
               <br><em>"This account is on the Vault (read-only) plan. Running agents is disabled — upgrade to run again."</em>
             </div>
           </div>
@@ -1051,31 +1051,31 @@
 
         <div class="fn-asides">
           <div class="aside warn">
-            <div class="aside-title">⚠️ Diferença crítica vs (C)</div>
-            <strong>(C) checkIfUserCanRunFlow</strong> — verifica o <em>caller</em> (quem chamou a API)
-            <br><strong>(D) assertOwnerCanRunFlow</strong> — verifica o <em>owner do flow</em>
-            <br><br>Um usuário livre pode ser bloqueado se estiver rodando um flow cujo dono está em Vault.
+            <div class="aside-title">⚠️ Diferença crítica em relação a (C)</div>
+            <strong>(C) checkIfUserCanRunFlow.</strong> Verifica o caller (quem chamou a API).
+            <br><strong>(D) assertOwnerCanRunFlow.</strong> Verifica o owner do flow.
+            <br><br>Um usuário livre pode ser bloqueado se estiver executando um flow cujo dono está em Vault.
           </div>
 
           <div class="aside info">
             <div class="aside-title">🎯 Por que só se !isNestedRunLog?</div>
-            Se este flow foi chamado por outro flow (via fluxBox/libraryNode), a checagem de billing já foi feita no top-level. Chamar de novo em nested seria redundante e potencialmente confuso (mesmo owner, mesma resposta).
+            Se este flow foi chamado por outro flow (via fluxBox ou libraryNode), a checagem de billing já foi feita no top-level. Executar de novo em nested seria redundante e potencialmente confuso. Mesmo owner, mesma resposta.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 Vault plan</div>
-            Plano "read-only" onde:
-            <br>• <code>product.can_run_flows = false</code>
-            <br>• <code>product.can_create_items = false</code>
-            <br><br>Usado quando a assinatura expirou mas os dados devem permanecer acessíveis.
+            Plano read-only. Configuração.
+            <br><code>product.can_run_flows = false</code>.
+            <br><code>product.can_create_items = false</code>.
+            <br><br>Usado quando a assinatura expirou, mas os dados devem permanecer acessíveis.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 Ordem de resolução do owner (selectFlowAdmin)</div>
-            1. Prioriza <strong>space company admin</strong> se flow está em space
-            <br>2. Fallback pra <strong>companyUser company admin</strong> se flow é de companyUser
-            <br>3. Senão retorna o <strong>user criador direto</strong> do flow
-            <br><br>Isso significa que a cobrança/billing recai sempre no admin da company, não no dono real do flow em ambientes multi-tenant.
+            1. Prioriza o space company admin se o flow está em space.
+            <br>2. Fallback para companyUser company admin se o flow é de companyUser.
+            <br>3. Caso contrário, retorna o usuário criador direto do flow.
+            <br><br>A cobrança e o billing recaem sempre no admin da company, não no dono real do flow em ambientes multi-tenant.
           </div>
         </div>
       </div>
@@ -1084,18 +1084,18 @@
 
   <!-- SUMMARY -->
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo — o que sai de 1.3:</strong>
-    <br>• <code>getFlow</code> populado com <code>.nodes</code>, <code>.edges</code>, <code>.user</code>, <code>.folder</code>, <code>.folder.spaces</code>, <code>.folder.spaces.company</code>, <code>.folder.companyUser</code>, <code>.library</code>
-    <br>• <code>flowVersionHistoryId</code> (uuid ou null) — chave que amarra qual snapshot congelado usar
-    <br>• Garantia de que <strong>o caller pode rodar</strong> (checkIfUserCanRunFlow) e (se top-level) que <strong>o owner tem plano válido</strong> (assertOwnerCanRunFlow)
-    <br>• Estado pra alimentar os próximos passos: <code>spaceOwnerId</code>, <code>loggingEnabledForSpace</code>, <code>RunLogCollector.createRoot({ orgId: company?.id, ... })</code>
+    <strong>Resumo. O que sai de 1.3:</strong>
+    <br><code>getFlow</code> populado com <code>.nodes</code>, <code>.edges</code>, <code>.user</code>, <code>.folder</code>, <code>.folder.spaces</code>, <code>.folder.spaces.company</code>, <code>.folder.companyUser</code> e <code>.library</code>.
+    <br><code>flowVersionHistoryId</code> (uuid ou null). Chave que amarra qual snapshot congelado usar.
+    <br>Garantia de que o caller pode executar (<code>checkIfUserCanRunFlow</code>) e, se top-level, que o owner tem plano válido (<code>assertOwnerCanRunFlow</code>).
+    <br>Estado para alimentar os próximos passos. <code>spaceOwnerId</code>, <code>loggingEnabledForSpace</code>, <code>RunLogCollector.createRoot({ orgId: company?.id, ... })</code>.
   </div>
 
   <div class="note">
     <strong>Observações para migração:</strong>
-    <br>• As 3 queries de carregamento (flow + nodes + edges) são feitas no backend antes de qualquer decisão de dispatch. Se o worker for orquestrar, ele vai precisar dessa mesma tríade — ou receber tudo serializado no start do workflow, ou refazer as queries lá.
-    <br>• A camada de permissões (C+D) é 100% relacional (users, company_user, user_product, folder.spaces) — replicá-la no worker significa expor esses schemas ou manter o gate no backend antes de iniciar o workflow.
-    <br>• A cascata de <code>selectFlowAdmin</code> é sensível a mudanças de estrutura de company: qualquer refactor do multi-tenancy vai afetar o billing gate.
+    <br>As 3 queries de carregamento (flow, nodes e edges) são feitas no backend antes de qualquer decisão de dispatch. Se o worker vai orquestrar, precisará dessa mesma tríade. Recebe tudo serializado no start do workflow ou refaz as queries lá.
+    <br>A camada de permissões (C mais D) é 100% relacional (<code>users</code>, <code>company_user</code>, <code>user_product</code>, <code>folder.spaces</code>). Replicar no worker significa expor esses schemas ou manter o gate no backend antes de iniciar o workflow.
+    <br>A cascata de <code>selectFlowAdmin</code> é sensível a mudanças de estrutura de company. Qualquer refactor do multi-tenancy vai afetar o billing gate.
   </div>
 
   <!-- FOOTER NAV -->

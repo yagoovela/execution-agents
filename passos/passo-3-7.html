@@ -156,22 +156,22 @@
   </div>
 
   <div class="page-header"><span class="icon">💰</span><h1>Passo 3.7 — Contabilidade token/custo por nó</h1></div>
-  <div class="page-sub">Bloco em <code>flux.service.ts:2280-2283</code> (closure), <code>3248-3249</code> (snapshot antes), <code>3296-3297</code> (2ª leitura), <code>4537-4546</code> (delta no endNode). Sem tabela, sem service — pura aritmética em variáveis globais do run + closure de mutação.</div>
+  <div class="page-sub">Bloco em <code>flux.service.ts:2280-2283</code> (closure), <code>3248-3249</code> (snapshot antes), <code>3296-3297</code> (segunda leitura) e <code>4537-4546</code> (delta no endNode). Sem tabela e sem serviço. Aritmética pura em variáveis globais da execução, mais closure de mutação.</div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
     <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
     <ul>
-      <li><strong>Contabiliza gasto de tokens e custo por nó:</strong> pura aritmética em cima de variáveis globais do run (<code>totalTokensUsed</code>, <code>totalCost</code>). Sem service, sem tabela — só duas variáveis vivendo no escopo do <code>apiV2()</code>.</li>
-      <li><strong>Closure <code>onUpdateTokens</code> pra path legacy:</strong> uma "caixinha de troco" passada como arg pros handlers legacy (LLM, imagem, áudio, embedding); cada handler grita <code>onUpdateTokens(delta, cost)</code> e a closure soma nos acumuladores. Funciona porque Node.js é single-threaded — sem lock, sem race.</li>
-      <li><strong>Delta por nó via snapshot antes/depois:</strong> no início do <code>try</code> do nó, guarda <code>genericTokensBefore = totalTokensUsed</code>; depois do handler, calcula delta = valor atual − snapshot. O delta vai pro <code>RunLogNode</code> em 3.9. Robusto <em>enquanto</em> não há paralelismo entre nós.</li>
-      <li><strong>AsyncLocalStorage pra propagação implícita:</strong> <code>chargeContext</code> injeta <code>{ execId, nodeId }</code> na ALS antes do handler; quando o <code>ProductService.updateTokens</code> (compartilhado com API pública) insere row em <code>token_transactions</code>, ele consulta a ALS pra saber a qual nó atribuir a cobrança.</li>
-      <li><strong>Path Temporal usa HTTP + SUM no banco:</strong> handlers no worker não podem tocar a closure (outro processo); então cobram via <code>/worker/charge-tokens</code>, e o backend, no retorno de <code>processNodeViaTemporal</code>, chama <code>sumChargesByExecution(execId, nodeId)</code> pra agregar do banco e somar em <code>totalTokensUsed</code>. Overhead per-node de HTTP+SQL, mas garante consistência entre paths.</li>
-      <li><strong>Saída:</strong> <code>totalTokensUsed</code>/<code>totalCost</code> refletindo consumo pós-nó; delta atribuído ao <code>RunLogNode</code>; row em <code>token_transactions</code> gravada como audit trail; <em>dois</em> mecanismos convergindo numa única fonte de verdade em memória.</li>
+      <li><strong>Contabiliza gasto de tokens e custo por nó.</strong> Aritmética pura sobre variáveis globais da execução (<code>totalTokensUsed</code>, <code>totalCost</code>). Sem serviço e sem tabela. Só duas variáveis vivem no escopo do <code>apiV2()</code>.</li>
+      <li><strong>Closure <code>onUpdateTokens</code> para o path legacy.</strong> Funciona como uma caixinha de troco passada por argumento aos handlers legacy (LLM, imagem, áudio, embedding). Cada handler chama <code>onUpdateTokens(delta, cost)</code>. A closure soma nos acumuladores. Funciona porque Node.js é single-threaded. Sem lock e sem race.</li>
+      <li><strong>Delta por nó via snapshot antes e depois.</strong> No início do <code>try</code> do nó, guarda <code>genericTokensBefore = totalTokensUsed</code>. Depois do handler, calcula delta como valor atual menos snapshot. O delta vai para o <code>RunLogNode</code> em 3.9. É robusto enquanto não há paralelismo entre nós.</li>
+      <li><strong>AsyncLocalStorage para propagação implícita.</strong> O <code>chargeContext</code> injeta <code>{ execId, nodeId }</code> na ALS antes do handler. Quando o <code>ProductService.updateTokens</code> (compartilhado com API pública) insere linha em <code>token_transactions</code>, consulta a ALS para saber a qual nó atribuir a cobrança.</li>
+      <li><strong>Path Temporal usa HTTP e SUM no banco.</strong> Handlers no worker não podem tocar a closure. É outro processo. Cobram via <code>/worker/charge-tokens</code>. No retorno do <code>processNodeViaTemporal</code>, o backend chama <code>sumChargesByExecution(execId, nodeId)</code>. Agrega do banco e soma em <code>totalTokensUsed</code>. Existe overhead per-node de HTTP e SQL. Garante consistência entre paths.</li>
+      <li><strong>Saída.</strong> <code>totalTokensUsed</code> e <code>totalCost</code> refletem o consumo pós-nó. Delta atribuído ao <code>RunLogNode</code>. Linha em <code>token_transactions</code> gravada como audit trail. Dois mecanismos convergem em uma única fonte de verdade em memória.</li>
     </ul>
   </div>
 
-  <div class="note info"><strong>Contexto:</strong> billing é cross-cutting (memória <code>[[project_execution_architecture]]</code>). O <em>total</em> do run vive em <code>totalTokensUsed</code>/<code>totalCost</code> — mutados por callback quando chamadas de LLM/API/embedding cobram tokens. Já o <em>delta por nó</em> é calculado por diferença antes/depois. Duas fontes possíveis: (i) handlers legacy chamam <code>onUpdateTokens(delta, cost)</code> direto; (ii) handlers Temporal cobram via HTTP <code>/worker/charge-tokens</code> e depois <code>sumChargesByExecution(execId, nodeId)</code> agrega do banco.</div>
+  <div class="note info"><strong>Contexto.</strong> Billing é cross-cutting (memória <code>[[project_execution_architecture]]</code>). O total da execução vive em <code>totalTokensUsed</code> e <code>totalCost</code>. É mutado por callback quando chamadas de LLM, API ou embedding cobram tokens. O delta por nó é calculado por diferença antes e depois. Duas fontes possíveis. Handlers legacy chamam <code>onUpdateTokens(delta, cost)</code> direto. Handlers Temporal cobram via HTTP <code>/worker/charge-tokens</code>. Depois, <code>sumChargesByExecution(execId, nodeId)</code> agrega do banco.</div>
 
   <div class="overview-mini">
     <div class="overview-mini-title">Cadeia em 3.7</div>
@@ -184,7 +184,7 @@
       <span class="overview-sep">→</span>
       <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>sumChargesByExecution (Temporal)</a>
     </div>
-    <div style="margin-top:10px; font-size:11.5px; color:#64748B;">Resultado: <code>totalTokensUsed</code>/<code>totalCost</code> refletem consumo acumulado do run; delta é atribuído ao <code>RunLogNode</code> deste nó em 3.9.</div>
+    <div style="margin-top:10px; font-size:11.5px; color:#64748B;">Resultado. <code>totalTokensUsed</code> e <code>totalCost</code> refletem o consumo acumulado da execução. O delta é atribuído ao <code>RunLogNode</code> deste nó em 3.9.</div>
   </div>
 
   <div class="fn-card collapsed" id="fn-a">
@@ -194,8 +194,8 @@
     </div>
     <div class="fn-card-body">
       <div class="fn-signature">const onUpdateTokens = (tokensUsed: number, cost: number) =&gt; { totalTokensUsed += tokensUsed; totalCost += cost; };</div>
-      <div class="fn-purpose"><strong>Propósito:</strong> Callback closure criado no início de <code>apiV2()</code>. Passado por argumento pra todos os handlers legacy que fazem cobrança (LLM, embedding, etc.). Cada handler chama <code>onUpdateTokens(delta, cost)</code> após cada operação cobrada — a closure muta as variáveis do escopo pai.</div>
-      <div class="fn-friendly"><strong>Em resumo:</strong> pensa nele como uma <em>caixinha de troco</em> que fica em cima da mesa do <code>apiV2()</code>. Toda vez que um handler <em>gasta</em> tokens (chamou o LLM, gerou embedding, transcreveu áudio), ele grita "gastei 300 tokens, 0.002 dolar!" chamando <code>onUpdateTokens(300, 0.002)</code>. A closure aceita e soma nos acumuladores globais do run. Como é <em>closure</em> (função definida no escopo do apiV2 acessando as variáveis <code>totalTokensUsed</code> e <code>totalCost</code>), <strong>mutar dentro da função mexe direto nas variáveis do run</strong> — sem passar por service, sem I/O, sem consistência distribuída. É simples, síncrono, e funciona porque tudo mora no mesmo processo. Cada handler recebe essa referência via arg (não via injeção) — é padrão dependency injection funcional. Handlers Temporal <em>não</em> chamam essa closure; eles cobram por HTTP direto no <code>/worker/charge-tokens</code>, e o backend depois lê via <code>sumChargesByExecution</code> (fn D). Sem worker, sem HTTP, sem lock — mas também sem paralelismo real.</div>
+      <div class="fn-purpose"><strong>Propósito.</strong> Callback closure criada no início do <code>apiV2()</code>. Passada por argumento para todos os handlers legacy que fazem cobrança (LLM, embedding e outros). Cada handler chama <code>onUpdateTokens(delta, cost)</code> após cada operação cobrada. A closure muta as variáveis do escopo pai.</div>
+      <div class="fn-friendly"><strong>Em resumo.</strong> Funciona como uma caixinha de troco em cima da mesa do <code>apiV2()</code>. Sempre que um handler consome tokens (chamou o LLM, gerou embedding, transcreveu áudio), reporta o consumo via <code>onUpdateTokens(300, 0.002)</code>. A closure aceita o valor e soma nos acumuladores globais da execução. É closure. A função é definida no escopo do <code>apiV2</code> e acessa as variáveis <code>totalTokensUsed</code> e <code>totalCost</code>. Mutar dentro da função altera direto as variáveis da execução. Sem passar por serviço, sem I/O, sem consistência distribuída. É simples, síncrono e funciona porque tudo mora no mesmo processo. Cada handler recebe essa referência via argumento, não via injeção. É padrão de dependency injection funcional. Handlers Temporal não chamam essa closure. Cobram por HTTP direto no <code>/worker/charge-tokens</code>. O backend depois lê via <code>sumChargesByExecution</code> (fn D). Sem worker, sem HTTP e sem lock. Também não há paralelismo real.</div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
@@ -208,22 +208,22 @@
 };</div>
           <div class="arrow">↓</div>
           <div class="box backend">
-            <div class="box-title"><span class="badge step">A1</span> Passado a handlers legacy</div>
-            <div class="box-desc">Handlers como <code>voiceNode</code>, <code>imageGeneratorNode</code>, <code>webSearchNode</code>, <code>audioReaderNode</code>, <code>commandContentNode</code> recebem <code>onUpdateTokens</code> como arg — chamam durante execução. Dispatch em <code>flux.service.ts:3380, 3615, 3706, 3722, 3712</code>.</div>
+            <div class="box-title"><span class="badge step">A1</span> Passado aos handlers legacy</div>
+            <div class="box-desc">Handlers como <code>voiceNode</code>, <code>imageGeneratorNode</code>, <code>webSearchNode</code>, <code>audioReaderNode</code> e <code>commandContentNode</code> recebem <code>onUpdateTokens</code> como argumento. Chamam durante a execução. Dispatch em <code>flux.service.ts:3380, 3615, 3706, 3722, 3712</code>.</div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Sem lock, single-threaded funciona</div>
-            Como Node.js é single-threaded no event loop, mutar <code>totalTokensUsed += x</code> nunca vai dar race — não existem 2 handlers rodando em paralelo <em>de verdade</em>. Só um <code>await</code> tá suspenso por vez. Em qualquer refactor que introduza paralelismo real (worker_threads, cluster), essa closure precisa virar operação atômica.
+            Node.js é single-threaded no event loop. Mutar <code>totalTokensUsed += x</code> nunca gera race. Não existem 2 handlers rodando em paralelo de verdade. Só um <code>await</code> fica suspenso por vez. Em qualquer refactor que introduza paralelismo real (worker_threads, cluster), essa closure precisa virar operação atômica.
           </div>
           <div class="aside warn">
             <div class="aside-title">⚠️ Sem idempotência</div>
-            Se um handler chamar <code>onUpdateTokens</code> 2× por engano (retry, bug), soma 2×. Não há dedup. Diferente do <code>token_transactions</code> do Temporal path, que pelo menos tem PK.
+            Se um handler chamar <code>onUpdateTokens</code> duas vezes por engano (retry ou bug), a soma acontece duas vezes. Não há dedup. Diferente do <code>token_transactions</code> do path Temporal, que pelo menos tem PK.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 Fecha sobre 2 variáveis</div>
-            A closure captura <code>totalTokensUsed</code> e <code>totalCost</code> por referência (é <code>let</code>, não const — mas mesmo com const, closure lê o valor atual da variável, não snapshot). Reatribuição fora afeta a leitura.
+            A closure captura <code>totalTokensUsed</code> e <code>totalCost</code> por referência. As variáveis são <code>let</code>, não const. Mesmo com const, a closure lê o valor atual da variável, não um snapshot. Reatribuição fora afeta a leitura.
           </div>
         </div>
       </div>
@@ -237,8 +237,8 @@
     </div>
     <div class="fn-card-body">
       <div class="fn-signature">genericTokensBefore = totalTokensUsed; ... [handler roda] ... delta = totalTokensUsed - genericTokensBefore;</div>
-      <div class="fn-purpose"><strong>Propósito:</strong> Pattern universal pra atribuir cobrança ao nó certo — no início do <code>try</code> do nó (linha 3248 e 3296 pra segurança dupla), snapshot dos acumuladores globais. Depois do handler terminar, delta = valor atual - snapshot. Vai pro <code>endNode</code> em 3.9.</div>
-      <div class="fn-friendly"><strong>Em resumo:</strong> é a <em>régua</em> antes/depois. O total do run tá subindo o tempo todo (cada handler cobra, cada iteração). Pra saber quanto foi <em>desse nó específico</em>, marca-se o total antes do nó começar (<code>genericTokensBefore</code>) e o total depois (<code>totalTokensUsed</code>) — a diferença é o gasto atribuível. Simples e robusto <em>enquanto</em> não há paralelismo entre nós. Se 2 nós rodassem em paralelo, os deltas se cruzariam — não teria como saber quem gastou o quê só pela diferença. Por que o snapshot aparece 2× (3248 e 3296)? Segurança dupla: a linha 3248 é depois do <code>try {</code> abrir; a 3296 é dentro do bloco onde o RunLog está sendo criado — reset explícito pra garantir que qualquer cobrança do <code>runLogCollector.startNode</code> (não deveria acontecer mas...) não vaze pro delta do nó. Um tanto paranóico mas defensivo. E o delta final é escrito no <code>RunLogNode</code> em 3.9 (<code>endNode</code>), com <code>tokens: totalTokensUsed - genericTokensBefore</code>. Assim a UI de timeline mostra tokens/custo <em>por nó</em>, não só o total do run.</div>
+      <div class="fn-purpose"><strong>Propósito.</strong> Padrão universal para atribuir cobrança ao nó certo. No início do <code>try</code> do nó (linhas 3248 e 3296, com segurança dupla), tira snapshot dos acumuladores globais. Depois que o handler termina, calcula delta como valor atual menos snapshot. Vai para o <code>endNode</code> em 3.9.</div>
+      <div class="fn-friendly"><strong>Em resumo.</strong> É a régua antes e depois. O total da execução sobe o tempo todo. Cada handler cobra. Cada iteração cobra. Para saber quanto foi desse nó específico, marca-se o total antes do nó começar (<code>genericTokensBefore</code>) e o total depois (<code>totalTokensUsed</code>). A diferença é o gasto atribuível. Simples e robusto enquanto não há paralelismo entre nós. Se 2 nós rodassem em paralelo, os deltas se cruzariam. Não haveria como saber quem gastou o quê só pela diferença. O snapshot aparece duas vezes (3248 e 3296) por segurança dupla. A linha 3248 vem logo após o <code>try {</code> abrir. A 3296 fica dentro do bloco onde o RunLog está sendo criado. É reset explícito para garantir que qualquer cobrança do <code>runLogCollector.startNode</code> não vaze para o delta do nó. Não deveria acontecer, mas é defensivo. O delta final é escrito no <code>RunLogNode</code> em 3.9 (<code>endNode</code>), com <code>tokens: totalTokensUsed - genericTokensBefore</code>. Assim a UI de timeline mostra tokens e custo por nó, não só o total da execução.</div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
@@ -256,15 +256,15 @@ cost: totalCost - genericCostBefore,</div>
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Por que 2 snapshots?</div>
-            Linha 3248 é durante inicialização de vars. Linha 3296-3297 é depois do <code>startNode</code>, garantindo reset — se o <code>startNode</code>/<code>redactSecrets</code> ativou algum path que cobrasse tokens (improvável mas defensivo), fica fora do delta do nó.
+            A linha 3248 acontece durante a inicialização das variáveis. A linha 3296-3297 acontece depois do <code>startNode</code>. Garante reset. Se o <code>startNode</code> ou <code>redactSecrets</code> ativarem algum path que cobre tokens, fica fora do delta do nó. É improvável, mas defensivo.
           </div>
           <div class="aside warn">
             <div class="aside-title">⚠️ Delta pode ficar negativo?</div>
-            Não em código normal — <code>totalTokensUsed</code> só cresce. Mas se alguém decidir "compensar" (subtrair tokens em caso de erro), o delta pode ficar negativo. O <code>endNode</code> passa cru pra <code>RunLogNode</code>, que persiste o número — futuramente pode virar bug se alguém somar sem checar sinal.
+            Não em código normal. <code>totalTokensUsed</code> só cresce. Mas se alguém decidir compensar (subtrair tokens em caso de erro), o delta pode ficar negativo. O <code>endNode</code> passa o valor cru para o <code>RunLogNode</code>. O <code>RunLogNode</code> persiste o número. Futuramente pode virar bug se alguém somar sem checar sinal.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 Snapshot em cópia por valor</div>
-            Numbers em JS são valores, não referências. <code>genericTokensBefore = totalTokensUsed</code> copia o número — mudar <code>totalTokensUsed</code> depois não afeta o snapshot.
+            Numbers em JS são valores, não referências. <code>genericTokensBefore = totalTokensUsed</code> copia o número. Mudar <code>totalTokensUsed</code> depois não afeta o snapshot.
           </div>
         </div>
       </div>
@@ -278,8 +278,8 @@ cost: totalCost - genericCostBefore,</div>
     </div>
     <div class="fn-card-body">
       <div class="fn-signature">chargeContext = new AsyncLocalStorage&lt;{ execId, nodeId }&gt;() · getStore() lido em updateTokens</div>
-      <div class="fn-purpose"><strong>Propósito:</strong> Faz a ponte entre "quem está cobrando" (services de provider genéricos) e "onde persistir" (execId + nodeId do run atual). Injetado em 3.4 antes do handler; lido pelo <code>ProductService.updateTokens</code> quando insere row em <code>token_transactions</code>.</div>
-      <div class="fn-friendly"><strong>Em resumo:</strong> se você olhar <em>só</em> o <code>onUpdateTokens</code> do fn A, parece que a cobrança só vive na memória do backend. Mas na verdade, quando um handler chama <code>anthropicService.chat(...)</code>, esse service internamente também chama <code>productService.updateTokens(delta, cost)</code> — que <strong>insere row em <code>token_transactions</code></strong> no Postgres. E aí vem o problema: o <code>ProductService</code> é compartilhado com rotas API públicas — como ele sabe que essa cobrança pertence a este agente, a este nó? Resposta: via <code>chargeContext.getStore()</code>. O 3.4 injetou <code>{ execId, nodeId }</code> na AsyncLocalStorage <em>antes</em> do handler começar; quando o <code>ProductService</code> lê a ALS, pega esses ids e escreve na coluna <code>metadata</code> da row. Assim, <em>duas</em> cobranças acontecem em paralelo: (i) <code>onUpdateTokens</code> soma no total do run em memória; (ii) <code>ProductService</code> insere row com identificação por-nó no banco. A memória vira o retorno síncrono do run (Fase 4 pega); o banco vira audit trail e fonte pra <code>sumChargesByExecution</code> depois (fn D).</div>
+      <div class="fn-purpose"><strong>Propósito.</strong> Faz a ponte entre quem está cobrando (serviços de provider genéricos) e onde persistir (execId e nodeId da execução atual). Injetado em 3.4, antes do handler. Lido pelo <code>ProductService.updateTokens</code> quando insere linha em <code>token_transactions</code>.</div>
+      <div class="fn-friendly"><strong>Em resumo.</strong> Só olhando o <code>onUpdateTokens</code> do fn A, parece que a cobrança vive só na memória do backend. Na verdade, quando um handler chama <code>anthropicService.chat(...)</code>, esse serviço internamente também chama <code>productService.updateTokens(delta, cost)</code>. Essa chamada insere linha em <code>token_transactions</code> no Postgres. Existe um problema. O <code>ProductService</code> é compartilhado com rotas API públicas. Como ele sabe que essa cobrança pertence a este agente e a este nó? Via <code>chargeContext.getStore()</code>. O 3.4 injetou <code>{ execId, nodeId }</code> na AsyncLocalStorage antes do handler começar. Quando o <code>ProductService</code> lê a ALS, pega esses ids e escreve na coluna <code>metadata</code> da linha. Assim, duas cobranças acontecem em paralelo. <code>onUpdateTokens</code> soma no total da execução em memória. <code>ProductService</code> insere linha com identificação por nó no banco. A memória vira o retorno síncrono da execução (Fase 4 consome). O banco vira audit trail e fonte para <code>sumChargesByExecution</code> depois (fn D).</div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
@@ -293,12 +293,12 @@ nodeId = nodeId ?? chargeCtx?.nodeId ?? <span class="k">null</span>;
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Fallback para arg explícito</div>
-            <code>execId = execId ?? chargeCtx?.execId</code> — se o caller passou explícito, respeita. Só usa ALS como fallback. Permite outros callers (API pública) não precisar do contexto.
+            <div class="aside-title">🎯 Fallback para argumento explícito</div>
+            <code>execId = execId ?? chargeCtx?.execId</code>. Se o caller passou explícito, respeita. Só usa ALS como fallback. Permite que outros callers (API pública) não precisem do contexto.
           </div>
           <div class="aside">
             <div class="aside-title">📎 Duas fontes de verdade</div>
-            Memória (<code>totalTokensUsed</code>) e banco (<code>token_transactions</code>) podem divergir — se <code>onUpdateTokens</code> é chamado mas o INSERT do <code>ProductService</code> falha, memória tem valor mas banco não. Não há reconciliação automática — mas em prática, se <code>ProductService</code> falha, o request de LLM falharia antes.
+            Memória (<code>totalTokensUsed</code>) e banco (<code>token_transactions</code>) podem divergir. Se <code>onUpdateTokens</code> é chamado mas o INSERT do <code>ProductService</code> falha, memória tem valor e banco não. Não há reconciliação automática. Na prática, se o <code>ProductService</code> falha, o request de LLM falharia antes.
           </div>
         </div>
       </div>
@@ -312,42 +312,42 @@ nodeId = nodeId ?? chargeCtx?.nodeId ?? <span class="k">null</span>;
     </div>
     <div class="fn-card-body">
       <div class="fn-signature">const { tokens, cost } = await tokenTransactionService.sumChargesByExecution(execId, nodeId)</div>
-      <div class="fn-purpose"><strong>Propósito:</strong> Handlers Temporal cobram via HTTP <code>/worker/charge-tokens</code> no worker (não têm acesso ao <code>onUpdateTokens</code> closure). Após workflow terminar, o backend agrega esses charges do banco por <code>{execId, nodeId}</code> e soma no <code>totalTokensUsed</code>/<code>totalCost</code> do run.</div>
-      <div class="fn-friendly"><strong>Em resumo:</strong> handlers no worker não podem chamar a closure — outro processo, outra memória, outra vida. A solução: cada activity que cobra tokens chama HTTP <code>/worker/charge-tokens</code> passando <code>{ execId, nodeId, tokens, cost }</code>. O endpoint no backend insere row em <code>token_transactions</code>. Aí, quando <code>processNodeViaTemporal</code> retorna, o backend chama <code>tokenTransactionService.sumChargesByExecution(execId, nodeId)</code> — <code>SELECT SUM(tokens), SUM(cost) FROM token_transactions WHERE exec_id = $1 AND node_id = $2</code>. O resultado é somado direto em <code>totalTokensUsed</code>/<code>totalCost</code>. Efeito: <em>dois caminhos</em> de propagação de billing, mas <strong>uma única fonte de verdade final</strong> no fim (a soma em memória do backend). Elegante mas com custo de round-trip: HTTP + SQL por nó Temporal. Em runs grandes com muitos nós migrados, é overhead considerável — mas garante consistência entre paths.</div>
+      <div class="fn-purpose"><strong>Propósito.</strong> Handlers Temporal cobram via HTTP <code>/worker/charge-tokens</code> no worker. Não têm acesso à closure <code>onUpdateTokens</code>. Depois que o workflow termina, o backend agrega essas cobranças do banco por <code>{execId, nodeId}</code>. Soma em <code>totalTokensUsed</code> e <code>totalCost</code> da execução.</div>
+      <div class="fn-friendly"><strong>Em resumo.</strong> Handlers no worker não podem chamar a closure. É outro processo. É outra memória. A solução: cada activity que cobra tokens chama HTTP <code>/worker/charge-tokens</code> passando <code>{ execId, nodeId, tokens, cost }</code>. O endpoint no backend insere linha em <code>token_transactions</code>. Quando <code>processNodeViaTemporal</code> retorna, o backend chama <code>tokenTransactionService.sumChargesByExecution(execId, nodeId)</code>. A query é <code>SELECT SUM(tokens), SUM(cost) FROM token_transactions WHERE exec_id = $1 AND node_id = $2</code>. O resultado é somado direto em <code>totalTokensUsed</code> e <code>totalCost</code>. Existem 2 caminhos de propagação de billing. Uma única fonte de verdade final: a soma em memória do backend. É elegante. Tem custo de round-trip: HTTP mais SQL por nó Temporal. Em execuções grandes, com muitos nós migrados, é overhead considerável. Garante consistência entre paths.</div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box worker">
             <div class="box-title"><span class="badge step">D1</span> Worker cobra via HTTP</div>
-            <div class="box-desc">Activity <code>chargeTokensActivity</code> chama <code>/worker/charge-tokens</code> com <code>{ execId, nodeId, tokens, cost }</code> — passo W7 do diagrama.</div>
+            <div class="box-desc">A activity <code>chargeTokensActivity</code> chama <code>/worker/charge-tokens</code> com <code>{ execId, nodeId, tokens, cost }</code>. É o passo W7 do diagrama.</div>
           </div>
           <div class="arrow">↓</div>
           <div class="box db">
             <div class="box-title"><span class="badge step">D2</span> Backend agrega ao retornar</div>
-            <div class="box-desc"><code>await tokenTransactionService.sumChargesByExecution(execId, nodeId)</code> → SUM em <code>token_transactions</code> por (execId, nodeId). Soma em <code>totalTokensUsed</code>/<code>totalCost</code>.</div>
+            <div class="box-desc"><code>await tokenTransactionService.sumChargesByExecution(execId, nodeId)</code>. SUM em <code>token_transactions</code> por (execId, nodeId). Soma em <code>totalTokensUsed</code> e <code>totalCost</code>.</div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Idempotente por design</div>
-            Se o worker retentar uma activity de cobrança, o INSERT em <code>token_transactions</code> pode duplicar — mas se a activity chargeTokens tem PK única, é seguro. Verificar se existe unique constraint em (execId, nodeId, iterationIndex) ou similar.
+            Se o worker retentar uma activity de cobrança, o INSERT em <code>token_transactions</code> pode duplicar. Se a activity <code>chargeTokens</code> tem PK única, é seguro. Verificar se existe unique constraint em (execId, nodeId, iterationIndex) ou similar.
           </div>
           <div class="aside warn">
             <div class="aside-title">⚠️ Overhead per node</div>
-            HTTP call + SQL SUM por nó Temporal. Numa agente com 50 nós migrados, é 100 round-trips extras (charge + sum). Poderia ser batched — hoje é um-a-um.
+            HTTP call e SQL SUM por nó Temporal. Em um agente com 50 nós migrados, são 100 round-trips extras (charge e sum). Poderia ser batched. Hoje acontece um a um.
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 Ambos os paths somam no mesmo lugar</div>
-            Path legacy: <code>onUpdateTokens</code> muta memória direto. Path Temporal: <code>sumChargesByExecution</code> lê do banco e soma na memória. Depois de 3.7 rodar (ou equivalente para Temporal), <code>totalTokensUsed</code> reflete os dois caminhos.
+            <div class="aside-title">🔧 Os dois paths somam no mesmo lugar</div>
+            Path legacy: <code>onUpdateTokens</code> muta a memória direto. Path Temporal: <code>sumChargesByExecution</code> lê do banco e soma na memória. Depois de 3.7 rodar (ou o equivalente para Temporal), <code>totalTokensUsed</code> reflete os dois caminhos.
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="note info" style="margin-top:32px"><strong>Resumo — o que sai de 3.7:</strong><br>• <code>totalTokensUsed</code>/<code>totalCost</code> refletem consumo pós-execução do nó<br>• Delta atribuído ao <code>RunLogNode</code> em 3.9 (<code>tokens</code>/<code>cost</code>)<br>• Row em <code>token_transactions</code> gravada (via ProductService ou HTTP worker)<br>• 2 mecanismos: closure legacy + AsyncLocalStorage/HTTP Temporal</div>
+  <div class="note info" style="margin-top:32px"><strong>Resumo — o que sai de 3.7.</strong><br>• <code>totalTokensUsed</code> e <code>totalCost</code> refletem o consumo pós-execução do nó.<br>• Delta atribuído ao <code>RunLogNode</code> em 3.9 (<code>tokens</code> e <code>cost</code>).<br>• Linha em <code>token_transactions</code> gravada (via ProductService ou HTTP worker).<br>• 2 mecanismos: closure legacy e AsyncLocalStorage/HTTP Temporal.</div>
 
-  <div class="note"><strong>Observações para migração:</strong><br>• A closure <code>onUpdateTokens</code> vira <strong>obsoleta</strong> quando tudo estiver no worker — todo mundo cobra via HTTP <code>/worker/charge-tokens</code>. É bom sinal: menos código, menos padrões concorrentes.<br>• <code>chargeContext</code> ALS também some — o worker sempre passa execId/nodeId explícitos por API.<br>• O snapshot before/after continua útil como pattern — mas se worker paralelizar, precisa de dedup por PK em <code>token_transactions</code>, não subtração de acumuladores.<br>• É <strong>cross-cutting e essencial</strong> pra billing. Deve ser migrado junto com o loop principal, com contract HTTP claro entre worker e backend.</div>
+  <div class="note"><strong>Observações para migração.</strong><br>• A closure <code>onUpdateTokens</code> fica obsoleta quando tudo estiver no worker. Todos cobram via HTTP <code>/worker/charge-tokens</code>. É bom sinal: menos código, menos padrões concorrentes.<br>• A ALS <code>chargeContext</code> também some. O worker sempre passa execId e nodeId explícitos por API.<br>• O snapshot antes e depois continua útil como padrão. Se o worker paralelizar, precisa de dedup por PK em <code>token_transactions</code>. Não bastará subtração de acumuladores.<br>• É cross-cutting e essencial para billing. Deve ser migrado junto com o loop principal. É preciso contract HTTP claro entre worker e backend.</div>
 
   <div class="page-footer-nav"><a href="../index.html#step-3-7" class="back-btn">← Voltar ao diagrama principal</a></div>
 </div>

@@ -584,23 +584,23 @@
     <h1>Passo 1.5 — Carregamento de objetos personalizados</h1>
   </div>
   <div class="page-sub">
-    Bloco em <code>flux.service.ts:2439-2462</code>. Resolve <strong>quem é o dono dos objetos</strong> (space, companyUser ou user) e carrega os <code>UserObject</code> daquele owner. Objetos são JSONs personalizados que o node <code>nodesBox</code> lê e (às vezes) escreve durante a execução.
+    Bloco em <code>flux.service.ts:2439-2462</code>. Resolve quem é o dono dos objetos (space, companyUser ou user) e carrega os <code>UserObject</code> daquele owner. Objetos são JSONs personalizados. O node <code>nodesBox</code> lê e, em alguns casos, escreve durante a execução.
   </div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
     <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
     <ul>
-      <li><strong>Descobre de quem é a gaveta de objetos:</strong> cascata em 3 opções mutuamente exclusivas — se o flow está num <em>space</em>, os objetos são do space (colaborativo); senão, se o usuário tem <code>selectedCompanyId</code>, confere no banco a relação <code>CompanyUser</code>; senão, fallback pros objetos pessoais do próprio <code>user</code>.</li>
-      <li><strong>Puxa todos os objetos daquele dono:</strong> <code>getObjectsByOwner</code> monta um WHERE clause dinâmico (space_id / company_user_id / user_id) e faz <code>SELECT * FROM user_objects</code> sem paginação. Se o owner vier vazio, o WHERE vira <code>{}</code> — footgun que traz <em>tudo de todo mundo</em>.</li>
-      <li><strong>Traduz entity → DTO:</strong> <code>toJsonArray</code> é um mapper puro que renomeia <code>objectId</code> para <code>id</code>, joga fora colunas de ownership/timestamps e devolve <code>FluxObject[]</code> no shape flat que o frontend e o <code>nodesBox</code> esperam.</li>
-      <li><strong>Configura o carteiro de mutação:</strong> cria o closure <code>onMutateObjectCallerData</code> que permite ao handler do <code>nodesBox</code> reescrever a lista <em>durante</em> a execução — mudanças feitas por um nó ficam visíveis pro próximo. É reatribuição de referência (<code>let</code>), não mutação in-place.</li>
-      <li><strong>Saída:</strong> <code>objectCallerData</code> = <code>FluxObject[]</code> pronto pra ser lido pelos handlers de <code>nodesBox</code> na Fase 3, mais o callback <code>onMutateObjectCallerData</code> que mantém essa lista sincronizada entre nós ao longo do run.</li>
+      <li><strong>Descobre de quem é o conjunto de objetos.</strong> Cascata em 3 opções mutuamente exclusivas. Se o flow está num space, os objetos são do space (colaborativo). Caso contrário, se o usuário tem <code>selectedCompanyId</code>, confere no banco a relação <code>CompanyUser</code>. Caso contrário, fallback para os objetos pessoais do próprio <code>user</code>.</li>
+      <li><strong>Carrega todos os objetos daquele dono.</strong> <code>getObjectsByOwner</code> monta um WHERE clause dinâmico (<code>space_id</code>, <code>company_user_id</code> ou <code>user_id</code>) e faz <code>SELECT * FROM user_objects</code> sem paginação. Se o owner vier vazio, o WHERE vira <code>{}</code>. É um footgun que traz tudo de todos.</li>
+      <li><strong>Traduz entidade para DTO.</strong> <code>toJsonArray</code> é um mapper puro que renomeia <code>objectId</code> para <code>id</code>, descarta colunas de ownership e timestamps, e devolve <code>FluxObject[]</code> no shape flat que o frontend e o <code>nodesBox</code> esperam.</li>
+      <li><strong>Configura o mecanismo de mutação.</strong> Cria o closure <code>onMutateObjectCallerData</code> que permite ao handler do <code>nodesBox</code> reescrever a lista durante a execução. Mudanças feitas por um nó ficam visíveis para o próximo. É reatribuição de referência (<code>let</code>), não mutação in-place.</li>
+      <li><strong>Saída.</strong> <code>objectCallerData</code> igual a <code>FluxObject[]</code>, pronto para ser lido pelos handlers de <code>nodesBox</code> na Fase 3. Mais o callback <code>onMutateObjectCallerData</code> que mantém essa lista sincronizada entre nós ao longo da execução.</li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto:</strong> objetos personalizados são estruturas de dados nomeadas (chave-valor + sessions) que o usuário define no editor e o nó <code>nodesBox</code> usa como <em>storage</em>. São carregados uma única vez aqui e passam a referenciar <code>objectCallerData</code> mutável ao longo do loop.
+    <strong>Contexto.</strong> Objetos personalizados são estruturas de dados nomeadas (chave-valor mais sessions) que o usuário define no editor. O nó <code>nodesBox</code> os usa como storage. São carregados uma única vez aqui e passam a referenciar <code>objectCallerData</code> mutável ao longo do loop.
   </div>
 
   <!-- Overview chain -->
@@ -618,7 +618,7 @@
       <a href="#fn-e" class="overview-chip"><span class="lbl">E</span>onMutateObjectCallerData</a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado final: variável <code>objectCallerData</code> preenchida no formato <code>FluxObject[]</code>, com um callback <code>onMutateObjectCallerData</code> que permite ao <code>nodesBox</code> mutar essa lista durante a execução do agente.
+      Resultado final. Variável <code>objectCallerData</code> preenchida no formato <code>FluxObject[]</code>. Callback <code>onMutateObjectCallerData</code> que permite ao <code>nodesBox</code> mutar essa lista durante a execução do agente.
     </div>
   </div>
 
@@ -638,10 +638,10 @@
         let objectOwner: ObjectOwner; // { userId? } | { companyUserId? } | { spaceId? }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Decide de qual <em>escopo</em> os objetos personalizados vêm — space (compartilhado), companyUser (privado dentro de uma company) ou user (privado pessoal). Cascata em 3 casos exclusivos.
+        <strong>Propósito.</strong> Decide de qual escopo os objetos personalizados vêm. Space (compartilhado), companyUser (privado dentro de uma company) ou user (privado pessoal). Cascata em 3 casos exclusivos.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> pense nessa parte como um <em>cadastrador</em> que precisa responder uma pergunta antes de qualquer coisa: "essa gaveta de objetos personalizados é de quem?". Ela testa em ordem: (1) se o flow vive dentro de um space, a gaveta é do space (compartilhada com o time); (2) se não tem space mas o usuário está logado numa company, ela vai no banco confirmar essa relação — se achar, a gaveta é do <code>companyUser</code>; senão cai pro pessoal; (3) se não veio nem space nem company selecionada, a gaveta é do próprio <code>user</code>. O resultado é um objetinho <code>{ spaceId }</code>, <code>{ companyUserId }</code> ou <code>{ userId }</code> — <strong>mutuamente exclusivo</strong> — que os próximos passos usam pra filtrar exatamente uma prateleira no banco.
+        <strong>Em resumo.</strong> A função responde a uma pergunta. De quem é o conjunto de objetos personalizados? Testa em ordem. Primeiro, se o flow vive dentro de um space, os objetos são do space (compartilhados com o time). Segundo, se não há space mas o usuário está logado numa company, consulta o banco para confirmar essa relação. Se acha, os objetos são do <code>companyUser</code>. Caso contrário, cai para o pessoal. Terceiro, se não veio nem space nem company selecionada, os objetos são do próprio <code>user</code>. O resultado é um objeto <code>{ spaceId }</code>, <code>{ companyUserId }</code> ou <code>{ userId }</code>, mutuamente exclusivo. Os próximos passos o usam para filtrar exatamente um subconjunto no banco.
       </div>
 
       <div class="fn-body-cols">
@@ -656,7 +656,7 @@
             <div class="cascade-step">
               <span class="cascade-num">2</span>
               <span class="cond"><code>userFound.selectedCompanyId</code> presente</span>
-              <span class="result call">→ CompanyUser.findOne</span>
+              <span class="result call">CompanyUser.findOne</span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">2a</span>
@@ -693,24 +693,24 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 3 modos de ownership de objetos</div>
-            <strong>1. Space</strong> — objeto compartilhado entre todos os membros do space (colaboração)
-            <br><br><strong>2. CompanyUser</strong> — privado dentro de uma company (o user pertence a essa company mas o objeto não é público no space)
-            <br><br><strong>3. User</strong> — privado, atrelado apenas ao usuário (uso pessoal, fora de qualquer company)
+            <strong>1. Space.</strong> Objeto compartilhado entre todos os membros do space (colaboração).
+            <br><br><strong>2. CompanyUser.</strong> Privado dentro de uma company. O usuário pertence a essa company, mas o objeto não é público no space.
+            <br><br><strong>3. User.</strong> Privado, atrelado apenas ao usuário (uso pessoal, fora de qualquer company).
           </div>
 
           <div class="aside">
-            <div class="aside-title">📎 Precedência: por que space primeiro?</div>
-            Se o flow está em um space, faz sentido usar os objetos daquele space (contexto colaborativo). Só cai pra companyUser/user se o flow não estiver em space nenhum.
-            <br><br>Nota: <code>selectedCompanyId</code> é o "workspace ativo" do usuário — mesma company pode ter multiple users, cada um com seus próprios objetos.
+            <div class="aside-title">📎 Precedência. Por que space primeiro?</div>
+            Se o flow está em um space, faz sentido usar os objetos daquele space (contexto colaborativo). Só cai para companyUser ou user se o flow não está em space nenhum.
+            <br><br>Nota. <code>selectedCompanyId</code> é o workspace ativo do usuário. A mesma company pode ter múltiplos usuários, cada um com os próprios objetos.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 Como é usado no buildWhereClause</div>
-            Depois em (C), <code>buildWhereClause</code> traduz esse ObjectOwner na coluna correta da tabela <code>user_objects</code>:
-            <br>• <code>spaceId</code> → WHERE space_id = X
-            <br>• <code>companyUserId</code> → WHERE company_user_id = X
-            <br>• <code>userId</code> → WHERE user_id = X
-            <br><br>São 3 colunas diferentes na mesma tabela — só uma é populada por row.
+            Depois em (C), <code>buildWhereClause</code> traduz esse ObjectOwner na coluna correta da tabela <code>user_objects</code>.
+            <br><code>spaceId</code>. <code>WHERE space_id = X</code>.
+            <br><code>companyUserId</code>. <code>WHERE company_user_id = X</code>.
+            <br><code>userId</code>. <code>WHERE user_id = X</code>.
+            <br><br>São 3 colunas diferentes na mesma tabela. Só uma é populada por linha.
           </div>
         </div>
       </div>
@@ -734,20 +734,20 @@
         await CompanyUser.findOne({ where: { user: { id: userFound.id }, company: { id: userFound.selectedCompanyId } } })
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Descobre se o usuário atual tem uma relação <code>CompanyUser</code> ativa com a company selecionada. Se sim, esse companyUser vira o "dono" dos objetos. Se não, cai pro fallback userId.
-        <br><strong>Só executa se</strong> (A) chegou no caso 2 (<code>selectedCompanyId</code> presente).
+        <strong>Propósito.</strong> Descobre se o usuário atual tem uma relação <code>CompanyUser</code> ativa com a company selecionada. Se sim, esse companyUser vira o dono dos objetos. Se não, cai para o fallback userId.
+        <br>Só executa se (A) chegou no caso 2 (<code>selectedCompanyId</code> presente).
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> é o <em>cartório</em> que confirma um vínculo: "esse usuário aí ainda tem carteirinha nessa company que ele diz ter selecionado?". Ela dá um pulo rápido no banco procurando a row que liga <code>user</code> + <code>company</code>. Se achou, aponta o dono dos objetos pra essa relação (<code>companyUserId</code>) — que dá acesso à prateleira privada da company. Se não achou, dá de ombros e devolve <code>userId</code>, ou seja, cai pros objetos pessoais do usuário. Detalhe importante: essa checagem <strong>não exige status ACTIVE</strong>, então mesmo um vínculo pendente/removido serve, o que difere do porteiro do passo 1.3.
+        <strong>Em resumo.</strong> A função confirma um vínculo. O usuário ainda pertence à company que declarou ter selecionado? Consulta o banco procurando a linha que liga <code>user</code> e <code>company</code>. Se acha, aponta o dono dos objetos para essa relação (<code>companyUserId</code>). Isso dá acesso ao conjunto privado da company. Se não acha, devolve <code>userId</code>. Ou seja, cai para os objetos pessoais do usuário. A checagem não exige status ACTIVE. Mesmo um vínculo pendente ou removido serve. Difere do porteiro do passo 1.3.
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box db">
-            <div class="box-title"><span class="badge step">B1</span> Query direta na entity (não via service)</div>
+            <div class="box-title"><span class="badge step">B1</span> Query direta na entidade (não via serviço)</div>
             <div class="box-desc">
-              <code>CompanyUser.findOne({ where: { user: {id}, company: {id} } })</code>
-              <br><br>Diferente das outras chamadas de 1.3-1.4 que passam por services (<code>companyUserService.findOne</code>), aqui usa a entity <strong>diretamente</strong> — atalho comum em NestJS com TypeORM ActiveRecord.
+              <code>CompanyUser.findOne({ where: { user: {id}, company: {id} } })</code>.
+              <br><br>Diferente das outras chamadas de 1.3 e 1.4, que passam por serviços (<code>companyUserService.findOne</code>), aqui usa a entidade diretamente. É um atalho comum em NestJS com TypeORM ActiveRecord.
             </div>
             <div class="box-file">flux.service.ts:2443-2448</div>
           </div>
@@ -756,8 +756,8 @@
           <div class="box decision">
             <div class="box-title"><span class="badge step">B2</span> companyUser existe?</div>
             <div class="box-desc">
-              <code>objectOwner = companyUser ? { companyUserId: companyUser.id } : { userId: userFound.id }</code>
-              <br><br>Ternário inline: se achou usa companyUserId, senão fallback pra userId.
+              <code>objectOwner = companyUser ? { companyUserId: companyUser.id } : { userId: userFound.id }</code>.
+              <br><br>Ternário inline. Se achou, usa <code>companyUserId</code>. Caso contrário, fallback para <code>userId</code>.
             </div>
             <div class="box-file">flux.service.ts:2449-2451</div>
           </div>
@@ -766,19 +766,19 @@
         <div class="fn-asides">
           <div class="aside warn">
             <div class="aside-title">⚠️ Ausência de filtro status = ACTIVE</div>
-            Diferente do <code>checkIfUserCanRunFlow</code> em 1.3-C que exige <code>status === ACTIVE</code>, aqui basta a row existir. Um user com status <em>pending</em> ou <em>removed</em> mas ainda com row viva ainda vai usar os objetos como companyUser.
+            Diferente do <code>checkIfUserCanRunFlow</code> em 1.3-C, que exige <code>status === ACTIVE</code>, aqui basta a linha existir. Um usuário com status <em>pending</em> ou <em>removed</em>, mas ainda com linha viva, vai usar os objetos como companyUser.
             <br><br>Pode ser edge case raro em produção, mas é comportamento diferente.
           </div>
 
           <div class="aside info">
             <div class="aside-title">💡 Por que o fallback userId?</div>
-            Se o usuário selecionou uma company mas não é membro dela (ou já não é mais), ainda faz sentido carregar os objetos <em>pessoais</em> dele. Não bloqueia — o pior caso é que ele vê os próprios objetos em vez dos da company.
+            Se o usuário selecionou uma company mas não é membro dela (ou já não é mais), ainda faz sentido carregar os objetos pessoais dele. Não bloqueia. O pior caso é o usuário ver os próprios objetos em vez dos da company.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 selectedCompanyId</div>
-            Campo em <code>user.selectedCompanyId</code>. Representa qual company o usuário está "ativo" agora (workspace switch).
-            <br><br>Um user pode pertencer a várias companies simultaneamente; o selectedCompanyId indica qual está no foco.
+            Campo em <code>user.selectedCompanyId</code>. Representa em qual company o usuário está ativo (workspace switch).
+            <br><br>Um usuário pode pertencer a várias companies simultaneamente. O <code>selectedCompanyId</code> indica qual está no foco.
           </div>
         </div>
       </div>
@@ -801,10 +801,10 @@
         async getObjectsByOwner(owner: ObjectOwner): Promise&lt;UserObject[]&gt;
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Carrega todos os <code>UserObject</code> daquele owner. Delega toda a lógica de WHERE pro helper privado <code>buildWhereClause</code>.
+        <strong>Propósito.</strong> Carrega todos os <code>UserObject</code> daquele owner. Delega toda a lógica de WHERE ao helper privado <code>buildWhereClause</code>.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> agora que o dono da gaveta foi decidido em (A/B), essa é a <em>carteira</em> que efetivamente abre a gaveta e traz tudo dentro. Ela recebe o objetinho <code>ObjectOwner</code>, passa pro helper <code>buildWhereClause</code> traduzir em qual coluna do banco filtrar (space_id, company_user_id ou user_id) e roda um <code>SELECT *</code> em <code>user_objects</code>. O retorno é um array cru de entidades <code>UserObject</code> — todas as prateleiras daquele dono. Cuidado embutido: se por algum motivo o owner vier vazio, o WHERE vira <code>{}</code> e o banco devolve <strong>todos os objetos de todos os usuários</strong> — footgun clássico esperando bug em (A) pra causar leak.
+        <strong>Em resumo.</strong> Depois de (A) e (B) decidirem o dono, esta função efetivamente carrega os objetos. Recebe o <code>ObjectOwner</code>. Passa ao helper <code>buildWhereClause</code>, que traduz em qual coluna do banco filtrar (<code>space_id</code>, <code>company_user_id</code> ou <code>user_id</code>). Executa <code>SELECT *</code> em <code>user_objects</code>. O retorno é um array de entidades <code>UserObject</code>. Todos os objetos daquele dono. Cuidado embutido. Se por algum motivo o owner vier vazio, o WHERE vira <code>{}</code> e o banco devolve todos os objetos de todos os usuários. É um footgun clássico. Um bug em (A) pode causar leak.
       </div>
 
       <div class="fn-body-cols">
@@ -819,7 +819,7 @@
           <div class="arrow">↓</div>
 
           <div class="nested-flow">
-            <div class="nested-flow-title">↳ buildWhereClause(owner) — objects.service.ts:201-208</div>
+            <div class="nested-flow-title">↳ buildWhereClause(owner). objects.service.ts:201-208</div>
             <div class="cascade" style="background:white;border-color:#94A3B8">
               <div class="cascade-step">
                 <span class="cascade-num">1</span>
@@ -839,7 +839,7 @@
               <div class="cascade-step">
                 <span class="cascade-num">4</span>
                 <span class="cond">nenhum</span>
-                <span class="result deny">return <code>{}</code> (traz TUDO — perigoso!)</span>
+                <span class="result deny">return <code>{}</code> (traz TUDO, perigoso)</span>
               </div>
             </div>
           </div>
@@ -848,7 +848,7 @@
           <div class="box db">
             <div class="box-title"><span class="badge step">C2</span> userObjectRepository.find({ where })</div>
             <div class="box-desc">
-              SELECT * FROM user_objects WHERE (space_id = $1) OR (company_user_id = $1) OR (user_id = $1) dependendo do owner. Retorna array de <code>UserObject</code>.
+              <code>SELECT * FROM user_objects WHERE (space_id = $1) OR (company_user_id = $1) OR (user_id = $1)</code> conforme o owner. Retorna array de <code>UserObject</code>.
             </div>
             <div class="box-file">objects.service.ts:23</div>
           </div>
@@ -857,13 +857,13 @@
         <div class="fn-asides">
           <div class="aside warn">
             <div class="aside-title">⚠️ Fallback {} do buildWhereClause</div>
-            Se por algum motivo o <code>objectOwner</code> ficar vazio (todos campos undefined), o WHERE clause vira <code>{}</code> — que em TypeORM significa <strong>"trazer todas as rows"</strong>.
-            <br><br>Na prática (A) sempre popula pelo menos <code>userId</code>, mas é um footgun latente. Um bug em (A) que zerar o owner leakaria objetos de TODOS os usuários.
+            Se por algum motivo o <code>objectOwner</code> fica vazio (todos os campos <code>undefined</code>), o WHERE clause vira <code>{}</code>. No TypeORM, isso significa "trazer todas as linhas".
+            <br><br>Na prática, (A) sempre popula ao menos <code>userId</code>. É um footgun latente. Um bug em (A) que zere o owner faria leak de objetos de todos os usuários.
           </div>
 
           <div class="aside info">
             <div class="aside-title">📊 Tabela user_objects</div>
-            Uma row = um objeto personalizado. Campos-chave:
+            Cada linha representa um objeto personalizado. Campos-chave.
             <table class="field-table">
               <tr><th>Campo</th><th>Descrição</th></tr>
               <tr><td>objectId</td><td>UUID do objeto (chave lógica)</td></tr>
@@ -873,14 +873,14 @@
               <tr><td>selectedSession</td><td>ID da session ativa</td></tr>
               <tr><td>sessionEnabled</td><td>Se tem modo session</td></tr>
               <tr><td>flowId</td><td>Se atrelado a um flow específico (nullable)</td></tr>
-              <tr><td>userId / companyUserId / spaceId</td><td>Mutually exclusive — só um populado</td></tr>
+              <tr><td>userId, companyUserId ou spaceId</td><td>Mutuamente exclusivos. Só um populado.</td></tr>
             </table>
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 Sem paginação</div>
-            <code>userObjectRepository.find</code> traz todos os objetos do owner de uma vez. Se um space tiver 500 objetos, tudo vem em memória.
-            <br><br>Em teoria não é problema porque objetos são pequenos, mas em espaces gigantes pode virar bottleneck (não é o caso hoje).
+            <code>userObjectRepository.find</code> traz todos os objetos do owner de uma vez. Se um space tem 500 objetos, tudo carrega em memória.
+            <br><br>Em teoria não é problema porque objetos são pequenos. Em spaces gigantes pode virar bottleneck. Não é o caso hoje.
           </div>
         </div>
       </div>
@@ -903,10 +903,10 @@
         toJsonArray(objects: UserObject[]): FluxObject[]
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Mapper puro. Converte a entity <code>UserObject</code> (que tem <code>objectId</code>, colunas de owner separadas, etc.) para o DTO <code>FluxObject</code> que o frontend/nodesBox espera (com <code>id</code> em vez de <code>objectId</code>, sem colunas de ownership).
+        <strong>Propósito.</strong> Mapper puro. Converte a entidade <code>UserObject</code> (que tem <code>objectId</code>, colunas de owner separadas, etc.) para o DTO <code>FluxObject</code> que o frontend e o <code>nodesBox</code> esperam. Usa <code>id</code> no lugar de <code>objectId</code> e omite colunas de ownership.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> é o <em>tradutor</em> — uma função pura, sem I/O, que só troca a embalagem. As entidades vindas de (C) têm um monte de coisa que o frontend não precisa ver (a PK real do banco, as colunas de dono, timestamps do TypeORM) e usam <code>objectId</code> como chave lógica. Aqui elas são remapeadas num formato mais enxuto: <code>id</code> (que na verdade é o <code>objectId</code>), <code>name</code>, <code>text</code>, <code>sessions</code>, etc. Depois desse passo, quem consumir a lista (o próprio <code>nodesBox</code> e o frontend) trabalha com <code>FluxObject[]</code> — sem risco de vazar detalhes internos do banco nem PK real.
+        <strong>Em resumo.</strong> Uma função pura, sem I/O. Apenas troca a estrutura. As entidades vindas de (C) trazem campos que o frontend não precisa ver. A PK real do banco, as colunas de dono, os timestamps do TypeORM. Usam <code>objectId</code> como chave lógica. Aqui são remapeadas num formato mais enxuto. <code>id</code> (que na verdade é o <code>objectId</code>), <code>name</code>, <code>text</code>, <code>sessions</code>, etc. Depois desse passo, quem consumir a lista (o próprio <code>nodesBox</code> e o frontend) trabalha com <code>FluxObject[]</code>. Sem risco de vazar detalhes internos do banco ou a PK real.
       </div>
 
       <div class="fn-body-cols">
@@ -914,7 +914,7 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">D1</span> .map(obj => FluxObject)</div>
             <div class="box-desc">
-              Função síncrona, sem I/O. Só renomeia e projeta campos.
+              Função síncrona, sem I/O. Apenas renomeia e projeta campos.
             </div>
             <div class="code-block">
 <span class="k">return</span> objects.<span class="t">map</span>((obj) =&gt; ({
@@ -957,18 +957,18 @@
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 objectId vs id</div>
-            <code>UserObject.id</code> = PK do banco (UUID gerado pelo TypeORM)
-            <br><code>UserObject.objectId</code> = ID lógico usado no frontend (mesmo objeto pode ter várias rows por owner, mas mesmo objectId)
-            <br><br>O DTO expõe <code>objectId</code> como <code>id</code> — o frontend nunca vê a PK real do banco.
+            <div class="aside-title">🔧 objectId versus id</div>
+            <code>UserObject.id</code>. PK do banco (UUID gerado pelo TypeORM).
+            <br><code>UserObject.objectId</code>. ID lógico usado no frontend. O mesmo objeto pode ter várias linhas por owner, mas o mesmo <code>objectId</code>.
+            <br><br>O DTO expõe <code>objectId</code> como <code>id</code>. O frontend nunca vê a PK real do banco.
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 Diferença UserObject → FluxObject</div>
-            Ficam de fora:
-            <br>• <code>userId</code> / <code>companyUserId</code> / <code>spaceId</code> — colunas de ownership não são expostas
-            <br>• <code>createdAt</code> / <code>updatedAt</code> — timestamps do banco
-            <br>• A PK <code>id</code> — só a chave lógica <code>objectId</code> vaza pra frontend
+            <div class="aside-title">🔧 Diferença UserObject para FluxObject</div>
+            Ficam de fora.
+            <br><code>userId</code>, <code>companyUserId</code> e <code>spaceId</code>. Colunas de ownership não são expostas.
+            <br><code>createdAt</code> e <code>updatedAt</code>. Timestamps do banco.
+            <br>A PK <code>id</code>. Só a chave lógica <code>objectId</code> vai para o frontend.
           </div>
         </div>
       </div>
@@ -991,10 +991,10 @@
         const onMutateObjectCallerData = (data) =&gt; { objectCallerData = data; };
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Closure que permite ao <code>nodesBox</code> mutar a lista de objetos durante a execução do agente. Sem essa referência mutável, mudanças feitas pelo nó não se propagariam pros próximos nós do mesmo run.
+        <strong>Propósito.</strong> Closure que permite ao <code>nodesBox</code> mutar a lista de objetos durante a execução do agente. Sem essa referência mutável, mudanças feitas pelo nó não se propagariam para os próximos nós da mesma execução.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> pense nele como um <em>carteiro</em> que fica entre os nós — quando um <code>nodesBox</code> altera algum objeto no meio da execução (grava um novo texto, muda a session ativa, adiciona uma linha), esse callback recebe a nova versão da lista e reatribui a variável <code>objectCallerData</code> no escopo pai. Assim, o próximo nó que ler a lista já vê o estado atualizado. É uma closure clássica de mutação: em vez de mutar o array no lugar, ele <strong>substitui a referência inteira</strong> pelo novo array que o handler devolveu. Segue o mesmo padrão de <code>onMutateSchema</code> e <code>onUpdateTokens</code>, e é o principal ponto de atrito pra qualquer migração pro worker — porque no worker os nós não compartilham essa memória e teriam que fazer round-trip pelo backend a cada mutação.
+        <strong>Em resumo.</strong> Este callback fica entre os nós. Quando um <code>nodesBox</code> altera algum objeto no meio da execução (grava um novo texto, muda a session ativa, adiciona uma linha), o callback recebe a nova versão da lista e reatribui a variável <code>objectCallerData</code> no escopo pai. Assim, o próximo nó que lê a lista já vê o estado atualizado. É uma closure clássica de mutação. Em vez de mutar o array no lugar, substitui a referência inteira pelo novo array que o handler devolveu. Segue o mesmo padrão de <code>onMutateSchema</code> e <code>onUpdateTokens</code>. É o principal ponto de atrito para uma migração ao worker. No worker, os nós não compartilham essa memória. Teriam que fazer round-trip pelo backend a cada mutação.
       </div>
 
       <div class="fn-body-cols">
@@ -1002,18 +1002,18 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">E1</span> Cria closure capturando a variável objectCallerData</div>
             <div class="box-desc">
-              <code>let objectCallerData = this.objectsService.toJsonArray(...)</code> em (D) — variável <strong>let</strong>, não const.
-              <br><br>O callback recebe novo <code>data</code> e reatribui a variável do escopo pai. Padrão mutação via closure.
+              <code>let objectCallerData = this.objectsService.toJsonArray(...)</code> em (D). Variável <code>let</code>, não <code>const</code>.
+              <br><br>O callback recebe novo <code>data</code> e reatribui a variável do escopo pai. Padrão de mutação via closure.
             </div>
             <div class="box-file">flux.service.ts:2456, 2460-2462</div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box cross">
-            <div class="box-title"><span class="badge step">E2</span> Passado como argumento pro handler de nodesBox</div>
+            <div class="box-title"><span class="badge step">E2</span> Passado como argumento ao handler de nodesBox</div>
             <div class="box-desc">
-              Quando o loop principal (Fase 3) despacha um nó do tipo <code>nodesBox</code>, ele passa <code>objectCallerData</code> (valor atual) + <code>onMutateObjectCallerData</code> (callback pra mutação). O handler chama o callback se o object foi alterado, propagando pra próxima iteração.
-              <br><br>Ver <code>flux.service.ts:3575-3599, 4146-4174</code> (handler do nodesBox).
+              Quando o loop principal (Fase 3) despacha um nó do tipo <code>nodesBox</code>, passa <code>objectCallerData</code> (valor atual) e <code>onMutateObjectCallerData</code> (callback para mutação). O handler chama o callback se o objeto foi alterado, propagando à próxima iteração.
+              <br><br>Ver <code>flux.service.ts:3575-3599, 4146-4174</code> (handler do <code>nodesBox</code>).
             </div>
           </div>
         </div>
@@ -1021,19 +1021,19 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Padrão de closure mutation</div>
-            É o mesmo pattern usado por <code>onMutateSchema</code> logo abaixo (linha 2465-2467) e por <code>onUpdateTokens</code> em Fase 3. Mantém a "fonte da verdade" no escopo do <code>apiV2()</code> e permite que services filhos atualizem sem passar referência de objeto.
+            É o mesmo padrão usado por <code>onMutateSchema</code> logo abaixo (linha 2465-2467) e por <code>onUpdateTokens</code> em Fase 3. Mantém a fonte da verdade no escopo do <code>apiV2()</code> e permite que serviços filhos atualizem sem passar referência de objeto.
           </div>
 
           <div class="aside warn">
             <div class="aside-title">⚠️ Race condition potencial</div>
-            Se dois nós <code>nodesBox</code> rodarem em paralelo (não acontece no loop legacy hoje, mas em qualquer refactor de paralelismo virá à tona), a última chamada do callback ganha.
-            <br><br>No worker isso seria pior porque o worker não compartilha essa closure — a mutação seria perdida.
+            Se dois nós <code>nodesBox</code> executam em paralelo, a última chamada do callback ganha. Não acontece no loop legacy hoje. Em um refactor de paralelismo, virá à tona.
+            <br><br>No worker seria pior. O worker não compartilha essa closure. A mutação seria perdida.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 Reatribuição, não mutação de array</div>
             O callback substitui a referência (<code>objectCallerData = data</code>) em vez de mutar o array in-place (<code>objectCallerData.push(...)</code>).
-            <br><br>Isso é intencional: o handler do nodesBox retorna um <em>novo</em> array já com as mudanças aplicadas.
+            <br><br>É intencional. O handler do <code>nodesBox</code> retorna um novo array já com as mudanças aplicadas.
           </div>
         </div>
       </div>
@@ -1042,20 +1042,20 @@
 
   <!-- SUMMARY -->
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo — o que sai de 1.5:</strong>
-    <br>• <code>objectOwner</code> = ObjectOwner (space/companyUser/user, mutually exclusive)
-    <br>• <code>objectCallerData</code> = <code>FluxObject[]</code> — lista dos objetos daquele owner, no formato flat esperado pelo frontend
-    <br>• <code>onMutateObjectCallerData</code> = callback que o loop passa pro handler do <code>nodesBox</code> pra ele reescrever a lista durante a run
-    <br>• Nenhum I/O pesado: 1 (raras vezes 2) SELECTs, sem paginação, sem cache
+    <strong>Resumo. O que sai de 1.5:</strong>
+    <br><code>objectOwner</code>. ObjectOwner (space, companyUser ou user, mutuamente exclusivos).
+    <br><code>objectCallerData</code>. <code>FluxObject[]</code>. Lista dos objetos daquele owner, no formato flat esperado pelo frontend.
+    <br><code>onMutateObjectCallerData</code>. Callback que o loop passa ao handler do <code>nodesBox</code> para reescrever a lista durante a execução.
+    <br>Nenhum I/O pesado. 1 (raras vezes 2) SELECTs, sem paginação, sem cache.
   </div>
 
   <div class="note">
     <strong>Observações para migração:</strong>
-    <br>• A cascata de resolução do ObjectOwner (A) é business logic pura — replicável em qualquer lugar, mas precisa do <code>flow.folder.spaces.id</code> e do <code>user.selectedCompanyId</code> como input.
-    <br>• O footgun do <code>buildWhereClause</code> retornando <code>{}</code> quando o owner é vazio é um alerta pra qualquer implementação nova: <strong>sempre garanta pelo menos userId antes de chamar</strong>.
-    <br>• Se o worker precisar dos objetos, tem que receber o array já preparado no start do workflow OU fazer a query lá — mas nesse caso perde o padrão de closure mutation (o worker não pode alterar o array in-memory do backend depois).
-    <br>• <code>onMutateObjectCallerData</code> é a maior dificuldade pra migração: <strong>nodesBox mutando objectCallerData durante a run é state compartilhado entre nós</strong>. No worker, cada nó executa isolado; qualquer mutação teria que ir via API call pro backend (custa round-trip por nó de nodesBox).
-    <br>• Sem esforço de refactor, 1.5 pode continuar no backend mesmo depois da migração — é rápido e o resultado é passado nos start-args do workflow.
+    <br>A cascata de resolução do ObjectOwner (A) é business logic pura. Replicável em qualquer lugar. Precisa do <code>flow.folder.spaces.id</code> e do <code>user.selectedCompanyId</code> como input.
+    <br>O footgun do <code>buildWhereClause</code> retornando <code>{}</code> quando o owner é vazio é um alerta para qualquer implementação nova. Sempre garantir pelo menos <code>userId</code> antes de chamar.
+    <br>Se o worker precisar dos objetos, deve receber o array já preparado no start do workflow ou fazer a query lá. Nesse caso, perde o padrão de closure mutation. O worker não pode alterar o array in-memory do backend depois.
+    <br><code>onMutateObjectCallerData</code> é a maior dificuldade para a migração. O <code>nodesBox</code> mutando <code>objectCallerData</code> durante a execução é state compartilhado entre nós. No worker, cada nó executa isolado. Qualquer mutação teria que ir via chamada de API ao backend. Custa round-trip por nó de <code>nodesBox</code>.
+    <br>Sem esforço de refactor, 1.5 pode continuar no backend mesmo depois da migração. É rápido e o resultado é passado nos start-args do workflow.
   </div>
 
   <!-- FOOTER NAV -->

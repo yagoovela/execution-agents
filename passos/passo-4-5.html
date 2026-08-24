@@ -84,43 +84,43 @@
 <div class="page-nav"><div class="breadcrumb"><a href="../index.html">📋 Execução de Agente</a><span class="sep">›</span><span>Passo 4.5 — Detalhamento</span></div><a href="../index.html#step-4-5" class="back-btn">← Voltar ao diagrama</a></div>
 
 <div class="page-header"><span class="icon">✉️</span><h1>Passo 4.5 — Preparação de erro amigável</h1></div>
-<div class="page-sub">Bloco em <code>flux.service.ts:4881-4884</code>. Uma única expressão que monta a string <code>nodeError</code> — user-facing, com nome do nó e mensagem original. Vai pro retorno em 4.9 e é lido pelo cliente pra exibir modal de erro.</div>
+<div class="page-sub">Bloco em <code>flux.service.ts:4881-4884</code>. Uma única expressão monta a string <code>nodeError</code>. A string é user-facing e traz o nome do nó e a mensagem original. Vai para o retorno em 4.9. O cliente lê essa string para exibir o modal de erro.</div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
     <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
     <ul>
-      <li><strong>Acha o culpado (de novo):</strong> <code>currentFlux.find(node =&gt; node.data?.errorMessage)</code> — usa <code>find</code> (para no primeiro match), e sobre <code>currentFlux</code> (que é <code>myUpdatedNodes</code> pós-<code>addConnectToNodes</code>).</li>
-      <li><strong>Monta a string user-facing:</strong> <code>"Execution failed at node \"Escritor\" — Rate limit exceeded. Check the execution logs for details (timestamp: 2026-08-20T14:23:15.123Z)."</code>. Três coisas em uma linha: <em>onde</em>, <em>o que</em> e <em>quando</em>.</li>
-      <li><strong>Fallback pro id se não tem label:</strong> <code>label || id</code> — se o dev do agente nomeou o nó ("Escritor"), aparece bonito; senão UUID cru.</li>
-      <li><strong>Timestamp é "agora", não do erro:</strong> <code>new Date().toISOString()</code> gera o momento de montar a string — não quando o erro realmente aconteceu. Miss de UX pequeno.</li>
-      <li><strong>Saída:</strong> <code>nodeError</code> = string amigável em caso de erro, <code>null</code> em caso de sucesso. Vai pro retorno em <em>4.9</em> — cliente checa <code>if (nodeError)</code> pra decidir se abre modal de erro.</li>
+      <li><strong>Localiza o nó culpado.</strong> <code>currentFlux.find(node =&gt; node.data?.errorMessage)</code>. Usa <code>find</code>, que para no primeiro match. Roda sobre <code>currentFlux</code>. <code>currentFlux</code> é <code>myUpdatedNodes</code> após <code>addConnectToNodes</code>.</li>
+      <li><strong>Monta a string user-facing.</strong> <code>"Execution failed at node \"Escritor\" — Rate limit exceeded. Check the execution logs for details (timestamp: 2026-08-20T14:23:15.123Z)."</code>. Três informações em uma linha: <em>onde</em>, <em>o que</em> e <em>quando</em>.</li>
+      <li><strong>Fallback para o id quando não há label.</strong> <code>label || id</code>. Se o dev do agente nomeou o nó ("Escritor"), o nome aparece formatado. Caso contrário, aparece o UUID cru.</li>
+      <li><strong>O timestamp é o momento atual, não o do erro.</strong> <code>new Date().toISOString()</code> gera o momento em que a string é montada. Não representa quando o erro aconteceu. É uma falha de UX pequena.</li>
+      <li><strong>Saída.</strong> <code>nodeError</code> guarda a string amigável em caso de erro. Guarda <code>null</code> em caso de sucesso. Vai para o retorno em <em>4.9</em>. O cliente checa <code>if (nodeError)</code> para decidir se abre o modal de erro.</li>
     </ul>
   </div>
 
-<div class="note info"><strong>Contexto:</strong> passo pequeno, mas <em>importante pra UX</em>. Se o run falhar, o cliente precisa saber <em>onde</em> e <em>por quê</em>. Essa string é o que aparece pro usuário — não é log, não é analytics. Cabe também timestamp pra o cliente conseguir cross-reference com logs se abrir ticket.</div>
+<div class="note info"><strong>Contexto.</strong> Passo pequeno, porém <em>relevante para a UX</em>. Se a execução falhar, o cliente precisa saber <em>onde</em> e <em>por quê</em>. Essa string aparece para o usuário. Não é log nem analytics. Também traz timestamp. O cliente consegue cruzar essa string com os logs quando abre um ticket.</div>
 
 <div class="fn-card collapsed">
 <div class="fn-card-header"><div class="fn-title"><span class="badge step" style="background:#EAB308;color:white">A</span><code>currentFlux.find(node =&gt; node.data?.errorMessage)</code></div><div class="fn-loc">flux.service.ts:4881</div></div>
 <div class="fn-card-body">
 <div class="fn-signature">const nodeWithError = currentFlux.find(node =&gt; node.data?.errorMessage);</div>
-<div class="fn-purpose"><strong>Propósito:</strong> Reproduz parte do fn A do 4.2 (nodesWithError.filter), mas usa <code>find</code> — pega o primeiro. E usa <code>currentFlux</code> em vez de <code>myUpdatedNodes</code>, porque <code>currentFlux</code> tem os nós já pós-<code>addConnectToNodes</code> (aplicado logo antes se <code>flowGlobalEdge?.source</code>).</div>
-<div class="fn-friendly"><strong>Em resumo:</strong> mais uma vez, procura o primeiro nó com <code>errorMessage</code>. Diferente do 4.2 (que faz <code>filter</code>), aqui usa <code>find</code> — mais eficiente, para no primeiro match. Alvo diferente também: <code>currentFlux</code> vs <code>myUpdatedNodes</code> — a diferença é que <code>currentFlux</code> já sofreu o <code>addConnectToNodes</code> (linha 4868) se o flow tem <code>flowGlobalEdge</code>. Isso adiciona connections do global start pra outros nós. Não impacta erros (nós de erro não estão nesse edge), então na prática dá o mesmo resultado. Uma pequena redundância entre 4.2 e 4.5 — poderia reusar <code>nodesWithError[0]</code>. Não é bug — só código legacy pouco refactored.</div>
+<div class="fn-purpose"><strong>Propósito.</strong> Reproduz parte do fn A do 4.2 (<code>nodesWithError.filter</code>). Aqui usa <code>find</code> e pega o primeiro. Roda sobre <code>currentFlux</code> em vez de <code>myUpdatedNodes</code>. <code>currentFlux</code> já passou por <code>addConnectToNodes</code>. O passo anterior aplica <code>addConnectToNodes</code> quando <code>flowGlobalEdge?.source</code> está presente.</div>
+<div class="fn-friendly"><strong>Em resumo.</strong> Localiza o primeiro nó com <code>errorMessage</code>. O passo 4.2 usa <code>filter</code>. Aqui usa <code>find</code>, que é mais eficiente e para no primeiro match. O alvo também difere: <code>currentFlux</code> em vez de <code>myUpdatedNodes</code>. <code>currentFlux</code> passou por <code>addConnectToNodes</code> na linha 4868 quando o flow tem <code>flowGlobalEdge</code>. O <code>addConnectToNodes</code> adiciona conexões do global start para outros nós. Não impacta erros. Os nós de erro não estão nesse edge. Na prática dá o mesmo resultado. Existe uma redundância pequena entre 4.2 e 4.5. Seria possível reusar <code>nodesWithError[0]</code>. Não é bug. É código legacy com pouco refactor.</div>
 
 <div class="fn-body-cols"><div class="fn-main">
 <div class="code-block"><span class="k">const</span> nodeWithError = currentFlux.<span class="t">find</span>(node =&gt; node.data?.errorMessage);</div>
 </div>
 <div class="fn-asides">
-<div class="aside info"><div class="aside-title">🎯 currentFlux vs myUpdatedNodes</div>Linha 4865: <code>let currentFlux = myUpdatedNodes</code>. Linha 4867-4879: se <code>flowGlobalEdge?.source</code>, aplica <code>addConnectToNodes</code>. Depois disso é <code>currentFlux</code>.</div>
-<div class="aside warn"><div class="aside-title">⚠️ Redundância com 4.2</div>Poderia ser <code>nodesWithError[0]</code> reusando 4.2. Bug latente: se algum código futuro mudar <code>nodesWithError</code> mas esquecer <code>currentFlux.find</code>, sai divergente.</div>
+<div class="aside info"><div class="aside-title">🎯 currentFlux vs myUpdatedNodes</div>Linha 4865: <code>let currentFlux = myUpdatedNodes</code>. Linhas 4867-4879: se <code>flowGlobalEdge?.source</code>, aplica <code>addConnectToNodes</code>. A partir daí, o código usa <code>currentFlux</code>.</div>
+<div class="aside warn"><div class="aside-title">⚠️ Redundância com 4.2</div>Poderia usar <code>nodesWithError[0]</code> reaproveitando o 4.2. Bug latente. Se algum código futuro mudar <code>nodesWithError</code> e esquecer <code>currentFlux.find</code>, o comportamento fica divergente.</div>
 </div></div></div></div>
 
 <div class="fn-card collapsed">
 <div class="fn-card-header"><div class="fn-title"><span class="badge step" style="background:#3B82F6;color:white">B</span><code>Template string do nodeError</code></div><div class="fn-loc">flux.service.ts:4882-4884</div></div>
 <div class="fn-card-body">
 <div class="fn-signature">const nodeError = nodeWithError ? `Execution failed at node "${label || id}" — ${errorMessage}. Check the execution logs for details (timestamp: ${ISO}).` : null;</div>
-<div class="fn-purpose"><strong>Propósito:</strong> Monta string user-friendly com 3 pedaços: (i) label do nó culpado (fallback pro id se não tem label), (ii) mensagem de erro do handler, (iii) timestamp ISO pra cross-reference com logs. Se sem erro, é null.</div>
-<div class="fn-friendly"><strong>Em resumo:</strong> é o <em>relatório final pro cliente</em>. Formato: <code>"Execution failed at node \"Escritor\" — Rate limit exceeded. Check the execution logs for details (timestamp: 2026-08-20T14:23:15.123Z)."</code>. Três informações densas em uma linha: <strong>onde</strong> (label do nó, ou id se label ausente — mais amigável dizer "Escritor" que "6d09d1a3-..."), <strong>o que</strong> (mensagem que o handler escreveu — geralmente algo curto e amigável, tipo "API returned 503" ou "Invalid credentials"), e <strong>quando</strong> (timestamp ISO em UTC — o cliente vê UTC estranho mas isso é problema conhecido; converte pra local timezone só no frontend). Se run foi sucesso, <code>nodeError = null</code> — o retorno tem esse campo mas o cliente checa <code>if (nodeError)</code> pra decidir se mostra modal de erro. Timestamp gerado <em>agora</em> na hora de montar a string — não é o tempo em que o erro aconteceu (que seria mais preciso).</div>
+<div class="fn-purpose"><strong>Propósito.</strong> Monta a string user-friendly com três partes. Parte 1: label do nó culpado. Faz fallback para o id quando o label está ausente. Parte 2: mensagem de erro do handler. Parte 3: timestamp ISO para cruzar com os logs. Sem erro, o valor é <code>null</code>.</div>
+<div class="fn-friendly"><strong>Em resumo.</strong> É o <em>relatório final para o cliente</em>. Formato: <code>"Execution failed at node \"Escritor\" — Rate limit exceeded. Check the execution logs for details (timestamp: 2026-08-20T14:23:15.123Z)."</code>. Três informações densas em uma linha. <strong>Onde</strong>: label do nó, ou id quando o label falta. Dizer "Escritor" é mais amigável que "6d09d1a3-...". <strong>O que</strong>: mensagem que o handler escreveu. Geralmente algo curto, tipo "API returned 503" ou "Invalid credentials". <strong>Quando</strong>: timestamp ISO em UTC. O cliente vê o UTC estranho. Trata-se de problema conhecido. O frontend converte para local timezone. Em caso de sucesso, <code>nodeError = null</code>. O retorno traz esse campo. O cliente checa <code>if (nodeError)</code> para decidir se mostra o modal de erro. O timestamp é gerado no momento em que a string é montada. Não representa quando o erro aconteceu, o que seria mais preciso.</div>
 
 <div class="fn-body-cols"><div class="fn-main">
 <div class="code-block"><span class="k">const</span> nodeError = nodeWithError
@@ -128,14 +128,14 @@
   : <span class="k">null</span>;</div>
 </div>
 <div class="fn-asides">
-<div class="aside info"><div class="aside-title">🎯 Label fallback pro id</div><code>label || id</code> — se o usuário nomeou o nó ("Escritor"), usa. Senão o UUID cru. Melhor UX quando o dev do agente nomeou tudo direitinho.</div>
-<div class="aside warn"><div class="aside-title">⚠️ Timestamp de "agora" não do erro</div>O <code>new Date().toISOString()</code> é o momento de montar a string, não quando o erro aconteceu. Pra debug preciso, o cliente prefere o timestamp do erro real — que existe em <code>execution_logs.updated_at</code> ou <code>node_executions.updated_at</code>, mas não é usado aqui. Miss de UX.</div>
-<div class="aside helper"><div class="aside-title">🔧 String livre, sem estrutura</div>Cliente parseia por regex ou substring se precisa extrair o nome do nó ou o timestamp. Não é JSON — se algum dia mudar formato, quebra parseamento cliente. Contratual implícito.</div>
+<div class="aside info"><div class="aside-title">🎯 Fallback do label para o id</div><code>label || id</code>. Se o usuário nomeou o nó ("Escritor"), o código usa esse nome. Caso contrário, usa o UUID cru. Melhora a UX quando o dev do agente nomeou todos os nós.</div>
+<div class="aside warn"><div class="aside-title">⚠️ Timestamp do momento atual, não do erro</div><code>new Date().toISOString()</code> retorna o momento em que a string é montada. Não representa quando o erro aconteceu. Para debug preciso, o cliente prefere o timestamp real do erro. Esse valor existe em <code>execution_logs.updated_at</code> ou <code>node_executions.updated_at</code>. Não é usado aqui. É uma falha de UX.</div>
+<div class="aside helper"><div class="aside-title">🔧 String livre, sem estrutura</div>O cliente faz parse por regex ou substring quando precisa extrair o nome do nó ou o timestamp. A string não é JSON. Se o formato mudar, o parse do cliente quebra. Contrato implícito.</div>
 </div></div></div></div>
 
-<div class="note info" style="margin-top:32px"><strong>Resumo — o que sai de 4.5:</strong><br>• <code>nodeError</code>: string amigável se erro, ou <code>null</code> se sucesso<br>• Vai pro retorno em 4.9 como parte do <code>{ message, nodeError, ... }</code><br>• Usado pelo callback consolidado em 4.7 pra decidir sucesso/erro do run</div>
+<div class="note info" style="margin-top:32px"><strong>Resumo — o que sai de 4.5:</strong><br>• <code>nodeError</code>: string amigável em caso de erro. <code>null</code> em caso de sucesso.<br>• Vai para o retorno em 4.9 como parte do <code>{ message, nodeError, ... }</code>.<br>• O callback consolidado em 4.7 usa esse valor para decidir sucesso ou erro da execução.</div>
 
-<div class="note"><strong>Observações para migração:</strong><br>• String livre é <strong>dívida técnica leve</strong> — poderia virar structured error <code>{ nodeId, nodeLabel, message, timestamp }</code>.<br>• Timestamp de "agora" vs "quando o erro aconteceu" é bug de UX pequeno — corrigir cedo.<br>• Não bloqueia migração — pode ficar tal como é. Refactor incremental depois.</div>
+<div class="note"><strong>Observações para migração:</strong><br>• A string livre é <strong>dívida técnica leve</strong>. Poderia virar erro estruturado <code>{ nodeId, nodeLabel, message, timestamp }</code>.<br>• O timestamp do momento atual em vez do momento do erro é bug de UX pequeno. Vale corrigir cedo.<br>• Não bloqueia migração. Pode ficar como está. Refactor incremental depois.</div>
 
 <div class="page-footer-nav"><a href="../index.html#step-4-5" class="back-btn">← Voltar ao diagrama principal</a></div>
 </div>

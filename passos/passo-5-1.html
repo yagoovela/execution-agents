@@ -83,21 +83,21 @@
 <div class="page-nav"><div class="breadcrumb"><a href="../index.html">📋 Execução de Agente</a><span class="sep">›</span><span>Passo 5.1 — Detalhamento</span></div><a href="../index.html#step-5-1" class="back-btn">← Voltar ao diagrama</a></div>
 
 <div class="page-header"><span class="icon">🔥</span><h1>Passo 5.1 — Catch top-level</h1></div>
-<div class="page-sub">Bloco em <code>flux.service.ts:5309-5392</code>. Catch envolvendo todo o corpo do <code>apiV2()</code>. Finaliza <code>RunLog</code> com status='error', cria <code>FlowLog</code> de erro, loga Winston com hint contextual, e re-throw o erro pro caller.</div>
+<div class="page-sub">Bloco em <code>flux.service.ts:5309-5392</code>. Catch que envolve todo o corpo do <code>apiV2()</code>. Finaliza o <code>RunLog</code> com <code>status='error'</code>. Cria <code>FlowLog</code> de erro. Loga via Winston com hint contextual. Re-lança o erro para o caller.</div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
     <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
     <ul>
-      <li><strong>Rede de segurança do apiV2:</strong> catch top-level que envolve o corpo inteiro do método. Se qualquer coisa <em>não-tratada</em> lançar (bug, DB caindo, code path esquecido), esse bloco é o último a rodar — garante audit trail mesmo em cenário catastrófico.</li>
-      <li><strong>Finaliza o RunLog em modo desastre:</strong> mesma cadeia da Fase 4.4 (<code>finalize</code> + <code>flushNow</code>), mas com <code>status: 'error'</code> e <code>errorMessage</code> da exception. Try/catch aninhado protege contra <em>erro-do-erro</em> — se o próprio flush falhar, só loga sem duplo-throw.</li>
-      <li><strong>Log estruturado com <em>hint</em> contextual:</strong> Winston recebe <code>errorName</code>, <code>errorMessage</code>, <code>errorStack</code> e contexto do run. Se a mensagem for <code>'nodes is not iterable'</code> (bug conhecido), anexa uma sugestão diagnóstica direcionando o dev pros handlers suspeitos — knowledge base embutida no código.</li>
-      <li><strong>Grava execution_log de erro (com guard):</strong> mesma <code>createLog</code> da 4.3, agora com <code>status: 'Error while running'</code>. Guard: se a exception é <code>NotFoundException</code> com "flow not found", <em>não</em> escreve — sem <code>flowId</code> válido não tem FK pra respeitar.</li>
-      <li><strong>Saída:</strong> <code>throw error</code> re-lança a exception original (tipo e stack preservados) pro caller — controller HTTP devolve 500, Bull marca job failed. O <code>finally</code> do 5.3 ainda roda antes da propagação efetiva.</li>
+      <li><strong>Rede de segurança do apiV2.</strong> Catch top-level que envolve o corpo inteiro do método. Se algo <em>não tratado</em> lançar (bug, banco caindo, code path esquecido), esse bloco é o último a rodar. Garante audit trail mesmo em cenário catastrófico.</li>
+      <li><strong>Finaliza o RunLog em modo desastre.</strong> Mesma cadeia da Fase 4.4 (<code>finalize</code> + <code>flushNow</code>). Aqui com <code>status: 'error'</code> e <code>errorMessage</code> da exception. Um try/catch aninhado protege contra <em>erro do erro</em>. Se o próprio flush falha, o código apenas loga sem duplo-throw.</li>
+      <li><strong>Log estruturado com <em>hint</em> contextual.</strong> Winston recebe <code>errorName</code>, <code>errorMessage</code>, <code>errorStack</code> e contexto da execução. Se a mensagem é <code>'nodes is not iterable'</code> (bug conhecido), anexa sugestão diagnóstica direcionando o dev para os handlers suspeitos. Base de conhecimento embutida no código.</li>
+      <li><strong>Grava execution_log de erro (com guard).</strong> Mesma <code>createLog</code> da 4.3, agora com <code>status: 'Error while running'</code>. Guard: se a exception é <code>NotFoundException</code> com "flow not found", o código <em>não</em> grava. Sem <code>flowId</code> válido, não há FK para respeitar.</li>
+      <li><strong>Saída.</strong> <code>throw error</code> re-lança a exception original. Tipo e stack são preservados. O controller HTTP devolve 500. O Bull marca o job como failed. O <code>finally</code> do 5.3 ainda roda antes da propagação efetiva.</li>
     </ul>
   </div>
 
-<div class="note info"><strong>Contexto:</strong> última linha de defesa contra qualquer exception não-tratada no <code>apiV2</code>. Diferente do catch por nó (3.8) que só quebra o loop e continua Fase 4, aqui é <em>bug/erro sistêmico</em> — falha em setup, DB down, code path não-esperado. Garante audit trail mesmo em cenário catastrófico.</div>
+<div class="note info"><strong>Contexto.</strong> Última linha de defesa contra qualquer exception não tratada no <code>apiV2</code>. Diferente do catch por nó (3.8), que só quebra o loop e segue para a Fase 4. Aqui trata-se de <em>bug ou erro sistêmico</em>. Falha em setup, banco fora do ar, code path não esperado. Garante audit trail mesmo em cenário catastrófico.</div>
 
 <div class="overview-mini"><div class="overview-mini-title">Cadeia em 5.1</div><div class="overview-chain">
 <a href="#fn-a" class="overview-chip"><span class="lbl">A</span>runLogCollector.finalize (error)</a><span class="overview-sep">→</span>
@@ -110,8 +110,8 @@
 <div class="fn-card-header"><div class="fn-title"><span class="badge step" style="background:#EAB308;color:white">A</span><code>runLogCollector.finalize + flushNow (error path)</code></div><div class="fn-loc">flux.service.ts:5310-5337</div></div>
 <div class="fn-card-body">
 <div class="fn-signature">if (runLogCollector?.enabled &amp;&amp; runLogSpaceId) { const runLogDoc = collector.finalize({ status: 'error', errorMessage: error?.message, totalTokens, totalCost }); if (runLogDoc &amp;&amp; !isNestedRunLog) { await spaceRunLogsService.flushNow(...); } }</div>
-<div class="fn-purpose"><strong>Propósito:</strong> Mesma lógica do 4.4 (fn A e B), mas com <code>status='error'</code> e <code>errorMessage: error?.message</code>. Garante que <code>space_run_logs</code> tem o registro do run mesmo em falha catastrófica. Try/catch aninhado — se essa persistência também falhar, só loga sem duplo-throw.</div>
-<div class="fn-friendly"><strong>Em resumo:</strong> paralelo simétrico da Fase 4.4 mas em modo desastre. Mesmos gates (<code>enabled</code>, <code>runLogSpaceId</code>, não-nested), mesma cadeia (<code>finalize</code> → <code>flushNow</code>), mas passando <code>status: 'error'</code>. O <code>errorMessage</code> é a message da exception que foi lançada — pode ser algo cru tipo "Cannot read property 'text' of undefined" ou algo mais formatado. Também passa <code>totalTokens</code>/<code>totalCost</code> — mesmo em run que crashou, se algum handler chegou a cobrar tokens antes de morrer, contabiliza. Try/catch em volta pra proteger: se o próprio finalize/flushNow falhar (DB down, etc.), loga separado — evita "erro do erro" cascatear.</div>
+<div class="fn-purpose"><strong>Propósito.</strong> Mesma lógica do 4.4 (fn A e B), agora com <code>status='error'</code> e <code>errorMessage: error?.message</code>. Garante que <code>space_run_logs</code> tem o registro da execução mesmo em falha catastrófica. Try/catch aninhado. Se essa persistência falha, o código só loga, sem duplo-throw.</div>
+<div class="fn-friendly"><strong>Em resumo.</strong> Paralelo simétrico da Fase 4.4 em modo desastre. Mesmos gates (<code>enabled</code>, <code>runLogSpaceId</code>, não aninhado). Mesma cadeia (<code>finalize</code> → <code>flushNow</code>). Passa <code>status: 'error'</code>. O <code>errorMessage</code> é a mensagem da exception lançada. Pode ser algo cru como "Cannot read property 'text' of undefined" ou algo mais formatado. Também passa <code>totalTokens</code> e <code>totalCost</code>. Se algum handler chegou a cobrar tokens antes de morrer, o valor entra na contabilização. O try/catch em volta protege. Se o próprio <code>finalize</code> ou <code>flushNow</code> falha (banco fora do ar etc.), o código loga separado. Evita cascatear "erro do erro".</div>
 
 <div class="fn-body-cols"><div class="fn-main">
 <div class="code-block"><span class="k">if</span> (runLogCollector?.enabled &amp;&amp; runLogSpaceId) {
@@ -136,16 +136,16 @@
 }</div>
 </div>
 <div class="fn-asides">
-<div class="aside info"><div class="aside-title">🎯 Guarda dupla contra erro-do-erro</div>Se persistir também falhar, apenas loga Winston. Sem crash cascata.</div>
-<div class="aside"><div class="aside-title">📎 tokens/cost preservados</div>Mesmo em crash, o que já foi cobrado é registrado. Cliente é billed pelo que gastou até morrer.</div>
+<div class="aside info"><div class="aside-title">🎯 Guarda dupla contra erro do erro</div>Se a persistência também falha, o código apenas loga via Winston. Sem crash em cascata.</div>
+<div class="aside"><div class="aside-title">📎 tokens e cost preservados</div>Mesmo em crash, o que já foi cobrado fica registrado. O cliente é billed pelo que gastou até a falha.</div>
 </div></div></div></div>
 
 <div class="fn-card collapsed" id="fn-b">
 <div class="fn-card-header"><div class="fn-title"><span class="badge step" style="background:#3B82F6;color:white">B</span><code>loggerService.error com hint contextual</code></div><div class="fn-loc">flux.service.ts:5339-5358</div></div>
 <div class="fn-card-body">
 <div class="fn-signature">this.loggerService.error({ message: `API V2 error: ${message} - flowId: ${flowId} ...`, metadata: { status: 500, error_type: 'error', user, other: { errorName, errorMessage, errorStack, flowId, sessionId, runType, hint } } });</div>
-<div class="fn-purpose"><strong>Propósito:</strong> Log estruturado Winston. Inclui <code>errorName</code>, <code>errorMessage</code>, <code>errorStack</code>, contexto do run, e um <em>hint</em> contextual — se a mensagem de erro é <code>'nodes is not iterable'</code>, adiciona sugestão diagnóstica ("check handler X, Y, Z").</div>
-<div class="fn-friendly"><strong>Em resumo:</strong> log detalhado pra SRE debugar. Estrutura standard: metadata com <code>error_type: 'error'</code> (chave-clave pra alertas). Payload rico: <code>errorName</code> (tipo da exception: <code>NotFoundException</code>, <code>Error</code>, etc.), <code>errorMessage</code>, <code>errorStack</code> completo, <code>flowId</code>, <code>sessionId</code>, <code>runType</code>. E o <em>hint</em> — se o erro é <code>'nodes is not iterable'</code> (bug conhecido: handler retornou array vazio quando esperava object com <code>{ nodes }</code>), adiciona texto sugestivo: "A node handler returned non-iterable 'nodes'; check webSearch, webCrawling, mathFunction, scriptingNode, or other node types that return { nodes }.". Isso é <em>knowledge base embutido no código</em> — reflete debugs anteriores que a equipe já teve. Se aparecer em prod, dev vê o hint e sabe onde procurar antes mesmo de abrir stack trace. Padrão elegante — quando você conhece bem os bugs comuns, otimiza pra próxima ocorrência.</div>
+<div class="fn-purpose"><strong>Propósito.</strong> Log estruturado via Winston. Inclui <code>errorName</code>, <code>errorMessage</code>, <code>errorStack</code>, contexto da execução e um <em>hint</em> contextual. Se a mensagem de erro é <code>'nodes is not iterable'</code>, adiciona sugestão diagnóstica ("check handler X, Y, Z").</div>
+<div class="fn-friendly"><strong>Em resumo.</strong> Log detalhado para SRE debugar. Estrutura padrão: metadata com <code>error_type: 'error'</code>. Chave usada para alertas. Payload rico. <code>errorName</code>: tipo da exception (<code>NotFoundException</code>, <code>Error</code> etc.). <code>errorMessage</code>. <code>errorStack</code> completo. <code>flowId</code>, <code>sessionId</code>, <code>runType</code>. E o <em>hint</em>. Se o erro é <code>'nodes is not iterable'</code> (bug conhecido: handler retornou array vazio quando esperava objeto com <code>{ nodes }</code>), o log recebe texto sugestivo: "A node handler returned non-iterable 'nodes'; check webSearch, webCrawling, mathFunction, scriptingNode, or other node types that return { nodes }.". É <em>base de conhecimento embutida no código</em>. Reflete debugs anteriores da equipe. Em produção, o dev vê o hint e sabe onde procurar antes mesmo de abrir o stack trace. Padrão elegante. Quando você conhece bem os bugs comuns, otimiza para a próxima ocorrência.</div>
 
 <div class="fn-body-cols"><div class="fn-main">
 <div class="code-block"><span class="k">this</span>.loggerService.<span class="t">error</span>({
@@ -172,16 +172,16 @@
 }</div>
 </div>
 <div class="fn-asides">
-<div class="aside info"><div class="aside-title">🎯 Console dev-only</div>Em dev, também emite <code>console.error(error)</code> — stack completo no terminal do dev. Em prod, só Winston (já vai pra log aggregator).</div>
-<div class="aside helper"><div class="aside-title">🔧 hint pattern</div>Padrão a expandir: se aparecerem outros bugs comuns, adicionar cascade <code>if (message === 'X') hint = 'Y'</code>. Baixo custo, alto valor.</div>
+<div class="aside info"><div class="aside-title">🎯 Console só em dev</div>Em dev, o código também emite <code>console.error(error)</code>. O stack completo aparece no terminal. Em produção, só Winston. Já vai para o log aggregator.</div>
+<div class="aside helper"><div class="aside-title">🔧 Padrão de hint</div>Padrão fácil de expandir. Se aparecerem outros bugs comuns, adicionar cascade <code>if (message === 'X') hint = 'Y'</code>. Baixo custo, alto valor.</div>
 </div></div></div></div>
 
 <div class="fn-card collapsed" id="fn-c">
 <div class="fn-card-header"><div class="fn-title"><span class="badge step" style="background:#10B981;color:white">C</span><code>flowLogsService.createLog (error)</code></div><div class="fn-loc">flux.service.ts:5364-5389</div></div>
 <div class="fn-card-body">
 <div class="fn-signature">const isFlowNotFound = error instanceof NotFoundException &amp;&amp; /flow not found/i.test(error?.message); if (!isFlowNotFound) { await flowLogsService.createLog({ status: 'Error while running', error_message, error_status_code, spent_tokens, cost, run_type, flowId, mcpTokenId }); }</div>
-<div class="fn-purpose"><strong>Propósito:</strong> Mesma createLog do 4.3, mas com <code>status: 'Error while running'</code>. Guard: se erro é <code>NotFoundException</code> com mensagem tipo "flow not found", NÃO cria log — porque não tem <code>flowId</code> válido (que é FK obrigatório). Try/catch pra proteger.</div>
-<div class="fn-friendly"><strong>Em resumo:</strong> mesma tabela <code>execution_logs</code> do 4.3, mas em modo erro. Um detalhe importante: se a exception é <code>NotFoundException</code> com "flow not found" na mensagem (usuário passou <code>flowId</code> inválido), o backend <em>não</em> escreve em <code>execution_logs</code> — porque <code>flowId</code> é FK obrigatória. Sem flow, sem log. Legítimo. Também try/catch em volta — se DB tá indisponível, loga Winston mas não propaga. Fica só sem log — melhor que crash duplicado. O <code>error_status_code</code> é convertido pra string via <code>error?.status?.toString()</code> — se a exception é HTTP-like (Nest exceptions), tem <code>.status</code>. Senão, fallback pra '500'.</div>
+<div class="fn-purpose"><strong>Propósito.</strong> Mesma <code>createLog</code> do 4.3, agora com <code>status: 'Error while running'</code>. Guard: se o erro é <code>NotFoundException</code> com mensagem tipo "flow not found", o código NÃO cria log. Não há <code>flowId</code> válido, que é FK obrigatória. Try/catch protege a chamada.</div>
+<div class="fn-friendly"><strong>Em resumo.</strong> Mesma tabela <code>execution_logs</code> do 4.3, em modo erro. Detalhe importante. Se a exception é <code>NotFoundException</code> com "flow not found" na mensagem (usuário passou <code>flowId</code> inválido), o backend <em>não</em> escreve em <code>execution_logs</code>. O <code>flowId</code> é FK obrigatória. Sem flow, sem log. Comportamento legítimo. Também há try/catch em volta. Se o banco está indisponível, o código loga via Winston e não propaga. Fica sem log. Melhor que crash duplicado. O <code>error_status_code</code> é convertido para string via <code>error?.status?.toString()</code>. Se a exception é HTTP-like (Nest exceptions), o campo <code>.status</code> existe. Caso contrário, o fallback é '500'.</div>
 
 <div class="fn-body-cols"><div class="fn-main">
 <div class="code-block"><span class="k">const</span> isFlowNotFound =
@@ -203,29 +203,29 @@
 }</div>
 </div>
 <div class="fn-asides">
-<div class="aside warn"><div class="aside-title">⚠️ Regex de detecção</div><code>/flow not found/i.test(msg)</code> — depende da mensagem literal. Se algum outro código do sistema lançar <code>NotFoundException("Flow could not be found")</code>, não bate. Frágil. Melhor seria uma classe específica (<code>FlowNotFoundException extends NotFoundException</code>).</div>
+<div class="aside warn"><div class="aside-title">⚠️ Regex de detecção</div><code>/flow not found/i.test(msg)</code>. Depende da mensagem literal. Se outro código do sistema lançar <code>NotFoundException("Flow could not be found")</code>, o teste não bate. Frágil. Uma classe específica (<code>FlowNotFoundException extends NotFoundException</code>) seria melhor.</div>
 </div></div></div></div>
 
 <div class="fn-card collapsed" id="fn-d">
 <div class="fn-card-header"><div class="fn-title"><span class="badge step" style="background:#EF4444;color:white">D</span><code>throw error</code></div><div class="fn-loc">flux.service.ts:5392</div></div>
 <div class="fn-card-body">
 <div class="fn-signature">throw error;</div>
-<div class="fn-purpose"><strong>Propósito:</strong> Re-lança a exception original pro caller. Endpoint controller (ou Bull processor) recebe e devolve HTTP 500 (ou marca job como failed no Bull). Fica evidente que o run falhou fatal — não retornou objeto de resposta.</div>
-<div class="fn-friendly"><strong>Em resumo:</strong> última linha do catch. Depois de todo o cleanup (finalize, log, createLog), <em>re-lança</em> a exception original. Simples. Isso pra que? Caller precisa saber que falhou. Se apiV2 tivesse <code>return null</code> ou similar, o controller/processor não saberia distinguir "sucesso com resposta vazia" de "crash fatal". Com throw, o caller HTTP recebe erro (endpoint controller vai pro exception handler global do Nest, devolve HTTP 500). Bull processor vê exception, marca job como failed. Tudo bem sinalizado. Note que <em>preserva a exception original</em> — não wrappa em <code>new Error</code>. Assim, quem pegar tem stack completo e tipo original. É a coisa certa em quase todos os casos.</div>
+<div class="fn-purpose"><strong>Propósito.</strong> Re-lança a exception original para o caller. O controller do endpoint (ou o processor do Bull) recebe e devolve HTTP 500, ou marca o job como failed no Bull. Fica evidente que a execução falhou de forma fatal. Não retornou objeto de resposta.</div>
+<div class="fn-friendly"><strong>Em resumo.</strong> Última linha do catch. Depois de todo o cleanup (<code>finalize</code>, log, <code>createLog</code>), o código <em>re-lança</em> a exception original. Simples. Motivo. O caller precisa saber que falhou. Se <code>apiV2</code> retornasse <code>null</code> ou algo similar, o controller ou processor não distinguiria "sucesso com resposta vazia" de "crash fatal". Com <code>throw</code>, o caller HTTP recebe erro. O controller do endpoint cai no exception handler global do Nest. Devolve HTTP 500. O processor do Bull vê a exception e marca o job como failed. Sinalização clara. O código <em>preserva a exception original</em>. Não faz wrap em <code>new Error</code>. Quem pega tem stack completo e tipo original. É a coisa certa em quase todos os casos.</div>
 
 <div class="fn-body-cols"><div class="fn-main">
 <div class="code-block"><span class="k">throw</span> error;</div>
 <div class="arrow">↓</div>
-<div class="box backend"><div class="box-title">Propagação</div><div class="box-desc">Endpoint controller (HTTP): Nest exception handler global. Bull processor: job marca failed. mcpRunStatusService (5.2) chama markFinished antes que o error propague.</div></div>
+<div class="box backend"><div class="box-title">Propagação</div><div class="box-desc">Controller do endpoint (HTTP): cai no exception handler global do Nest. Processor do Bull: marca o job como failed. O <code>mcpRunStatusService</code> (5.2) chama <code>markFinished</code> antes de o erro propagar.</div></div>
 </div>
 <div class="fn-asides">
-<div class="aside info"><div class="aside-title">🎯 finally roda antes do throw efetivo</div>JS semântica: <code>throw</code> no <code>catch</code> ainda passa pelo <code>finally</code> antes de propagar. É o que garante que 5.3 (delete chatbotSocketByRun) roda mesmo em erro.</div>
-<div class="aside"><div class="aside-title">📎 Sem wrapping</div>Tipo e stack originais preservados. Boa prática — melhor pra debug.</div>
+<div class="aside info"><div class="aside-title">🎯 O finally roda antes do throw efetivo</div>Semântica do JS. <code>throw</code> dentro do <code>catch</code> ainda passa pelo <code>finally</code> antes de propagar. É o que garante que o 5.3 (<code>delete chatbotSocketByRun</code>) roda mesmo em erro.</div>
+<div class="aside"><div class="aside-title">📎 Sem wrapping</div>Tipo e stack originais são preservados. Boa prática. Melhor para debug.</div>
 </div></div></div></div>
 
-<div class="note info" style="margin-top:32px"><strong>Resumo — o que sai de 5.1:</strong><br>• RunLog e FlowLog persistidos com status error<br>• Winston log com hint quando aplicável<br>• Exception re-lançada pro caller<br>• Finally (5.3) ainda roda antes do error propagar</div>
+<div class="note info" style="margin-top:32px"><strong>Resumo — o que sai de 5.1:</strong><br>• <code>RunLog</code> e <code>FlowLog</code> persistidos com status de erro.<br>• Log Winston com hint quando aplicável.<br>• Exception re-lançada para o caller.<br>• O <code>finally</code> (5.3) ainda roda antes de o erro propagar.</div>
 
-<div class="note"><strong>Observações para migração:</strong><br>• <strong>Essencial e cross-cutting</strong> — cobertura de erros catastróficos é obrigatória.<br>• Try/catch aninhados dentro do catch principal (defesa contra erro-do-erro) é bom pattern — manter.<br>• Hint contextual (<code>'nodes is not iterable'</code>) é dívida-baixa: crescer conforme mais bugs conhecidos aparecerem.<br>• <code>NotFoundException</code>+ regex é frágil — melhor tipo específico.<br>• Migração pro worker: worker vai ter seu próprio catch — mas backend continua sendo o orquestrador principal e precisa desse safety net.</div>
+<div class="note"><strong>Observações para migração:</strong><br>• <strong>Essencial e cross-cutting</strong>. Cobertura de erros catastróficos é obrigatória.<br>• Try/catch aninhados dentro do catch principal (defesa contra erro do erro) é bom padrão. Manter.<br>• Hint contextual (<code>'nodes is not iterable'</code>) é dívida baixa. Cresce conforme mais bugs conhecidos aparecerem.<br>• <code>NotFoundException</code> + regex é frágil. Um tipo específico é melhor.<br>• Migração para o worker. O worker terá seu próprio catch. O backend continua como orquestrador principal e precisa dessa rede de segurança.</div>
 
 <div class="page-footer-nav"><a href="../index.html#step-5-1" class="back-btn">← Voltar ao diagrama principal</a></div>
 </div>

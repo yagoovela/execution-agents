@@ -340,23 +340,23 @@
     <h1>Passo 2.1 — buildSchedulerState (DAG scheduler)</h1>
   </div>
   <div class="page-sub">
-    Bloco em <code>scheduler.ts:152-293</code> (planOrder: 412-425). Constrói o estado do scheduler DAG que vai reger o loop principal: classifica arestas em <em>control / condition / data / global</em>, calcula alcançabilidade a partir do starter, remove backedges (ciclos), monta contadores de predecessores e devolve a fila inicial de nós prontos (<code>ready</code>).
+    Bloco em <code>scheduler.ts:152-293</code> (<code>planOrder</code>: 412-425). Constrói o estado do scheduler DAG que rege o loop principal. Classifica arestas em control, condition, data e global. Calcula alcançabilidade a partir do starter. Remove backedges (ciclos). Monta contadores de predecessores. Devolve a fila inicial de nós prontos (<code>ready</code>).
   </div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
     <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
     <ul>
-      <li><strong>Etiqueta cada aresta do canvas:</strong> passa por todas as ligações entre nós e coloca um rótulo (<code>global</code>, <code>control</code>, <code>condition</code>, <code>data</code>) que diz <em>se aquela aresta bloqueia execução ou não</em>.</li>
-      <li><strong>Descobre quem entra na festa:</strong> partindo do starter, calcula o <code>Set</code> de nós <em>reachable</em> — quem não estiver nele fica dormindo o run inteiro, mesmo desenhado no canvas.</li>
-      <li><strong>Remove ciclos do grafo:</strong> um DFS com coloring (branco/cinza/preto) identifica as <em>backedges</em> (típico de <code>arrayNode</code> que volta pro início) e as ignora, pra não travar os contadores de predecessores.</li>
-      <li><strong>Monta o "painel de controle" do loop:</strong> pra cada nó, calcula quantos predecessores tem no total e quantos são <em>gates</em> (control+condition), inicializa contadores em zero e popula o <code>ready[]</code> só com nós de in-degree 0.</li>
-      <li><strong>Saída:</strong> um <code>SchedulerState</code> mutável de 12 campos (<code>ready</code>, <code>forwardDeps</code>, <code>conditionEdges</code>, contadores, sets vazios de <code>completed/dead/scheduled</code>) que o loop da Fase 3 vai consumir — puro CPU, zero I/O, <code>O(V+E)</code>.</li>
+      <li><strong>Etiqueta cada aresta do canvas.</strong> Passa por todas as ligações entre nós e coloca um rótulo (<code>global</code>, <code>control</code>, <code>condition</code>, <code>data</code>). O rótulo indica se a aresta bloqueia execução.</li>
+      <li><strong>Descobre quais nós entram na execução.</strong> A partir do starter, calcula o <code>Set</code> de nós reachable. Quem não estiver nele fica ocioso durante toda a execução, mesmo desenhado no canvas.</li>
+      <li><strong>Remove ciclos do grafo.</strong> Um DFS com coloring (branco, cinza, preto) identifica as backedges (típico de <code>arrayNode</code> que volta ao início) e as ignora. Evita travar os contadores de predecessores.</li>
+      <li><strong>Monta o painel de controle do loop.</strong> Para cada nó, calcula quantos predecessores existem no total e quantos são gates (control e condition). Inicializa contadores em zero. Popula o <code>ready[]</code> só com nós de in-degree 0.</li>
+      <li><strong>Saída.</strong> Um <code>SchedulerState</code> mutável de 12 campos. Contém <code>ready</code>, <code>forwardDeps</code>, <code>conditionEdges</code>, contadores e sets vazios de <code>completed</code>, <code>dead</code>, <code>scheduled</code>. O loop da Fase 3 consome esses dados. Puro CPU. Zero I/O. Complexidade <code>O(V+E)</code>.</li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto:</strong> este é o <strong>coração do algoritmo de execução</strong>. Todo o loop da Fase 3 depende do <code>SchedulerState</code> que sai daqui — <code>nextReady()</code>, <code>markCompleted()</code>, <code>markDead()</code>, <code>completeCondition()</code> operam nas estruturas montadas em 2.1. É código puro (sem I/O, sem async), determinístico, ~140 linhas — pode virar unit test trivial.
+    <strong>Contexto.</strong> Este é o núcleo do algoritmo de execução. Todo o loop da Fase 3 depende do <code>SchedulerState</code> que sai daqui. As funções <code>nextReady()</code>, <code>markCompleted()</code>, <code>markDead()</code> e <code>completeCondition()</code> operam nas estruturas montadas em 2.1. É código puro, sem I/O e sem async. Determinístico. Cerca de 140 linhas. Trivial de cobrir com unit tests.
   </div>
 
   <div class="overview-mini">
@@ -373,7 +373,7 @@
       <a href="#fn-e" class="overview-chip"><span class="lbl">E</span>planOrder (debug)</a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado final: <code>SchedulerState</code> com 12 campos que o loop consome — <code>ready[]</code>, <code>forwardDeps</code>, <code>conditionEdges</code>, contadores de preds/gating, sets de <code>completed/dead/scheduled</code>.
+      Resultado final. <code>SchedulerState</code> com 12 campos que o loop consome. <code>ready[]</code>, <code>forwardDeps</code>, <code>conditionEdges</code>, contadores de preds e gating, sets de <code>completed</code>, <code>dead</code> e <code>scheduled</code>.
     </div>
   </div>
 
@@ -391,10 +391,10 @@
         function classifyEdge(edge, starterSourceId): 'control' | 'condition' | 'data' | 'global'
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Categoriza cada aresta em uma de 4 classes. Essa classificação determina como o scheduler trata a dependência: <em>control</em>/<em>condition</em> gateiam execução; <em>data</em> passa valor mas não bloqueia por si só; <em>global</em> não conta como dep.
+        <strong>Propósito.</strong> Categoriza cada aresta em uma de 4 classes. A classificação determina como o scheduler trata a dependência. <em>control</em> e <em>condition</em> gateiam execução. <em>data</em> passa valor mas não bloqueia por si só. <em>global</em> não conta como dependência.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> pense nessa função como o <em>cadastrador</em> das arestas — ela pega cada linha que liga um nó a outro no canvas e coloca uma etiqueta em cada uma. Olhando pro handle de saída, ela decide: "essa aqui é <code>global</code> (vem do starter, não trava ninguém)", "essa é <code>control</code> (fluxo explícito, tem que respeitar a ordem)", "essa é <code>condition</code> (saída de if/switch, pode matar a branch se o teste der errado)" ou "essa é <code>data</code> (só entrega um valor)". É uma cascata de 5 checks, e o primeiro que bater ganha. O rótulo é o que vai dizer pro resto do scheduler <strong>se aquela aresta bloqueia execução</strong> ou não.
+        <strong>Em resumo.</strong> Esta função é o cadastrador das arestas. Pega cada linha que liga um nó a outro no canvas e coloca uma etiqueta. Ao olhar o handle de saída, decide entre quatro opções. <code>global</code> (vem do starter, não bloqueia). <code>control</code> (fluxo explícito, respeita a ordem). <code>condition</code> (saída de if/switch, pode matar o branch se o teste der errado). <code>data</code> (só entrega um valor). Cascata de 5 checks. O primeiro que bate ganha. O rótulo diz ao resto do scheduler se a aresta bloqueia execução.
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
@@ -430,7 +430,7 @@
           <div class="box backend">
             <div class="box-title">isDependencyEdge = <code>control</code> || <code>condition</code> || <code>data</code></div>
             <div class="box-desc">
-              Ou seja: só arestas <em>global</em> são ignoradas no cálculo de dependência. As demais viram nós no grafo de precedência.
+              Só arestas <em>global</em> são ignoradas no cálculo de dependência. As demais entram no grafo de precedência.
             </div>
             <div class="box-file">scheduler.ts:59-65</div>
           </div>
@@ -438,18 +438,18 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Semântica das 4 classes</div>
-            <strong>global</strong> — starter/globals (não gateiam nada, todo run começa com)
-            <br><strong>control</strong> — fluxo explícito (aresta <code>outputFlow</code>): "só rode depois deste"
-            <br><strong>condition</strong> — saída de conditionNode: pode marcar branch como <em>dead</em>
-            <br><strong>data</strong> — aresta de valor: dep de precedência mas não força ordem no DAG se já resolvido
+            <strong>global.</strong> Starter e globals. Não bloqueiam ninguém. Toda execução começa por eles.
+            <br><strong>control.</strong> Fluxo explícito (aresta <code>outputFlow</code>). "Só rode depois deste."
+            <br><strong>condition.</strong> Saída de <code>conditionNode</code>. Pode marcar branch como dead.
+            <br><strong>data.</strong> Aresta de valor. Dependência de precedência. Não força ordem no DAG se já resolvido.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 Handles hardcoded</div>
-            <code>GLOBAL_HANDLE = 'a'</code>, <code>CONTROL_HANDLE = 'outputFlow'</code>, regex <code>outputHandle-[01]</code> (bool if/else) e <code>conditionHandle-[TF]\d+</code> (switch). Se o front cria um handle com nome fora desses padrões, ele cai em <code>data</code> ou <code>global</code> por acidente.
+            <code>GLOBAL_HANDLE = 'a'</code>. <code>CONTROL_HANDLE = 'outputFlow'</code>. Regex <code>outputHandle-[01]</code> (bool if/else). Regex <code>conditionHandle-[TF]\d+</code> (switch). Se o front cria um handle com nome fora desses padrões, cai em <code>data</code> ou <code>global</code> por acidente.
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ Fallback silencioso pra global</div>
-            Aresta sem <code>sourceHandle</code> e sem <code>targetHandle</code> → <code>global</code>. Se um bug no front criar aresta assim entre 2 nós de negócio, o scheduler <em>não</em> vai gatear a execução — pode causar race na Fase 3.
+            <div class="aside-title">⚠️ Fallback silencioso para global</div>
+            Aresta sem <code>sourceHandle</code> e sem <code>targetHandle</code> vai para <code>global</code>. Se um bug no front criar aresta assim entre dois nós de negócio, o scheduler não bloqueia a execução. Pode causar race na Fase 3.
           </div>
         </div>
       </div>
@@ -470,17 +470,17 @@
         // BFS a partir do starter, depois expande por data-providers e data-sinks até fixed point
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Descobrir quais nós vão realmente rodar neste run. Só nós alcançáveis a partir do <code>flow-global-starter</code> via arestas control/condition entram na base, e depois puxa <em>data providers</em> (nós cujo output alimenta um nó alcançável) e <em>data sinks</em> (output/varInput consumers). Fixed point até estabilizar.
+        <strong>Propósito.</strong> Descobre quais nós rodam na execução. Só nós alcançáveis a partir do <code>flow-global-starter</code> via arestas control/condition entram na base. Depois puxa data providers (nós cujo output alimenta um nó alcançável) e data sinks (output ou varInput consumers). Repete até fixed point.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> essa etapa é o <em>vigia</em> que decide quem entra na festa. Ela parte do nó starter e vai andando pelas arestas de <code>control</code>/<code>condition</code> pra montar um primeiro grupo de nós "com convite"; depois faz uma passada puxando quem <em>alimenta</em> esses nós com dados (os providers), e uma outra passada puxando quem <em>recebe</em> resultado deles (os sinks tipo <code>outputController</code>, <code>varInputNode</code>). Roda em fixed point — repete até nada mudar. No final sobra um <code>Set</code> chamado <code>reachable</code>, e <strong>quem não está nele nem existe pro loop</strong>: mesmo estando desenhado no canvas, o nó fica dormindo o run inteiro. É o que evita rodar um <code>apiCaller</code> desconectado só porque ele está pendurado por lá.
+        <strong>Em resumo.</strong> Esta etapa é o vigia que decide quem participa da execução. Parte do nó starter e percorre as arestas de <code>control</code> e <code>condition</code> para montar um primeiro grupo de nós admitidos. Depois faz uma passada puxando quem alimenta esses nós com dados (os providers). Depois outra puxando quem recebe resultado deles (os sinks como <code>outputController</code> e <code>varInputNode</code>). Roda em fixed point. Repete até nada mudar. Sobra um <code>Set</code> chamado <code>reachable</code>. Quem não está nele nem existe para o loop. Mesmo desenhado no canvas, o nó fica ocioso durante toda a execução. É o que evita executar um <code>apiCaller</code> desconectado só por estar no canvas.
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
             <div class="box-title"><span class="badge step">B1</span> BFS de control/condition (<code>reachableFrom</code>)</div>
             <div class="box-desc">
-              Começa dos <code>starterTargets</code> (nós ligados diretamente ao <code>starterSourceId</code>) e caminha por <code>orchAdj</code> (control + condition).
+              Começa dos <code>starterTargets</code> (nós ligados diretamente ao <code>starterSourceId</code>) e caminha por <code>orchAdj</code> (control e condition).
             </div>
             <div class="box-file">scheduler.ts:113-128, 181</div>
           </div>
@@ -488,7 +488,7 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">B2</span> Fase 1: pullDataProviders(<code>false</code>)</div>
             <div class="box-desc">
-              Loop até fixed point: pra cada nó alcançável, puxa seus <em>data providers</em> upstream (via <code>reverseDataAdj</code>). Nesta fase, <strong>não</strong> pula side-effects.
+              Loop até fixed point. Para cada nó alcançável, puxa os data providers upstream via <code>reverseDataAdj</code>. Nesta fase, não pula side-effects.
             </div>
             <div class="box-file">scheduler.ts:212-215</div>
           </div>
@@ -496,7 +496,7 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">B3</span> Fase 2: pullSinkConsumers + pullDataProviders(<code>true</code>)</div>
             <div class="box-desc">
-              Segundo loop até fixed point. <code>pullSinkConsumers</code> puxa consumers do tipo <code>outputController</code>/<code>outputObjectNode</code>/<code>varInputNode</code> (que precisam existir mesmo sem control edge). Depois puxa mais providers, agora <strong>pulando</strong> side-effect types.
+              Segundo loop até fixed point. <code>pullSinkConsumers</code> puxa consumers do tipo <code>outputController</code>, <code>outputObjectNode</code> e <code>varInputNode</code>. Esses precisam existir mesmo sem control edge. Depois puxa mais providers, agora pulando side-effect types.
             </div>
             <div class="box-file">scheduler.ts:200-220</div>
           </div>
@@ -504,7 +504,7 @@
           <div class="box decision">
             <div class="box-title"><span class="badge step">B4</span> <code>reachable: Set&lt;string&gt;</code></div>
             <div class="box-desc">
-              Set final de nodeIds que vão rodar. Nós fora do <code>reachable</code> nem são registrados em <code>totalPreds</code> — o loop nunca os toca.
+              Set final de <code>nodeIds</code> que vão rodar. Nós fora do <code>reachable</code> nem são registrados em <code>totalPreds</code>. O loop nunca os toca.
             </div>
             <div class="box-file">scheduler.ts:182, 278</div>
           </div>
@@ -512,19 +512,19 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Por que 2 fases?</div>
-            Fase 1 é a expansão "completa" (traz tudo que alimenta os nós de negócio, mesmo side-effects como <code>apiCaller</code>). Fase 2 corrige overshoot: se um output-sink virou alcançável e precisa de mais providers, só puxa se não for side-effect (evita disparar <code>apiCaller</code> só pra popular um output).
+            Fase 1 é a expansão completa. Traz tudo que alimenta os nós de negócio, mesmo side-effects como <code>apiCaller</code>. Fase 2 corrige overshoot. Se um output-sink virou alcançável e precisa de mais providers, só puxa quando não é side-effect. Evita disparar <code>apiCaller</code> só para popular um output.
           </div>
           <div class="aside">
             <div class="aside-title">📎 <code>SIDE_EFFECT_TYPES</code></div>
-            <code>apiCaller</code>, <code>mcpNode</code>, <code>thirdPartyIntegration</code>, <code>pushData</code>, <code>hubSpotCRM</code>, <code>fileSave</code>. Set fechado em <code>scheduler.ts:29-36</code>. Adicionar tipo novo aqui muda semântica de alcançabilidade — cuidado.
+            <code>apiCaller</code>, <code>mcpNode</code>, <code>thirdPartyIntegration</code>, <code>pushData</code>, <code>hubSpotCRM</code>, <code>fileSave</code>. Set fechado em <code>scheduler.ts:29-36</code>. Adicionar type novo aqui muda a semântica de alcançabilidade. Cuidado.
           </div>
           <div class="aside">
             <div class="aside-title">📎 <code>DATA_SINK_TYPES</code></div>
-            <code>outputController</code>, <code>outputObjectNode</code>, <code>varInputNode</code>. Só esses 3 são puxados pela regra "consumer alcançável se produzido por alcançável". <code>scheduler.ts:23-27</code>.
+            <code>outputController</code>, <code>outputObjectNode</code>, <code>varInputNode</code>. Só esses três são puxados pela regra "consumer alcançável se produzido por alcançável". <code>scheduler.ts:23-27</code>.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 <code>orchAdj</code> vs <code>dataAdj</code></div>
-            Duas listas de adjacência separadas: <code>orchAdj</code> só tem control+condition (usada na BFS inicial); <code>dataAdj</code>/<code>reverseDataAdj</code> só tem data (usada na expansão). Bug clássico é misturar as duas.
+            Duas listas de adjacência separadas. <code>orchAdj</code> só tem control e condition. Usada na BFS inicial. <code>dataAdj</code> e <code>reverseDataAdj</code> só têm data. Usadas na expansão. Bug clássico é misturar as duas.
           </div>
         </div>
       </div>
@@ -545,17 +545,17 @@
         function findBackEdges(roots, adj: depAdj): Set&lt;`${src}-&gt;${tgt}`&gt;
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> DFS clássico com <em>coloring</em> (0=white/unvisited, 1=gray/on-stack, 2=black/done) pra detectar backedges no grafo de dependência. Backedges são <strong>ignoradas</strong> na montagem de <code>forwardDeps</code>/<code>preds</code> — sem isso, ciclos travariam <code>nextReady</code> (nunca zera predecessores).
+        <strong>Propósito.</strong> DFS clássico com coloring (0 = white/unvisited, 1 = gray/on-stack, 2 = black/done) para detectar backedges no grafo de dependência. Backedges são ignoradas na montagem de <code>forwardDeps</code> e <code>preds</code>. Sem isso, ciclos travariam <code>nextReady</code>. Nunca zeraria predecessores.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> imagina que o grafo tem um <em>arrayNode</em> que volta pro início pra iterar: isso é um ciclo, e ciclo em DAG é veneno pro scheduler (o contador de predecessores nunca chega a zero, então <code>nextReady</code> nunca acha o nó pronto e o loop trava). Essa função é o <em>faxineiro</em> que sai passeando pelo grafo com uma marcação de três cores (branco = não visitei, cinza = estou dentro, preto = já saí) e, sempre que topa com uma seta apontando pra alguém que ainda está "cinza" (ou seja, tem a mesma seta subindo pela pilha), <strong>marca aquela aresta como backedge</strong>. Essas backedges ficam num <code>Set</code> e são simplesmente <em>ignoradas</em> na hora de montar as dependências — o loop lógico do array vira problema do handler de <code>arrayNode</code> na Fase 3, não do scheduler.
+        <strong>Em resumo.</strong> O grafo pode ter um <code>arrayNode</code> que volta ao início para iterar. Isso é um ciclo. Ciclo em DAG é veneno para o scheduler. O contador de predecessores nunca chega a zero. O <code>nextReady</code> nunca acha o nó pronto. O loop trava. Esta função é o faxineiro. Passeia pelo grafo com marcação de três cores. Branco: não visitei. Cinza: estou dentro. Preto: já saí. Sempre que topa com uma seta apontando para alguém ainda cinza (a mesma seta sobe pela pilha), marca a aresta como backedge. Essas backedges ficam em um <code>Set</code> e são ignoradas na montagem das dependências. O loop lógico do array vira problema do handler de <code>arrayNode</code> na Fase 3, não do scheduler.
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
             <div class="box-title"><span class="badge step">C1</span> Constrói <code>depAdj</code> (só arestas de dependência)</div>
             <div class="box-desc">
-              Filtra <code>edges</code>: só as classificadas como dep (não-global) E ambas as pontas alcançáveis. Vira o input do DFS.
+              Filtra <code>edges</code>. Só as classificadas como dep (não-global) e com ambas as pontas alcançáveis. Vira o input do DFS.
             </div>
             <div class="box-file">scheduler.ts:222-228</div>
           </div>
@@ -580,23 +580,23 @@
             <div class="box-title"><span class="badge step">C3</span> Filtra <code>backEdges</code> na montagem de <code>forwardDeps</code></div>
             <div class="box-desc">
               <code>if (backEdges.has(`${source}-&gt;${target}`)) continue;</code>
-              <br><br>Arestas de loop viram invisíveis pro scheduler — o loop propriamente dito é gerenciado por <code>arrayNode</code>/<code>loopIterationContext</code> na Fase 3.
+              <br><br>Arestas de loop viram invisíveis para o scheduler. O loop propriamente dito é gerenciado por <code>arrayNode</code> e <code>loopIterationContext</code> na Fase 3.
             </div>
             <div class="box-file">scheduler.ts:246</div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside warn">
-            <div class="aside-title">⚠️ DFS recursivo — risco de stack overflow</div>
-            Flow com &gt; ~5000 nós encadeados em série pode estourar o call stack do Node. Não é caso real hoje (nenhum flow em prod chega perto), mas é limitação latente. Migrar pra DFS iterativo com stack explícito eliminaria.
+            <div class="aside-title">⚠️ DFS recursivo. Risco de stack overflow</div>
+            Flow com mais de 5000 nós encadeados em série pode estourar o call stack do Node. Não é caso real hoje. Nenhum flow em produção chega perto. Limitação latente. Migrar para DFS iterativo com stack explícito elimina o risco.
           </div>
           <div class="aside info">
             <div class="aside-title">🎯 Por que ignorar backedge?</div>
-            Se A → B → A é um ciclo, um dos dois nós tem in-degree ≥ 1 pra sempre — <code>nextReady</code> nunca acha ele pronto. Removendo o backedge do grafo de deps, o loop principal consegue rodar A, depois B (que agora tem in-degree 0), e o <em>loop lógico</em> vira responsabilidade do <code>arrayNode</code> handler em Fase 3.
+            Se A → B → A forma um ciclo, um dos nós tem in-degree ≥ 1 para sempre. O <code>nextReady</code> nunca acha o nó pronto. Ao remover o backedge do grafo de deps, o loop principal consegue rodar A, depois B (que agora tem in-degree 0). O loop lógico vira responsabilidade do handler de <code>arrayNode</code> na Fase 3.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 Chave <code>${node}-&gt;${next}</code></div>
-            String literal, não tupla. Concat direto. Se algum <code>nodeId</code> contiver a substring <code>-&gt;</code>, colisão. Como IDs são UUIDs no front, seguro na prática.
+            String literal, não tupla. Concat direto. Se algum <code>nodeId</code> contiver a substring <code>-&gt;</code>, gera colisão. Como IDs são UUIDs no front, é seguro na prática.
           </div>
         </div>
       </div>
@@ -617,17 +617,17 @@
         return { nodeIds, forwardDeps, conditionEdges, totalPreds, resolvedPreds, deadPreds, gatingPairs, totalGating..., ready: [], completed: Set(), dead: Set(), scheduled: Set() }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Materializar o estado final que o loop vai mutar. Cada nó tem 6 contadores (total/resolved/dead × preds/gating) que <code>markCompleted</code>/<code>markDead</code>/<code>completeCondition</code> incrementam em O(1) durante o run. <code>ready[]</code> começa com nós de in-degree 0.
+        <strong>Propósito.</strong> Materializa o estado final que o loop vai mutar. Cada nó tem 6 contadores (<code>total</code>, <code>resolved</code>, <code>dead</code> combinados com <code>preds</code> e <code>gating</code>) que <code>markCompleted</code>, <code>markDead</code> e <code>completeCondition</code> incrementam em O(1) durante a execução. O <code>ready[]</code> começa com nós de in-degree 0.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> essa aqui é o <em>montador</em> do painel de controle que o loop de execução vai usar do início ao fim. Passando aresta por aresta, ela vai enchendo mapas: pra cada nó quantos predecessores totais existem, quantos deles são "gates" (control+condition, os que podem matar o nó), quais são as arestas de saída pra propagar depois, e quais saídas de <code>conditionNode</code> devem ser lembradas pra quando o if resolver. No fim inicializa contadores zerados de "resolved" e "dead" pra cada um e monta o <code>ready[]</code> inicial só com quem não tem predecessor nenhum — esses são os primeiros a rodar. Daqui pra frente, cada <code>markCompleted</code>/<code>markDead</code>/<code>completeCondition</code> vai só incrementar esses contadores em O(1) e mover nós pro <code>ready</code> conforme forem se liberando.
+        <strong>Em resumo.</strong> Esta função é o montador do painel de controle usado pelo loop de execução do início ao fim. Aresta por aresta, preenche mapas. Para cada nó, quantos predecessores totais existem, quantos deles são gates (control e condition, os que podem matar o nó), quais são as arestas de saída para propagar depois, e quais saídas de <code>conditionNode</code> devem ser lembradas para quando o if resolver. No fim, inicializa contadores zerados de <code>resolved</code> e <code>dead</code> para cada nó. Monta o <code>ready[]</code> inicial só com os nós sem predecessor. Esses rodam primeiro. Daqui em diante, cada <code>markCompleted</code>, <code>markDead</code> ou <code>completeCondition</code> só incrementa contadores em O(1) e move nós para o <code>ready</code> conforme se liberam.
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
             <div class="box-title"><span class="badge step">D1</span> Loop único monta <code>forwardDeps</code>, <code>preds</code>, <code>gatingPairs</code>, <code>conditionEdges</code></div>
             <div class="box-desc">
-              Passa por cada aresta 1x. Se é <em>condition</em>: guarda em <code>conditionEdges[source]</code> pro <code>completeCondition</code> resolver depois. Se é dep e não-backedge: preenche forward + preds + (se control/condition) gating.
+              Passa por cada aresta uma vez. Se é <em>condition</em>, guarda em <code>conditionEdges[source]</code> para o <code>completeCondition</code> resolver depois. Se é dep e não backedge, preenche forward, preds e (se control ou condition) gating.
             </div>
             <div class="box-file">scheduler.ts:238-256</div>
           </div>
@@ -650,7 +650,7 @@
             <div class="box-title"><span class="badge step">D3</span> Monta <code>ready[]</code> inicial</div>
             <div class="box-desc">
               <code>for (id of reachable) if (totalPreds.get(id) === 0) ready.push(id)</code>
-              <br><br>Nós sem predecessores = pontos de entrada do DAG. Tipicamente: os targets do starter, e globals. É o array que <code>nextReady()</code> vai shift() na Fase 3.
+              <br><br>Nós sem predecessores são pontos de entrada do DAG. Tipicamente. Os targets do starter e os globals. É o array que <code>nextReady()</code> consome via <code>shift()</code> na Fase 3.
             </div>
             <div class="box-file">scheduler.ts:273-275</div>
           </div>
@@ -658,21 +658,21 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Por que 2 contagens (preds vs gating)?</div>
-            <strong>preds</strong> = todas as deps (control+condition+data). Só quando <em>todas</em> resolvidas o nó pode ir pra <code>ready</code>.
-            <br><br><strong>gating</strong> = subset (só control+condition). Se <em>todos</em> os gates que sobraram estão mortos, o nó também morre (não roda).
-            <br><br>Data edges contam pra ordem mas não podem "matar" o nó sozinhas.
+            <strong>preds.</strong> Todas as deps (control, condition e data). Só quando todas estão resolvidas o nó vai para <code>ready</code>.
+            <br><br><strong>gating.</strong> Subset (só control e condition). Se todos os gates restantes estão mortos, o nó também morre e não roda.
+            <br><br>Data edges contam para a ordem, mas não matam o nó sozinhas.
           </div>
           <div class="aside">
             <div class="aside-title">📎 <code>conditionEdges</code> guarda todas as arestas de condition por source</div>
-            Usado pelo <code>completeCondition(schedState, id, takenHandle)</code> pra decidir qual branch vira <em>dead</em> quando um <code>conditionNode</code> resolve. Ver <code>scheduler.ts:366-389</code>.
+            Usado pelo <code>completeCondition(schedState, id, takenHandle)</code> para decidir qual branch vira dead quando um <code>conditionNode</code> resolve. Ver <code>scheduler.ts:366-389</code>.
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 Sets vazios pre-alocados</div>
-            <code>completed</code>, <code>dead</code>, <code>scheduled</code> começam vazios. O loop popula on-the-fly. <code>scheduled</code> evita re-enfileirar o mesmo id se <code>nextReady</code> for chamado após já ter servido.
+            <div class="aside-title">🔧 Sets vazios pré-alocados</div>
+            <code>completed</code>, <code>dead</code> e <code>scheduled</code> começam vazios. O loop popula on-the-fly. <code>scheduled</code> evita reenfileirar o mesmo id quando o <code>nextReady</code> é chamado após já ter servido.
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ Todas as estruturas são <code>Map</code>/<code>Set</code></div>
-            Rápido em memória, mas não são serializáveis pra Redis/Postgres direto. Se algum dia o scheduler precisar sobreviver a um crash do backend, precisa serializer custom.
+            <div class="aside-title">⚠️ Todas as estruturas são <code>Map</code> ou <code>Set</code></div>
+            Rápido em memória. Não são serializáveis para Redis/Postgres diretamente. Se um dia o scheduler precisar sobreviver a um crash do backend, precisa de serializer custom.
           </div>
         </div>
       </div>
@@ -693,10 +693,10 @@
         function planOrder(nodes, edges, starterSourceId): string[] // ordem topológica linear
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Roda o scheduler <strong>a seco</strong> — chama <code>buildSchedulerState</code> + loop <code>nextReady → markCompleted</code> até esvaziar, sem executar handlers. Só devolve a ordem em que os nós <em>iriam</em> rodar. Usado pra popular <code>allNodesIds</code> no flux.service pra debug/UI.
+        <strong>Propósito.</strong> Roda o scheduler a seco. Chama <code>buildSchedulerState</code> e o loop <code>nextReady → markCompleted</code> até esvaziar, sem executar handlers. Devolve a ordem em que os nós iriam rodar. Usado para popular <code>allNodesIds</code> no <code>flux.service</code> para debug/UI.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> é um <em>ensaio geral</em> do agente sem ninguém no palco. Ela chama tudo que a D montou e simula o loop: pega o próximo nó pronto, "marca como completo" (sem executar de verdade, sem gastar token, sem chamar API), pega o próximo, e assim por diante até acabar. O que sai é só a <strong>lista ordenada dos IDs</strong> na sequência em que iriam rodar — usada em <code>allNodesIds</code> pra debug, previews e alguns asserts. Cuidado com uma pegadinha: como ela nunca chama <code>completeCondition</code> nem <code>markDead</code>, o ensaio assume que <em>todos</em> os branches são tomados — então a lista é o "cenário máximo", não necessariamente o que vai acontecer num run real com condições.
+        <strong>Em resumo.</strong> É um ensaio do agente sem ninguém no palco. Chama tudo o que a D montou e simula o loop. Pega o próximo nó pronto. Marca como completo (sem executar de verdade, sem gastar token, sem chamar API). Pega o próximo. E assim por diante até acabar. O resultado é a lista ordenada dos IDs na sequência em que iriam rodar. Usada em <code>allNodesIds</code> para debug, previews e alguns asserts. Atenção. A função nunca chama <code>completeCondition</code> nem <code>markDead</code>. O ensaio assume que todos os branches são tomados. A lista é o cenário máximo, não necessariamente o que vai acontecer em uma execução real com condições.
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
@@ -717,7 +717,7 @@
             <div class="box-title">Uso em flux.service.ts</div>
             <div class="box-desc">
               <code>allNodesIds = planOrder(newFlows, edges, flowGlobalEdge?.source)</code>
-              <br><br>Consumido em asserts e por endpoints de debug/preview.
+              <br><br>Consumido em asserts e por endpoints de debug e preview.
             </div>
             <div class="box-file">flux.service.ts:3141</div>
           </div>
@@ -725,15 +725,15 @@
         <div class="fn-asides">
           <div class="aside warn">
             <div class="aside-title">⚠️ Não considera conditions</div>
-            <code>planOrder</code> só chama <code>markCompleted</code> — nunca <code>completeCondition</code> ou <code>markDead</code>. Ou seja: assume que <strong>todo</strong> branch é tomado. Ordem gerada é a <em>hipótese máxima</em>, não o que vai rodar de verdade num run com condições.
+            <code>planOrder</code> só chama <code>markCompleted</code>. Nunca <code>completeCondition</code> ou <code>markDead</code>. Assume que todo branch é tomado. A ordem gerada é a hipótese máxima, não o que vai rodar em uma execução real com condições.
           </div>
           <div class="aside info">
             <div class="aside-title">🎯 Custo</div>
-            É basicamente o dobro do trabalho do build — chama <code>buildSchedulerState</code> de novo e depois faz uma passada topológica. Rodado a cada run. Poderia ser cacheado por (flowId, version) já que é determinístico só a partir de nodes+edges, mas hoje não é.
+            Basicamente o dobro do trabalho do build. Chama <code>buildSchedulerState</code> de novo e faz uma passada topológica. Executado a cada execução. Poderia ser cacheado por (<code>flowId</code>, <code>version</code>), já que é determinístico só a partir de <code>nodes</code> e <code>edges</code>. Hoje não é.
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 <code>buildSchedulerState</code> é chamado 2 vezes no run</div>
-            1x aqui pra <code>schedState</code> (flux.service.ts:3136) e 1x dentro de <code>planOrder</code> pra <code>allNodesIds</code>. Poderia reusar o mesmo state, mas requer <code>markCompleted</code> ser não-destrutivo (não é).
+            <div class="aside-title">🔧 <code>buildSchedulerState</code> é chamado 2 vezes na execução</div>
+            Uma vez aqui para <code>schedState</code> (<code>flux.service.ts:3136</code>) e outra dentro de <code>planOrder</code> para <code>allNodesIds</code>. Poderia reusar o mesmo state, mas exige que <code>markCompleted</code> seja não destrutivo. Não é.
           </div>
         </div>
       </div>
@@ -741,20 +741,20 @@
   </div>
 
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo — o que sai de 2.1:</strong>
-    <br>• <code>schedState: SchedulerState</code> — mutável, consumido pelo loop da Fase 3
-    <br>• <code>allNodesIds: string[]</code> — ordem topológica pra debug/UI
-    <br>• Zero I/O; puro CPU; ~O(V+E) na maioria dos casos
-    <br>• Nós fora do <code>reachable</code> ficam invisíveis pro run (nunca executados)
+    <strong>Resumo — o que sai de 2.1.</strong>
+    <br>• <code>schedState: SchedulerState</code>. Mutável. Consumido pelo loop da Fase 3.
+    <br>• <code>allNodesIds: string[]</code>. Ordem topológica para debug/UI.
+    <br>• Zero I/O. Puro CPU. Complexidade ~O(V+E) na maioria dos casos.
+    <br>• Nós fora do <code>reachable</code> ficam invisíveis para a execução. Nunca executados.
   </div>
 
   <div class="note">
-    <strong>Observações para migração:</strong>
-    <br>• <strong>Essencial e código puro</strong> — é o menor risco de migrar. Pode virar biblioteca compartilhada backend/worker com zero mudança semântica.
-    <br>• Worker <em>não</em> precisa rodar scheduler hoje (cada activity é um nó isolado). Se algum dia o worker orquestrar sub-DAGs, esse mesmo módulo funciona.
-    <br>• Cachear <code>buildSchedulerState</code> por (flowId, versionId) elimina uma rodada por run. Custo trivial hoje mas cresce linear com nº nós.
-    <br>• Formalizar interface pública (só exporta <code>buildSchedulerState</code>/<code>nextReady</code>/<code>markCompleted</code>/<code>markDead</code>/<code>completeCondition</code>) antes de qualquer refactor — hoje é fácil alguém importar helper interno sem querer.
-    <br>• <strong>Adicionar tipo em cima de handles</strong>: as regex <code>outputHandle-[01]</code> e <code>conditionHandle-[TF]\d+</code> são strings mágicas — enum tipado no front que gera esses handles seria mais seguro.
+    <strong>Observações para migração.</strong>
+    <br>• Essencial e código puro. Menor risco de migrar. Pode virar biblioteca compartilhada entre backend e worker sem mudança semântica.
+    <br>• O worker não precisa rodar scheduler hoje. Cada activity é um nó isolado. Se um dia o worker orquestrar sub-DAGs, o mesmo módulo funciona.
+    <br>• Cachear <code>buildSchedulerState</code> por (<code>flowId</code>, <code>versionId</code>) elimina uma rodada por execução. Custo trivial hoje. Cresce linear com o número de nós.
+    <br>• Formalize a interface pública (só exporte <code>buildSchedulerState</code>, <code>nextReady</code>, <code>markCompleted</code>, <code>markDead</code> e <code>completeCondition</code>) antes de qualquer refactor. Hoje é fácil alguém importar um helper interno sem querer.
+    <br>• Adicionar tipagem em cima de handles. As regex <code>outputHandle-[01]</code> e <code>conditionHandle-[TF]\d+</code> são strings mágicas. Um enum tipado no front que gera esses handles seria mais seguro.
   </div>
 
   <div class="page-footer-nav">

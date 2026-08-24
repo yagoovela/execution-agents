@@ -585,23 +585,23 @@
     <h1>Passo 1.6 — Carregamento de contexto de chat</h1>
   </div>
   <div class="page-sub">
-    Bloco em <code>flux.service.ts:2485-2618</code>. Determina a <strong>sessão de chat ativa</strong>, carrega o <em>histórico</em> daquela sessão pra cada <code>fluxObject</code> em modo chat, e injeta essas entries + o <code>selectedSession</code> no <code>node.data</code> em memória dos <code>fluxObject</code> e <code>nodesBox</code>. Só executa se houver sessionId (do request ou fallback pra <code>'default'</code>).
+    Bloco em <code>flux.service.ts:2485-2618</code>. Determina a <strong>sessão de chat ativa</strong>. Carrega o histórico daquela sessão para cada <code>fluxObject</code> em modo chat. Injeta essas entries e o <code>selectedSession</code> no <code>node.data</code> em memória dos <code>fluxObject</code> e <code>nodesBox</code>. Só executa quando há sessionId (do request ou fallback para <code>'default'</code>).
   </div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
     <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
     <ul>
-      <li><strong>Decide se este run tem conversa:</strong> pega <code>sessionId</code> do request; se não veio mas o flow tem algum <code>fluxObject</code> com <code>chat=true</code>, cai no fallback <code>'default'</code>; se nada disso, string vazia e o passo inteiro é pulado — flows batch/api sem chat não pagam custo.</li>
-      <li><strong>Carrega o histórico da tabela nova:</strong> pra cada <code>fluxObject</code> em modo chat/session, faz um SELECT em <code>session_state_entries</code> filtrando por <code>(flowId, nodeId, sessionKey, ownerUserId)</code> — sequencial, um await por nó — e joga tudo num <code>Map</code> local temporário.</li>
-      <li><strong>Merge no fluxObject (via spread imutável):</strong> injeta <code>entries</code>, <code>userSessionsChat</code>, <code>selectedChat</code> no <code>node.data</code>, reconstruindo o shape antigo que os handlers do loop já sabem ler. Elege um <em>único porta-voz</em> — só o primeiro <code>fluxObject</code> com <code>chat=true</code> mantém a flag ligada, os demais viram só storage silencioso.</li>
-      <li><strong>Merge no nodesBox (mais burro):</strong> pra todo <code>nodesBox</code> do flow, seta <code>selectedSession = sessionIdForChat</code> e faz upsert no array <code>data.sessions</code> — sem ler tabela nova, o storage dele ainda vive no JSONB legado. Migração parcial: <code>fluxObject</code> já foi, <code>nodesBox</code> não.</li>
-      <li><strong>Saída:</strong> <code>updatedFlows</code> = array de nodes com fluxObject hidratado e nodesBox apontando pra sessão correta, tudo em memória e pronto pro loop principal (Fase 3). O <code>Map</code> temporário é descartado.</li>
+      <li><strong>Decide se esta execução tem conversa.</strong> Consulta o <code>sessionId</code> do request. Se não veio e o flow tem algum <code>fluxObject</code> com <code>chat=true</code>, aplica o fallback <code>'default'</code>. Sem nada disso, resulta em string vazia e o passo inteiro é pulado. Flows batch/api sem chat não pagam custo.</li>
+      <li><strong>Carrega o histórico da tabela nova.</strong> Para cada <code>fluxObject</code> em modo chat/session, executa um SELECT em <code>session_state_entries</code>. O filtro usa <code>(flowId, nodeId, sessionKey, ownerUserId)</code>. O loop é sequencial, um await por nó. O resultado vai para um <code>Map</code> local temporário.</li>
+      <li><strong>Merge no fluxObject via spread imutável.</strong> Injeta <code>entries</code>, <code>userSessionsChat</code> e <code>selectedChat</code> no <code>node.data</code>. Reconstrói o shape antigo que os handlers do loop já sabem ler. Elege um único porta-voz. Apenas o primeiro <code>fluxObject</code> com <code>chat=true</code> mantém a flag ligada. Os demais viram storage silencioso.</li>
+      <li><strong>Merge no nodesBox, mais simples.</strong> Para todo <code>nodesBox</code> do flow, define <code>selectedSession = sessionIdForChat</code> e faz upsert no array <code>data.sessions</code>. Não lê a tabela nova. O storage dele ainda vive no JSONB legado. A migração é parcial. O <code>fluxObject</code> já migrou. O <code>nodesBox</code> ainda não.</li>
+      <li><strong>Saída.</strong> <code>updatedFlows</code> é um array de nodes com fluxObject hidratado e nodesBox apontando para a sessão correta. Fica em memória e pronto para o loop principal (Fase 3). O <code>Map</code> temporário é descartado.</li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto:</strong> desde uma migração recente, <code>chat history</code> e <code>object sessions</code> não vivem mais em JSONB mutável (<code>flows_nodes.data.userSessionsChat</code>, <code>flow_objects.sessions</code>) — passaram pra tabela <code>session_state_entries</code>, append-only, isolada por <code>ownerUserId</code>. Este passo é o <strong>hidratador</strong>: lê essas rows e reconstrói o shape antigo dentro do <code>updatedFlows</code> em memória, pra que os handlers do loop principal (Fase 3) continuem funcionando sem reescrita.
+    <strong>Contexto.</strong> Uma migração recente moveu <code>chat history</code> e <code>object sessions</code>. Não vivem mais em JSONB mutável (<code>flows_nodes.data.userSessionsChat</code>, <code>flow_objects.sessions</code>). Passaram para a tabela <code>session_state_entries</code>, append-only, isolada por <code>ownerUserId</code>. Este passo é o hidratador. Lê essas linhas e reconstrói o shape antigo dentro do <code>updatedFlows</code> em memória. Os handlers do loop principal (Fase 3) continuam funcionando sem reescrita.
   </div>
 
   <!-- Overview chain -->
@@ -617,7 +617,7 @@
       <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>Loop 2: merge nodesBox</a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado final: <code>updatedFlows</code> (array de nós em memória) fica com <code>entries</code>, <code>userSessionsChat</code>, <code>selectedChat</code>, <code>selectedSession</code> e <code>sessions[]</code> preenchidos nos <code>fluxObject</code>/<code>nodesBox</code> corretos, prontos pro loop de execução.
+      Resultado final. <code>updatedFlows</code> (array de nós em memória) fica com <code>entries</code>, <code>userSessionsChat</code>, <code>selectedChat</code>, <code>selectedSession</code> e <code>sessions[]</code> preenchidos nos <code>fluxObject</code> e <code>nodesBox</code> correspondentes. Ficam prontos para o loop de execução.
     </div>
   </div>
 
@@ -637,10 +637,10 @@
         const sessionIdForChat = sessionId || (hasFluxObjectChat ? 'default' : '');
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Decidir se o run tem uma sessão de chat associada. Se veio <code>sessionId</code> no request, usa; senão, se algum <code>fluxObject</code> declara <code>chat=true</code>, cai no fallback <code>'default'</code>. String vazia = pula todo o bloco (nenhum chat).
+        <strong>Propósito.</strong> Decide se a execução tem uma sessão de chat associada. Se veio <code>sessionId</code> no request, usa esse valor. Senão, quando algum <code>fluxObject</code> declara <code>chat=true</code>, aplica o fallback <code>'default'</code>. String vazia pula todo o bloco (nenhum chat).
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> pense nessa etapa como o <em>vigia da porta do chat</em> — antes de gastar qualquer query, ele decide se este run tem conversa em andamento ou não. Ele responde três perguntas em ordem: <em>"o request trouxe um sessionId?"</em> — se sim, usa esse; <em>"não? então esse flow tem algum nó marcado como chat interativo?"</em> — se sim, entra na sessão <code>'default'</code>; <em>"nada disso?"</em> — então devolve string vazia e o bloco inteiro (queries de histórico, merges nos nós) é <strong>pulado</strong>. Também já anota qual é o primeiro <code>fluxObject</code> com <code>chat=true</code>, porque mais adiante só <strong>um</strong> nó pode ficar como "o cara do chat" — os demais viram só storage silencioso.
+        <strong>Em resumo.</strong> Esta etapa é o vigia da porta do chat. Antes de disparar qualquer query, decide se a execução tem conversa em andamento. Responde três perguntas em ordem. Primeira. O request trouxe um <code>sessionId</code>? Se sim, usa esse valor. Segunda. Se não, o flow tem algum nó marcado como chat interativo? Se sim, entra na sessão <code>'default'</code>. Terceira. Nenhuma das anteriores? Devolve string vazia e o bloco inteiro é pulado. Isso inclui queries de histórico e merges nos nós. A etapa também localiza o primeiro <code>fluxObject</code> com <code>chat=true</code>. Adiante, só um nó pode ficar como responsável pelo chat. Os demais viram storage silencioso.
       </div>
 
       <div class="fn-body-cols">
@@ -649,7 +649,7 @@
             <div class="box-title"><span class="badge step">A1</span> Detecta se o flow tem chat</div>
             <div class="box-desc">
               <code>hasFluxObjectChat = updatedFlows.some(n =&gt; n.type === 'fluxObject' &amp;&amp; n.data?.chat === true)</code>
-              <br><br>Checa <strong>apenas</strong> <code>chat === true</code>, ignorando <code>sessionEnabled</code>.
+              <br><br>Verifica apenas <code>chat === true</code>. Ignora <code>sessionEnabled</code>.
             </div>
             <div class="box-file">flux.service.ts:2485-2487</div>
           </div>
@@ -679,7 +679,7 @@
           <div class="box decision">
             <div class="box-title"><span class="badge step">A2</span> Gate: <code>if (sessionIdForChat) { ... }</code></div>
             <div class="box-desc">
-              String vazia é falsy → pula todo o bloco 2491-2618 e vai direto pro 1.7 (Google OAuth). Nada é hidratado; nenhuma query é feita.
+              String vazia é falsy. Pula todo o bloco 2491-2618. Vai direto para o 1.7 (Google OAuth). Nada é hidratado. Nenhuma query é executada.
             </div>
             <div class="box-file">flux.service.ts:2491</div>
           </div>
@@ -689,7 +689,7 @@
             <div class="box-title"><span class="badge step">A3</span> Localiza <code>firstFluxObjectWithChat</code></div>
             <div class="box-desc">
               <code>updatedFlows.find(n =&gt; n.type === 'fluxObject' &amp;&amp; n.data?.chat === true)</code>
-              <br><br>Usado depois em (C) pra decidir qual é o <em>único</em> nó que fica com <code>chat=true</code> após o merge.
+              <br><br>Usado depois em (C) para decidir qual é o único nó que fica com <code>chat=true</code> após o merge.
             </div>
             <div class="box-file">flux.service.ts:2492-2494</div>
           </div>
@@ -698,20 +698,20 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Por que <code>'default'</code>?</div>
-            É o <code>DEFAULT_SESSION_KEY</code> exposto em <code>session-state.service.ts:32</code>. Se o flow tem chat mas o cliente não passou <code>sessionId</code>, todas as runs compartilham a sessão <code>'default'</code> (histórico único global daquele nó, isolado por <code>ownerUserId</code>).
+            É o <code>DEFAULT_SESSION_KEY</code> exposto em <code>session-state.service.ts:32</code>. Se o flow tem chat mas o cliente não passou <code>sessionId</code>, todas as execuções compartilham a sessão <code>'default'</code>. O histórico é único e global daquele nó, isolado por <code>ownerUserId</code>.
           </div>
 
           <div class="aside warn">
             <div class="aside-title">⚠️ Colisão em <code>'default'</code></div>
-            Dois runs concorrentes do mesmo user sem <code>sessionId</code> vão ambos ler/escrever a sessão <code>'default'</code>. Como <code>appendEntries</code> é append-only, o histórico vira uma <strong>concatenação intercalada</strong> das duas conversas — sem corromper (append é seguro), mas semanticamente confuso.
+            Duas execuções concorrentes do mesmo usuário sem <code>sessionId</code> vão ambas ler e escrever na sessão <code>'default'</code>. O <code>appendEntries</code> é append-only. O histórico vira uma concatenação intercalada das duas conversas. Não há corrupção, o append é seguro. Fica semanticamente confuso.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 <code>chat</code> vs <code>sessionEnabled</code></div>
-            No <code>fluxObject</code> existem 2 flags:
-            <br>• <code>chat === true</code> → interpreta como chat interativo (mensagens user/assistant)
-            <br>• <code>sessionEnabled === true</code> → só quer persistir turno-a-turno, sem UI de chat
-            <br><br>A detecção do gate (<code>hasFluxObjectChat</code>) considera <strong>apenas</strong> <code>chat === true</code>. Se todos os <code>fluxObject</code> só tiverem <code>sessionEnabled</code>, o gate não abre com <code>'default'</code> — precisa vir <code>sessionId</code> explícito.
+            O <code>fluxObject</code> tem duas flags.
+            <br>• <code>chat === true</code>. Interpreta como chat interativo (mensagens user/assistant).
+            <br>• <code>sessionEnabled === true</code>. Persiste turno a turno, sem UI de chat.
+            <br><br>A detecção do gate (<code>hasFluxObjectChat</code>) considera apenas <code>chat === true</code>. Se todos os <code>fluxObject</code> só tiverem <code>sessionEnabled</code>, o gate não abre com <code>'default'</code>. Precisa vir <code>sessionId</code> explícito.
           </div>
         </div>
       </div>
@@ -734,10 +734,10 @@
         for (const chatNode of updatedFlows) { if (fluxObject && (chat || sessionEnabled)) chatEntriesByNodeId.set(id, await readContents(...)) }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Para cada <code>fluxObject</code> em modo chat ou session, buscar todas as entries persistidas em <code>session_state_entries</code> pra aquela combinação <em>(flowId, nodeId, sessionKey, ownerUserId)</em>. Preenche um <code>Map&lt;nodeId, content[]&gt;</code> pra ser consumido no loop de merge (C).
+        <strong>Propósito.</strong> Para cada <code>fluxObject</code> em modo chat ou session, busca todas as entries persistidas em <code>session_state_entries</code> para a combinação (flowId, nodeId, sessionKey, ownerUserId). Preenche um <code>Map&lt;nodeId, content[]&gt;</code>. O map é consumido no loop de merge (C).
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> aqui o backend faz o papel de <em>carteiro</em> — para cada <code>fluxObject</code> que participa de chat ou sessão, ele vai até a tabela nova <code>session_state_entries</code>, entrega o "endereço" (<code>flowId + nodeId + sessionKey + ownerUserId</code>) e recolhe todas as mensagens antigas ordenadas por <code>seq</code>. O resultado vai parar num <code>Map</code> local (chave = id do nó, valor = array de mensagens) que serve só como <em>rascunho</em> pro próximo passo — depois do merge, esse map é jogado fora. Detalhe importante: é um loop <strong>sequencial</strong> (um <code>await</code> por vez), então flows com muitos nós de chat somam SELECTs em série no início da execução.
+        <strong>Em resumo.</strong> O backend faz o papel de carteiro. Para cada <code>fluxObject</code> que participa de chat ou sessão, consulta a tabela nova <code>session_state_entries</code>. Passa o endereço (<code>flowId</code>, <code>nodeId</code>, <code>sessionKey</code>, <code>ownerUserId</code>). Recolhe todas as mensagens ordenadas por <code>seq</code>. O resultado vai para um <code>Map</code> local. A chave é o id do nó. O valor é o array de mensagens. Esse map serve apenas como rascunho para o próximo passo. Depois do merge, é descartado. O loop é sequencial. Cada <code>await</code> aguarda o anterior. Flows com muitos nós de chat somam SELECTs em série no início da execução.
       </div>
 
       <div class="fn-body-cols">
@@ -746,7 +746,7 @@
             <div class="box-title"><span class="badge step">B1</span> Cria <code>Map&lt;nodeId, content[]&gt;</code></div>
             <div class="box-desc">
               <code>const chatEntriesByNodeId = new Map&lt;string, Record&lt;string, any&gt;[]&gt;()</code>
-              <br><br>Acumulador local — jogado fora depois do merge.
+              <br><br>Acumulador local. Descartado após o merge.
             </div>
             <div class="box-file">flux.service.ts:2496</div>
           </div>
@@ -756,7 +756,7 @@
             <div class="box-title"><span class="badge step">B2</span> Filtro por node</div>
             <div class="box-desc">
               <code>chatNode.type === 'fluxObject' &amp;&amp; (data.chat === true || data.sessionEnabled === true)</code>
-              <br><br>Só <code>fluxObject</code> entra no loop. Nesse <code>chatModeNode</code>, ambas as flags disparam a leitura (diferente do gate em A1).
+              <br><br>Só <code>fluxObject</code> entra no loop. Nesse <code>chatModeNode</code>, ambas as flags disparam a leitura. É diferente do gate em A1.
             </div>
             <div class="box-file">flux.service.ts:2497-2501</div>
           </div>
@@ -781,7 +781,7 @@
               <div class="box-title"><span class="badge step">B3b</span> readEntries → SELECT em <code>session_state_entries</code></div>
               <div class="box-desc">
                 <code>find({ where: { scopeType, scopeId, sessionKey, ownerUserId? }, order: { seq: 'ASC' } })</code>
-                <br><br>Usa o índice <code>IDX_SSE_SCOPE_SESSION</code> (scopeType, scopeId, sessionKey, ownerUserId, seq).
+                <br><br>Usa o índice <code>IDX_SSE_SCOPE_SESSION</code> (<code>scopeType</code>, <code>scopeId</code>, <code>sessionKey</code>, <code>ownerUserId</code>, <code>seq</code>).
               </div>
               <div class="box-file">session-state.service.ts:75-88</div>
             </div>
@@ -789,7 +789,7 @@
             <div class="box backend">
               <div class="box-title"><span class="badge step">B3c</span> Projeta <code>row.content</code></div>
               <div class="box-desc">
-                <code>rows.map(r =&gt; r.content).filter(Boolean)</code> — retorna array de payloads JSON (não a row inteira).
+                <code>rows.map(r =&gt; r.content).filter(Boolean)</code>. Retorna array de payloads JSON. Não retorna a linha inteira.
               </div>
               <div class="box-file">session-state.service.ts:93-95</div>
             </div>
@@ -799,7 +799,7 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">B4</span> <code>chatEntriesByNodeId.set(chatNode.id, entries)</code></div>
             <div class="box-desc">
-              Uma entry no map por node. Se um node não tem histórico, ainda assim tem uma entrada no map com <code>[]</code>.
+              Uma entry no map por nó. Um nó sem histórico ainda tem uma entrada no map com <code>[]</code>.
             </div>
             <div class="box-file">flux.service.ts:2502-2513</div>
           </div>
@@ -808,30 +808,30 @@
         <div class="fn-asides">
           <div class="aside warn">
             <div class="aside-title">⚠️ N+1 sequencial (não Promise.all)</div>
-            É um <code>for...of</code> com <code>await</code> dentro — cada <code>readContents</code> aguarda a anterior. Um flow com 5 <code>fluxObject</code> em chat = 5 SELECTs sequenciais no início de cada run.
-            <br><br>Impacto real é baixo (query é indexada e cada uma retorna poucas rows), mas trivial de virar <code>Promise.all(...)</code> se apertar.
+            É um <code>for...of</code> com <code>await</code> interno. Cada <code>readContents</code> aguarda o anterior. Um flow com 5 <code>fluxObject</code> em chat gera 5 SELECTs sequenciais no início de cada execução.
+            <br><br>O impacto real é baixo. A query é indexada e cada uma retorna poucas linhas. A conversão para <code>Promise.all(...)</code> é trivial se necessário.
           </div>
 
           <div class="aside info">
             <div class="aside-title">📊 Tabela <code>session_state_entries</code></div>
-            Append-only, uma row por turno/entry:
+            Append-only. Uma linha por turno/entry.
             <table class="field-table">
               <tr><th>Campo</th><th>Descrição</th></tr>
               <tr><td>scopeType</td><td>'chat' | 'object' | 'memory' | 'counter'</td></tr>
               <tr><td>scopeId</td><td>chat/memory: <code>${flowId}:${nodeId}</code></td></tr>
               <tr><td>sessionKey</td><td>selectedChat / sessionId / 'default'</td></tr>
-              <tr><td>ownerUserId</td><td>Isolação — user autenticado</td></tr>
-              <tr><td>seq</td><td>bigint auto-increment (ordem global)</td></tr>
+              <tr><td>ownerUserId</td><td>Isolamento. Usuário autenticado.</td></tr>
+              <tr><td>seq</td><td>bigint auto-increment. Ordem global.</td></tr>
               <tr><td>role</td><td>'user' | 'assistant' (chat) ou 'counter'</td></tr>
-              <tr><td>content</td><td>JSONB — payload do turno</td></tr>
-              <tr><td>execId</td><td>UUID do run que gerou (rastreabilidade)</td></tr>
+              <tr><td>content</td><td>JSONB. Payload do turno.</td></tr>
+              <tr><td>execId</td><td>UUID da execução que gerou. Rastreabilidade.</td></tr>
             </table>
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 <code>buildNodeScopeId</code></div>
-            Puro string concat: <code>`${flowId}:${nodeId}`</code>. O <code>ownerUserId</code> <strong>não</strong> entra no scopeId — vai no <code>WHERE</code> separado, permitindo indexar por (flow,node) e filtrar por dono depois.
-            <br><br>Consequência: se <code>ownerUserId</code> for undefined (bug em <code>user?.id</code>), a query traz <strong>todas as entries daquele scope de todos os usuários</strong> — porque o WHERE nem inclui a coluna. Footgun a monitorar.
+            Concatenação de string. <code>`${flowId}:${nodeId}`</code>. O <code>ownerUserId</code> não entra no scopeId. Vai no <code>WHERE</code> separado. Permite indexar por (<code>flow</code>, <code>node</code>) e filtrar por dono depois.
+            <br><br>Consequência. Se <code>ownerUserId</code> for undefined (bug em <code>user?.id</code>), a query traz todas as entries daquele scope de todos os usuários. O WHERE nem inclui a coluna. Footgun a monitorar.
           </div>
         </div>
       </div>
@@ -854,10 +854,10 @@
         updatedFlows = updatedFlows.map(node =&gt; { if (fluxObject && isChatMode) return { ...node, data: { ...data, entries, userSessionsChat, ... } } })
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Injetar as entries lidas de <code>session_state_entries</code> dentro do <code>node.data</code> em memória de cada <code>fluxObject</code>, reconstruindo o shape antigo (<code>entries</code>, <code>userSessionsChat</code>, <code>selectedChat</code>). Só <strong>um</strong> nó por run acaba com <code>chat=true</code> — os demais fluxObject com <code>chat=true</code> ficam com <code>chat=false</code>.
+        <strong>Propósito.</strong> Injeta as entries lidas de <code>session_state_entries</code> dentro do <code>node.data</code> em memória de cada <code>fluxObject</code>. Reconstrói o shape antigo (<code>entries</code>, <code>userSessionsChat</code>, <code>selectedChat</code>). Só um nó por execução termina com <code>chat=true</code>. Os demais <code>fluxObject</code> com <code>chat=true</code> ficam com <code>chat=false</code>.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> aqui rola o papel de <em>tradutor</em> — o histórico que acabou de vir da tabela nova precisa ser encaixado dentro do <code>node.data</code> no formato antigo que os handlers do loop já sabem ler (<code>entries</code>, <code>userSessionsChat</code>, <code>selectedChat</code>). Para cada <code>fluxObject</code> em modo chat/session, o merge decide: se aquela sessão já existia no array antigo, ele substitui as entries pelas da tabela nova (com um <em>fallback esquisito</em> para o JSONB antigo se o storage novo estiver vazio); se não existia, cria uma nova entrada. Também elege <strong>um único "porta-voz"</strong> — o primeiro nó com <code>chat=true</code> continua sendo o dono do chat interativo, e os outros são rebaixados a "só storage" pra não brigarem pelo input do usuário. Tudo feito por spread imutável, sem alterar o objeto original do <code>getFlow</code>.
+        <strong>Em resumo.</strong> Esta etapa é o tradutor. O histórico vindo da tabela nova precisa ser encaixado dentro do <code>node.data</code> no formato antigo que os handlers do loop já sabem ler (<code>entries</code>, <code>userSessionsChat</code>, <code>selectedChat</code>). Para cada <code>fluxObject</code> em modo chat/session, o merge decide o encaixe. Se aquela sessão já existia no array antigo, substitui as entries pelas da tabela nova. Existe um fallback para o JSONB antigo quando o storage novo está vazio. Se a sessão não existia, cria uma nova entrada. A etapa também elege um único porta-voz. O primeiro nó com <code>chat=true</code> continua sendo o dono do chat interativo. Os outros são rebaixados a storage. Isso evita disputa pela entrada do usuário. Tudo é feito por spread imutável. O objeto original do <code>getFlow</code> não é alterado.
       </div>
 
       <div class="fn-body-cols">
@@ -865,7 +865,7 @@
           <div class="box decision">
             <div class="box-title"><span class="badge step">C1</span> Filtro: <code>fluxObject &amp;&amp; (chat || sessionEnabled)</code></div>
             <div class="box-desc">
-              Mesmo filtro que B2 — só fluxObject em modo chat/session entra na transformação. Outros nodes seguem no <code>map</code> pro branch (D).
+              Mesmo filtro do B2. Só <code>fluxObject</code> em modo chat/session entra na transformação. Outros nós seguem no <code>map</code> para o branch (D).
             </div>
             <div class="box-file">flux.service.ts:2518-2520</div>
           </div>
@@ -887,7 +887,7 @@
             <div class="box-title"><span class="badge step">C3</span> Busca a sessão no <code>userSessionsChat</code> antigo</div>
             <div class="box-desc">
               <code>userSessionsChat.find(s =&gt; s.id === sessionIdForChat)</code>
-              <br><br><code>userSessionsChat</code> é o array de sessões que já existia em <code>node.data</code> (JSONB do flow). Objetivo: decidir se substitui uma entry existente ou anexa uma nova.
+              <br><br><code>userSessionsChat</code> é o array de sessões que já existia em <code>node.data</code> (JSONB do flow). O objetivo é decidir se substitui uma entry existente ou anexa uma nova.
             </div>
             <div class="box-file">flux.service.ts:2527-2531</div>
           </div>
@@ -940,25 +940,25 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Por que só 1 fluxObject fica com <code>chat=true</code>?</div>
-            O chat interativo (com UI e roteamento de mensagens do socket) só faz sentido pra <strong>um</strong> nó. Os demais <code>fluxObject</code> com <code>chat=true</code> viram apenas storage de sessão (<code>sessionEnabled=true</code>, mas <code>chat=false</code>).
-            <br><br>Isso evita que 2 nós disputem o input do usuário.
+            O chat interativo (com UI e roteamento de mensagens do socket) só faz sentido para um nó. Os demais <code>fluxObject</code> com <code>chat=true</code> viram storage de sessão. Ficam com <code>sessionEnabled=true</code> e <code>chat=false</code>.
+            <br><br>Isso evita que dois nós disputem a entrada do usuário.
           </div>
 
           <div class="aside warn">
             <div class="aside-title">⚠️ Fallback perigoso: usa entries do JSONB</div>
-            Se <code>storedEntries.length === 0</code> mas <code>findUserSession</code> existe, o merge <strong>mantém as entries antigas do JSONB</strong> (<code>findUserSession.entries</code>) — em vez de virar array vazio.
-            <br><br>Isso é rescaldo do modelo antigo (antes da migração pra <code>session_state_entries</code>). Um flow com dados residuais no <code>userSessionsChat</code> do JSONB continua enxergando esse histórico legado indefinidamente, até alguém escrever no novo storage.
+            Se <code>storedEntries.length === 0</code> mas <code>findUserSession</code> existe, o merge mantém as entries antigas do JSONB (<code>findUserSession.entries</code>). Não vira array vazio.
+            <br><br>Isso é resquício do modelo antigo, anterior à migração para <code>session_state_entries</code>. Um flow com dados residuais no <code>userSessionsChat</code> do JSONB continua enxergando esse histórico legado indefinidamente. Só muda quando alguém escreve no novo storage.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 Shape do <code>userSessionsChat[i]</code></div>
             <code>{ id: string, name: string, entries: Record&lt;string,any&gt;[] }</code>
-            <br><br>Novo item criado tem <code>name</code> = <code>'Primary'</code> se <code>sessionIdForChat === 'default'</code>, senão o próprio <code>sessionIdForChat</code>.
+            <br><br>O novo item criado tem <code>name</code> igual a <code>'Primary'</code> quando <code>sessionIdForChat === 'default'</code>. Caso contrário, usa o próprio <code>sessionIdForChat</code>.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 Mutação imutável</div>
-            Tudo via spread (<code>...node</code>, <code>...data</code>, <code>[...userSessionsChat, novo]</code>) — <code>updatedFlows</code> vira nova referência a cada map, mas as sub-referências antigas não são tocadas. Nenhum risco de vazar mutação pro <code>getFlow.nodes</code> original.
+            Tudo passa por spread (<code>...node</code>, <code>...data</code>, <code>[...userSessionsChat, novo]</code>). O <code>updatedFlows</code> vira nova referência a cada map. As sub-referências antigas não são tocadas. Nenhum risco de vazar mutação para o <code>getFlow.nodes</code> original.
           </div>
         </div>
       </div>
@@ -981,10 +981,10 @@
         if (node.type === 'nodesBox') return { ...node, data: { ...data, selectedSession: sessionIdForChat, sessions: [...] } }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Todo <code>nodesBox</code> recebe o <code>sessionIdForChat</code> como <code>selectedSession</code>, e faz upsert em <code>data.sessions[]</code>. Diferente do fluxObject, aqui não há leitura de <code>session_state_entries</code> — só o ponteiro <code>selectedSession</code> é ajustado.
+        <strong>Propósito.</strong> Todo <code>nodesBox</code> recebe o <code>sessionIdForChat</code> como <code>selectedSession</code>. Faz upsert em <code>data.sessions[]</code>. Diferente do <code>fluxObject</code>, aqui não há leitura de <code>session_state_entries</code>. Só o ponteiro <code>selectedSession</code> é ajustado.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> se o <code>fluxObject</code> teve tradutor, o <code>nodesBox</code> tem um <em>cadastrador de gaveta</em> muito mais simples. Para todo <code>nodesBox</code> do flow (sem filtrar por chat/session), ele aponta um "cursor" chamado <code>selectedSession</code> pro id da sessão atual e, se essa gaveta ainda não existir no array <code>data.sessions</code>, cria uma vazia (<code>content: []</code>). É <strong>só isso</strong> — nenhum SELECT, nenhuma leitura de tabela nova. O storage dos <code>nodesBox</code> continua vivendo dentro do JSONB gordo de <code>flows_nodes.data</code>, migração pra <code>session_state_entries</code> ainda pendente. E cuidado com a nomenclatura: aqui a lista se chama <code>content</code>, no fluxObject se chama <code>entries</code> — mesma ideia, schemas diferentes.
+        <strong>Em resumo.</strong> Se o <code>fluxObject</code> teve tradutor, o <code>nodesBox</code> tem um cadastrador simples. Para todo <code>nodesBox</code> do flow (sem filtrar por chat/session), aponta um cursor chamado <code>selectedSession</code> para o id da sessão atual. Se essa gaveta ainda não existir no array <code>data.sessions</code>, cria uma vazia (<code>content: []</code>). Nada além disso. Nenhum SELECT. Nenhuma leitura de tabela nova. O storage dos <code>nodesBox</code> continua dentro do JSONB gordo de <code>flows_nodes.data</code>. A migração para <code>session_state_entries</code> ainda está pendente. Atenção à nomenclatura. Aqui a lista se chama <code>content</code>. No <code>fluxObject</code> se chama <code>entries</code>. Mesma ideia. Schemas diferentes.
       </div>
 
       <div class="fn-body-cols">
@@ -992,7 +992,7 @@
           <div class="box decision">
             <div class="box-title"><span class="badge step">D1</span> Filtro: <code>node.type === 'nodesBox'</code></div>
             <div class="box-desc">
-              Roda pra <strong>todo</strong> nodesBox — sem checar chat/sessionEnabled. Se o run tem <code>sessionIdForChat</code>, todo nodesBox é reconfigurado.
+              Roda para todo <code>nodesBox</code>. Não verifica chat/sessionEnabled. Se a execução tem <code>sessionIdForChat</code>, todo <code>nodesBox</code> é reconfigurado.
             </div>
             <div class="box-file">flux.service.ts:2580</div>
           </div>
@@ -1002,7 +1002,7 @@
             <div class="box-title"><span class="badge step">D2</span> Procura session existente</div>
             <div class="box-desc">
               <code>const findSession = sessions.find(s =&gt; s.id === sessionIdForChat)</code>
-              <br><br><code>sessions</code> aqui é o array embutido em <code>node.data.sessions</code> (JSONB legado do nodesBox — <em>não</em> a tabela session_state_entries).
+              <br><br><code>sessions</code> aqui é o array embutido em <code>node.data.sessions</code> (JSONB legado do <code>nodesBox</code>). Não é a tabela <code>session_state_entries</code>.
             </div>
             <div class="box-file">flux.service.ts:2581-2584</div>
           </div>
@@ -1045,23 +1045,23 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Por que atualiza todo nodesBox?</div>
-            <code>nodesBox</code> é storage de objects (chave-valor + sessions) que pode ser lido/escrito por qualquer nó do flow. Ao mudar o <code>sessionIdForChat</code>, todo nodesBox precisa apontar pra mesma "sessão" pra que o storage escrito por um nó seja o storage lido por outro dentro do mesmo run.
+            <code>nodesBox</code> é storage de objects (chave-valor com sessões). Qualquer nó do flow pode ler ou escrever. Ao mudar o <code>sessionIdForChat</code>, todo <code>nodesBox</code> precisa apontar para a mesma sessão. O storage escrito por um nó deve ser o mesmo lido por outro dentro da mesma execução.
           </div>
 
           <div class="aside warn">
             <div class="aside-title">⚠️ <code>content: []</code>, não <code>entries: []</code></div>
-            O shape do <code>nodesBox.sessions[i]</code> tem <code>content</code>, enquanto <code>fluxObject.userSessionsChat[i]</code> tem <code>entries</code>. Não confunda — são schemas diferentes por design, mesmo que carreguem a mesma ideia de "lista de coisas gravadas nesta sessão".
+            O shape do <code>nodesBox.sessions[i]</code> tem <code>content</code>. O <code>fluxObject.userSessionsChat[i]</code> tem <code>entries</code>. Não confunda. São schemas diferentes por design. Carregam a mesma ideia de lista de itens gravados na sessão.
           </div>
 
           <div class="aside warn">
             <div class="aside-title">⚠️ Não lê de <code>session_state_entries</code></div>
-            Diferente do fluxObject (que hidrata via <code>readContents</code>), o nodesBox <strong>não</strong> lê a tabela — usa só o array in-memory de <code>data.sessions</code>. Ou seja: o storage novo (session_state_entries) só cobre <code>fluxObject</code>. Se o handler do nodesBox depende do <code>content</code> antigo, ele lê JSONB. Migração incompleta.
-            <br><br>Ver <code>objects.service.ts</code> e handler em <code>flux.service.ts:3575</code> (nodesBox handler) pra confirmar como o handler faz o append.
+            Diferente do <code>fluxObject</code>, que hidrata via <code>readContents</code>, o <code>nodesBox</code> não lê a tabela. Usa só o array in-memory de <code>data.sessions</code>. O storage novo (<code>session_state_entries</code>) só cobre <code>fluxObject</code>. Se o handler do <code>nodesBox</code> depende do <code>content</code> antigo, lê JSONB. Migração incompleta.
+            <br><br>Ver <code>objects.service.ts</code> e handler em <code>flux.service.ts:3575</code> (<code>nodesBox</code> handler) para confirmar como o append acontece.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 <code>selectedSession</code> = ponteiro</div>
-            Como se fosse um <em>cursor</em> no array: o handler do nodesBox lê <code>sessions.find(s =&gt; s.id === selectedSession)</code> pra saber onde gravar/ler nesse run.
+            Funciona como um cursor no array. O handler do <code>nodesBox</code> executa <code>sessions.find(s =&gt; s.id === selectedSession)</code> para saber onde gravar e ler durante a execução.
           </div>
         </div>
       </div>
@@ -1070,21 +1070,21 @@
 
   <!-- SUMMARY -->
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo — o que sai de 1.6:</strong>
-    <br>• <code>sessionIdForChat</code> = string com a sessão de chat resolvida ('', <code>'default'</code>, ou <code>sessionId</code> do request)
-    <br>• <code>updatedFlows</code> = array de nodes com <code>fluxObject</code> hidratado (entries, userSessionsChat, selectedChat, chat, sessionEnabled) e <code>nodesBox</code> apontando pra <code>selectedSession</code> correto
-    <br>• Um <code>Map&lt;nodeId, content[]&gt;</code> local (<code>chatEntriesByNodeId</code>) que é descartado após o merge
-    <br>• I/O: 1 SELECT em <code>session_state_entries</code> por <code>fluxObject</code> em modo chat/session (sequencial)
+    <strong>Resumo — o que sai de 1.6.</strong>
+    <br>• <code>sessionIdForChat</code>. String com a sessão de chat resolvida (<code>''</code>, <code>'default'</code>, ou <code>sessionId</code> do request).
+    <br>• <code>updatedFlows</code>. Array de nós com <code>fluxObject</code> hidratado (<code>entries</code>, <code>userSessionsChat</code>, <code>selectedChat</code>, <code>chat</code>, <code>sessionEnabled</code>) e <code>nodesBox</code> apontando para o <code>selectedSession</code> correto.
+    <br>• Um <code>Map&lt;nodeId, content[]&gt;</code> local (<code>chatEntriesByNodeId</code>) descartado após o merge.
+    <br>• I/O. Um SELECT em <code>session_state_entries</code> por <code>fluxObject</code> em modo chat/session, sequencial.
   </div>
 
   <div class="note">
-    <strong>Observações para migração:</strong>
-    <br>• <strong>Essencial só se o flow tem chat/session</strong> — o gate em (A) permite pular todo o bloco. Flows batch/api sem chat não pagam custo nenhum.
-    <br>• Este passo já foi <strong>parcialmente migrado</strong>: <code>fluxObject.entries</code> agora vem de <code>session_state_entries</code>, mas <code>nodesBox.sessions[i].content</code> ainda vive no JSONB de <code>flows_nodes.data</code>. Migrar o nodesBox pra <code>session_state_entries</code> (scopeType <code>'object'</code>) é o próximo passo natural pra eliminar o "fat JSONB" ([[project_jsonb_fat_fields]]).
-    <br>• O worker <strong>não</strong> precisa fazer esse setup — pode receber o <code>updatedFlows</code> já hidratado nos start-args do workflow, ou receber apenas <code>sessionIdForChat</code> + <code>ownerUserId</code> e fazer o read remoto se realmente precisar do histórico dentro de um handler específico.
-    <br>• N+1 sequencial (B) é trivial de virar <code>Promise.all</code> — pode entrar num sprint de otimização qualquer, não bloqueia a migração.
-    <br>• Footgun crítico: se <code>ownerUserId</code> ficar <code>undefined</code>, o WHERE em <code>readEntries</code> omite a coluna → leaks entries de outros users. Blindar isso antes de qualquer refactor.
-    <br>• Fallback de entries antigas (C, aside warn) precisa ser removido em algum ponto — hoje mantém dados residuais do JSONB indefinidamente.
+    <strong>Observações para migração.</strong>
+    <br>• Essencial só quando o flow tem chat/session. O gate em (A) permite pular todo o bloco. Flows batch/api sem chat não pagam custo.
+    <br>• Este passo já foi parcialmente migrado. O <code>fluxObject.entries</code> agora vem de <code>session_state_entries</code>. O <code>nodesBox.sessions[i].content</code> ainda vive no JSONB de <code>flows_nodes.data</code>. Migrar o <code>nodesBox</code> para <code>session_state_entries</code> (scopeType <code>'object'</code>) é o próximo passo natural. Elimina o fat JSONB ([[project_jsonb_fat_fields]]).
+    <br>• O worker não precisa fazer esse setup. Pode receber o <code>updatedFlows</code> já hidratado nos start-args do workflow. Alternativa: receber apenas <code>sessionIdForChat</code> e <code>ownerUserId</code> e fazer o read remoto dentro de um handler específico quando o histórico for necessário.
+    <br>• O N+1 sequencial (B) é trivial de virar <code>Promise.all</code>. Pode entrar em qualquer sprint de otimização. Não bloqueia a migração.
+    <br>• Footgun crítico. Se <code>ownerUserId</code> ficar <code>undefined</code>, o WHERE em <code>readEntries</code> omite a coluna. Vaza entries de outros usuários. Blindar isso antes de qualquer refactor.
+    <br>• O fallback de entries antigas (C, aside warn) precisa ser removido em algum ponto. Hoje mantém dados residuais do JSONB indefinidamente.
   </div>
 
   <!-- FOOTER NAV -->

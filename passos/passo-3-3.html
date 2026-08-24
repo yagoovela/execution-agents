@@ -181,24 +181,24 @@
     <h1>Passo 3.3 — applySubstitutionToObject(node, schema)</h1>
   </div>
   <div class="page-sub">
-    Bloco em <code>flux.service.ts:3280-3284</code> · engine em <code>node-reference-substitution.service.ts:145-167</code>. Percorre <em>recursivamente</em> o <code>node</code> e substitui todo <code>{{...}}</code> pelo valor real do <code>nodeSubstitutionSchema</code> (montado em 2.3, mutado ao longo do loop em 3.6).
+    Bloco em <code>flux.service.ts:3280-3284</code>. Engine em <code>node-reference-substitution.service.ts:145-167</code>. Percorre <em>recursivamente</em> o <code>node</code> e substitui todo <code>{{...}}</code> pelo valor real do <code>nodeSubstitutionSchema</code> (montado em 2.3, mutado ao longo do loop em 3.6).
   </div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
     <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
     <ul>
-      <li><strong>Preenche todos os buracos <code>{{...}}</code>:</strong> pega o node cru (com placeholders tipo <code>"Escreva sobre {{tema}}"</code>) e devolve <code>processedNode</code> com tudo resolvido em texto concreto. É <em>o</em> ponto onde referências entre nós viram valores reais.</li>
-      <li><strong>Walker recursivo sem whitelist:</strong> <code>applySubstitutionToObject</code> desce a árvore inteira do node — strings passam pelo regex, arrays viram <code>.map</code> recursivo, objetos ganham container novo. Nunca muta o original — retorna uma <em>árvore paralela clonada</em>, o que preserva o node cru pra retry.</li>
-      <li><strong>Motor de placeholder navega paths com ponto:</strong> <code>replacePlaceholders</code> roda <code>/{{(.*?)}}/g</code>, splita por <code>.</code>, e vai andando no schema segmento a segmento. Se qualquer nó do path resolve <code>undefined</code>, deixa o placeholder <em>literal</em> no output — fallback silencioso intencional pra templates opcionais.</li>
-      <li><strong>Cada nó vira 3 chaves no schema:</strong> <em>stableKey</em> (UUID), <em>refKey</em> (id legacy com dots→underscore) e <em>labelKey</em> (label humano). Todas apontam pra mesma entry — o usuário pode escrever <code>{{writer}}</code>, <code>{{6d09d1...}}</code> ou o refKey e todos resolvem igual. Colisões entre labels de nós diferentes são first-write-wins (footgun).</li>
-      <li><strong>Handlers ignoram <code>processedNode</code> em partes:</strong> Temporal, voice, mcp usam <code>processedNode</code>; pull/push, condition, nodesBox, arrayNode, fluxBox usam <code>node</code> cru e fazem substitution interna própria — origem dos <strong>57 sync sites</strong> espalhados pelo código.</li>
-      <li><strong>Saída:</strong> <code>processedNode</code> resolvido (árvore paralela), <code>node</code> intocado. 100% síncrono, 100% in-memory — mas com memória gorda: schema × N nós × strings pode virar megabytes vivos.</li>
+      <li><strong>Preenche todos os buracos <code>{{...}}</code>.</strong> Pega o node cru (com placeholders como <code>"Escreva sobre {{tema}}"</code>) e devolve <code>processedNode</code> com tudo resolvido em texto concreto. É <em>o</em> ponto onde referências entre nós viram valores reais.</li>
+      <li><strong>Walker recursivo sem whitelist.</strong> <code>applySubstitutionToObject</code> desce a árvore inteira do node. Strings passam pelo regex. Arrays viram <code>.map</code> recursivo. Objetos ganham container novo. Nunca muta o original. Retorna uma <em>árvore paralela clonada</em>. Isso preserva o node cru para retry.</li>
+      <li><strong>Motor de placeholder navega paths com ponto.</strong> <code>replacePlaceholders</code> roda <code>/{{(.*?)}}/g</code>, aplica split por <code>.</code> e navega no schema segmento a segmento. Se qualquer nó do path resolve <code>undefined</code>, deixa o placeholder <em>literal</em> na saída. Fallback silencioso intencional para templates opcionais.</li>
+      <li><strong>Cada nó vira 3 chaves no schema.</strong> <em>stableKey</em> (UUID), <em>refKey</em> (id legacy com dots convertidos a underscore) e <em>labelKey</em> (label humano). Todas apontam para a mesma entry. O usuário pode escrever <code>{{writer}}</code>, <code>{{6d09d1...}}</code> ou o refKey e todos resolvem igual. Colisões entre labels de nós diferentes são first-write-wins (footgun).</li>
+      <li><strong>Handlers ignoram <code>processedNode</code> em partes.</strong> Temporal, voice e mcp usam <code>processedNode</code>. Pull/push, condition, nodesBox, arrayNode e fluxBox usam <code>node</code> cru e fazem substitution interna própria. Origem dos <strong>57 sync sites</strong> espalhados pelo código.</li>
+      <li><strong>Saída.</strong> <code>processedNode</code> resolvido (árvore paralela), <code>node</code> intocado. 100% síncrono, 100% in-memory. Memória gorda: schema × N nós × strings pode virar megabytes vivos.</li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto:</strong> este é <strong>o</strong> ponto onde referências entre nós viram texto concreto. Antes: <code>node.data.prompt = "Escreva sobre {{tema}}"</code>. Depois: <code>processedNode.data.prompt = "Escreva sobre inteligência artificial"</code>. A função é síncrona e sem I/O — <em>toda</em> a resolução vem do schema in-memory (memória <code>[[project_substitution_engine]]</code>).
+    <strong>Contexto.</strong> Este é <strong>o</strong> ponto onde referências entre nós viram texto concreto. Antes: <code>node.data.prompt = "Escreva sobre {{tema}}"</code>. Depois: <code>processedNode.data.prompt = "Escreva sobre inteligência artificial"</code>. A função é síncrona e sem I/O. <em>Toda</em> a resolução vem do schema in-memory (memória <code>[[project_substitution_engine]]</code>).
   </div>
 
   <!-- Overview chain -->
@@ -214,7 +214,7 @@
       <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>processedNode (clone raso)</a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado: <code>processedNode</code> — objeto novo com mesma estrutura de <code>node</code>, mas todo campo string teve seus placeholders resolvidos. O <code>node</code> original permanece intacto (não muta).
+      Resultado. <code>processedNode</code> é um objeto novo com mesma estrutura de <code>node</code>. Todo campo string teve seus placeholders resolvidos. O <code>node</code> original permanece intacto (não muta).
     </div>
   </div>
 
@@ -234,10 +234,10 @@
         applySubstitutionToObject(obj: any, schema: any): any
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Walker recursivo genérico. Cria uma <em>nova árvore</em> percorrendo <code>obj</code>. Sem whitelist de campos — aplica em <em>tudo</em> que for string. Sem clonagem prévia, sem deep-copy — o retorno é o próprio novo objeto montado nível-por-nível.
+        <strong>Propósito.</strong> Walker recursivo genérico. Cria uma <em>nova árvore</em> percorrendo <code>obj</code>. Sem whitelist de campos. Aplica em <em>tudo</em> que for string. Sem clonagem prévia, sem deep-copy. O retorno é o próprio novo objeto montado nível a nível.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> é o <em>revisor de rascunho</em> — pega o texto do nó cheio de <code>{{...}}</code> ("Escreva sobre {{tema}} para {{publico}}") e devolve uma versão limpa, com todos os buracos preenchidos. Só que ao invés de percorrer o texto de forma tradicional, ele desce recursivo pela árvore inteira do <code>node</code>: se topa com string, chama o motor de substitution (fn B); se é array, percorre cada item; se é objeto, cria um <em>novo</em> objeto e revisa campo por campo. O importante é que <strong>nunca muta o original</strong> — o <code>node</code> que veio como argumento continua intacto (com seus <code>{{...}}</code>), e o retorno é uma árvore paralela clonada. Isso é o que garante que se o handler falhar no meio, o <code>node</code> original ainda tá disponível pra retry. Não tem whitelist — aplica em <em>todo</em> campo string, inclusive coisas internas como <code>_rawProviderResponse</code>, <code>_attempts</code>. Não tem limite de profundidade — patologicamente pode dar stack overflow, mas nós reais ficam em 3-4 níveis. Este é o <strong>coração da substitution engine</strong>: os 57 sync sites que a memória menciona (<code>[[project_substitution_engine]]</code>) são todos variações desse walker, um dos ofensores centrais que a migração pro worker precisa reescrever ou eliminar via prefetch.
+        <strong>Em resumo.</strong> É o <em>revisor de rascunho</em>. Pega o texto do nó cheio de <code>{{...}}</code> ("Escreva sobre {{tema}} para {{publico}}") e devolve uma versão limpa, com todos os buracos preenchidos. Em vez de percorrer o texto de forma tradicional, desce recursivo pela árvore inteira do <code>node</code>. Se topa com string, chama o motor de substitution (fn B). Se é array, percorre cada item. Se é objeto, cria um <em>novo</em> objeto e revisa campo por campo. O importante é que <strong>nunca muta o original</strong>. O <code>node</code> passado como argumento continua intacto (com seus <code>{{...}}</code>). O retorno é uma árvore paralela clonada. Isso garante que, se o handler falhar no meio, o <code>node</code> original ainda está disponível para retry. Não tem whitelist. Aplica em <em>todo</em> campo string, inclusive campos internos como <code>_rawProviderResponse</code> e <code>_attempts</code>. Não tem limite de profundidade. Patologicamente pode dar stack overflow. Nós reais ficam em 3-4 níveis. Este é o <strong>coração da substitution engine</strong>. Os 57 sync sites que a memória menciona (<code>[[project_substitution_engine]]</code>) são variações desse walker. Um dos ofensores centrais que a migração para o worker precisa reescrever ou eliminar via prefetch.
       </div>
 
       <div class="fn-body-cols">
@@ -272,7 +272,7 @@
             <div class="cascade-step">
               <span class="cascade-num">1</span>
               <span class="cond">obj === null/undefined OU schema falsy</span>
-              <span class="result pass">return obj (early)</span>
+              <span class="result pass">retorna obj (early)</span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">2</span>
@@ -287,12 +287,12 @@
             <div class="cascade-step">
               <span class="cascade-num">4</span>
               <span class="cond">typeof obj === 'object'</span>
-              <span class="result call">novo {} + Object.entries loop</span>
+              <span class="result call">novo {} e Object.entries loop</span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">5</span>
               <span class="cond">tipo primitivo (number/boolean)</span>
-              <span class="result pass">return obj inalterado</span>
+              <span class="result pass">retorna obj inalterado</span>
             </div>
           </div>
         </div>
@@ -300,13 +300,13 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Clonagem estrutural, não in-place</div>
-            Cada objeto/array retorna um <strong>novo container</strong> (<code>const result = {}</code>). O <code>node</code> original nunca é mutado — o retorno é uma árvore paralela. Isso é o que garante que <code>previewResponses</code> antigos (lidos em 3.2) não vazem pra <code>processedNode</code> depois de a saída ser reescrita.
+            Cada objeto ou array retorna um <strong>novo container</strong> (<code>const result = {}</code>). O <code>node</code> original nunca é mutado. O retorno é uma árvore paralela. Isso garante que <code>previewResponses</code> antigos (lidos em 3.2) não vazem para <code>processedNode</code> depois de a saída ser reescrita.
           </div>
 
           <div class="aside warn">
             <div class="aside-title">⚠️ Sem whitelist, sem limite de profundidade</div>
-            A função aplica em <em>todos</em> os campos. Se <code>node.data</code> tem campos <em>internos</em> tipo <code>_rawProviderResponse</code>, <code>_attempts</code>, <code>_modelId</code>, eles também são copiados (e strings dentro também passam pelo regex).
-            <br><br>Sem <code>maxDepth</code>. Um <code>node.data</code> patologicamente profundo pode dar stack overflow, mas nós de flow ficam em 3-4 níveis.
+            A função aplica em <em>todos</em> os campos. Se <code>node.data</code> tem campos <em>internos</em> como <code>_rawProviderResponse</code>, <code>_attempts</code>, <code>_modelId</code>, eles também são copiados (e strings dentro também passam pelo regex).
+            <br><br>Sem <code>maxDepth</code>. Um <code>node.data</code> patologicamente profundo pode dar stack overflow. Nós de flow ficam em 3-4 níveis.
           </div>
 
           <div class="aside">
@@ -346,10 +346,10 @@
         replacePlaceholders(originalString: string, replacementSchema: any): string
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Núcleo da engine — encontra <code>{{qualquer.coisa}}</code>, faz split por <code>.</code>, navega o schema segmento por segmento. Se em qualquer ponto o lookup falha, devolve o <code>match</code> original (não resolvido).
+        <strong>Propósito.</strong> Núcleo da engine. Encontra <code>{{qualquer.coisa}}</code>, aplica split por <code>.</code> e navega o schema segmento por segmento. Se em qualquer ponto o lookup falha, devolve o <code>match</code> original (não resolvido).
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> é o <em>dicionário</em> chamado pra cada palavra entre chaves duplas. Recebe uma string como <code>"Escreva sobre {{textGen1.text}} pro cliente {{clienteAtual}}"</code>, roda um regex <code>/{{(.*?)}}/g</code> pra achar todos os <code>{{...}}</code>, e pra cada um: pega o conteúdo (<code>textGen1.text</code>), splita por ponto (<code>['textGen1', 'text']</code>), e vai navegando o schema segmento a segmento — <code>schema['textGen1']</code>, depois <code>.text</code>. Se qualquer segmento retornar <code>undefined</code>, aborta e devolve o placeholder original literal (<code>{{textGen1.text}}</code> fica no output, sem substituir). Isso é comportamento <em>intencional</em>: permite prompts template com placeholders opcionais que só se resolvem se o dado existir. Ponto sutil: se o valor final for um objeto (não string), o <code>String.replace</code> coage pra <code>"[object Object]"</code> — quase nunca é o que o usuário quer. Por isso o passo 2.3 (<code>generateSchemaFromNodes</code>) achata objetos pra <code>.text/.content/.result</code> antes de indexar. E outra: a substituição é <strong>de esquerda pra direita, uma passada só</strong> — se um placeholder resolvido conter outros <code>{{...}}</code>, eles ficam literais (não é recursivo). Simples, previsível, mas exige que o usuário conheça essa restrição.
+        <strong>Em resumo.</strong> É o <em>dicionário</em> chamado para cada palavra entre chaves duplas. Recebe uma string como <code>"Escreva sobre {{textGen1.text}} para o cliente {{clienteAtual}}"</code>. Roda o regex <code>/{{(.*?)}}/g</code> para achar todos os <code>{{...}}</code>. Para cada um: pega o conteúdo (<code>textGen1.text</code>), aplica split por ponto (<code>['textGen1', 'text']</code>) e navega no schema segmento a segmento. <code>schema['textGen1']</code>, depois <code>.text</code>. Se qualquer segmento retornar <code>undefined</code>, aborta e devolve o placeholder original literal. <code>{{textGen1.text}}</code> fica na saída, sem substituir. Isso é comportamento <em>intencional</em>. Permite prompts template com placeholders opcionais que só se resolvem se o dado existir. Ponto sutil. Se o valor final for um objeto (não string), o <code>String.replace</code> coage para <code>"[object Object]"</code>. Quase nunca é o que o usuário quer. Por isso o passo 2.3 (<code>generateSchemaFromNodes</code>) achata objetos para <code>.text/.content/.result</code> antes de indexar. Outra restrição. A substituição é <strong>da esquerda para a direita, uma passada só</strong>. Se um placeholder resolvido contiver outros <code>{{...}}</code>, eles ficam literais. Não é recursivo. Simples, previsível. Exige que o usuário conheça essa restrição.
       </div>
 
       <div class="fn-body-cols">
@@ -380,7 +380,7 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">B1</span> Regex non-greedy: <code>/{{(.*?)}}/g</code></div>
             <div class="box-desc">
-              <code>.*?</code> pega o menor match possível — pra <code>"{{a}} e {{b}}"</code> ele acha 2 grupos, não 1 gigante.
+              <code>.*?</code> pega o menor match possível. Para <code>"{{a}} e {{b}}"</code> acha 2 grupos, não 1 gigante.
               <br>Aceita qualquer conteúdo entre <code>{{</code> e <code>}}</code>, inclusive espaços, símbolos e paths com dots.
             </div>
           </div>
@@ -391,9 +391,9 @@
             <div class="box-desc">
               <code>keys = p1.split('.')</code>. Loop: <code>value = value[key]</code>. Se qualquer segmento retorna <code>undefined</code>, aborta e retorna o <code>match</code> original.
               <br><br>Suporta <em>N segmentos</em>. Casos comuns:
-              <br>• <code>{{textGen1}}</code> — 1 segmento → objeto inteiro do nó
-              <br>• <code>{{textGen1.text}}</code> — 2 segmentos → só o campo text
-              <br>• <code>{{age.text}}</code> — usa labelKey (fn C)
+              <br>• <code>{{textGen1}}</code>: 1 segmento → objeto inteiro do nó
+              <br>• <code>{{textGen1.text}}</code>: 2 segmentos → só o campo text
+              <br>• <code>{{age.text}}</code>: usa labelKey (fn C)
             </div>
           </div>
         </div>
@@ -401,24 +401,24 @@
         <div class="fn-asides">
           <div class="aside warn">
             <div class="aside-title">⚠️ Coerção implícita string</div>
-            Quando o <code>value</code> final é um objeto/array, o <code>String.replace</code> chama <code>String(value)</code> — vira <code>"[object Object]"</code> ou <code>"1,2,3"</code>. Isso quase nunca é o que o usuário quer.
-            <br><br>É por isso que <code>generateSchemaFromNodes</code> (passo 2.3) já achata objetos pra <code>.text/.content/.result</code> antes de indexar — pra evitar esse cenário.
+            Quando o <code>value</code> final é um objeto ou array, o <code>String.replace</code> chama <code>String(value)</code>. Vira <code>"[object Object]"</code> ou <code>"1,2,3"</code>. Isso quase nunca é o que o usuário quer.
+            <br><br>Por isso <code>generateSchemaFromNodes</code> (passo 2.3) já achata objetos para <code>.text/.content/.result</code> antes de indexar. Evita esse cenário.
           </div>
 
           <div class="aside info">
             <div class="aside-title">💡 Fallback silencioso</div>
-            Placeholder não resolvido não lança erro — apenas fica no output como <code>{{nomeErrado}}</code>. Handler downstream (ex: LLM) pode ver isso e reclamar, mas o loop segue.
-            <br><br>É comportamento intencional pra permitir <em>prompts template</em> com placeholders opcionais.
+            Placeholder não resolvido não lança erro. Apenas fica na saída como <code>{{nomeErrado}}</code>. Handler downstream (ex.: LLM) pode ver isso e reclamar, mas o loop segue.
+            <br><br>É comportamento intencional para permitir <em>prompts template</em> com placeholders opcionais.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 Ordem de match</div>
-            <code>String.replace</code> com regex <code>/g</code> aplica da esquerda pra direita, não recursivamente. Um placeholder cujo <em>valor resolvido</em> contém <code>{{...}}</code> não é re-processado nesta passada.
+            <code>String.replace</code> com regex <code>/g</code> aplica da esquerda para a direita, não recursivamente. Um placeholder cujo <em>valor resolvido</em> contém <code>{{...}}</code> não é reprocessado nesta passada.
           </div>
 
           <div class="aside">
             <div class="aside-title">📎 typeof guard duplo</div>
-            Tanto <code>applySubstitutionToObject</code> quanto <code>replacePlaceholders</code> checam <code>typeof === 'string'</code>. Redundante mas defensivo — a segunda checagem protege se <code>replacePlaceholders</code> é chamada direto (fora do walker).
+            Tanto <code>applySubstitutionToObject</code> quanto <code>replacePlaceholders</code> checam <code>typeof === 'string'</code>. Redundante mas defensivo. A segunda checagem protege se <code>replacePlaceholders</code> é chamada direto (fora do walker).
           </div>
         </div>
       </div>
@@ -441,10 +441,10 @@
         generateSchemaFromNodes(nodes) — indexa cada nó sob stableKey (UUID), refKey (dots→_), labelKey (label sem espaços)
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Contexto do schema que 3.3 consome. Cada nó do flow vira <strong>3 entradas</strong> no objeto <code>nodeSubstitutionSchema</code> — mesma <em>referência de entry</em>, chaves diferentes. Isso permite que o usuário escreva <code>{{6d09d1...uuid}}</code>, <code>{{textBox_1714_0_8148}}</code> ou <code>{{writer}}</code> e todos resolvam pro mesmo lugar.
+        <strong>Propósito.</strong> Contexto do schema que 3.3 consome. Cada nó do flow vira <strong>3 entradas</strong> no objeto <code>nodeSubstitutionSchema</code>. Mesma <em>referência de entry</em>, chaves diferentes. Isso permite que o usuário escreva <code>{{6d09d1...uuid}}</code>, <code>{{textBox_1714_0_8148}}</code> ou <code>{{writer}}</code> e todos resolvam para o mesmo lugar.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> pensa nas 3 chaves como <em>3 nomes que a mesma pessoa atende</em>: o CPF (stableKey — UUID collision-free), o apelido do RG (refKey — id legacy com dots trocados por underscore) e o nome social (labelKey — o que o usuário digitou como "label" do nó, tipo <code>"My Writer"</code> → <code>"mywriter"</code>). Todas as 3 chaves apontam pra <strong>mesma entry</strong> — se o output do nó atualizar, atualiza pra todas simultaneamente porque é a mesma referência. Isso é o que dá flexibilidade pro usuário: no editor ele pode arrastar uma referência (usa o UUID por baixo dos panos) ou digitar <code>{{writer}}</code> na mão — os dois funcionam. Também é o que permite ids legacy com dots (herança de versões antigas) continuarem resolvendo — porque o parser de <code>{{path.field}}</code> splitaria no dot errado. Cuidado com <em>colisões</em>: se dois nós têm o mesmo label, o segundo <em>não</em> sobrescreve o primeiro (o check <code>labelKey !== stableKey && labelKey !== refKey</code> só cuida disso <em>dentro</em> do mesmo nó), mas o <em>escopo</em> do labelKey de nós diferentes é first-write-wins — footgun quando alguém duplica um label sem perceber. A whitelist <code>basedOnType</code> (linhas 25-80) define <em>quais campos</em> de cada tipo aparecem na entry — não é o walker que filtra, é o indexing que já entrega só o essencial (prompt, text, url, etc.).
+        <strong>Em resumo.</strong> Pense nas 3 chaves como <em>3 nomes que a mesma pessoa atende</em>. O CPF (stableKey: UUID collision-free), o apelido do RG (refKey: id legacy com dots trocados por underscore) e o nome social (labelKey: o que o usuário digitou como "label" do nó, ex.: <code>"My Writer"</code> → <code>"mywriter"</code>). Todas as 3 chaves apontam para a <strong>mesma entry</strong>. Se a saída do nó atualizar, atualiza para todas simultaneamente porque é a mesma referência. Isso dá flexibilidade ao usuário. No editor ele pode arrastar uma referência (usa o UUID por baixo dos panos) ou digitar <code>{{writer}}</code> à mão. Os dois funcionam. Também permite que ids legacy com dots (herança de versões antigas) continuem resolvendo. O parser de <code>{{path.field}}</code> aplicaria split no dot errado. Cuidado com <em>colisões</em>. Se dois nós têm o mesmo label, o segundo <em>não</em> sobrescreve o primeiro. O check <code>labelKey !== stableKey && labelKey !== refKey</code> só cuida disso <em>dentro</em> do mesmo nó. O <em>escopo</em> do labelKey de nós diferentes é first-write-wins. Footgun quando alguém duplica um label sem perceber. A whitelist <code>basedOnType</code> (linhas 25-80) define <em>quais campos</em> de cada tipo aparecem na entry. Não é o walker que filtra. É o indexing que já entrega só o essencial (prompt, text, url, etc.).
       </div>
 
       <div class="fn-body-cols">
@@ -452,7 +452,7 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">C1</span> stableKey — node.id (UUID)</div>
             <div class="box-desc">
-              <code>const stableKey = node.id</code>. É o identificador collision-free, sobrevive a renomeações. É a chave "canônica".
+              <code>const stableKey = node.id</code>. É o identificador collision-free, sobrevive a renomeações. É a chave canônica.
             </div>
             <div class="box-file">service.ts:93, 132</div>
           </div>
@@ -462,7 +462,7 @@
             <div class="box-title"><span class="badge step">C2</span> refKey — dots viram underscore</div>
             <div class="box-desc">
               <code>const refKey = stableKey.replace(/\./g, '_')</code>. Ids legacy como <code>textBox_1714569876581_0.8148</code> viram <code>textBox_1714569876581_0_8148</code>.
-              <br>Necessário porque o <em>parser</em> de <code>{{path.field}}</code> em (B) splitaria no dot errado — refKey elimina essa ambiguidade.
+              <br>Necessário porque o <em>parser</em> de <code>{{path.field}}</code> em (B) aplicaria split no dot errado. O refKey elimina essa ambiguidade.
             </div>
             <div class="box-file">service.ts:133-136</div>
           </div>
@@ -471,7 +471,7 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">C3</span> labelKey — alias humano</div>
             <div class="box-desc">
-              <code>const labelKey = (node.data?.label || '').toLowerCase().replace(/\s/g, '')</code>. Ex: <code>"My Writer"</code> → <code>"mywriter"</code>. Só adicionado se não colidir com stableKey/refKey.
+              <code>const labelKey = (node.data?.label || '').toLowerCase().replace(/\s/g, '')</code>. Ex.: <code>"My Writer"</code> → <code>"mywriter"</code>. Só adicionado se não colidir com stableKey ou refKey.
             </div>
             <div class="box-file">service.ts:99-101, 137-139</div>
           </div>
@@ -495,19 +495,19 @@ schema = {
         <div class="fn-asides">
           <div class="aside warn">
             <div class="aside-title">⚠️ Whitelist basedOnType é INDEXING</div>
-            <code>basedOnType</code> (linhas 25-80) define <strong>quais campos do node.data são indexados</strong> por tipo. Só campos listados aparecem no entry — ex: <code>textBox</code> só expõe <code>text</code>; <code>apiCaller</code> expõe <code>url/jsonRequestBody/etc</code>.
-            <br><br>Mas ATENÇÃO: a whitelist é da geração do schema, <strong>não</strong> do walker. O walker (fn A) aplica em tudo. A whitelist só filtra o <em>que fica disponível pra ser referenciado</em>.
+            <code>basedOnType</code> (linhas 25-80) define <strong>quais campos do node.data são indexados</strong> por tipo. Só campos listados aparecem no entry. Ex.: <code>textBox</code> só expõe <code>text</code>. <code>apiCaller</code> expõe <code>url</code>, <code>jsonRequestBody</code>, etc.
+            <br><br>Atenção. A whitelist é da geração do schema, <strong>não</strong> do walker. O walker (fn A) aplica em tudo. A whitelist só filtra o <em>que fica disponível para ser referenciado</em>.
           </div>
 
           <div class="aside info">
             <div class="aside-title">🎯 Precedência de lookup</div>
-            Não existe. Todas as 3 chaves apontam pra <em>mesma entry</em>. Se o usuário escrever <code>{{writer}}</code> ou <code>{{6d09d1...}}</code>, o resultado é idêntico. A "escolha" da chave é do usuário no editor.
-            <br><br>Colisões (label = outro nodeId) não são tratadas — o <code>if (labelKey && labelKey !== stableKey && labelKey !== refKey)</code> só evita sobrescrever a si mesmo, não colisões entre nós diferentes.
+            Não existe. Todas as 3 chaves apontam para a <em>mesma entry</em>. Se o usuário escrever <code>{{writer}}</code> ou <code>{{6d09d1...}}</code>, o resultado é idêntico. A escolha da chave é do usuário no editor.
+            <br><br>Colisões (label = outro nodeId) não são tratadas. O <code>if (labelKey && labelKey !== stableKey && labelKey !== refKey)</code> só evita sobrescrever a si mesmo, não colisões entre nós diferentes.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 Objetos achatados no indexing</div>
-            Se <code>node.data.prompt</code> é um objeto (não string), <code>generateSchemaFromNodes</code> extrai <code>.text</code> → <code>.content</code> → <code>.result</code> nessa ordem. Fallback: <code>JSON.stringify(value)</code>. Isso <em>não</em> acontece no walker — só no schema build.
+            Se <code>node.data.prompt</code> é um objeto (não string), <code>generateSchemaFromNodes</code> extrai <code>.text</code> → <code>.content</code> → <code>.result</code> nessa ordem. Fallback: <code>JSON.stringify(value)</code>. Isso <em>não</em> acontece no walker. Apenas no schema build.
           </div>
         </div>
       </div>
@@ -530,10 +530,10 @@ schema = {
         const processedNode = this.nodeReferenceSubstitutionService.applySubstitutionToObject(node, nodeSubstitutionSchema);
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Consumidor final da engine. É o que os handlers de nó (inline ou Temporal) recebem como input <em>já resolvido</em>. Alguns handlers usam <code>processedNode</code>, outros usam <code>node</code> — a distinção não é uniforme e é um dos <em>footguns</em> do código atual.
+        <strong>Propósito.</strong> Consumidor final da engine. É o que os handlers de nó (inline ou Temporal) recebem como entrada <em>já resolvida</em>. Alguns handlers usam <code>processedNode</code>, outros usam <code>node</code>. A distinção não é uniforme e é um dos <em>footguns</em> do código atual.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> imagina que <code>node</code> é o <em>original manuscrito</em> do documento (com anotações, referências pendentes, o rascunho) e <code>processedNode</code> é a <em>versão datilografada</em>, com todos os buracos preenchidos e pronta pra ser lida. O loop entrega os dois pros handlers, e aí começa a confusão: <code>processNodeViaTemporal</code>, <code>voiceNode</code>, <code>thirdPartyIntegrationNode</code>, <code>mcpNode</code> usam <strong>processedNode</strong> (a versão limpa) — perfeito. Mas <code>pullDataNode</code>, <code>pushDataNode</code>, <code>conditionNode</code>, <code>nodesBox</code>, <code>arrayNode</code>, <code>fluxBox</code>, <code>libraryNode</code> usam <code>node</code> cru — fazem sua própria substitution internamente. Não tá documentado no código quem usa o quê; é convenção ad-hoc que só se aprende lendo cada handler. É por isso que existem <strong>57 sync sites</strong> de substitution: cada handler que ignora <code>processedNode</code> reimplementa parte da engine com regras próprias, e sincronizar todas essas variações é o pesadelo de qualquer refactor. Outro footgun: mutar <code>processedNode.data</code> <em>não</em> afeta o array <code>myUpdatedNodes</code> (é árvore paralela clonada) — mutar <code>node.data</code> afeta (é ref viva). Quem tentar "corrigir" o output escrevendo em <code>processedNode</code> vai perder a mudança silenciosamente.
+        <strong>Em resumo.</strong> Imagine que <code>node</code> é o <em>original manuscrito</em> do documento (com anotações, referências pendentes, o rascunho) e <code>processedNode</code> é a <em>versão datilografada</em>, com todos os buracos preenchidos e pronta para ser lida. O loop entrega os dois aos handlers, e começa a confusão. <code>processNodeViaTemporal</code>, <code>voiceNode</code>, <code>thirdPartyIntegrationNode</code> e <code>mcpNode</code> usam <strong>processedNode</strong> (a versão limpa). Perfeito. Mas <code>pullDataNode</code>, <code>pushDataNode</code>, <code>conditionNode</code>, <code>nodesBox</code>, <code>arrayNode</code>, <code>fluxBox</code> e <code>libraryNode</code> usam <code>node</code> cru. Fazem sua própria substitution internamente. Não está documentado no código quem usa o quê. É convenção ad-hoc que só se aprende lendo cada handler. É por isso que existem <strong>57 sync sites</strong> de substitution. Cada handler que ignora <code>processedNode</code> reimplementa parte da engine com regras próprias. Sincronizar todas essas variações é o pesadelo de qualquer refactor. Outro footgun. Mutar <code>processedNode.data</code> <em>não</em> afeta o array <code>myUpdatedNodes</code> (é árvore paralela clonada). Mutar <code>node.data</code> afeta (é ref viva). Quem tentar "corrigir" a saída escrevendo em <code>processedNode</code> vai perder a mudança silenciosamente.
       </div>
 
       <div class="fn-body-cols">
@@ -543,10 +543,10 @@ schema = {
             <div class="box-desc">
               <table class="field-table">
                 <tr><th>Handler</th><th>Argumento</th></tr>
-                <tr><td>processNodeViaTemporal</td><td><strong>processedNode</strong> — worker recebe input já resolvido</td></tr>
+                <tr><td>processNodeViaTemporal</td><td><strong>processedNode</strong>. Worker recebe entrada já resolvida.</td></tr>
                 <tr><td>voiceNode</td><td><strong>processedNode</strong> (linha 3366)</td></tr>
                 <tr><td>thirdPartyIntegrationNode / mcpNode</td><td><strong>processedNode</strong> (3457, 3469)</td></tr>
-                <tr><td>pullDataNode / pushDataNode</td><td><strong>node</strong> (raw!) — resolve inputs internamente</td></tr>
+                <tr><td>pullDataNode / pushDataNode</td><td><strong>node</strong> (raw). Resolve entradas internamente.</td></tr>
                 <tr><td>conditionNode / nodesBox / arrayNode</td><td><strong>node</strong> (raw)</td></tr>
               </table>
             </div>
@@ -557,7 +557,7 @@ schema = {
           <div class="box cross">
             <div class="box-title"><span class="badge step">D2</span> Também usado por isWorkerRoutedIntegration</div>
             <div class="box-desc">
-              A decisão de dispatch (passo 3.5) checa <code>isWorkerRoutedIntegration(processedNode)</code> — precisa do <code>provider</code> resolvido (caso ele venha via <code>{{...}}</code> de outro nó, o que raramente acontece mas é possível).
+              A decisão de dispatch (passo 3.5) checa <code>isWorkerRoutedIntegration(processedNode)</code>. Precisa do <code>provider</code> resolvido (caso venha via <code>{{...}}</code> de outro nó, o que raramente acontece mas é possível).
               <br>Sem essa substituição prévia, um provider dinâmico poderia ser roteado errado.
             </div>
             <div class="box-file">flux.service.ts:3301, 3433, 3453</div>
@@ -567,19 +567,19 @@ schema = {
         <div class="fn-asides">
           <div class="aside warn">
             <div class="aside-title">⚠️ Handlers que ignoram processedNode</div>
-            <code>pullDataNode</code>, <code>pushDataNode</code>, <code>conditionNode</code>, <code>arrayNode</code>, <code>nodesBox</code>, <code>fluxBox</code>, <code>libraryNode</code> recebem <code>node</code> cru. Eles fazem sua própria resolução (via <code>schema: mutatedSchema</code> ou reimplementação parcial).
-            <br><br>Resultado: a <em>substituição</em> é feita 57 sync sites, alguns explícitos como este 3.3, outros escondidos dentro dos handlers.
+            <code>pullDataNode</code>, <code>pushDataNode</code>, <code>conditionNode</code>, <code>arrayNode</code>, <code>nodesBox</code>, <code>fluxBox</code> e <code>libraryNode</code> recebem <code>node</code> cru. Fazem sua própria resolução (via <code>schema: mutatedSchema</code> ou reimplementação parcial).
+            <br><br>Resultado. A <em>substituição</em> é feita em 57 sync sites. Alguns explícitos como este 3.3. Outros escondidos dentro dos handlers.
           </div>
 
           <div class="aside info">
             <div class="aside-title">🎯 Por que processedNode é "puro" mas node é "vivo"</div>
-            <code>node</code> é a referência do array <code>myUpdatedNodes</code> — se um handler mutar <code>node.data.text</code>, o próximo <code>find</code> em 3.2 pega esse valor. <code>processedNode</code> é uma árvore paralela — mutá-la <em>não</em> reflete de volta no array.
-            <br><br>Isso não é documentado no código. É fonte comum de bugs quando alguém tenta "corrigir" o output escrevendo em <code>processedNode.data</code>.
+            <code>node</code> é a referência do array <code>myUpdatedNodes</code>. Se um handler mutar <code>node.data.text</code>, o próximo <code>find</code> em 3.2 pega esse valor. <code>processedNode</code> é uma árvore paralela. Mutá-la <em>não</em> reflete de volta no array.
+            <br><br>Isso não está documentado no código. É fonte comum de bugs quando alguém tenta "corrigir" a saída escrevendo em <code>processedNode.data</code>.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 mutatedSchema é o mesmo objeto</div>
-            <code>let nodeSubstitutionSchema</code> e <code>let mutatedSchema</code> em <code>apiV2()</code> apontam pro <em>mesmo</em> schema — nomes duplicados por refactor incompleto. Ambos são passados aos handlers. Reatribuir um não afeta o outro (footgun).
+            <code>let nodeSubstitutionSchema</code> e <code>let mutatedSchema</code> em <code>apiV2()</code> apontam para o <em>mesmo</em> schema. Nomes duplicados por refactor incompleto. Ambos são passados aos handlers. Reatribuir um não afeta o outro (footgun).
           </div>
         </div>
       </div>
@@ -589,21 +589,21 @@ schema = {
   <!-- SUMMARY -->
   <div class="note info" style="margin-top:32px">
     <strong>Resumo — o que sai de 3.3:</strong>
-    <br>• <code>processedNode</code> — árvore nova com todo <code>{{...}}</code> resolvido em campos string
-    <br>• <code>node</code> permanece intacto (mesma ref do array <code>myUpdatedNodes</code>)
-    <br>• Placeholders não resolvidos ficam literais no output (<code>{{nomeErrado}}</code>)
-    <br>• 100% síncrono, 100% in-memory, sem I/O
-    <br>• Tempo O(size(node.data) × avg-placeholders-per-string)
+    <br>• <code>processedNode</code>: árvore nova com todo <code>{{...}}</code> resolvido em campos string.
+    <br>• <code>node</code> permanece intacto (mesma ref do array <code>myUpdatedNodes</code>).
+    <br>• Placeholders não resolvidos ficam literais na saída (<code>{{nomeErrado}}</code>).
+    <br>• 100% síncrono, 100% in-memory, sem I/O.
+    <br>• Tempo O(size(node.data) × avg-placeholders-per-string).
   </div>
 
   <div class="note">
     <strong>Observações para migração:</strong>
-    <br>• Este é <strong>o</strong> ofensor da migração pro worker (memória <code>[[project_substitution_engine]]</code>). São 57 sync sites, alguns explícitos (3.3), outros escondidos em cada handler legacy. O worker <em>não tem</em> engine de substitution — recebe input já resolvido.
-    <br>• A whitelist <code>basedOnType</code> é <strong>hard-coded</strong> em <code>node-reference-substitution.service.ts:25-80</code>. Cada tipo novo que precisar de campos referenciáveis exige editar essa lista. Prefetch mode e worker também têm listas paralelas — três lugares pra manter sincronizados.
-    <br>• A ausência de resolução recursiva (placeholders dentro de outputs resolvidos) é intencional mas frágil. Migração pode escolher: (a) suportar via 2ª passada, (b) proibir explicitamente, (c) manter o comportamento atual documentado.
-    <br>• <code>processedNode</code> é temporário — não persistido em lugar nenhum. Se um nó falhar após substitution mas antes de gravar, o input resolvido é perdido. No path Temporal, o INSERT em <code>node_executions</code> (passo T2) grava justamente esse input resolvido — pattern superior.
-    <br>• 3 chaves × N nós × strings dentro de cada = memória do schema cresce O(nodes × avg-fields × avg-string-size). Em agentes grandes com respostas de LLM longas, o schema fica com megabytes de JSON vivos.
-    <br>• É <strong>essencial e crítico</strong> — todo o modelo de propagação de dados entre nós depende disso. Migração pro worker precisa desenhar um modelo alternativo (prefetch por refs já é uma tentativa) antes de tocar nesse código.
+    <br>• Este é <strong>o</strong> ofensor da migração para o worker (memória <code>[[project_substitution_engine]]</code>). São 57 sync sites, alguns explícitos (3.3), outros escondidos em cada handler legacy. O worker <em>não tem</em> engine de substitution. Recebe entrada já resolvida.
+    <br>• A whitelist <code>basedOnType</code> é <strong>hard-coded</strong> em <code>node-reference-substitution.service.ts:25-80</code>. Cada tipo novo que precisar de campos referenciáveis exige editar essa lista. Prefetch mode e worker também têm listas paralelas. Três lugares para manter sincronizados.
+    <br>• A ausência de resolução recursiva (placeholders dentro de saídas resolvidas) é intencional mas frágil. Migração pode escolher: (a) suportar via segunda passada; (b) proibir explicitamente; (c) manter o comportamento atual documentado.
+    <br>• <code>processedNode</code> é temporário. Não é persistido em lugar nenhum. Se um nó falhar após substitution mas antes de gravar, a entrada resolvida é perdida. No path Temporal, o INSERT em <code>node_executions</code> (passo T2) grava justamente essa entrada resolvida. Padrão superior.
+    <br>• 3 chaves × N nós × strings dentro de cada. Memória do schema cresce O(nodes × avg-fields × avg-string-size). Em agentes grandes com respostas de LLM longas, o schema fica com megabytes de JSON vivos.
+    <br>• É <strong>essencial e crítico</strong>. Todo o modelo de propagação de dados entre nós depende disso. Migração para o worker precisa desenhar um modelo alternativo (prefetch por refs já é uma tentativa) antes de tocar nesse código.
   </div>
 
   <div class="page-footer-nav">

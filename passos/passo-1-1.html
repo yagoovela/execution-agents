@@ -584,24 +584,24 @@
     <h1>Passo 1.1 — Bull queue api-v2 · ApiV2QueueProcessor.execute()</h1>
   </div>
   <div class="page-sub">
-    Bull queue <code>api-v2</code> definida em <code>apiV2Job.queue.ts</code> e consumida em <code>apiV2Job.processor.ts:44-174</code>. É a porta de entrada assíncrona pra execução de agentes — enfileira o payload no Redis, roda com concorrência limitada, delega ao <code>FluxService.apiV2</code>, atualiza duas tabelas de status e dispara callback HTTP no fim.
+    Bull queue <code>api-v2</code>. Definida em <code>apiV2Job.queue.ts</code> e consumida em <code>apiV2Job.processor.ts:44-174</code>. É a porta de entrada assíncrona para a execução de agentes. Enfileira o payload no Redis. Executa com concorrência limitada. Delega ao <code>FluxService.apiV2</code>. Atualiza duas tabelas de status. Dispara callback HTTP no fim.
   </div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
     <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
     <ul>
-      <li><strong>Porta de entrada assíncrona:</strong> qualquer código que precise rodar um agente "em background" chama <code>ApiV2Queue.enqueueApiV2Job(model)</code> — o payload vira um job Bull no Redis com <code>timeout: 600s</code>, <code>attempts: 1</code> (sem retry) e <code>jobId</code> auto-gerado por UUID caso não venha do chamador.</li>
-      <li><strong>Consumo com concorrência controlada:</strong> o processor lê a env <code>AGENT_CONCURRENCY</code> (default <code>5</code>) via <code>parseConcurrency</code> — cada worker Node processa até N jobs simultâneos. Se a env vier vazia ou inválida, cai no default.</li>
-      <li><strong>Fluxo do execute():</strong> extrai <code>{ jobId, params, webhookUrl, apiV2CallbackFormat }</code>, resolve <code>processId = params.parentProcessId ?? jobId</code>, chama <code>markRunning</code> (MCP) e <code>markInProgress</code> (flow_execution_status) se os IDs existirem, invoca <code>fluxService.apiV2({ ...params, parentProcessId, mcpTokenId })</code>, calcula duração, marca <code>markFinished</code>+<code>markCompleted</code>/<code>markError</code> conforme <code>result.nodeError</code>, e finalmente dispara callback HTTP (POST com timeout 10s).</li>
-      <li><strong>Dois formatos de callback:</strong> <code>apiV2CallbackFormat=true</code> monta payload rico (<code>executionId</code>, <code>success</code>, <code>outputs</code>, <code>totalTokensUsed</code>, <code>totalCost</code>, <code>timestamp</code>); senão devolve o payload legacy <code>{ jobId, result }</code>. No caminho de erro, o legacy vira <code>{ jobId, error }</code>.</li>
-      <li><strong>Catch replica tudo:</strong> em exceção, o processor calcula <code>durationMs</code>, marca ambas as tabelas como erro com <code>tokens: 0, cost: 0</code>, dispara callback (formato novo com <code>success: false</code> ou legacy com <code>{ jobId, error }</code>) e <strong>re-lança</strong> — pra que o <code>@OnQueueFailed</code> do Bull registre no Winston.</li>
-      <li><strong>Saída:</strong> retorna o objeto <code>result</code> do <code>fluxService.apiV2</code> (o Bull persiste isso em <code>job.returnvalue</code>). Handler <code>onFailed</code> loga separadamente com <code>error_type: 'Internal Server Error'</code>, status 500 e stack trace.</li>
+      <li><strong>Porta de entrada assíncrona.</strong> Qualquer código que precise executar um agente em background chama <code>ApiV2Queue.enqueueApiV2Job(model)</code>. O payload vira um job Bull no Redis com <code>timeout: 600s</code>, <code>attempts: 1</code> (sem retry) e <code>jobId</code> gerado por UUID quando não vem do chamador.</li>
+      <li><strong>Consumo com concorrência controlada.</strong> O processor lê a env <code>AGENT_CONCURRENCY</code> (default <code>5</code>) via <code>parseConcurrency</code>. Cada worker Node processa até N jobs simultâneos. Se a env vier vazia ou inválida, cai no default.</li>
+      <li><strong>Fluxo do execute().</strong> Extrai <code>{ jobId, params, webhookUrl, apiV2CallbackFormat }</code>. Resolve <code>processId = params.parentProcessId ?? jobId</code>. Chama <code>markRunning</code> (MCP) e <code>markInProgress</code> (flow_execution_status) se os IDs existirem. Invoca <code>fluxService.apiV2({ ...params, parentProcessId, mcpTokenId })</code>. Calcula duração. Marca <code>markFinished</code> mais <code>markCompleted</code> ou <code>markError</code> conforme <code>result.nodeError</code>. Por fim, dispara callback HTTP (POST com timeout 10s).</li>
+      <li><strong>Dois formatos de callback.</strong> <code>apiV2CallbackFormat=true</code> monta payload rico (<code>executionId</code>, <code>success</code>, <code>outputs</code>, <code>totalTokensUsed</code>, <code>totalCost</code>, <code>timestamp</code>). Caso contrário, devolve o payload legacy <code>{ jobId, result }</code>. No caminho de erro, o legacy vira <code>{ jobId, error }</code>.</li>
+      <li><strong>Catch replica tudo.</strong> Em exceção, o processor calcula <code>durationMs</code>. Marca ambas as tabelas como erro com <code>tokens: 0, cost: 0</code>. Dispara callback (formato novo com <code>success: false</code> ou legacy com <code>{ jobId, error }</code>). Relança a exceção. Isso permite que o <code>@OnQueueFailed</code> do Bull registre no Winston.</li>
+      <li><strong>Saída.</strong> Retorna o objeto <code>result</code> do <code>fluxService.apiV2</code>. O Bull persiste isso em <code>job.returnvalue</code>. O handler <code>onFailed</code> registra separadamente com <code>error_type: 'Internal Server Error'</code>, status 500 e stack trace.</li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto:</strong> essa fila é o único ponto legítimo do backend hoje pra rodar agentes de forma <em>fire-and-forget</em> — chamada por 3 clientes internos (endpoints HTTP de trigger, MCP tool, nós <code>flowCallerNode</code>/<code>libraryNode</code> em modo <code>triggerOnly</code>). O caminho síncrono do <code>apiV2</code> (chamada direta do controller) não passa pela fila.
+    <strong>Contexto.</strong> Essa fila é o único ponto legítimo do backend hoje para executar agentes de forma fire-and-forget. É chamada por 3 clientes internos. Endpoints HTTP de trigger. MCP tool. Nós <code>flowCallerNode</code> ou <code>libraryNode</code> em modo <code>triggerOnly</code>. O caminho síncrono do <code>apiV2</code> (chamada direta do controller) não passa pela fila.
   </div>
 
   <!-- Overview chain -->
@@ -621,7 +621,7 @@
       <a href="#fn-f" class="overview-chip"><span class="lbl">F</span>@OnQueueFailed</a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado final: job Bull com <code>returnvalue = result</code> do <code>apiV2</code>, tabelas <code>mcp_run_status</code>/<code>flow_execution_status</code> atualizadas e callback HTTP disparado (se <code>webhookUrl</code>).
+      Resultado final. Job Bull com <code>returnvalue = result</code> do <code>apiV2</code>. Tabelas <code>mcp_run_status</code> e <code>flow_execution_status</code> atualizadas. Callback HTTP disparado se houver <code>webhookUrl</code>.
     </div>
   </div>
 
@@ -641,10 +641,10 @@
         async enqueueApiV2Job(model: ApiV2QueueModel): Promise&lt;Job&gt;
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Empacota o <code>ApiV2QueueModel</code> num job Bull e joga na fila <code>api-v2</code> no Redis. Serve tanto pros triggers HTTP externos quanto pros nós que rodam sub-flows em modo <code>triggerOnly</code>.
+        <strong>Propósito.</strong> Empacota o <code>ApiV2QueueModel</code> num job Bull e envia para a fila <code>api-v2</code> no Redis. Serve tanto para triggers HTTP externos quanto para nós que executam sub-flows em modo <code>triggerOnly</code>.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> pense nessa função como o <em>despachante</em> — recebe o pacote (<code>ApiV2QueueModel</code>), garante que ele tem uma etiqueta única (<code>jobId</code> vem do chamador ou é gerado por UUID) e joga no cinturão da fila com regras claras: <strong>tem 10 minutos pra rodar</strong>, se der certo some da fila em 5 minutos, se der errado fica lá por 24h ou até acumular 20 falhas (o que vier primeiro), e <strong>não tenta de novo</strong> (<code>attempts: 1</code>). Cada job é independente. Detalhe: <code>jobId</code> também vai duplicado dentro do <code>jobData</code> — não é redundância à toa, é pro processor conseguir ler o mesmo id no <code>job.data</code> sem precisar do <code>job.id</code> do Bull.
+        <strong>Em resumo.</strong> A função recebe o pacote (<code>ApiV2QueueModel</code>). Garante que ele tem uma etiqueta única. O <code>jobId</code> vem do chamador ou é gerado por UUID. Envia para a fila com regras claras. Tem 10 minutos para executar. Se der certo, some da fila em 5 minutos. Se der errado, fica lá por 24h ou até acumular 20 falhas, o que vier primeiro. Não repete a tentativa (<code>attempts: 1</code>). Cada job é independente. O <code>jobId</code> também é duplicado dentro do <code>jobData</code>. Não é redundância. Permite que o processor leia o mesmo id em <code>job.data</code> sem precisar do <code>job.id</code> do Bull.
       </div>
 
       <div class="fn-body-cols">
@@ -652,7 +652,7 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">A1</span> Gera jobId (UUID se não vier)</div>
             <div class="box-desc">
-              <code>const jobId = model.jobId ?? uuidv4()</code>. Se o chamador (ex.: MCP tool) já passou um id, preserva; senão gera v4.
+              <code>const jobId = model.jobId ?? uuidv4()</code>. Se o chamador (por exemplo, uma MCP tool) já passou um id, preserva. Caso contrário, gera v4.
             </div>
             <div class="box-file">apiV2Job.queue.ts:19</div>
           </div>
@@ -661,7 +661,7 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">A2</span> Duplica jobId dentro do jobData</div>
             <div class="box-desc">
-              <code>const jobData = { ...model, jobId }</code> — o mesmo id vai tanto como chave do Bull quanto dentro do payload. O processor lê de <code>job.data.jobId</code>.
+              <code>const jobData = { ...model, jobId }</code>. O mesmo id vai tanto como chave do Bull quanto dentro do payload. O processor lê em <code>job.data.jobId</code>.
             </div>
             <div class="box-file">apiV2Job.queue.ts:20-23</div>
           </div>
@@ -670,11 +670,11 @@
           <div class="box redis">
             <div class="box-title"><span class="badge step">A3</span> queue.add() com config completa</div>
             <div class="box-desc">
-              Bull grava no Redis a lista <code>bull:api-v2:wait</code>. Config exata:
+              O Bull grava no Redis a lista <code>bull:api-v2:wait</code>. Config exata:
             </div>
             <div class="code-block">
 <span class="k">return</span> this.queue.<span class="t">add</span>(APIV2_JOB_NAME, jobData, {
-  <span class="k">jobId</span>,                                <span class="c">// dedup key</span>
+  <span class="k">jobId</span>,                                <span class="c">// chave de dedup</span>
   <span class="k">timeout</span>: <span class="s">600000</span>,                    <span class="c">// 10 min</span>
   <span class="k">removeOnComplete</span>: { <span class="k">age</span>: <span class="s">300</span> },     <span class="c">// 5 min após completar</span>
   <span class="k">removeOnFail</span>: {
@@ -690,28 +690,28 @@
 
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">📎 APIV2_QUEUE_NAME / APIV2_JOB_NAME</div>
-            Constantes exportadas em <code>models/apiV2JobModel.ts:32-33</code>:
-            <br>• <code>APIV2_QUEUE_NAME = 'api-v2'</code>
-            <br>• <code>APIV2_JOB_NAME = 'api-v2-job'</code>
-            <br><br>Bull separa por nome de <em>fila</em> e nome de <em>job</em> — permite ter múltiplos tipos na mesma queue (aqui só um).
+            <div class="aside-title">📎 APIV2_QUEUE_NAME e APIV2_JOB_NAME</div>
+            Constantes exportadas em <code>models/apiV2JobModel.ts:32-33</code>.
+            <br><code>APIV2_QUEUE_NAME = 'api-v2'</code>.
+            <br><code>APIV2_JOB_NAME = 'api-v2-job'</code>.
+            <br><br>O Bull separa por nome de fila e nome de job. Permite ter múltiplos tipos na mesma queue. Aqui há apenas um.
           </div>
 
           <div class="aside">
             <div class="aside-title">🎯 jobId como chave de dedup</div>
-            Bull rejeita <code>add()</code> com <code>jobId</code> já existente (se ainda ativo). Chamadores que passam <code>jobId</code> explícito (ex.: MCP passando <code>processId</code>) ganham dedup natural — chamar 2× com mesmo id não duplica.
+            O Bull rejeita <code>add()</code> com <code>jobId</code> já existente (se ainda ativo). Chamadores que passam <code>jobId</code> explícito (por exemplo, MCP passando <code>processId</code>) ganham dedup natural. Duas chamadas com o mesmo id não duplicam.
           </div>
 
           <div class="aside warn">
             <div class="aside-title">⚠️ attempts: 1 (sem retry)</div>
-            Se o worker crashar no meio ou o job der throw, <strong>não</strong> reprocessa. Vai direto pra <code>failed</code>. Bom pra evitar side-effects duplicados (email/webhook), mas ruim se o erro foi transiente (network blip com provider de LLM).
-            <br><br>Trade-off consciente: agentes têm side effects irreversíveis (cobrança, webhook, email).
+            Se o worker falhar no meio ou o job der throw, não reprocessa. Vai direto para <code>failed</code>. É bom para evitar side effects duplicados (email, webhook). É ruim se o erro foi transiente (network blip com provider de LLM).
+            <br><br>Trade-off consciente. Agentes têm side effects irreversíveis (cobrança, webhook, email).
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 removeOn* — housekeeping</div>
-            <code>removeOnComplete: { age: 300 }</code> — job some do Redis 5min após completar (economia de memória).
-            <br><br><code>removeOnFail: { age: 24*3600, count: 20 }</code> — falhas ficam 24h OU as 20 mais recentes (o que expirar primeiro). Ajuda a debugar sem inflar Redis.
+            <div class="aside-title">🔧 removeOn*: housekeeping</div>
+            <code>removeOnComplete: { age: 300 }</code>. O job some do Redis 5 minutos após completar. Economia de memória.
+            <br><br><code>removeOnFail: { age: 24*3600, count: 20 }</code>. Falhas ficam 24h ou as 20 mais recentes, o que expirar primeiro. Ajuda no debug sem inflar o Redis.
           </div>
         </div>
       </div>
@@ -734,10 +734,10 @@
         parseConcurrency(process.env.AGENT_CONCURRENCY) → number  // default 5
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Define <em>quantos jobs simultâneos</em> cada instância do worker processa. É lido no boot da app (no decorator estático) — mudar a env exige restart.
+        <strong>Propósito.</strong> Define quantos jobs simultâneos cada instância do worker processa. É lido no boot da app, no decorator estático. Mudar a env exige restart.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> essa parte é o <em>porteiro do galpão</em> — decide quantos agentes podem estar rodando ao mesmo tempo dentro do mesmo processo Node. Ele lê a env <code>AGENT_CONCURRENCY</code> logo quando a app sobe, tenta parsear como inteiro, e se der ruim (env vazia, string qualquer, número zero ou negativo) cai no default <code>5</code>. Detalhe importante: como o decorator é avaliado <strong>uma vez</strong> na inicialização, trocar a env em runtime não faz nada — precisa reiniciar. E se você roda 3 instâncias do backend, cada uma processa até 5 jobs simultâneos, então o teto real é <code>concorrência × instâncias</code>.
+        <strong>Em resumo.</strong> Este parâmetro decide quantos agentes podem executar simultaneamente dentro do mesmo processo Node. Lê a env <code>AGENT_CONCURRENCY</code> quando a app sobe. Tenta parsear como inteiro. Se falhar (env vazia, string qualquer, número zero ou negativo), cai no default <code>5</code>. O decorator é avaliado uma vez na inicialização. Trocar a env em runtime não faz nada. É necessário reiniciar. Com 3 instâncias do backend, cada uma processa até 5 jobs simultâneos. O teto real é concorrência multiplicado por instâncias.
       </div>
 
       <div class="fn-body-cols">
@@ -775,23 +775,23 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">📎 Por que env var e não config service?</div>
-            Concorrência é infra (não business), e precisa ser lida <em>antes</em> do NestJS montar o DI. Env var pura, avaliada no boot, é o padrão do Bull. Trocar exige restart do processo.
+            Concorrência é infra (não business). Precisa ser lida antes do NestJS montar o DI. Env var pura, avaliada no boot, é o padrão do Bull. Trocar exige restart do processo.
           </div>
 
           <div class="aside">
-            <div class="aside-title">🎯 Escala real = concorrência × instâncias</div>
-            Se 3 instâncias do backend estão vivas, cada uma processa até 5 jobs simultâneos ⇒ 15 no total. Não há coordenação entre elas — Bull distribui via Redis (BRPOPLPUSH).
+            <div class="aside-title">🎯 Escala real: concorrência × instâncias</div>
+            Se 3 instâncias do backend estão ativas, cada uma processa até 5 jobs simultâneos. Total de 15. Não há coordenação entre elas. O Bull distribui via Redis (BRPOPLPUSH).
           </div>
 
           <div class="aside warn">
             <div class="aside-title">⚠️ Env inválida cai no default silenciosamente</div>
-            <code>AGENT_CONCURRENCY=abc</code> ⇒ <code>parseInt('abc', 10) = NaN</code> ⇒ <code>Number.isFinite(NaN) = false</code> ⇒ default 5.
-            <br><br>Nenhum log, nenhum warning. Se você achou que setou 20 e digitou errado, roda com 5 sem avisar.
+            <code>AGENT_CONCURRENCY=abc</code> resulta em <code>parseInt('abc', 10) = NaN</code>. <code>Number.isFinite(NaN) = false</code>. Aplica default 5.
+            <br><br>Nenhum log, nenhum warning. Um erro de digitação (querer 20 e digitar errado) resulta em execução com 5 sem aviso.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 CALLBACK_TIMEOUT_MS</div>
-            <code>const CALLBACK_TIMEOUT_MS = 10_000</code> (10s) — timeout do POST HTTP no callback (fn C e E). Diferente do timeout do job em si (600s).
+            <code>const CALLBACK_TIMEOUT_MS = 10_000</code> (10s). É o timeout do POST HTTP no callback (fn C e E). Diferente do timeout do job em si (600s).
           </div>
         </div>
       </div>
@@ -805,7 +805,7 @@
     <div class="fn-card-header">
       <div class="fn-title">
         <span class="badge migrated" style="background:#3B82F6;color:white">C</span>
-        <code>execute() — fluxo happy path</code>
+        <code>execute(). Fluxo happy path</code>
       </div>
       <div class="fn-loc">apiV2Job.processor.ts:48-127</div>
     </div>
@@ -814,10 +814,10 @@
         async execute(job: Job&lt;ApiV2QueueModel&gt;) → result
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Método principal — recebe o job Bull, extrai payload, orquestra chamada ao <code>FluxService.apiV2</code>, atualiza tabelas de status e dispara callback HTTP no fim.
+        <strong>Propósito.</strong> Método principal. Recebe o job Bull. Extrai payload. Orquestra a chamada ao <code>FluxService.apiV2</code>. Atualiza tabelas de status. Dispara callback HTTP no fim.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> essa é a <em>linha de montagem</em> — desempacota o job (jobId, params, webhookUrl, flag de formato), resolve dois identificadores importantes (<code>processId</code> vem do <code>parentProcessId</code> se veio de sub-flow, senão do próprio jobId; <code>executionId</code> vem só quando o chamador quer rastreamento na tabela <code>flow_execution_status</code>), abre timestamp de duração, faz duas marcações de "começou" se os IDs existem (MCP + flow_execution_status são independentes), chama o <code>fluxService.apiV2</code> — essa é a chamada pesada que roda a Fase 1-4 inteira do agente —, calcula duração no fim, decide se foi erro (existe <code>result.nodeError</code>) e propaga status pras duas tabelas, e só então dispara webhook. O retorno vai pro <code>job.returnvalue</code> do Bull.
+        <strong>Em resumo.</strong> O método desempacota o job (jobId, params, webhookUrl, flag de formato). Resolve dois identificadores importantes. <code>processId</code> vem de <code>parentProcessId</code> se veio de sub-flow. Caso contrário, do próprio jobId. <code>executionId</code> vem só quando o chamador quer rastreamento na tabela <code>flow_execution_status</code>. Registra o timestamp de duração. Faz duas marcações de início se os IDs existem. MCP e flow_execution_status são independentes. Chama <code>fluxService.apiV2</code>. Essa é a chamada pesada que executa a Fase 1-4 inteira do agente. Calcula duração no fim. Decide se foi erro pela presença de <code>result.nodeError</code>. Propaga status para as duas tabelas. Só então dispara o webhook. O retorno vai para <code>job.returnvalue</code> do Bull.
       </div>
 
       <div class="fn-body-cols">
@@ -884,10 +884,10 @@
           <div class="arrow">↓</div>
 
           <div class="box cross">
-            <div class="box-title"><span class="badge step">C6</span> Chamada ao FluxService.apiV2 (o miolo)</div>
+            <div class="box-title"><span class="badge step">C6</span> Chamada ao FluxService.apiV2 (o núcleo)</div>
             <div class="box-desc">
               <code>await this.fluxService.apiV2({ ...params, parentProcessId: processId, mcpTokenId: params.mcpTracking?.tokenId })</code>
-              <br><br>Isso roda a máquina toda das Fases 1-4 (validação → carregamento → loop de nós → finalização). O <code>...params</code> derrama tudo do <code>ApiV2QueueModel</code>, mas o <code>apiV2</code> só desestrutura o que conhece — campos extras (ex.: <code>executionId</code>) passam ignorados pela destructuring.
+              <br><br>Executa a máquina completa das Fases 1-4 (validação, carregamento, loop de nós, finalização). O <code>...params</code> encaminha tudo do <code>ApiV2QueueModel</code>. O <code>apiV2</code> só desestrutura o que conhece. Campos extras (por exemplo, <code>executionId</code>) passam ignorados pela destructuring.
             </div>
             <div class="box-file">apiV2Job.processor.ts:71-75 → flux.service.ts:2280</div>
           </div>
@@ -905,29 +905,29 @@
 
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 processId ≠ jobId ≠ executionId</div>
-            Três IDs distintos convivendo:
-            <br>• <code>jobId</code> = id do Bull (chave dedup)
-            <br>• <code>processId</code> = id lógico do run (usado pelo MCP e pelo run-log). Vem de <code>parentProcessId</code> pra sub-flows; senão = jobId.
-            <br>• <code>executionId</code> = id na tabela <code>flow_execution_status</code>. Só existe pra runs vindos de trigger com callback opt-in.
+            <div class="aside-title">🎯 processId, jobId e executionId são distintos</div>
+            Três IDs distintos convivem.
+            <br><code>jobId</code>. Id do Bull. Chave de dedup.
+            <br><code>processId</code>. Id lógico da execução. Usado pelo MCP e pelo run log. Vem de <code>parentProcessId</code> em sub-flows. Caso contrário, é igual a jobId.
+            <br><code>executionId</code>. Id na tabela <code>flow_execution_status</code>. Só existe em execuções vindas de trigger com callback opt-in.
           </div>
 
           <div class="aside warn">
-            <div class="aside-title">⚠️ Marcações têm early-exit por gate</div>
-            <code>markRunning</code> só roda se <code>params.mcpTracking</code>.
-            <br><code>markInProgress</code> só roda se <code>executionId</code>.
-            <br><br>Isso quer dizer que a maioria dos runs (trigger interno, fire-and-forget dos nós) <strong>não</strong> escreve em nenhuma das tabelas — passa direto pro <code>apiV2</code>.
+            <div class="aside-title">⚠️ Marcações têm early exit por gate</div>
+            <code>markRunning</code> só executa se <code>params.mcpTracking</code>.
+            <br><code>markInProgress</code> só executa se <code>executionId</code>.
+            <br><br>A maioria das execuções (trigger interno, fire-and-forget dos nós) não escreve em nenhuma das tabelas. Passa direto para o <code>apiV2</code>.
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 Spread ...params silenciosamente ignora executionId</div>
-            <code>this.fluxService.apiV2({ ...params, ... })</code> derrama <code>executionId</code> no argumento, mas a destructuring do <code>apiV2</code> (flux.service.ts:2280-2318) <strong>não menciona executionId</strong> — ele fica no objeto mas nunca é lido. Puro <em>dead data</em>.
+            <div class="aside-title">🔧 Spread ...params ignora executionId silenciosamente</div>
+            <code>this.fluxService.apiV2({ ...params, ... })</code> encaminha <code>executionId</code> no argumento. A destructuring do <code>apiV2</code> (flux.service.ts:2280-2318) não menciona <code>executionId</code>. Fica no objeto, mas nunca é lido. É dead data.
           </div>
 
           <div class="aside">
-            <div class="aside-title">📎 result.nodeError decide erro vs sucesso</div>
-            O <code>apiV2</code> não throw em erro de nó — retorna <code>result.nodeError: string</code>. Se estiver preenchido, ambas as tabelas viram status <em>error</em>. Se estiver <code>null</code>/<code>undefined</code>, viram <em>completed</em>.
-            <br><br>Só exceção JS não capturada (queda de rede, bug) cai no catch (fn E).
+            <div class="aside-title">📎 result.nodeError decide erro versus sucesso</div>
+            O <code>apiV2</code> não lança em erro de nó. Retorna <code>result.nodeError: string</code>. Se preenchido, ambas as tabelas viram status <em>error</em>. Se <code>null</code> ou <code>undefined</code>, viram <em>completed</em>.
+            <br><br>Só exceção JavaScript não capturada (queda de rede, bug) cai no catch (fn E).
           </div>
         </div>
       </div>
@@ -950,10 +950,10 @@
         private buildApiV2CallbackPayload(args): { executionId, success, flowId, sessionId, totalTokensUsed, totalCost, timestamp, outputs, error }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Monta o payload "novo" (formato v2) do callback HTTP. Só usado quando <code>apiV2CallbackFormat === true</code>. Senão o processor manda o payload legacy <code>{ jobId, result }</code> direto.
+        <strong>Propósito.</strong> Monta o payload novo (formato v2) do callback HTTP. Só usado quando <code>apiV2CallbackFormat === true</code>. Caso contrário, o processor envia o payload legacy <code>{ jobId, result }</code> direto.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> é o <em>envelope de saída</em> pro cliente que pediu callback moderno. O envelope legacy é cru — devolve o <code>result</code> inteiro, com tudo que o <code>apiV2</code> retornou. O novo é enxuto e "estável": pega só o essencial (executionId, flowId, sessionId, tokens totais, custo total, timestamp ISO, outputs, erro se houver) e monta um objeto plano. A flag <code>success</code> é derivada — <code>!result.nodeError</code>, ou seja, <code>true</code> se não tem erro. Se teve erro, <code>outputs</code> vai como <code>[]</code> pra não vazar output parcial confuso. E defaults defensivos em todos os campos numéricos (<code>?? 0</code>) — se o <code>apiV2</code> esqueceu de contabilizar, não quebra o payload.
+        <strong>Em resumo.</strong> É o envelope de saída para o cliente que pediu callback moderno. O envelope legacy é cru. Devolve o <code>result</code> inteiro, com tudo que o <code>apiV2</code> retornou. O novo é enxuto e estável. Pega só o essencial (executionId, flowId, sessionId, tokens totais, custo total, timestamp ISO, outputs, erro se houver) e monta um objeto plano. A flag <code>success</code> é derivada de <code>!result.nodeError</code>. Vale <code>true</code> se não há erro. Em caso de erro, <code>outputs</code> vai como <code>[]</code> para não vazar saída parcial confusa. Defaults defensivos em todos os campos numéricos (<code>?? 0</code>). Se o <code>apiV2</code> esqueceu de contabilizar, o payload não quebra.
       </div>
 
       <div class="fn-body-cols">
@@ -978,11 +978,11 @@
           <div class="arrow">↓</div>
 
           <div class="box decision">
-            <div class="box-title"><span class="badge step">D2</span> Legacy vs novo — dispatch em (C)</div>
+            <div class="box-title"><span class="badge step">D2</span> Legacy versus novo. Dispatch em (C)</div>
             <div class="code-block">
 <span class="k">const</span> payload = apiV2CallbackFormat
   ? this.<span class="t">buildApiV2CallbackPayload</span>({ executionId, flowId, sessionId, result })
-  : { jobId, result };  <span class="c">// legacy — result cru</span>
+  : { jobId, result };  <span class="c">// legacy: result cru</span>
             </div>
             <div class="box-file">apiV2Job.processor.ts:110-118</div>
           </div>
@@ -1008,13 +1008,13 @@
           </div>
 
           <div class="aside">
-            <div class="aside-title">🎯 outputs = [] quando erro</div>
-            Se <code>result.nodeError</code> presente, <code>outputs</code> vira <code>[]</code> — decisão explícita pra não vazar output parcial pro caller. O legacy manda <code>result</code> cru, então pode ter output parcial + erro juntos.
+            <div class="aside-title">🎯 outputs = [] quando há erro</div>
+            Se <code>result.nodeError</code> está presente, <code>outputs</code> vira <code>[]</code>. É uma decisão explícita para não vazar saída parcial ao caller. O legacy envia <code>result</code> cru, então pode ter saída parcial e erro juntos.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 Defaults ?? 0 em campos numéricos</div>
-            <code>totalTokensUsed ?? 0</code> e <code>totalCost ?? 0</code> — se <code>apiV2</code> não populou (falhou cedo), payload ainda tem tipo consistente. Cliente HTTP pode confiar em <code>typeof x === 'number'</code>.
+            <code>totalTokensUsed ?? 0</code> e <code>totalCost ?? 0</code>. Se <code>apiV2</code> não populou (falhou cedo), o payload ainda tem tipo consistente. O cliente HTTP pode confiar em <code>typeof x === 'number'</code>.
           </div>
         </div>
       </div>
@@ -1028,7 +1028,7 @@
     <div class="fn-card-header">
       <div class="fn-title">
         <span class="badge migrated" style="background:#EF4444;color:white">E</span>
-        <code>catch block — replica de erro</code>
+        <code>catch block. Replica de erro</code>
       </div>
       <div class="fn-loc">apiV2Job.processor.ts:128-173</div>
     </div>
@@ -1037,10 +1037,10 @@
         catch (error) { markFinished('error') · markError · callback(success:false) · throw error; }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Trata exceções JS não capturadas pelo <code>apiV2</code> (queda de rede, throw de terceiros, bug de código). Marca ambas tabelas como erro, dispara callback com <code>success: false</code>, e re-lança pro Bull registrar em <code>failed</code>.
+        <strong>Propósito.</strong> Trata exceções JavaScript não capturadas pelo <code>apiV2</code> (queda de rede, throw de terceiros, bug de código). Marca ambas as tabelas como erro. Dispara callback com <code>success: false</code>. Relança para o Bull registrar em <code>failed</code>.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> é o <em>plano B espelhado</em> — praticamente refaz os mesmos 4 passos do happy path (durationMs, MCP markFinished, FES markError, callback), mas com valores hard-coded pra erro: status <em>error</em>, tokens <code>0</code>, cost <code>0</code>. A mensagem do erro é extraída com <code>error instanceof Error ? error.message : String(error)</code> — cobre tanto Error nativo quanto qualquer coisa jogável (string, número, obj). No fim, <code>throw error</code> devolve a exception pro Bull, pra que ele mova o job pra lista <em>failed</em> no Redis e dispare o hook <code>@OnQueueFailed</code>. Sem esse re-throw, o Bull acharia que deu certo e nunca chamaria o handler de falha.
+        <strong>Em resumo.</strong> Este bloco espelha o happy path com valores de erro. Refaz os mesmos 4 passos (durationMs, MCP markFinished, FES markError, callback), mas com valores hardcoded para erro. Status <em>error</em>, tokens <code>0</code>, cost <code>0</code>. A mensagem do erro é extraída com <code>error instanceof Error ? error.message : String(error)</code>. Cobre tanto Error nativo quanto qualquer valor lançável (string, número, objeto). No fim, <code>throw error</code> devolve a exceção ao Bull. O Bull move o job para a lista <em>failed</em> no Redis e dispara o hook <code>@OnQueueFailed</code>. Sem o re-throw, o Bull consideraria sucesso e nunca chamaria o handler de falha.
       </div>
 
       <div class="fn-body-cols">
@@ -1093,9 +1093,9 @@
           <div class="arrow">↓</div>
 
           <div class="box decision">
-            <div class="box-title"><span class="badge step">E5</span> throw error (fundamental!)</div>
+            <div class="box-title"><span class="badge step">E5</span> throw error (fundamental)</div>
             <div class="box-desc">
-              <code>throw error;</code> — sem isso, o Bull acharia que o job deu certo. O re-throw é o que aciona o <code>@OnQueueFailed</code> em (F) e move o job pra <code>bull:api-v2:failed</code>.
+              <code>throw error;</code>. Sem isso, o Bull consideraria que o job deu certo. O re-throw aciona o <code>@OnQueueFailed</code> em (F) e move o job para <code>bull:api-v2:failed</code>.
             </div>
             <div class="box-file">apiV2Job.processor.ts:172</div>
           </div>
@@ -1104,23 +1104,23 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">📎 Payload de erro do formato novo</div>
-            Diferente do happy path (que tem <code>outputs</code>, <code>totalTokensUsed</code>, etc.), o payload de erro é <strong>menor</strong>: só <code>{ executionId, success:false, error, flowId, timestamp }</code>. Cliente que espera <code>outputs</code> tem que checar <code>success</code> antes.
+            Diferente do happy path (que tem <code>outputs</code>, <code>totalTokensUsed</code>, entre outros), o payload de erro é menor. Só <code>{ executionId, success:false, error, flowId, timestamp }</code>. Cliente que espera <code>outputs</code> precisa checar <code>success</code> antes.
           </div>
 
           <div class="aside warn">
             <div class="aside-title">⚠️ E se o callback de erro também falhar?</div>
-            <code>lastValueFrom(httpService.post(...))</code> pode dar throw (timeout, DNS, 5xx). Essa exception <strong>propaga pra cima do catch</strong> — não é capturada. Resultado: job vai pra <code>failed</code> com a mensagem do erro do callback, não do erro original.
-            <br><br>Sequência ruim: MCP/FES já foram marcados com o erro original, mas o Bull registra o erro do callback. Divergência sutil pra debug.
+            <code>lastValueFrom(httpService.post(...))</code> pode lançar (timeout, DNS, 5xx). Essa exceção propaga acima do catch. Não é capturada. O job vai para <code>failed</code> com a mensagem do erro do callback, não do erro original.
+            <br><br>Sequência ruim. MCP e FES já foram marcados com o erro original, mas o Bull registra o erro do callback. É uma divergência sutil no debug.
           </div>
 
           <div class="aside warn">
-            <div class="aside-title">⚠️ tokens: 0 / cost: 0 hardcoded</div>
-            Se o <code>apiV2</code> falhou no meio (após já ter feito calls pra provider caras), o erro sobe com <code>tokens: 0, cost: 0</code>. A cobrança real fica <em>invisível</em> nesse rastro — precisa cross-referenciar com logs de provider.
+            <div class="aside-title">⚠️ tokens: 0 e cost: 0 hardcoded</div>
+            Se o <code>apiV2</code> falhou no meio (após já ter feito chamadas caras a provedores), o erro sobe com <code>tokens: 0, cost: 0</code>. A cobrança real fica invisível nesse rastro. Requer cross-reference com logs de provider.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 instanceof Error é seguro</div>
-            <code>error instanceof Error ? error.message : String(error)</code> — TS aceita anything em <code>catch</code>. Cobre <code>throw 'string'</code>, <code>throw 42</code>, <code>throw { foo: 1 }</code> sem crashar.
+            <code>error instanceof Error ? error.message : String(error)</code>. TypeScript aceita qualquer valor em <code>catch</code>. Cobre <code>throw 'string'</code>, <code>throw 42</code> e <code>throw { foo: 1 }</code> sem crash.
           </div>
         </div>
       </div>
@@ -1143,10 +1143,10 @@
         onFailed(job: Job, err: Error) → void  // Winston.error com metadata estruturada
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Hook do Bull chamado quando o job vai pra <code>failed</code> (por causa do <code>throw</code> em E ou timeout). Registra no Winston com metadata rica pra observabilidade — <em>fora</em> do fluxo síncrono do <code>execute()</code>.
+        <strong>Propósito.</strong> Hook do Bull chamado quando o job vai para <code>failed</code> (por causa do <code>throw</code> em E ou timeout). Registra no Winston com metadata rica para observabilidade. Fora do fluxo síncrono do <code>execute()</code>.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> é a <em>caixa preta</em> do processor. Roda automaticamente sempre que um job termina em <code>failed</code> — seja porque <code>execute()</code> jogou uma exception no catch (E5) ou porque o job estourou o timeout de 10min sem terminar. Ele só faz uma coisa: chama <code>this.logger.error</code> (Winston) com uma metadata bem estruturada — <code>error_type: 'Internal Server Error'</code>, <code>status: 500</code>, o <code>user</code> e <code>flow</code> do payload (com <code>?.</code> defensivo, porque em teoria pode faltar), e o <code>stack</code> do erro. Isso é o que aparece no CloudWatch / logs de produção quando um agente falha. Note que ele <strong>não</strong> escreve nas tabelas MCP/FES — isso já foi feito no catch. Aqui é só observabilidade.
+        <strong>Em resumo.</strong> É a caixa preta do processor. Executa automaticamente sempre que um job termina em <code>failed</code>. Isso ocorre quando <code>execute()</code> lança uma exceção no catch (E5) ou o job estoura o timeout de 10 minutos. Faz apenas uma coisa. Chama <code>this.logger.error</code> (Winston) com metadata estruturada. Inclui <code>error_type: 'Internal Server Error'</code>, <code>status: 500</code>, o <code>user</code> e <code>flow</code> do payload (com <code>?.</code> defensivo, pois pode faltar) e o <code>stack</code> do erro. É o que aparece no CloudWatch e nos logs de produção quando um agente falha. Não escreve nas tabelas MCP e FES. Isso já foi feito no catch. Aqui é apenas observabilidade.
       </div>
 
       <div class="fn-body-cols">
@@ -1175,22 +1175,22 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Complementar, não substituto</div>
-            F1 <strong>não</strong> escreve em MCP/FES — quem faz isso é o catch (E). F1 só existe pro Winston (CloudWatch / Datadog / etc.). É o log estruturado que fica na esteira de observabilidade.
+            F1 não escreve em MCP e FES. Isso é feito no catch (E). F1 existe apenas para o Winston (CloudWatch, Datadog, etc.). É o log estruturado da esteira de observabilidade.
           </div>
 
           <div class="aside">
             <div class="aside-title">📎 Dispara também em timeout do Bull</div>
-            Se o job estourar <code>timeout: 600000</code>, o Bull mata o worker e chama <code>@OnQueueFailed</code> — mas nesse caso <strong>o catch de E NÃO roda</strong> (o job foi morto de fora). Resultado: F1 loga, mas MCP/FES podem ter ficado em <em>in_progress</em> pra sempre. Órfão.
+            Se o job estoura <code>timeout: 600000</code>, o Bull mata o worker e chama <code>@OnQueueFailed</code>. Nesse caso, o catch de E não executa. O job foi encerrado de fora. F1 registra, mas MCP e FES podem ficar em <em>in_progress</em> para sempre. É um órfão.
           </div>
 
           <div class="aside warn">
-            <div class="aside-title">⚠️ user completo no log</div>
-            <code>job.data?.params?.user</code> — passa o objeto <code>User</code> inteiro pra dentro do log. Inclui email, id, roles, e possivelmente PII. Violação sutil da regra de logging (não vazar nome/email). Ficar de olho quando migrar pro worker — chance ótima de limpar isso.
+            <div class="aside-title">⚠️ objeto user completo no log</div>
+            <code>job.data?.params?.user</code>. Passa o objeto <code>User</code> inteiro para dentro do log. Inclui email, id, roles e possivelmente PII. Viola a regra de logging (não vazar nome ou email). Deve ser observado na migração para o worker. É uma boa oportunidade de limpeza.
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 error_type + status 500 hard-coded</div>
-            Convenção interna: todo job falho é classificado como <code>'Internal Server Error'</code>/500, independente da causa real (validation, network, provider). Facilita dashboards mas perde granularidade.
+            <div class="aside-title">🔧 error_type e status 500 hardcoded</div>
+            Convenção interna. Todo job falho é classificado como <code>'Internal Server Error'</code> com status 500, independentemente da causa real (validation, network, provider). Facilita dashboards, mas perde granularidade.
           </div>
         </div>
       </div>
@@ -1199,22 +1199,22 @@
 
   <!-- SUMMARY -->
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo — o que sai de 1.1:</strong>
-    <br>• <code>job.returnvalue</code> = o objeto <code>result</code> do <code>fluxService.apiV2</code> (persistido pelo Bull no Redis por 5min após completar)
-    <br>• Tabela <code>mcp_run_status</code>: row atualizada com <code>status/tokens/cost/durationMs/errorMessage</code> — <em>só</em> se <code>params.mcpTracking</code> estava presente
-    <br>• Tabela <code>flow_execution_status</code>: row atualizada com <code>status/output/tokensUsed/totalCost/durationMs/finishedAt</code> — <em>só</em> se <code>executionId</code> estava presente
-    <br>• Webhook HTTP POST disparado (10s timeout) com payload legacy <code>{ jobId, result }</code> ou novo formato v2 — <em>só</em> se <code>webhookUrl</code> presente
-    <br>• Em falha: exception re-lançada ⇒ Bull marca <code>failed</code> ⇒ Winston loga via <code>@OnQueueFailed</code> com stack + user + flow
+    <strong>Resumo. O que sai de 1.1:</strong>
+    <br><code>job.returnvalue</code>. O objeto <code>result</code> do <code>fluxService.apiV2</code>. Persistido pelo Bull no Redis por 5 minutos após completar.
+    <br>Tabela <code>mcp_run_status</code>. Linha atualizada com <code>status</code>, <code>tokens</code>, <code>cost</code>, <code>durationMs</code> e <code>errorMessage</code>. Só se <code>params.mcpTracking</code> estava presente.
+    <br>Tabela <code>flow_execution_status</code>. Linha atualizada com <code>status</code>, <code>output</code>, <code>tokensUsed</code>, <code>totalCost</code>, <code>durationMs</code> e <code>finishedAt</code>. Só se <code>executionId</code> estava presente.
+    <br>Webhook HTTP POST disparado (10s timeout) com payload legacy <code>{ jobId, result }</code> ou novo formato v2. Só se <code>webhookUrl</code> presente.
+    <br>Em falha, a exceção é relançada. O Bull marca <code>failed</code>. Winston registra via <code>@OnQueueFailed</code> com stack, user e flow.
   </div>
 
   <div class="note">
     <strong>Observações para migração:</strong>
-    <br>• <strong>Fila continua existindo hoje porque</strong> o <code>apiV2</code> ainda é síncrono e roda no request do backend — pra callers que querem fire-and-forget (MCP tool, nós <em>triggerOnly</em>), a fila é o único desacoplamento HTTP disponível. Sem worker Temporal, sem alternativa.
-    <br>• Se o worker Temporal absorver a execução, a fila <strong>pode ser deletada</strong> — o próprio Temporal já é uma fila durável com retry/timeout/observabilidade builtin. Chamador vira <code>client.workflow.start(...)</code> em vez de <code>enqueueApiV2Job</code>.
-    <br>• Pontos que sobrevivem sem fila: (1) o <em>dispatch de callback HTTP</em> vira uma atividade no workflow; (2) as marcações em <code>mcp_run_status</code> e <code>flow_execution_status</code> viram atividades de status (podem inclusive ser consolidadas numa só tabela, hoje tem duplicação);(3) <code>OnQueueFailed</code> vira o handler de erro do workflow.
-    <br>• <strong>Attempts: 1</strong> não muda: agentes têm side-effects irreversíveis. O Temporal precisa ser configurado com <code>maximumAttempts: 1</code> na retry policy da atividade principal.
-    <br>• <strong>Concorrência</strong> vira config do worker Temporal (<code>taskQueue</code> concurrency), não mais env var lida no boot do Nest.
-    <br>• <strong>Riscos de deixar pra depois:</strong> a duplicação MCP/FES + os dead-data no spread + o log de PII são bugs latentes. Vale limpar junto quando reescrever o handler pro worker.
+    <br>A fila continua existindo hoje porque o <code>apiV2</code> ainda é síncrono e executa no request do backend. Para callers que querem fire-and-forget (MCP tool, nós <em>triggerOnly</em>), a fila é o único desacoplamento HTTP disponível. Sem worker Temporal, não há alternativa.
+    <br>Se o worker Temporal absorver a execução, a fila pode ser deletada. O próprio Temporal já é uma fila durável com retry, timeout e observabilidade builtin. O chamador passa a usar <code>client.workflow.start(...)</code> em vez de <code>enqueueApiV2Job</code>.
+    <br>Pontos que sobrevivem sem fila. O dispatch de callback HTTP vira uma activity no workflow. As marcações em <code>mcp_run_status</code> e <code>flow_execution_status</code> viram activities de status. Podem ser consolidadas numa só tabela, pois hoje há duplicação. <code>OnQueueFailed</code> vira o handler de erro do workflow.
+    <br>Attempts: 1 não muda. Agentes têm side effects irreversíveis. O Temporal precisa ser configurado com <code>maximumAttempts: 1</code> na retry policy da activity principal.
+    <br>Concorrência vira config do worker Temporal (concurrency de <code>taskQueue</code>). Não mais env var lida no boot do Nest.
+    <br>Riscos de deixar para depois. A duplicação MCP e FES, o dead data no spread e o log de PII são bugs latentes. Vale limpar em conjunto ao reescrever o handler para o worker.
   </div>
 
   <!-- FOOTER NAV -->

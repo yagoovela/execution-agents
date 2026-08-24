@@ -584,24 +584,59 @@
     <h1>Passo 1.4 — Setup de log por espaço</h1>
   </div>
   <div class="page-sub">
-    Bloco condicional em <code>flux.service.ts:2371-2437</code> que inicia o coletor hierárquico de logs (<code>RunLogCollector</code>) e grava a primeira row de <code>space_run_logs</code> — <strong>só executa se o space tiver logging habilitado</strong>.
+    Bloco condicional em <code>flux.service.ts:2371-2437</code>. Inicia o coletor hierárquico de logs (<code>RunLogCollector</code>) e grava a primeira linha em <code>space_run_logs</code>. Executa apenas quando o space tem logging habilitado.
   </div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
     <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
     <ul>
-      <li><strong>Decide se vale logar essa run:</strong> checa se é execução top-level, se o space tem logging ligado, se o <code>runType</code> não é <em>manual/chatbot</em>, e se o flow está mesmo num space. Se qualquer um falhar, o passo inteiro é pulado e a run roda em silêncio.</li>
-      <li><strong>Congela o preço do token:</strong> pergunta pro plano ativo do dono do flow qual é o <code>fluxTokenPrice</code> atual e carimba esse valor no doc — igual sistema de e-commerce guardando preço unitário no order_item. Se der pau, fallback pra <code>0</code> sem quebrar a execução.</li>
-      <li><strong>Monta o "caderno de campo" da run:</strong> cria em memória o <code>RunLogCollector</code> root com toda a metadata (processId, flow, space, org, quem disparou, input com secrets ofuscados) e métricas zeradas — a árvore de nós vai sendo anexada ao longo da execução. Se logging estiver off, devolve uma versão <em>no-op</em> pra os call-sites não precisarem de <code>if</code>.</li>
-      <li><strong>Planta a bandeirinha inicial no banco:</strong> escreve logo uma row em <code>space_run_logs</code> com status <code>in_progress</code>, praticamente vazia. Serve pra que, se o processo morrer no meio (OOM, deploy), a run continue existindo no dashboard e um cron depois carimbe como erro.</li>
-      <li><strong>Conecta o flush debounced:</strong> pluga o callback <code>scheduleUpsert</code> com debounce de 2s — cada mudança no doc (startNode, endNode, sub-run, finalize) agenda um write que reseta o timer, agrupando N eventos em ~1 write por 2s de atividade.</li>
-      <li><strong>Saída:</strong> variável <code>runLogCollector</code> pronta pra ser passada adiante e uma row inicial em <code>space_run_logs</code>. Se o gate não passou, <code>runLogCollector</code> fica <code>undefined</code> e os call-sites de Fase 3 usam optional chaining.</li>
+      <li>
+        <strong>Decide se a execução gera log.</strong>
+        Verifica quatro condições:
+        <ul>
+          <li>é execução de topo (não é sub-fluxo);</li>
+          <li>o space tem logging habilitado;</li>
+          <li>o <code>runType</code> não é <code>manual</code> nem <code>chatbot</code>;</li>
+          <li>o flow pertence a um space.</li>
+        </ul>
+        Se qualquer condição falhar, o passo inteiro é descartado. A execução prossegue sem registro.
+      </li>
+      <li>
+        <strong>Congela o preço do token.</strong>
+        Consulta o plano ativo do dono do flow. Grava o <code>fluxTokenPrice</code> atual no documento do log. Segue o mesmo padrão de e-commerce, que salva o preço unitário em <code>order_item</code>. Em caso de erro, o valor cai para <code>0</code> e a execução prossegue.
+      </li>
+      <li>
+        <strong>Monta o coletor raiz.</strong>
+        Cria em memória o <code>RunLogCollector</code> como raiz. Preenche a metadata inicial:
+        <ul>
+          <li><code>processId</code>;</li>
+          <li><code>flow</code>;</li>
+          <li><code>space</code>;</li>
+          <li><code>org</code>;</li>
+          <li>responsável pelo disparo;</li>
+          <li>entrada com segredos ofuscados;</li>
+          <li>métricas zeradas.</li>
+        </ul>
+        A árvore de nós é anexada ao longo da execução. Quando o logging está desativado, devolve uma versão no-op. Os call-sites não precisam de <code>if</code>.
+      </li>
+      <li>
+        <strong>Grava a linha inicial no banco.</strong>
+        Escreve uma linha em <code>space_run_logs</code> com status <code>in_progress</code>. A linha nasce praticamente vazia. Esse write garante que a execução aparece no dashboard mesmo quando o processo morre no meio (OOM, deploy). Um cron posterior marca a execução como erro.
+      </li>
+      <li>
+        <strong>Conecta o flush debounced.</strong>
+        Registra o callback <code>scheduleUpsert</code> com debounce de 2s. Cada mudança no doc (<code>startNode</code>, <code>endNode</code>, sub-run, <code>finalize</code>) agenda um write. Cada agendamento reseta o timer. O padrão agrupa N eventos em cerca de 1 write a cada 2s de atividade.
+      </li>
+      <li>
+        <strong>Saída.</strong>
+        A variável <code>runLogCollector</code> fica pronta para propagação. A linha inicial em <code>space_run_logs</code> fica gravada. Quando o gate falha, <code>runLogCollector</code> recebe <code>undefined</code>. Os call-sites da Fase 3 usam optional chaining.
+      </li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto:</strong> este passo é <em>cross-cutting</em> (observabilidade), não é essencial pra execução do agente. Se o gate não passar, tudo continua funcionando — apenas não vai haver trace na tabela <code>space_run_logs</code>.
+    <strong>Contexto.</strong> Este passo é cross-cutting (observabilidade). Não é essencial para a execução do agente. Quando o gate falha, a execução continua normalmente. Apenas não há trace na tabela <code>space_run_logs</code>.
   </div>
 
   <!-- Overview chain -->
@@ -617,7 +652,7 @@
       <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>spaceRunLogsService.upsertRun()</a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Nota: além destas 4 diretas, o passo <em>configura</em> o callback <code>flush</code> que dispara depois assincronamente via <a href="#fn-e" style="color:#3B82F6;text-decoration:none;font-weight:600;">scheduleUpsert (E)</a> — cada mudança no doc (startNode, endNode, finalize) chama esse flush.
+      Nota. Além das 4 chamadas diretas, o passo configura o callback <code>flush</code>. O <code>flush</code> dispara depois de forma assíncrona via <a href="#fn-e" style="color:#3B82F6;text-decoration:none;font-weight:600;">scheduleUpsert (E)</a>. Cada mudança no doc chama esse flush (<code>startNode</code>, <code>endNode</code>, <code>finalize</code>).
     </div>
   </div>
 
@@ -637,10 +672,16 @@
         if (!isNestedRunLog) { const loggingEnabledForSpace = !!space.loggingEnabled && !['manual','chatbot'].includes(runType); ... if (loggingEnabledForSpace && spaceOwnerId) { ... } }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Duas guardas encadeadas decidem se vale a pena montar o coletor e persistir logs. Se qualquer uma falhar, todo o bloco de setup é pulado e a execução segue sem <code>runLogCollector</code>.
+        <strong>Propósito.</strong> Duas guardas encadeadas decidem se o coletor deve ser montado e os logs persistidos. Quando qualquer uma falha, o bloco de setup é descartado. A execução segue sem <code>runLogCollector</code>.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> pense nesse bloco como o <em>vigia da portaria do logging</em>. Antes de gastar CPU e escrita no banco montando toda a estrutura de trace, ele faz três perguntas: essa execução é de "primeiro nível" (não é um sub-flow chamado por outro)? o space desse flow tem logging ligado E não é um modo interativo tipo "Run" do editor ou chatbot? esse flow está mesmo dentro de um space (não é flow solto)? Só se as três respostas forem "sim" o resto do setup roda; caso contrário, a execução continua normalmente, só que <strong>silenciosa</strong> — nada aparece no dashboard. Ainda faz um <code>console.log</code> com a decisão pra facilitar debug do tipo "cadê minha run que não apareceu?".
+        <strong>Em resumo.</strong> Este bloco é o vigia da portaria do logging. Antes de montar toda a estrutura de trace, verifica três condições:
+        <ul style="margin:8px 0;padding-left:20px">
+          <li>a execução é de topo (não é sub-fluxo);</li>
+          <li>o space tem logging habilitado e o <code>runType</code> não é interativo (<code>manual</code>, <code>chatbot</code>);</li>
+          <li>o flow pertence a um space.</li>
+        </ul>
+        Apenas quando as três condições passam, o setup roda. Caso contrário, a execução prossegue sem registro no dashboard. Um <code>console.log</code> grava a decisão do gate. Isso facilita debug quando uma execução não aparece no dashboard.
       </div>
 
       <div class="fn-body-cols">
@@ -669,7 +710,7 @@
           <div class="box cross">
             <div class="box-title">console.log('[SpaceRunLog gate]', {...})</div>
             <div class="box-desc">
-              Loga a decisão do gate com <code>flowId</code>, <code>flowName</code>, <code>spaceOwnerId</code>, <code>spaceLoggingEnabled</code>, <code>runType</code>, <code>willCapture</code>, <code>processId</code> — observabilidade pra debug de "por que essa run não apareceu no dashboard".
+              Registra a decisão do gate. Campos gravados: <code>flowId</code>, <code>flowName</code>, <code>spaceOwnerId</code>, <code>spaceLoggingEnabled</code>, <code>runType</code>, <code>willCapture</code>, <code>processId</code>. Serve para debugar quando uma execução não aparece no dashboard.
             </div>
             <div class="box-file">flux.service.ts:2377-2385</div>
           </div>
@@ -678,23 +719,23 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Por que essas 3 condições?</div>
-            <strong>1. !isNestedRunLog</strong> — evita duplicar log. Se um flow chama outro via fluxBox, o log já vem do top-level como <code>subRun</code> aninhado.
-            <br><br><strong>2. loggingEnabled + runType</strong> — respeita a preferência do space E ignora modos "interativos" (manual/chatbot) onde o log costuma poluir sem valor.
-            <br><br><strong>3. spaceOwnerId</strong> — sem space definido não tem onde persistir (a tabela é indexada por spaceId).
+            <strong>1. <code>!isNestedRunLog</code>.</strong> Evita log duplicado. Quando um flow chama outro via <code>fluxBox</code>, o log já vem da raiz como <code>subRun</code> aninhado.
+            <br><br><strong>2. <code>loggingEnabled</code> + <code>runType</code>.</strong> Respeita a preferência do space. Ignora modos interativos (<code>manual</code>, <code>chatbot</code>) que poluem o log sem valor.
+            <br><br><strong>3. <code>spaceOwnerId</code>.</strong> Sem space definido não há onde persistir. A tabela é indexada por <code>spaceId</code>.
           </div>
 
           <div class="aside">
             <div class="aside-title">📎 Origem dos dados</div>
-            <code>spaceOwnerId</code> = <code>getFlow.folder.spaces.id</code> (relation carregada em 1.3)
-            <br><br><code>space.loggingEnabled</code> = <code>getFlow.folder.spaces.loggingEnabled</code> (flag por space no DB)
-            <br><br><code>runType</code> = enum derivado do endpoint que chamou (api / canvas / chatbot / etc.)
+            <code>spaceOwnerId</code> = <code>getFlow.folder.spaces.id</code>. Relação carregada em 1.3.
+            <br><br><code>space.loggingEnabled</code> = <code>getFlow.folder.spaces.loggingEnabled</code>. Flag por space no banco.
+            <br><br><code>runType</code> = enum derivado do endpoint que originou a chamada (<code>api</code>, <code>canvas</code>, <code>chatbot</code>, etc.).
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 runType excluídos</div>
-            <strong>manual</strong> — botão "Run" do editor
-            <br><strong>chatbot</strong> — mensagem em widget de chat
-            <br><br>Ambos rodam com frequência alta durante desenvolvimento e não devem inflar a tabela de audit.
+            <strong><code>manual</code>.</strong> Botão "Run" do editor.
+            <br><strong><code>chatbot</code>.</strong> Mensagem em widget de chat.
+            <br><br>Ambos rodam com frequência alta durante desenvolvimento. Não devem inflar a tabela de auditoria.
           </div>
         </div>
       </div>
@@ -717,10 +758,10 @@
         async resolveFluxTokenPriceForFlow(flow: Flow): Promise&lt;number&gt;
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Descobre qual preço-por-token o dono do flow está pagando (varia por plano/produto). Esse número é <em>congelado no doc do log</em> — se o preço mudar depois, o doc mantém o que valia na hora da execução.
+        <strong>Propósito.</strong> Retorna o preço por token que o dono do flow paga. O preço varia por plano/produto. Esse número é congelado no documento do log. Se o preço mudar depois, o documento mantém o valor da hora da execução.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> essa função é a <em>tabela de preços do momento</em> — ela descobre quanto custa cada token pra quem <strong>paga a conta</strong> desse flow (o admin da company, ou o dono direto se for pessoal), vai no banco puxar o plano ativo dele e devolve o valor de <code>fluxTokenPrice</code>. Esse número é então "carimbado" no doc do log e nunca mais muda, mesmo que o admin troque de plano semana que vem. É o mesmo truque que sistemas de e-commerce usam pra guardar o preço unitário na order_item: você quer saber quanto custou <em>naquele momento</em>, não hoje. Se der qualquer pau (owner sem produto, DB fora), retorna <code>0</code> em vez de derrubar a execução — logging não pode quebrar o agente.
+        <strong>Em resumo.</strong> A função retorna o preço por token vigente para o pagador do flow. O pagador é o admin da company ou o dono direto quando o flow é pessoal. A função consulta o plano ativo desse pagador e devolve o <code>fluxTokenPrice</code> correspondente. O valor é gravado no documento do log. Permanece congelado mesmo se o admin trocar de plano depois. Segue o mesmo padrão de e-commerce, que grava o preço unitário em <code>order_item</code>. O objetivo é conhecer o custo daquele momento, não o atual. Em caso de erro (owner sem product ativo, banco indisponível), a função retorna <code>0</code>. Logging não pode derrubar a execução do agente.
       </div>
 
       <div class="fn-body-cols">
@@ -777,7 +818,7 @@
           <div class="box cross">
             <div class="box-title">try/catch com fallback 0</div>
             <div class="box-desc">
-              Se qualquer coisa quebrar (owner sem product ativo, DB indisponível, etc.), loga via WinstonLogger e retorna <code>0</code>. Nunca lança pra cima — logging não pode derrubar execução.
+              Em caso de falha (owner sem product ativo, banco indisponível), a função registra via <code>WinstonLogger</code> e retorna <code>0</code>. Nunca propaga o erro. Logging não pode derrubar a execução.
             </div>
             <div class="box-file">product.service.ts:177-186</div>
           </div>
@@ -786,19 +827,19 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">💡 Por que congelar o preço no log?</div>
-            Se o admin mudar de plano semana que vem e você olhar um log de duas semanas atrás, você precisa ver quanto custou <em>naquele momento</em>, não o preço atual.
-            <br><br>É o mesmo padrão de "guardar o preço unitário na tabela de order_items" que sistemas de e-commerce usam.
+            Se o admin muda de plano depois, o log antigo deve mostrar o custo daquele momento. Não o preço atual.
+            <br><br>É o mesmo padrão dos sistemas de e-commerce. Eles gravam o preço unitário na tabela <code>order_items</code>.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 fluxTokenPrice</div>
-            Campo em <code>product</code> (entidade do plano/subscription). Representa o multiplicador de conversão tokens brutos → "flux tokens" (moeda interna). Cada plano tem seu próprio.
-            <br><br>Usado depois em cálculos de <code>totalCost</code> por nó e por run.
+            Campo em <code>product</code> (entidade do plano). Representa o multiplicador de conversão de tokens brutos para flux tokens (moeda interna). Cada plano tem o seu.
+            <br><br>Usado depois nos cálculos de <code>totalCost</code> por nó e por execução.
           </div>
 
           <div class="aside warn">
             <div class="aside-title">⚠️ Impacto no gate anterior</div>
-            Esta função é chamada <em>somente se</em> o gate (A) passou. Se você desabilita logging por space, essa função sequer executa — evita uma round-trip ao DB.
+            Esta função só é chamada quando o gate (A) passa. Se o logging está desativado no space, a função não executa. Isso evita uma round-trip ao banco.
           </div>
         </div>
       </div>
@@ -821,10 +862,20 @@
         static createRoot(init: CollectorInit): RunLogCollector
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Factory que cria o coletor <em>root</em> de logs — o objeto in-memory que acumula toda a árvore de execução (nós, sub-runs, loops) e sabe fazer flush pra tabela <code>space_run_logs</code>. Guarda a referência do doc e do callback <code>flush</code> pra uso posterior.
+        <strong>Propósito.</strong> Factory que cria o coletor raiz de logs. O coletor é um objeto in-memory. Acumula toda a árvore de execução (nós, sub-runs, loops) e sabe fazer flush para a tabela <code>space_run_logs</code>. Guarda a referência do doc e do callback <code>flush</code> para uso posterior.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> imagine um <em>caderno de campo</em> que vai andando junto com a execução, anotando cada nó que roda, quanto durou e quanto custou. Essa função é a que <strong>abre a primeira página desse caderno</strong>: cria o objeto em memória com toda a metadata da run (id do processo, nome do flow, space, org, preço do token, quem disparou, input já com secrets ofuscados) e deixa métricas zeradas prontas pra serem acumuladas ao longo da execução. Também plugga um "botão de flush" (o callback) que vai ser puxado a cada mudança pra persistir no banco. Detalhe importante: se o logging estiver desligado, ela devolve uma versão <strong>no-op</strong> (métodos vazios) — assim o resto do código chama <code>startNode/endNode</code> sem precisar de <code>if</code> em todo lugar.
+        <strong>Em resumo.</strong> Imagine um caderno de campo que acompanha a execução. Anota cada nó que roda, sua duração e seu custo. A função <code>createRoot</code> abre a primeira página desse caderno. Cria o objeto em memória com toda a metadata da execução:
+        <ul style="margin:8px 0;padding-left:20px">
+          <li>id do processo;</li>
+          <li>nome do flow;</li>
+          <li>space;</li>
+          <li>org;</li>
+          <li>preço do token;</li>
+          <li>responsável pelo disparo;</li>
+          <li>entrada com segredos ofuscados.</li>
+        </ul>
+        As métricas nascem zeradas e acumulam ao longo da execução. A função também registra o callback de flush. O callback é chamado a cada mudança para persistir no banco. Quando o logging está desativado, a função devolve uma versão no-op. Os métodos ficam vazios. O resto do código chama <code>startNode</code> e <code>endNode</code> sem <code>if</code>.
       </div>
 
       <div class="fn-body-cols">
@@ -832,7 +883,7 @@
           <div class="box decision">
             <div class="box-title"><span class="badge step">C1</span> init.enabled === false?</div>
             <div class="box-desc">
-              Se sim → retorna um coletor <strong>no-op</strong> (todos os métodos viram vazios). Isso simplifica os call-sites: eles chamam <code>startNode/endNode</code> incondicionalmente sem precisar de <code>if</code>.
+              Se sim, retorna um coletor no-op. Todos os métodos ficam vazios. Isso simplifica os call-sites. Eles chamam <code>startNode</code> e <code>endNode</code> incondicionalmente, sem <code>if</code>.
             </div>
             <div class="box-file">run-log-collector.ts:201-213</div>
           </div>
@@ -866,7 +917,7 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">C3</span> redactSecrets(init.input)</div>
             <div class="box-desc">
-              Aplica em <code>input</code> antes de salvar. Scrubbing de secrets/tokens/senhas para não vazarem no log.
+              Aplica em <code>input</code> antes de salvar. Ofusca segredos, tokens e senhas para não vazarem no log.
             </div>
             <div class="box-file">run-log-collector.ts:232 · utils/redact.ts</div>
           </div>
@@ -875,8 +926,8 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">C4</span> new RunLogCollector({ kind: 'root', ... })</div>
             <div class="box-desc">
-              Instancia o coletor com o doc, um bucket de nós apontando pro mesmo array, e guarda o <code>flushFn</code> (callback que dispara <code>scheduleUpsert</code> em cada mutação).
-              <br>Retorna a instância — o call-site guarda em <code>runLogCollector</code> local pra passar adiante durante a execução.
+              Instancia o coletor com o doc. Cria um bucket de nós que aponta para o mesmo array. Guarda o <code>flushFn</code> (callback que dispara <code>scheduleUpsert</code> em cada mutação).
+              <br>Retorna a instância. O call-site guarda em <code>runLogCollector</code> local para propagar durante a execução.
             </div>
             <div class="box-file">run-log-collector.ts:235-245</div>
           </div>
@@ -904,24 +955,26 @@
           </div>
 
           <div class="aside warn">
-            <div class="aside-title">⚠️ runType hardcoded pra WEBHOOK</div>
-            No call-site (flux.service.ts:2406) o campo <code>runType</code> do doc é <strong>sempre</strong> <code>FlowLogRunType.WEBHOOK</code>, mesmo se o request veio da canvas ou de outro endpoint.
-            <br><br>Pode ser bug ou intencional — a distinção real de runType fica em <code>triggeredBy.source</code>.
+            <div class="aside-title">⚠️ runType hardcoded para WEBHOOK</div>
+            No call-site (<code>flux.service.ts:2406</code>), o campo <code>runType</code> do doc é sempre <code>FlowLogRunType.WEBHOOK</code>. O valor não varia mesmo quando o request vem da canvas ou de outro endpoint.
+            <br><br>Pode ser bug ou intencional. A distinção real de <code>runType</code> fica em <code>triggeredBy.source</code>.
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 O padrão "no-op collector"</div>
-            Quando <code>enabled=false</code>, todos os métodos (<code>startNode</code>, <code>endNode</code>, <code>finalize</code>, <code>startFlowCallerSubRun</code>...) fazem <code>return null</code> ou <code>return</code> vazio.
-            <br><br>Assim o loop principal (Fase 3) chama <code>runLogCollector.startNode(...)</code> sem checar nada. Simplifica muito o call-site.
+            <div class="aside-title">🔧 O padrão no-op collector</div>
+            Quando <code>enabled=false</code>, todos os métodos fazem <code>return null</code> ou <code>return</code> vazio. Métodos afetados: <code>startNode</code>, <code>endNode</code>, <code>finalize</code>, <code>startFlowCallerSubRun</code>, etc.
+            <br><br>Assim o loop principal (Fase 3) chama <code>runLogCollector.startNode(...)</code> sem verificação. Simplifica o call-site.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🌳 Estrutura hierárquica</div>
-            O mesmo coletor gera sub-coletores para:
-            <br>• <code>startFlowCallerSubRun</code> — fluxBox/libraryNode (novo doc aninhado)
-            <br>• <code>startLibrarySubRun</code> — inner steps de biblioteca
-            <br>• <code>startLoopBody</code> — iteração de arrayNode
-            <br><br>Todos compartilham o mesmo <code>flushFn</code> e <code>rootDocRef</code>.
+            O mesmo coletor gera sub-coletores para três casos:
+            <ul style="margin:6px 0;padding-left:18px">
+              <li><code>startFlowCallerSubRun</code>: <code>fluxBox</code> e <code>libraryNode</code> (novo doc aninhado);</li>
+              <li><code>startLibrarySubRun</code>: inner steps de biblioteca;</li>
+              <li><code>startLoopBody</code>: iteração de <code>arrayNode</code>.</li>
+            </ul>
+            Todos compartilham o mesmo <code>flushFn</code> e <code>rootDocRef</code>.
           </div>
         </div>
       </div>
@@ -944,10 +997,10 @@
         async upsertRun(params: { processId, spaceId, rootFlowId, logData: RunLogDocument }): Promise&lt;SpaceRunLog&gt;
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Escreve (ou atualiza) a row em <code>space_run_logs</code>. No passo 1.4 é chamada uma vez com o doc <em>vazio</em> (só metadata) para gravar a run em estado <code>in_progress</code>. Depois é chamada de novo assincronamente via debounce em <code>scheduleUpsert</code> a cada mudança.
+        <strong>Propósito.</strong> Escreve ou atualiza a linha em <code>space_run_logs</code>. No passo 1.4 é chamada uma vez com o doc vazio (apenas metadata). Grava a execução com status <code>in_progress</code>. Chamadas posteriores acontecem via debounce em <code>scheduleUpsert</code> a cada mudança.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> essa é a <em>gravadora</em> do caderno de logs no banco. No 1.4, ela é chamada logo de cara pra <strong>plantar uma "bandeirinha" no Postgres</strong>: cria uma row em <code>space_run_logs</code> com status <code>in_progress</code>, praticamente vazia, só pra registrar que essa execução começou. Isso é uma proteção — se o processo morrer no meio (deploy, OOM, kill), pelo menos a run não some do dashboard: fica marcada como "começou mas não terminou" e outro job depois carimba como erro. Ela usa o <code>processId</code> como chave, então funciona como upsert: cada chamada seguinte (via debounce) vai <em>sobrescrever</em> a mesma linha com o snapshot atualizado do doc. Como logging não pode derrubar agente, o call-site envolve tudo em try/catch — se falhar, só loga um aviso e segue a vida.
+        <strong>Em resumo.</strong> Esta função grava o log no banco. No passo 1.4 é chamada logo no início. Cria uma linha em <code>space_run_logs</code> com status <code>in_progress</code>. A linha nasce praticamente vazia. Serve apenas para registrar o começo da execução. A proteção cobre falhas do processo (deploy, OOM, kill). A execução não desaparece do dashboard. A linha fica marcada como iniciada mas não concluída. Outro job depois marca a linha como erro. A função usa <code>processId</code> como chave e funciona como upsert. Cada chamada seguinte via debounce sobrescreve a mesma linha com o snapshot atualizado. O call-site envolve tudo em try/catch. Falhas apenas geram um log de aviso. A execução prossegue.
       </div>
 
       <div class="fn-body-cols">
@@ -955,17 +1008,17 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">D1</span> Pega o doc via <code>runLogCollector.getRootDocument()</code></div>
             <div class="box-desc">
-              Retorna a referência do doc criado em (C). Se <code>enabled=false</code>, retorna null e o bloco é pulado.
+              Retorna a referência do doc criado em (C). Se <code>enabled=false</code>, retorna <code>null</code> e o bloco é descartado.
             </div>
             <div class="box-file">run-log-collector.ts:184-186 · flux.service.ts:2419</div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box backend">
-            <div class="box-title"><span class="badge step">D2</span> Monta entity SpaceRunLog</div>
+            <div class="box-title"><span class="badge step">D2</span> Monta a entidade SpaceRunLog</div>
             <div class="box-desc">
               <code>repository.create({ id: processId, spaceId, rootFlowId, rootFlowName, runType, status, errorMessage, startedAt, endedAt, durationMs, totalTokens, totalCost, logData })</code>
-              <br>Key: <strong>id = processId</strong> — upsert usa isso como chave natural.
+              <br>Chave: <code>id = processId</code>. O upsert usa esse campo como chave natural.
             </div>
             <div class="box-file">space_run_logs.service.ts:74-88</div>
           </div>
@@ -974,7 +1027,7 @@
           <div class="box db">
             <div class="box-title"><span class="badge step">D3</span> repository.save(entity)</div>
             <div class="box-desc">
-              TypeORM: INSERT se não existe, UPDATE se já existe (pelo id). O doc inteiro vai em <code>logData</code> (JSONB) — nome, status, tokens, cost e árvore de nós inteira.
+              TypeORM: <code>INSERT</code> se a linha não existe, <code>UPDATE</code> se já existe (por <code>id</code>). O doc inteiro vai em <code>logData</code> (JSONB). Contém nome, status, tokens, custo e árvore de nós.
             </div>
             <div class="box-file">space_run_logs.service.ts:89</div>
           </div>
@@ -983,7 +1036,7 @@
           <div class="box cross">
             <div class="box-title"><span class="badge step">D4</span> try/catch tolerante</div>
             <div class="box-desc">
-              O call-site em flux.service.ts:2418-2436 envolve tudo em try/catch e apenas loga se falhar (<code>[SpaceRunLog initial upsert failed]</code>). Nunca derruba a execução — o agente continua rodando sem log.
+              O call-site em <code>flux.service.ts:2418-2436</code> envolve tudo em try/catch. Em caso de falha, apenas registra <code>[SpaceRunLog initial upsert failed]</code>. Nunca derruba a execução. O agente continua rodando sem log.
             </div>
           </div>
         </div>
@@ -991,19 +1044,24 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Por que fazer o upsert inicial já em 1.4?</div>
-            Se a execução crashar no meio (SIGKILL, OOM, deploy no meio da run...), pelo menos a row já existe em <code>in_progress</code>. Sem esse upsert inicial, se o processo morre antes do primeiro flush, a run desaparece.
-            <br><br>Depois um cron job (<code>markStuckRunsAsError</code>) marca runs órfãs como erro.
+            Se a execução falhar no meio (SIGKILL, OOM, deploy), a linha já existe em <code>in_progress</code>. Sem esse upsert inicial, a execução desapareceria quando o processo morresse antes do primeiro flush.
+            <br><br>Um cron job posterior (<code>markStuckRunsAsError</code>) marca execuções órfãs como erro.
           </div>
 
           <div class="aside">
             <div class="aside-title">📊 Colunas indexáveis vs blob</div>
-            A entity tem colunas <em>indexáveis</em> extraídas do doc (spaceId, rootFlowId, runType, status, startedAt, endedAt, durationMs, totalTokens, totalCost) usadas em queries de listagem/filtro.
-            <br><br>O doc inteiro fica em <code>logData</code> JSONB — carregado só quando abrir a run individual.
+            A entidade tem colunas indexáveis extraídas do doc:
+            <ul style="margin:6px 0;padding-left:18px">
+              <li><code>spaceId</code>, <code>rootFlowId</code>, <code>runType</code>, <code>status</code>;</li>
+              <li><code>startedAt</code>, <code>endedAt</code>, <code>durationMs</code>;</li>
+              <li><code>totalTokens</code>, <code>totalCost</code>.</li>
+            </ul>
+            Essas colunas alimentam queries de listagem e filtro. O doc inteiro fica em <code>logData</code> JSONB. Só é carregado quando o usuário abre a execução individual.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 STUCK_RUN_ERROR_MESSAGE</div>
-            Constante <code>'run did not complete'</code> em space_run_logs.service.ts:12. Usada por outra função pra sinalizar runs que ficaram in_progress além de um timeout (24h).
+            Constante <code>'run did not complete'</code> em <code>space_run_logs.service.ts:12</code>. Uma outra função a usa para sinalizar execuções que ficaram <code>in_progress</code> além do timeout de 24h.
           </div>
         </div>
       </div>
@@ -1027,17 +1085,17 @@
         scheduleUpsert(params: { spaceId, rootFlowId, doc: RunLogDocument }): void
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Wrapper com <strong>debounce de 2 segundos</strong> em cima de <code>upsertRun</code>. Não é chamado diretamente em 1.4 — é configurado em (C) como <code>flush</code> callback. Cada vez que o coletor muda algo (startNode, endNode, finalize, sub-runs), ele chama esse flush.
+        <strong>Propósito.</strong> Wrapper com debounce de 2 segundos sobre <code>upsertRun</code>. Não é chamado diretamente no passo 1.4. Está configurado em (C) como callback <code>flush</code>. Cada mudança no coletor chama esse flush. Mudanças típicas: <code>startNode</code>, <code>endNode</code>, <code>finalize</code>, sub-runs.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> pense num <em>funcionário meio preguiçoso, mas esperto</em>. Toda vez que o coletor grita "ei, teve mudança!", em vez de correr no banco na hora, ele fala "calma, vou esperar 2 segundos pra ver se vem mais coisa". Se vier outra mudança nesse meio-tempo, ele <strong>reseta o cronômetro</strong> — assim, uma execução com 50 nós disparando eventos rápidos vira ~1 write a cada 2s de atividade em vez de 50 writes seguidos. O preço a pagar é o risco de perder até ~2s de progresso se o processo morrer entre dois debounces (mas a bandeirinha inicial de D já garante que a row existe). Pra evitar essa perda no fim, a finalização chama uma variante <code>flushNow()</code> que dispensa o debounce e grava na hora.
+        <strong>Em resumo.</strong> A função agrupa writes. Sempre que o coletor sinaliza uma mudança, o write no banco não acontece na hora. Ele aguarda 2 segundos para acumular novas mudanças. Cada mudança nova nesse intervalo reseta o timer. Uma execução com 50 nós disparando eventos rápidos vira cerca de 1 write a cada 2s de atividade em vez de 50 writes consecutivos. O custo é o risco de perder até 2s de progresso quando o processo morre entre dois debounces. O <code>upsertRun</code> inicial do passo 1.4 mitiga esse risco. Garante que a linha já existe. Para evitar a perda na finalização, o passo final chama a variante <code>flushNow()</code>. <code>flushNow</code> dispensa o debounce e escreve imediatamente.
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
             <div class="box-title"><span class="badge step">E1</span> Coleta processId do doc</div>
-            <div class="box-desc"><code>const processId = doc.processId</code> — chave do debounce (por run)</div>
+            <div class="box-desc"><code>const processId = doc.processId</code>. Chave do debounce (uma por execução).</div>
           </div>
           <div class="arrow">↓</div>
 
@@ -1063,7 +1121,7 @@
           <div class="box db">
             <div class="box-title"><span class="badge step">E4</span> Callback do timer executa upsertRun</div>
             <div class="box-desc">
-              Remove entry do mapa e chama <code>upsertRun</code> (D). Se falhar, apenas loga <code>[SpaceRunLog scheduleUpsert] write failed</code> — não propaga erro.
+              Remove a entrada do mapa e chama <code>upsertRun</code> (D). Em caso de falha, apenas registra <code>[SpaceRunLog scheduleUpsert] write failed</code>. Não propaga o erro.
             </div>
           </div>
         </div>
@@ -1071,25 +1129,25 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">⏱️ Por que debounce de 2s?</div>
-            Um agente pode ter dezenas de nós disparando <code>startNode</code>/<code>endNode</code> em segundos. Sem debounce seriam 50+ writes por run.
-            <br><br>Com debounce, agrupamos em ~1 write por 2s de atividade + um write final via <code>flushNow</code> na finalização.
+            Um agente pode ter dezenas de nós disparando <code>startNode</code> e <code>endNode</code> em segundos. Sem debounce seriam mais de 50 writes por execução.
+            <br><br>Com debounce, o padrão vira cerca de 1 write a cada 2s de atividade. Mais um write final via <code>flushNow</code> na finalização.
           </div>
 
           <div class="aside warn">
             <div class="aside-title">⚠️ Trade-off: perda em crash</div>
-            Se o processo morrer entre dois debounces, os últimos ~2s de progresso se perdem — só o snapshot anterior fica gravado. Por isso o <code>upsertRun</code> inicial em 1.4 é importante: garante a row existe.
-            <br><br>A finalização (Fase 4) chama <code>flushNow()</code> (sem debounce) — cancela o pending flush e escreve na hora.
+            Se o processo morrer entre dois debounces, os últimos 2s de progresso se perdem. Apenas o snapshot anterior fica gravado. Por isso o <code>upsertRun</code> inicial do passo 1.4 é importante. Ele garante que a linha existe.
+            <br><br>A finalização (Fase 4) chama <code>flushNow()</code> sem debounce. Cancela o pending flush e escreve imediatamente.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 pendingFlushes</div>
             <code>Map&lt;processId, { timer, spaceId, rootFlowId, doc }&gt;</code>
-            <br><br>Guarda in-memory os writes agendados. Se processo morrer, esse mapa some com ele.
+            <br><br>Mantém os writes agendados em memória. Se o processo morrer, o mapa desaparece com ele.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 OnModuleDestroy</div>
-            O service implementa <code>OnModuleDestroy</code> pra dar flush em todos os pending durante shutdown gracioso do NestJS. Não ajuda em crash forçado.
+            O serviço implementa <code>OnModuleDestroy</code> para dar flush em todos os pending durante o encerramento graceful do NestJS. Não ajuda em crash forçado.
           </div>
         </div>
       </div>
@@ -1098,20 +1156,24 @@
 
   <!-- SUMMARY -->
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo — o que sai de 1.4 (quando o gate passa):</strong>
-    <br>• <code>runLogCollector</code> instanciado como <code>root</code>, com <code>rootDoc</code> em memória e <code>flushFn</code> conectado ao <code>scheduleUpsert</code>
-    <br>• Uma row inicial em <code>space_run_logs</code> com <code>status = 'in_progress'</code> e árvore de nós vazia
-    <br>• A partir daqui, cada <code>startNode</code>/<code>endNode</code>/<code>subRun</code>/<code>finalize</code> vai mutar o doc e agendar um write debounced
-    <br>• O <code>fluxTokenPrice</code> resolvido fica congelado no doc — não muda mais durante a run
-    <br>• Se o gate <em>não</em> passar: <code>runLogCollector = undefined</code>, todos os call-sites em Fase 3 ficam checando <code>if (runLogCollector) ...</code> ou usando optional chaining
+    <strong>Resumo — o que sai de 1.4 quando o gate passa:</strong>
+    <ul style="margin:8px 0;padding-left:20px">
+      <li><code>runLogCollector</code> instanciado como raiz. Contém <code>rootDoc</code> em memória e <code>flushFn</code> conectado ao <code>scheduleUpsert</code>.</li>
+      <li>Uma linha inicial em <code>space_run_logs</code> com <code>status = 'in_progress'</code> e árvore de nós vazia.</li>
+      <li>A partir daqui, cada <code>startNode</code>, <code>endNode</code>, <code>subRun</code> e <code>finalize</code> muta o doc e agenda um write debounced.</li>
+      <li>O <code>fluxTokenPrice</code> resolvido fica congelado no doc. Não muda durante a execução.</li>
+      <li>Se o gate falhar, <code>runLogCollector</code> recebe <code>undefined</code>. Os call-sites da Fase 3 usam <code>if (runLogCollector) ...</code> ou optional chaining.</li>
+    </ul>
   </div>
 
   <div class="note">
     <strong>Observações para migração:</strong>
-    <br>• Este bloco é <strong>cross-cutting</strong> — precisa acontecer <em>antes</em> do loop principal para que os passos 3.4 (<code>startNode</code>), 3.9 (<code>endNode</code>) e 4.4 (<code>finalize</code>) tenham o coletor pronto.
-    <br>• O <code>RunLogCollector</code> é uma estrutura in-memory com o mesmo padrão do <code>nodeSubstitutionSchema</code>: mutado ao longo do loop. Se orquestrar no worker, ou o worker mantém sua própria árvore, ou faz update parcial via API pro backend.
-    <br>• O debounce de 2s é <strong>por processo</strong> — se dividir orquestração entre backend e worker, cada um teria seu próprio <code>pendingFlushes</code> e o writeback pode ficar concorrente.
-    <br>• Nada aqui é essencial pra correção da execução (é observabilidade) — pode ser migrado por último no plano.
+    <ul style="margin:8px 0;padding-left:20px">
+      <li>Este bloco é cross-cutting. Precisa acontecer antes do loop principal. Assim os passos 3.4 (<code>startNode</code>), 3.9 (<code>endNode</code>) e 4.4 (<code>finalize</code>) já têm o coletor pronto.</li>
+      <li>O <code>RunLogCollector</code> é uma estrutura in-memory. Segue o mesmo padrão do <code>nodeSubstitutionSchema</code>: muta ao longo do loop. Se a orquestração for no worker, o worker mantém a própria árvore ou faz update parcial via API para o backend.</li>
+      <li>O debounce de 2s é por processo. Se a orquestração se divide entre backend e worker, cada um tem o próprio <code>pendingFlushes</code>. O writeback pode ficar concorrente.</li>
+      <li>Nada aqui é essencial para a correção da execução. É observabilidade. Pode ser migrado por último no plano.</li>
+    </ul>
   </div>
 
   <!-- FOOTER NAV -->

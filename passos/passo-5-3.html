@@ -83,28 +83,28 @@
 <div class="page-nav"><div class="breadcrumb"><a href="../index.html">📋 Execução de Agente</a><span class="sep">›</span><span>Passo 5.3 — Detalhamento</span></div><a href="../index.html#step-5-3" class="back-btn">← Voltar ao diagrama</a></div>
 
 <div class="page-header"><span class="icon">🧹</span><h1>Passo 5.3 — Cleanup socket chatbot + forgetRun</h1></div>
-<div class="page-sub">Bloco em <code>flux.service.ts:5393-5397</code>. Última linha executada — <code>finally</code> do try/catch principal. Delete da entrada no <code>chatbotSocketByRun</code> Map e <code>runCancellationService.forgetRun</code> — cleanup de dados in-memory pra evitar leak.</div>
+<div class="page-sub">Bloco em <code>flux.service.ts:5393-5397</code>. Última linha executada. É o <code>finally</code> do try/catch principal. Faz <code>delete</code> da entrada no Map <code>chatbotSocketByRun</code> e chama <code>runCancellationService.forgetRun</code>. Cleanup de dados in-memory para evitar leak.</div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
     <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
     <ul>
-      <li><strong>Bloco <code>finally</code> — sempre roda:</strong> última coisa executada em <em>qualquer</em> caminho (sucesso, erro, cancel, re-throw). Serve pra limpar Maps in-memory que não são persistidos — sem esse cleanup, cada run acumularia entradas indefinidamente e o processo vazaria memória com o tempo.</li>
-      <li><strong>Fecha a "agenda" do chatbot socket:</strong> se o run populou <code>chatbotSocketByRun</code> lá no 3.10 (chatbot com <code>socketId</code>), o finally faz <code>delete</code> nessa chave. Guard <code>if (socketId)</code> evita chamada desnecessária pra runs de outros run_types que nem populam o map.</li>
-      <li><strong>Limpa cache do runCancellationService:</strong> chama <code>forgetRun(runLogProcessId)</code>. É <em>belt-and-suspenders</em> — o cache tem TTL de 1500ms e limparia sozinho, mas cleanup explícito reduz footprint imediato em picos de alta frequência de runs.</li>
-      <li><strong>Zero I/O, zero side effect externo:</strong> ambos são <code>Map.delete</code> — O(1), sem rede, sem banco. Housekeeping puro do processo Node.</li>
-      <li><strong>Saída:</strong> nada visível externamente — só memória liberada. Se o run entrou pelo 5.1 (erro), o finally roda antes do <code>throw</code> propagar de fato, garantindo cleanup mesmo em crash.</li>
+      <li><strong>Bloco <code>finally</code>. Sempre roda.</strong> Última coisa executada em <em>qualquer</em> caminho (sucesso, erro, cancel, re-throw). Serve para limpar Maps in-memory que não são persistidos. Sem esse cleanup, cada execução acumularia entradas indefinidamente. O processo vazaria memória com o tempo.</li>
+      <li><strong>Fecha a "agenda" do socket do chatbot.</strong> Se a execução populou <code>chatbotSocketByRun</code> no 3.10 (chatbot com <code>socketId</code>), o <code>finally</code> faz <code>delete</code> nessa chave. O guard <code>if (socketId)</code> evita chamada desnecessária em execuções de outros run_types que não populam o Map.</li>
+      <li><strong>Limpa o cache do runCancellationService.</strong> Chama <code>forgetRun(runLogProcessId)</code>. É belt-and-suspenders. O cache tem TTL de 1500ms e limparia sozinho. O cleanup explícito reduz o footprint imediato em picos de alta frequência de execuções.</li>
+      <li><strong>Zero I/O, zero side effect externo.</strong> Ambos são <code>Map.delete</code>. O(1). Sem rede. Sem banco. Housekeeping puro do processo Node.</li>
+      <li><strong>Saída.</strong> Nada visível externamente. Só memória liberada. Se a execução entrou pelo 5.1 (erro), o <code>finally</code> roda antes de o <code>throw</code> propagar de fato. Cleanup garantido mesmo em crash.</li>
     </ul>
   </div>
 
-<div class="note info"><strong>Contexto:</strong> finally roda em <strong>qualquer</strong> caminho: sucesso, erro, cancel, re-throw. Garante que Maps in-memory (não persistidos) são limpos ao final do run. Sem esse cleanup, cada run acumularia entradas indefinidamente — memory leak crônico.</div>
+<div class="note info"><strong>Contexto.</strong> O <code>finally</code> roda em <strong>qualquer</strong> caminho: sucesso, erro, cancel, re-throw. Garante que os Maps in-memory (não persistidos) são limpos ao final da execução. Sem esse cleanup, cada execução acumularia entradas indefinidamente. Memory leak crônico.</div>
 
 <div class="fn-card collapsed">
 <div class="fn-card-header"><div class="fn-title"><span class="badge step" style="background:#EAB308;color:white">A</span><code>Delete chatbotSocketByRun[runId]</code></div><div class="fn-loc">flux.service.ts:5393-5396</div></div>
 <div class="fn-card-body">
 <div class="fn-signature">if (socketId) { this.chatbotSocketByRun.delete(runLogProcessId); }</div>
-<div class="fn-purpose"><strong>Propósito:</strong> Se o run foi populado no <code>chatbotSocketByRun</code> Map (chatbot com socket), remove a entrada. Só faz se <code>socketId</code> presente — outros run_types nem populam.</div>
-<div class="fn-friendly"><strong>Em resumo:</strong> a "agenda" do 3.10 fn A precisa fechar aqui. O <code>chatbotSocketByRun</code> é um Map interno do FluxService (não distribuído, não persistido). Cada run com <code>socketId</code> adiciona uma entrada em 2288; se não remover, o Map cresce infinitamente. <code>delete</code> é O(1) — trivial. Guard <code>if (socketId)</code> evita chamada desnecessária pra runs que nem populam o map. Sem custo, sem I/O, sem side effect — só housekeeping. Executa em <em>qualquer</em> caminho porque tá em <code>finally</code> — mesmo se apiV2 lançou (5.1) e re-throw, o finally roda antes do throw efetivo propagar.</div>
+<div class="fn-purpose"><strong>Propósito.</strong> Se a execução populou o Map <code>chatbotSocketByRun</code> (chatbot com socket), remove a entrada. Só faz o <code>delete</code> quando <code>socketId</code> está presente. Outros run_types não populam.</div>
+<div class="fn-friendly"><strong>Em resumo.</strong> A "agenda" do 3.10 fn A precisa fechar aqui. O <code>chatbotSocketByRun</code> é um Map interno do <code>FluxService</code>. Não é distribuído nem persistido. Cada execução com <code>socketId</code> adiciona uma entrada na linha 2288. Sem o <code>delete</code>, o Map cresce indefinidamente. <code>delete</code> é O(1). Trivial. O guard <code>if (socketId)</code> evita chamada desnecessária para execuções que não populam o Map. Sem custo, sem I/O, sem side effect. Só housekeeping. Executa em <em>qualquer</em> caminho porque está em <code>finally</code>. Mesmo se o <code>apiV2</code> lançou (5.1) e fez re-throw, o <code>finally</code> roda antes de o <code>throw</code> propagar de fato.</div>
 
 <div class="fn-body-cols"><div class="fn-main">
 <div class="code-block"><span class="k">finally</span> {
@@ -115,27 +115,27 @@
 }</div>
 </div>
 <div class="fn-asides">
-<div class="aside warn"><div class="aside-title">⚠️ Memory leak se não roda</div>Se algum bug fizer o finally não executar (JS não permite — finally sempre roda, exceto crash catastrófico de processo), Map cresce. Em processo long-running com milhares de runs/hora, vira problema.</div>
-<div class="aside info"><div class="aside-title">🎯 Delete O(1)</div>Map<code>.delete</code> é constant time. Nenhum trade-off performance.</div>
+<div class="aside warn"><div class="aside-title">⚠️ Memory leak se não roda</div>Se algum bug impedir o <code>finally</code> de executar (JS não permite; o <code>finally</code> sempre roda, exceto em crash catastrófico do processo), o Map cresce. Em processo long-running com milhares de execuções por hora, vira problema.</div>
+<div class="aside info"><div class="aside-title">🎯 Delete O(1)</div><code>Map.delete</code> é constant time. Sem trade-off de performance.</div>
 </div></div></div></div>
 
 <div class="fn-card collapsed">
 <div class="fn-card-header"><div class="fn-title"><span class="badge step" style="background:#3B82F6;color:white">B</span><code>runCancellationService.forgetRun</code></div><div class="fn-loc">flux.service.ts:5397 · run-cancellation.service.ts</div></div>
 <div class="fn-card-body">
 <div class="fn-signature">this.runCancellationService.forgetRun(runLogProcessId);</div>
-<div class="fn-purpose"><strong>Propósito:</strong> Limpa cache in-memory do <code>runCancellationService</code> (o Map <code>checkMemory</code> do 3.4-cancellation) pra este processId. Sem isso, entradas ficariam no cache mesmo após o run — leak lento mas real.</div>
-<div class="fn-friendly"><strong>Em resumo:</strong> paralelo ao anterior — cleanup de outra estrutura in-memory. O <code>runCancellationService</code> tinha aquele cache de 1500ms (visto no 3.4-cancellation fn B) pra evitar hammering do Postgres em <code>isCancelRequested</code>. Cada consulta populava esse Map. No fim do run, chama <code>forgetRun</code> — não é urgente porque o TTL de 1500ms limparia sozinho naturalmente, mas <em>proativamente</em> limpar reduz footprint imediato. Pattern bom — não confia só em TTL, faz limpeza explícita quando conhece o fim do lifecycle.</div>
+<div class="fn-purpose"><strong>Propósito.</strong> Limpa o cache in-memory do <code>runCancellationService</code> (o Map <code>checkMemory</code> do 3.4-cancellation) para esse <code>processId</code>. Sem isso, as entradas ficariam no cache mesmo após o fim da execução. Leak lento, mas real.</div>
+<div class="fn-friendly"><strong>Em resumo.</strong> Paralelo ao anterior. Cleanup de outra estrutura in-memory. O <code>runCancellationService</code> tinha o cache de 1500ms (visto no 3.4-cancellation fn B) para evitar hammering do Postgres em <code>isCancelRequested</code>. Cada consulta populava esse Map. No fim da execução, o código chama <code>forgetRun</code>. Não é urgente. O TTL de 1500ms limparia sozinho naturalmente. Porém, limpar <em>proativamente</em> reduz o footprint imediato. Bom padrão. Não confia só em TTL. Faz limpeza explícita quando conhece o fim do lifecycle.</div>
 
 <div class="fn-body-cols"><div class="fn-main">
-<div class="box backend"><div class="box-title">forgetRun impl</div><div class="box-desc"><code>this.checkMemory.delete(runId)</code> em <code>runCancellationService</code>. Simple <code>Map.delete</code>. Evita esperar TTL de 1500ms pra liberar memória.</div><div class="box-file">executions_logs/run-cancellation.service.ts</div></div>
+<div class="box backend"><div class="box-title">Implementação de forgetRun</div><div class="box-desc"><code>this.checkMemory.delete(runId)</code> em <code>runCancellationService</code>. Simples <code>Map.delete</code>. Evita esperar o TTL de 1500ms para liberar memória.</div><div class="box-file">executions_logs/run-cancellation.service.ts</div></div>
 </div>
 <div class="fn-asides">
-<div class="aside info"><div class="aside-title">🎯 Belt-and-suspenders</div>TTL cache já expiraria em 1.5s. Cleanup explícito é redundância — mas ajuda em runs de alta frequência (menos memory pressure em picos).</div>
+<div class="aside info"><div class="aside-title">🎯 Belt-and-suspenders</div>O cache de TTL já expiraria em 1,5s. O cleanup explícito é redundância. Ajuda em execuções de alta frequência. Menos pressão de memória em picos.</div>
 </div></div></div></div>
 
-<div class="note info" style="margin-top:32px"><strong>Resumo — o que sai de 5.3:</strong><br>• 1-2 <code>Map.delete</code> in-memory<br>• Sem I/O, sem persistência, sem side effect visível externamente<br>• Roda em qualquer caminho (sucesso, erro, cancel)<br>• Última coisa antes do run "acabar" completamente</div>
+<div class="note info" style="margin-top:32px"><strong>Resumo — o que sai de 5.3:</strong><br>• 1 a 2 chamadas de <code>Map.delete</code> in-memory.<br>• Sem I/O, sem persistência, sem side effect visível externamente.<br>• Roda em qualquer caminho (sucesso, erro, cancel).<br>• Última coisa antes de a execução acabar por completo.</div>
 
-<div class="note"><strong>Observações para migração:</strong><br>• <strong>Trivial de manter</strong> — 2 linhas de cleanup. Se worker assumir o loop, precisa do seu próprio cleanup análogo.<br>• <code>chatbotSocketByRun</code> Map local é <strong>anti-distribuído</strong> — se refactor tornar backend multi-pod, esse pattern precisa Redis pub/sub ou similar.<br>• Não bloqueia migração — pode ficar tal como é enquanto worker migra outros passos.</div>
+<div class="note"><strong>Observações para migração:</strong><br>• <strong>Trivial de manter</strong>. Duas linhas de cleanup. Se o worker assumir o loop, precisa de cleanup próprio análogo.<br>• O Map <code>chatbotSocketByRun</code> é local. <strong>Anti-distribuído</strong>. Se o refactor tornar o backend multi-pod, esse padrão precisa Redis pub/sub ou similar.<br>• Não bloqueia migração. Pode ficar como está enquanto o worker migra outros passos.</div>
 
 <div class="page-footer-nav"><a href="../index.html#step-5-3" class="back-btn">← Voltar ao diagrama principal</a></div>
 </div>

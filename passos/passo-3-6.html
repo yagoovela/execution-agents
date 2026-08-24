@@ -168,24 +168,24 @@
     <h1>Passo 3.6 — updateSchemaWithNodeOutput()</h1>
   </div>
   <div class="page-sub">
-    Bloco em <code>node-reference-substitution.service.ts:169-216</code> · chamadas em <code>flux.service.ts:3389, 3485, 3624, 3670, 4331</code>. Após um handler terminar, o output vira parte do schema — visível pros próximos nós como <code>{{nodeLabel.text}}</code>, <code>{{nodeLabel.url}}</code>, etc.
+    Bloco em <code>node-reference-substitution.service.ts:169-216</code>. Chamadas em <code>flux.service.ts:3389, 3485, 3624, 3670, 4331</code>. Quando um handler termina, a saída passa a fazer parte do schema. Os próximos nós enxergam esses valores como <code>{{nodeLabel.text}}</code>, <code>{{nodeLabel.url}}</code>, entre outros.
   </div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
     <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
     <ul>
-      <li><strong>É a "outra ponta" da substitution engine:</strong> se em 3.3 alguém <em>lê</em> o schema pra resolver <code>{{...}}</code>, aqui em 3.6 se <em>escreve</em> nele. Sem esse passo, cada nó ficaria isolado — impossível referenciar output de nó anterior.</li>
-      <li><strong>Aceita string ou objeto como output:</strong> se veio string simples, dupla-grava em <code>.text</code> e <code>.result</code> (backward compat com placeholders antigos); se veio objeto, distribui em até 5 slots opcionais (<code>text</code>, <code>content</code>, <code>result</code>, <code>url</code>, <code>audioUrl</code>) — cada um só escrito se o handler forneceu.</li>
-      <li><strong>Preserva os campos de input existentes:</strong> a entry do nó não é reescrita — o <code>{ ...schema[stableKey] ?? {} }</code> mantém prompt/url/formula indexados em 2.3, e só sobrescreve os campos de output. Assim <code>{{writer.prompt}}</code> continua funcionando depois do nó terminar.</li>
-      <li><strong>3 chaves apontam pra mesma entry:</strong> <code>stableKey</code> (UUID), <code>refKey</code> (dots→underscores) e <code>labelKey</code> (label humano lowercased) — atualizar uma reflete nas 3 automaticamente. É simetria explícita com o build inicial em 2.3.</li>
-      <li><strong>3 mecanismos convivendo:</strong> só 5 dos ~17 handlers legacy chamam <em>explicitamente</em> essa função; handlers Temporal atualizam via <em>retorno</em> do <code>processNodeViaTemporal</code>; e outros (<code>conditionNode</code>, <code>arrayNode</code>, <code>nodesBox</code>) usam <em>onMutateSchema</em> closure. Inconsistência que dificulta refactor.</li>
-      <li><strong>Saída:</strong> <code>nodeSubstitutionSchema</code> reatribuído (novo objeto, spread do anterior) — do próximo <code>applySubstitutionToObject</code> em diante, placeholders desse nó já resolvem pro output atual.</li>
+      <li><strong>É a outra ponta da substitution engine.</strong> Em 3.3 alguém lê o schema para resolver <code>{{...}}</code>. Aqui em 3.6 escreve-se nele. Sem esse passo, cada nó ficaria isolado. Seria impossível referenciar a saída de um nó anterior.</li>
+      <li><strong>Aceita string ou objeto como saída.</strong> Quando veio string simples, grava duas vezes, em <code>.text</code> e <code>.result</code>. Isso preserva compatibilidade com placeholders antigos. Quando veio objeto, distribui em até 5 campos opcionais: <code>text</code>, <code>content</code>, <code>result</code>, <code>url</code> e <code>audioUrl</code>. Cada campo só é escrito quando o handler o forneceu.</li>
+      <li><strong>Preserva os campos de entrada existentes.</strong> A entry do nó não é reescrita. O <code>{ ...schema[stableKey] ?? {} }</code> mantém prompt, url e formula indexados em 2.3. Só sobrescreve os campos de saída. Assim <code>{{writer.prompt}}</code> continua funcionando depois que o nó termina.</li>
+      <li><strong>3 chaves apontam para a mesma entry.</strong> São <code>stableKey</code> (UUID), <code>refKey</code> (dots convertidos em underscores) e <code>labelKey</code> (label humano em lowercase). Atualizar uma reflete nas 3 automaticamente. Segue simetria explícita com o build inicial em 2.3.</li>
+      <li><strong>3 mecanismos convivendo.</strong> Só 5 dos aproximadamente 17 handlers legacy chamam essa função de forma explícita. Handlers Temporal atualizam via retorno do <code>processNodeViaTemporal</code>. Outros (<code>conditionNode</code>, <code>arrayNode</code>, <code>nodesBox</code>) usam a closure <code>onMutateSchema</code>. A inconsistência dificulta o refactor.</li>
+      <li><strong>Saída.</strong> A variável <code>nodeSubstitutionSchema</code> é reatribuída com um novo objeto. O objeto vem de um spread do anterior. Do próximo <code>applySubstitutionToObject</code> em diante, placeholders desse nó já resolvem para a saída atual.</li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto:</strong> essa é a <em>outra ponta</em> da substitution engine (memória <code>[[project_substitution_engine]]</code>). Em 3.3 <code>applySubstitutionToObject</code> LÊ o schema; aqui em 3.6 se ESCREVE nele. Sem esse passo, cada nó ficaria isolado — impossível referenciar output de nó anterior. É o "ponto de sincronização" entre handlers.
+    <strong>Contexto.</strong> Esta é a outra ponta da substitution engine (memória <code>[[project_substitution_engine]]</code>). Em 3.3, <code>applySubstitutionToObject</code> lê o schema. Aqui em 3.6, escreve-se nele. Sem esse passo, cada nó ficaria isolado. Não seria possível referenciar a saída de um nó anterior. Funciona como ponto de sincronização entre handlers.
   </div>
 
   <div class="overview-mini">
@@ -200,7 +200,7 @@
       <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>Call sites (5 handlers)</a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado: <code>nodeSubstitutionSchema</code> reatribuído (é <em>novo objeto</em>, spread do anterior). Do próximo nó em diante, referências a este nó resolvem pra output atual.
+      Resultado. A variável <code>nodeSubstitutionSchema</code> é reatribuída como um novo objeto. Ele vem do spread do anterior. Do próximo nó em diante, referências a este nó resolvem para a saída atual.
     </div>
   </div>
 
@@ -212,8 +212,8 @@
     </div>
     <div class="fn-card-body">
       <div class="fn-signature">updateSchemaWithNodeOutput(schema: any, nodeId: string, nodeLabel: string, output: any): any</div>
-      <div class="fn-purpose"><strong>Propósito:</strong> Recebe output do handler que acabou de rodar (string ou objeto) e escreve os campos apropriados na entry do nó no schema. Retorna <em>novo</em> schema (spread do anterior) — não muta in-place.</div>
-      <div class="fn-friendly"><strong>Em resumo:</strong> se 3.3 é o <em>revisor</em> que lê e resolve <code>{{...}}</code>, essa é a <em>redatora</em> que atualiza o dicionário depois que o nó terminou. Pega o output do handler (pode ser uma string simples como <code>"Hello world"</code> ou um objeto complexo como <code>{ text, url, content }</code>), abre a entry desse nó no schema e escreve os campos que caberem — se veio string vira <code>.text</code> e <code>.result</code>; se veio objeto, extrai <code>.text</code>, <code>.content</code>, <code>.result</code>, <code>.url</code>, <code>.audioUrl</code> conforme presentes. Não substitui a entry inteira — <em>preserva</em> os campos existentes (input, prompt) e só acrescenta/atualiza os de saída. E aqui vem o pulo do gato: como as <strong>3 chaves</strong> (stableKey/refKey/labelKey) da entry apontam pra <em>mesmo objeto</em>, atualizar uma atualiza as 3 automaticamente. O próximo nó que ler <code>{{writer.text}}</code>, <code>{{6d09d1...uuid.text}}</code> ou <code>{{textBox_1714_0_8148.text}}</code> vê exatamente o mesmo valor. E o <code>{ ...schema }</code> na linha 182 clona o container antes de mexer — o schema anterior fica imutável (se alguém guardou referência, não vaza mudança).</div>
+      <div class="fn-purpose"><strong>Propósito.</strong> Recebe a saída do handler que acabou de rodar (string ou objeto). Escreve os campos apropriados na entry do nó no schema. Retorna um novo schema (spread do anterior). Não muta in-place.</div>
+      <div class="fn-friendly"><strong>Em resumo.</strong> Se 3.3 é o revisor que lê e resolve <code>{{...}}</code>, este é o redator que atualiza o dicionário depois que o nó termina. Pega a saída do handler. A saída pode ser uma string simples como <code>"Hello world"</code> ou um objeto complexo como <code>{ text, url, content }</code>. Abre a entry desse nó no schema e escreve os campos que couberem. Quando veio string, escreve em <code>.text</code> e <code>.result</code>. Quando veio objeto, extrai <code>.text</code>, <code>.content</code>, <code>.result</code>, <code>.url</code> e <code>.audioUrl</code> conforme presentes. Não substitui a entry inteira. Preserva os campos existentes (entrada, prompt). Só acrescenta ou atualiza os de saída. As 3 chaves (stableKey, refKey e labelKey) apontam para o mesmo objeto. Atualizar uma atualiza as 3 automaticamente. O próximo nó que ler <code>{{writer.text}}</code>, <code>{{6d09d1...uuid.text}}</code> ou <code>{{textBox_1714_0_8148.text}}</code> enxerga exatamente o mesmo valor. O <code>{ ...schema }</code> na linha 182 clona o container antes de qualquer mutação. O schema anterior permanece imutável. Se alguém guardou referência, a mudança não vaza.</div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
@@ -234,23 +234,23 @@
 }</div>
           <div class="arrow">↓</div>
           <div class="box backend">
-            <div class="box-title"><span class="badge step">A1</span> Guard: sem nodeId, no-op</div>
-            <div class="box-desc">Se <code>!stableKey</code>, retorna schema inalterado. Defensivo — nunca deveria acontecer em prática porque o loop só chama isso depois de encontrar um <code>node</code> válido.</div>
+            <div class="box-title"><span class="badge step">A1</span> Guarda: sem nodeId, no-op</div>
+            <div class="box-desc">Se <code>!stableKey</code>, retorna o schema inalterado. É defensivo. Nunca deveria acontecer na prática. O loop só chama isso depois de encontrar um <code>node</code> válido.</div>
             <div class="box-file">service.ts:175-179</div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Por que preservar entry existente</div>
-            O <code>entry = updatedSchema[stableKey] ?? {}</code> preserva os campos <em>de input</em> (prompt, url, formula, etc.) que foram indexados em 2.3 pelo <code>generateSchemaFromNodes</code>. Só sobrescreve os campos de <em>output</em>. Assim, referências como <code>{{writer.prompt}}</code> continuam funcionando depois que o nó terminou.
+            <div class="aside-title">🎯 Por que preservar a entry existente</div>
+            O <code>entry = updatedSchema[stableKey] ?? {}</code> preserva os campos de entrada (prompt, url, formula e outros). Esses campos foram indexados em 2.3 pelo <code>generateSchemaFromNodes</code>. Só sobrescreve os campos de saída. Assim, referências como <code>{{writer.prompt}}</code> continuam funcionando depois que o nó termina.
           </div>
           <div class="aside">
             <div class="aside-title">📎 shallow clone, não deep</div>
-            <code>{ ...schema }</code> clona só o container. As entries individuais ainda são referências partilhadas (as 3 chaves apontam pra mesma). É intencional — assim escrever numa chave reflete nas 3.
+            <code>{ ...schema }</code> clona só o container. As entries individuais permanecem como referências compartilhadas. As 3 chaves apontam para a mesma entry. É intencional. Escrever em uma chave reflete nas 3.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 typeof null === 'object'</div>
-            O guard <code>output !== null</code> na linha 188 evita cair no ramo de objeto com <code>null</code>. Sem ele, <code>null.text</code> daria TypeError.
+            A guarda <code>output !== null</code> na linha 188 evita cair no ramo de objeto quando o valor é <code>null</code>. Sem ela, <code>null.text</code> geraria TypeError.
           </div>
         </div>
       </div>
@@ -265,14 +265,14 @@
     </div>
     <div class="fn-card-body">
       <div class="fn-signature">if (typeof output === 'string') → text+result · if (object) → text/content/result/url/audioUrl (opcionais)</div>
-      <div class="fn-purpose"><strong>Propósito:</strong> Decide quais campos escrever baseado no formato do output. String simples vira ambos <code>.text</code> e <code>.result</code> (pra compat com placeholders legacy); objeto expande em vários campos condicionais.</div>
-      <div class="fn-friendly"><strong>Em resumo:</strong> pensa nisso como uma <em>caixa de encomenda</em> — o handler não sabe (e não deve saber) exatamente onde o próximo nó vai procurar o valor. Alguns usam <code>{{writer.text}}</code>, outros escreveram templates antigos com <code>{{writer.result}}</code>, um handler de imagem vai gerar <code>{{img.url}}</code>. A função aceita a encomenda em qualquer formato e distribui nos 5 slots possíveis. Se veio uma string pura, dupla escrita em <code>.text</code> e <code>.result</code> — cobre 2 estilos de placeholder simultaneamente. Se veio um objeto, cada campo <code>.text</code>/<code>.content</code>/<code>.result</code>/<code>.url</code>/<code>.audioUrl</code> é <em>opcional</em> — só é escrito se estiver definido no output. Um handler de LLM manda <code>{ text }</code>; um de imagem manda <code>{ url }</code>; um de áudio manda <code>{ audioUrl, text }</code>. Nunca vaza dados de outros nós — cada handler é responsável por retornar só o que ele produziu. E ausência de campo <em>não zera</em> valor existente — mantém o que já estava.</div>
+      <div class="fn-purpose"><strong>Propósito.</strong> Decide quais campos escrever com base no formato da saída. String simples vira <code>.text</code> e <code>.result</code>, para compatibilidade com placeholders legacy. Objeto expande em vários campos condicionais.</div>
+      <div class="fn-friendly"><strong>Em resumo.</strong> Funciona como uma caixa de encomenda. O handler não sabe onde o próximo nó vai procurar o valor. Alguns usam <code>{{writer.text}}</code>. Outros escreveram templates antigos com <code>{{writer.result}}</code>. Um handler de imagem gera <code>{{img.url}}</code>. A função aceita a encomenda em qualquer formato e distribui nos 5 campos possíveis. Quando veio uma string pura, escreve nos dois campos <code>.text</code> e <code>.result</code>. Cobre 2 estilos de placeholder ao mesmo tempo. Quando veio um objeto, cada campo <code>.text</code>, <code>.content</code>, <code>.result</code>, <code>.url</code> e <code>.audioUrl</code> é opcional. Só é escrito quando está definido na saída. Um handler de LLM manda <code>{ text }</code>. Um de imagem manda <code>{ url }</code>. Um de áudio manda <code>{ audioUrl, text }</code>. Nunca vaza dados de outros nós. Cada handler é responsável por retornar apenas o que produziu. A ausência de campo não zera valor existente. Mantém o que já estava.</div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
             <div class="box-title"><span class="badge step">B1</span> Ramo string</div>
-            <div class="box-desc"><code>entry.text = output; entry.result = output;</code> — dupla escrita. Cobre placeholders <code>{{X.text}}</code> e <code>{{X.result}}</code> ao mesmo tempo. Usado pra outputs de <code>mathFunction</code>, <code>textBox</code>, etc.</div>
+            <div class="box-desc"><code>entry.text = output; entry.result = output;</code>. Escrita dupla. Cobre placeholders <code>{{X.text}}</code> e <code>{{X.result}}</code> ao mesmo tempo. Usado para saídas de <code>mathFunction</code> e <code>textBox</code>, entre outros.</div>
             <div class="box-file">service.ts:185-187</div>
           </div>
           <div class="arrow">↓</div>
@@ -283,29 +283,29 @@
 <span class="k">if</span> (output.result !== <span class="k">undefined</span>) entry.result = output.result;
 <span class="k">if</span> (output.url !== <span class="k">undefined</span>) entry.url = output.url;
 <span class="k">if</span> (output.audioUrl !== <span class="k">undefined</span>) entry.audioUrl = output.audioUrl;</div>
-            <div class="box-desc">Cada campo só escreve se o handler forneceu. Ausência = mantém valor anterior (ou undefined se nunca setou).</div>
+            <div class="box-desc">Cada campo só é escrito quando o handler o fornece. A ausência mantém o valor anterior. Se nunca foi atribuído, permanece undefined.</div>
             <div class="box-file">service.ts:188-204</div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 5 campos = 5 tipos de output comuns</div>
+            <div class="aside-title">🎯 5 campos para 5 tipos de saída comuns</div>
             <table class="field-table">
               <tr><th>Campo</th><th>Origem</th></tr>
               <tr><td>text</td><td>LLM, texto genérico</td></tr>
               <tr><td>content</td><td>commandContentNode, documentos</td></tr>
-              <tr><td>result</td><td>Compat com placeholders antigos</td></tr>
+              <tr><td>result</td><td>Compatibilidade com placeholders antigos</td></tr>
               <tr><td>url</td><td>imageGenerator, uploads</td></tr>
               <tr><td>audioUrl</td><td>voiceBoxNode, audioReaderNode</td></tr>
             </table>
           </div>
           <div class="aside warn">
             <div class="aside-title">⚠️ Sem validação de tipos</div>
-            <code>entry.text = output.text</code> aceita qualquer coisa — string, number, array, function. Se um handler bugado passar <code>output.text = { foo: 1 }</code>, esse objeto vai virar <code>"[object Object]"</code> quando um placeholder tentar interpolar (via <code>String</code> coerção no <code>replacePlaceholders</code>).
+            <code>entry.text = output.text</code> aceita qualquer valor: string, number, array ou function. Se um handler com bug passar <code>output.text = { foo: 1 }</code>, esse objeto vira <code>"[object Object]"</code> quando um placeholder tentar interpolar. A coerção acontece via <code>String</code> no <code>replacePlaceholders</code>.
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 Ausência ≠ null</div>
-            O check <code>output.text !== undefined</code> permite explicitamente sobrescrever com <code>null</code> ou <code>''</code> (string vazia). Só <code>undefined</code> significa "não mexer".
+            <div class="aside-title">🔧 Ausência não é null</div>
+            O check <code>output.text !== undefined</code> permite sobrescrever explicitamente com <code>null</code> ou string vazia. Só <code>undefined</code> significa "não mexer".
           </div>
         </div>
       </div>
@@ -320,8 +320,8 @@
     </div>
     <div class="fn-card-body">
       <div class="fn-signature">updatedSchema[stableKey] = entry; if (refKey ≠ stableKey) updatedSchema[refKey] = entry; if (labelKey && ≠ ambos) updatedSchema[labelKey] = entry;</div>
-      <div class="fn-purpose"><strong>Propósito:</strong> Garante que as 3 chaves de acesso (UUID, refKey normalizado, labelKey humano) apontem pra mesma entry atualizada. Como <code>entry</code> é referência, escrever uma chave já reflete nas outras — mas fazer o assign explícito garante idempotência mesmo se a entry foi trocada.</div>
-      <div class="fn-friendly"><strong>Em resumo:</strong> é o momento de garantir que os 3 nomes que a pessoa atende (CPF, RG, apelido) apontem pra mesma pasta atualizada. Como o schema foi <em>shallow cloned</em> na linha 182, o <code>updatedSchema</code> tem uma cópia do container mas ainda tá referenciando as entries antigas. Ao fazer <code>updatedSchema[stableKey] = entry</code>, força a atribuição pra <em>essa nova entry</em> (que veio de <code>schema[stableKey] ?? {}</code> — se existia, é a mesma; se não, é objeto novo). Depois faz o mesmo pra refKey e labelKey <em>se</em> forem diferentes — o guard evita sobrescrita desnecessária quando o nó não tem dots no id ou label humano. É idempotente: rodar 2× com mesmos args não muda nada. É simetria com o build inicial em 2.3 — mesma lógica de indexação, mesmos guards. E é <em>referência partilhada</em>: se um placeholder resolveu <code>{{writer.text}}</code> depois desse update, e outro nó do agente atualizar o mesmo writer (não acontece hoje, mas em qualquer paralelismo futuro seria bug), o segundo update <em>afeta</em> a leitura do primeiro — mutação compartilhada.</div>
+      <div class="fn-purpose"><strong>Propósito.</strong> Garante que as 3 chaves de acesso (UUID, refKey normalizado, labelKey humano) apontem para a mesma entry atualizada. Como <code>entry</code> é referência, escrever em uma chave já reflete nas outras. Ainda assim, o assign explícito garante idempotência mesmo quando a entry foi trocada.</div>
+      <div class="fn-friendly"><strong>Em resumo.</strong> Garante que os 3 nomes de acesso (CPF, RG, apelido) apontem para a mesma pasta atualizada. O schema foi shallow-cloned na linha 182. O <code>updatedSchema</code> tem uma cópia do container. Ainda referencia as entries antigas. Ao fazer <code>updatedSchema[stableKey] = entry</code>, força a atribuição para essa nova entry. A entry veio de <code>schema[stableKey] ?? {}</code>. Se existia, é a mesma. Se não, é objeto novo. Depois faz o mesmo para refKey e labelKey quando forem diferentes. A guarda evita sobrescrita desnecessária quando o nó não tem dots no id ou label humano. É idempotente. Rodar 2 vezes com mesmos args não muda nada. Existe simetria com o build inicial em 2.3. Mesma lógica de indexação. Mesmas guardas. A entry é referência compartilhada. Se um placeholder resolveu <code>{{writer.text}}</code> depois desse update e outro nó do agente atualizar o mesmo writer, o segundo update afeta a leitura do primeiro. Hoje não acontece. Em qualquer paralelismo futuro, isso seria bug.</div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
@@ -336,22 +336,22 @@
 <span class="k">return</span> updatedSchema;</div>
           <div class="arrow">↓</div>
           <div class="box backend">
-            <div class="box-title"><span class="badge step">C1</span> Retorno = novo schema</div>
-            <div class="box-desc">O caller reatribui: <code>nodeSubstitutionSchema = this.node...updateSchemaWithNodeOutput(...)</code>. Do próximo <code>applySubstitutionToObject</code> em diante, todo placeholder resolve com o output atualizado.</div>
+            <div class="box-title"><span class="badge step">C1</span> Retorno como novo schema</div>
+            <div class="box-desc">O caller reatribui: <code>nodeSubstitutionSchema = this.node...updateSchemaWithNodeOutput(...)</code>. Do próximo <code>applySubstitutionToObject</code> em diante, todo placeholder resolve com a saída atualizada.</div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside warn">
             <div class="aside-title">⚠️ Colisão de labelKey</div>
-            Se dois nós têm o mesmo label ("Writer") — o segundo update reescreveria a mesma chave, mas <em>nas suas próprias 3 chaves</em>. O primeiro nó ainda tem <code>schema[stableKey1]</code> e <code>schema[refKey1]</code> apontando pra sua entry original — só <code>schema['writer']</code> (label compartilhada) foi sobrescrita. Comportamento sutil: nem "última wins" nem "primeira wins" — depende de qual chave o placeholder usa.
+            Se dois nós têm o mesmo label ("Writer"), o segundo update reescreve a mesma chave. Cada nó ainda tem as suas próprias 3 chaves. O primeiro nó continua com <code>schema[stableKey1]</code> e <code>schema[refKey1]</code> apontando para a entry original. Só <code>schema['writer']</code> (label compartilhada) foi sobrescrita. O comportamento é sutil. Não é "última vence" nem "primeira vence". Depende da chave que o placeholder usa.
           </div>
           <div class="aside info">
-            <div class="aside-title">🎯 Símetria com generateSchemaFromNodes</div>
-            Mesma lógica de <code>replace(/\./g, '_')</code> e mesmo <code>toLowerCase().replace(/\s/g, '')</code>. É a garantia de que build inicial e update pós-execução usam exatamente as mesmas chaves — nenhuma referência "some" entre 2.3 e 3.6.
+            <div class="aside-title">🎯 Simetria com generateSchemaFromNodes</div>
+            Mesma lógica de <code>replace(/\./g, '_')</code>. Mesmo <code>toLowerCase().replace(/\s/g, '')</code>. Garante que o build inicial e o update pós-execução usam exatamente as mesmas chaves. Nenhuma referência é perdida entre 2.3 e 3.6.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 refKey e labelKey podem colidir</div>
-            Se o label for tipo "6d09d1a3_...", ele pode colidir com o refKey. O último check garante que labelKey só é atribuído se for realmente distinto — evita 2 escritas na mesma chave.
+            Se o label é do tipo "6d09d1a3_...", pode colidir com o refKey. O último check garante que labelKey só é atribuído quando é realmente distinto. Evita duas escritas na mesma chave.
           </div>
         </div>
       </div>
@@ -366,8 +366,8 @@
     </div>
     <div class="fn-card-body">
       <div class="fn-signature">nodeSubstitutionSchema = this.nodeReferenceSubstitutionService.updateSchemaWithNodeOutput(schema, node.id, node.data?.label, newTexts[last]?.text)</div>
-      <div class="fn-purpose"><strong>Propósito:</strong> Os 5 pontos do loop onde a função é chamada — <em>não</em> em todo handler, só nos que produzem output legacy que precisa aparecer no schema. Handlers Temporal (worker) atualizam via o retorno do <code>processNodeViaTemporal</code>, não aqui.</div>
-      <div class="fn-friendly"><strong>Em resumo:</strong> só <strong>5 dos ~17 handlers legacy</strong> chamam essa função <em>explicitamente</em>: <code>voiceBoxNode</code> (3389), <code>thirdPartyIntegration/mcpNode</code> (3485), <code>imageGenerator</code> (3624), <code>audioReaderNode</code> (3670 — <em>comentário</em>), e <code>arrayNode</code> após fechar iteração (4331). Os outros handlers ou não produzem output substituível (<code>conditionNode</code>, <code>arrayNode</code> antes de fechar), ou fazem sua própria manipulação via <code>onMutateSchema</code> callback. Handlers Temporal (<code>commandTextNode</code>, <code>scripting</code>, <code>apiCaller</code>, etc.) atualizam o schema por <em>retorno do envelope</em> (<code>result.nodeSubstitutionSchema</code>) — o worker recebe input já resolvido e o schema atualizado vem de volta como parte do resultado. Essa <em>inconsistência</em> de padrões (alguns chamam explícito, outros via callback, outros via retorno) é um dos motivos do refactor da substitution engine ser complexo: pra migrar, é preciso rastrear <strong>todas</strong> as ~57 sync sites que a memória menciona. E o argumento <code>newTexts[newTexts.length - 1]?.text</code> é padrão: os handlers colecionam múltiplos texts (histórico), mas só o <em>último</em> vira output visível pro próximo nó.</div>
+      <div class="fn-purpose"><strong>Propósito.</strong> Os 5 pontos do loop onde a função é chamada. Não é em todo handler. Só nos que produzem saída legacy que precisa aparecer no schema. Handlers Temporal (worker) atualizam via o retorno do <code>processNodeViaTemporal</code>. Não passam por aqui.</div>
+      <div class="fn-friendly"><strong>Em resumo.</strong> Apenas 5 dos aproximadamente 17 handlers legacy chamam essa função de forma explícita: <code>voiceBoxNode</code> (3389), <code>thirdPartyIntegration/mcpNode</code> (3485), <code>imageGenerator</code> (3624), <code>audioReaderNode</code> (3670, em comentário) e <code>arrayNode</code> após fechar iteração (4331). Os outros handlers não produzem saída substituível (<code>conditionNode</code>, <code>arrayNode</code> antes de fechar) ou fazem manipulação própria via callback <code>onMutateSchema</code>. Handlers Temporal (<code>commandTextNode</code>, <code>scripting</code>, <code>apiCaller</code> e outros) atualizam o schema pelo retorno do envelope (<code>result.nodeSubstitutionSchema</code>). O worker recebe a entrada já resolvida. O schema atualizado volta como parte do resultado. Essa inconsistência de padrões (alguns chamam explícito, outros via callback, outros via retorno) é um dos motivos que tornam complexo o refactor da substitution engine. Para migrar, é preciso rastrear todas as aproximadamente 57 sync sites mencionadas na memória. O argumento <code>newTexts[newTexts.length - 1]?.text</code> segue padrão. Os handlers coletam múltiplos texts (histórico). Só o último vira saída visível para o próximo nó.</div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
@@ -383,14 +383,14 @@
           </div>
           <div class="arrow">↓</div>
           <div class="box backend">
-            <div class="box-title"><span class="badge step">D2</span> 5 call sites</div>
+            <div class="box-title"><span class="badge step">D2</span> 5 call-sites</div>
             <div class="box-desc">
               <table class="field-table">
                 <tr><th>Linha</th><th>Handler</th></tr>
-                <tr><td>3389</td><td>voiceBoxNode (TTS output)</td></tr>
+                <tr><td>3389</td><td>voiceBoxNode (saída TTS)</td></tr>
                 <tr><td>3485</td><td>thirdPartyIntegration / mcpNode</td></tr>
                 <tr><td>3624</td><td>imageGenerator (url)</td></tr>
-                <tr><td>3670</td><td>audioReaderNode (comentário — pode não estar ativo)</td></tr>
+                <tr><td>3670</td><td>audioReaderNode (comentário; pode não estar ativo)</td></tr>
                 <tr><td>4331</td><td>arrayNode (após iterar body inteiro)</td></tr>
               </table>
             </div>
@@ -398,17 +398,17 @@
         </div>
         <div class="fn-asides">
           <div class="aside warn">
-            <div class="aside-title">⚠️ Só a última text vira output</div>
-            <code>newTexts[newTexts.length - 1]?.text</code>. Se um handler produz múltiplas mensagens (streaming de LLM, iteração de array), só a última fica exposta no schema. O restante fica no <code>myTexts</code>/<code>previewResponses</code> mas não é referenciável via <code>{{...}}</code>.
+            <div class="aside-title">⚠️ Só o último text vira saída</div>
+            <code>newTexts[newTexts.length - 1]?.text</code>. Se um handler produz múltiplas mensagens (streaming de LLM, iteração de array), só a última fica exposta no schema. O restante permanece em <code>myTexts</code> ou <code>previewResponses</code>. Não é referenciável via <code>{{...}}</code>.
           </div>
           <div class="aside info">
-            <div class="aside-title">🎯 Handlers Temporal usam retorno, não call direto</div>
-            <code>processNodeViaTemporal</code> retorna <code>{ myUpdatedNodes, myTexts, nodeSubstitutionSchema }</code>. O loop reatribui direto (linhas 3336-3338, 3361-3363, etc.). Não chama <code>updateSchemaWithNodeOutput</code> aqui — o worker já fez a lógica equivalente dentro dele.
-            <br>Efeito: 2 padrões de propagação de output, difíceis de sincronizar.
+            <div class="aside-title">🎯 Handlers Temporal usam retorno, não chamada direta</div>
+            <code>processNodeViaTemporal</code> retorna <code>{ myUpdatedNodes, myTexts, nodeSubstitutionSchema }</code>. O loop reatribui direto (linhas 3336-3338, 3361-3363 e outras). Não chama <code>updateSchemaWithNodeOutput</code> aqui. O worker já fez a lógica equivalente por dentro.
+            <br>Efeito: 2 padrões de propagação de saída, difíceis de sincronizar.
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 onMutateSchema pra casos exóticos</div>
-            <code>conditionNode</code>, <code>arrayNode</code> durante iteração, e <code>nodesBox</code> usam <code>onMutateSchema</code> — callback closure que muta o schema no escopo do <code>apiV2</code>. Terceiro padrão pra propagar output. Somando: 3 mecanismos diferentes fazem a mesma coisa.
+            <div class="aside-title">🔧 onMutateSchema para casos exóticos</div>
+            <code>conditionNode</code>, <code>arrayNode</code> durante iteração e <code>nodesBox</code> usam <code>onMutateSchema</code>. É callback closure que muta o schema no escopo do <code>apiV2</code>. Terceiro padrão para propagar saída. No total, 3 mecanismos fazem a mesma coisa.
           </div>
         </div>
       </div>
@@ -416,20 +416,20 @@
   </div>
 
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo — o que sai de 3.6:</strong>
-    <br>• <code>nodeSubstitutionSchema</code> reatribuído com output do nó que terminou (novo objeto, spread do anterior)
-    <br>• As 3 chaves do nó (stableKey/refKey/labelKey) apontam pra mesma entry atualizada
-    <br>• 100% síncrono, in-memory
-    <br>• Só 5 handlers legacy chamam explicitamente; Temporal usa retorno; outros usam onMutateSchema
+    <strong>Resumo — o que sai de 3.6.</strong>
+    <br>• <code>nodeSubstitutionSchema</code> reatribuído com a saída do nó que terminou (novo objeto, spread do anterior).
+    <br>• As 3 chaves do nó (stableKey, refKey, labelKey) apontam para a mesma entry atualizada.
+    <br>• 100% síncrono, in-memory.
+    <br>• Só 5 handlers legacy chamam de forma explícita. Temporal usa retorno. Outros usam onMutateSchema.
   </div>
 
   <div class="note">
-    <strong>Observações para migração:</strong>
-    <br>• É <strong>o segundo maior ofensor</strong> da substitution engine (junto com o passo 3.3). São 57 sync sites que precisam funcionar em coerência. Migração pro worker requer que TODOS os call sites usem um único mecanismo — ou tudo via retorno de activity, ou via API centralizada.
-    <br>• A entry compartilhada entre 3 chaves é uma otimização de memória — em qualquer refactor com paralelismo, vira problema de race. Precisará ser convertida em 3 escritas independentes ou lock por nodeId.
-    <br>• A dupla escrita em <code>.text</code> e <code>.result</code> (ramo string) é <em>backward compat</em>. Um sistema novo pode escolher um só e forçar migração de placeholders.
-    <br>• A whitelist implícita de 5 campos (text/content/result/url/audioUrl) é hardcoded — se um novo tipo de node produzir <code>videoUrl</code>, precisa adicionar aqui e no <code>generateSchemaFromNodes</code> em paralelo.
-    <br>• É <strong>essencial</strong> — sem esse passo o loop não funciona. Deve migrar junto com 3.3.
+    <strong>Observações para migração.</strong>
+    <br>• É o segundo maior ofensor da substitution engine, junto com o passo 3.3. São 57 sync sites que precisam funcionar em coerência. A migração para o worker requer que todos os call-sites usem um único mecanismo. Ou tudo via retorno de activity, ou via API centralizada.
+    <br>• A entry compartilhada entre 3 chaves é otimização de memória. Em qualquer refactor com paralelismo, vira problema de race. Precisará ser convertida em 3 escritas independentes ou lock por nodeId.
+    <br>• A escrita dupla em <code>.text</code> e <code>.result</code> (ramo string) existe para backward compat. Um sistema novo pode escolher só um dos campos e forçar migração de placeholders.
+    <br>• A whitelist implícita de 5 campos (text, content, result, url, audioUrl) está hardcoded. Se um novo tipo de node produzir <code>videoUrl</code>, é preciso adicionar aqui e no <code>generateSchemaFromNodes</code> em paralelo.
+    <br>• É essencial. Sem esse passo, o loop não funciona. Deve migrar junto com 3.3.
   </div>
 
   <div class="page-footer-nav">

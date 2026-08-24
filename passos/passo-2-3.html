@@ -182,24 +182,24 @@
     <h1>Passo 2.3 — generateSchemaFromNodes (schema de substituição)</h1>
   </div>
   <div class="page-sub">
-    Bloco em <code>node-reference-substitution.service.ts:82-143</code>. Constrói o <strong>mapa de substituição in-memory</strong> que resolve placeholders <code>{{...}}</code> em tempo de execução. Cada nó vira até 3 chaves no mapa: UUID puro, UUID normalizado (pontos → underscores), e label lowercase — todas apontando pra mesma <code>entry</code> (compartilhada por referência).
+    Bloco em <code>node-reference-substitution.service.ts:82-143</code>. Constrói o mapa de substituição in-memory que resolve placeholders <code>{{...}}</code> em tempo de execução. Cada nó vira até três chaves no mapa. UUID puro. UUID normalizado (pontos viram underscores). Label lowercase. Todas apontam para a mesma <code>entry</code>, compartilhada por referência.
   </div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
     <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
     <ul>
-      <li><strong>Monta a "agenda de referências" do agente:</strong> constrói um único mapa in-memory que responde à pergunta <em>"quando o prompt escreve <code>{{persona}}</code>, o que ele quer dizer?"</em>. Sem esse mapa nenhum placeholder resolve.</li>
-      <li><strong>Filtra por whitelist hand-maintained:</strong> só publica campos listados em <code>basedOnType</code> — nó de tipo novo com campo referenciável precisa ser adicionado à mão nessa lista, ou o placeholder falha <em>silenciosamente</em>.</li>
-      <li><strong>Normaliza tudo pra string:</strong> se o campo é objeto, tenta <code>value.text ?? value.content ?? value.result</code> em ordem, e cai em <code>JSON.stringify</code> como fallback. É onde a RAM infla se um <code>result</code> for gigante (2MB fica inteiro no schema).</li>
-      <li><strong>Indexa cada nó sob 3 chaves apontando pra mesma <code>entry</code>:</strong> UUID puro, UUID com <code>.</code> trocado por <code>_</code>, e label lowercase sem espaço — permite o user escrever <code>{{Persona Model}}</code>, <code>{{a1b2_c3d4}}</code> ou o UUID cru e todos resolverem pro mesmo valor. Colisão de label sobrescreve <em>silenciosamente</em>.</li>
-      <li><strong>Roda 1× no início do run:</strong> depois disso o schema é <em>mutado in-place</em> por <code>updateSchemaWithNodeOutput</code> a cada nó completado — nunca regenerado. A memória <code>[[project_substitution_engine]]</code> avisa que existem 57 sync sites tocando esse schema no <code>FluxService</code>.</li>
-      <li><strong>Saída:</strong> <code>nodeSubstitutionSchema: { [key]: { [field]: string } }</code> pronto pra ser consumido por <code>applySubstitutionToObject</code> em cada iteração do loop — zero I/O, puro CPU, <code>O(N × F)</code>.</li>
+      <li><strong>Monta a agenda de referências do agente.</strong> Constrói um único mapa in-memory que responde a "quando o prompt escreve <code>{{persona}}</code>, o que significa?". Sem esse mapa, nenhum placeholder resolve.</li>
+      <li><strong>Filtra por whitelist hand-maintained.</strong> Só publica campos listados em <code>basedOnType</code>. Um tipo de nó novo com campo referenciável precisa ser adicionado manualmente à lista. Sem isso, o placeholder falha silenciosamente.</li>
+      <li><strong>Normaliza tudo para string.</strong> Se o campo é objeto, tenta <code>value.text ?? value.content ?? value.result</code> em ordem. Cai em <code>JSON.stringify</code> como fallback. É onde a RAM cresce se um <code>result</code> é grande (2MB fica inteiro no schema).</li>
+      <li><strong>Indexa cada nó sob 3 chaves apontando para a mesma <code>entry</code>.</strong> UUID puro, UUID com <code>.</code> trocado por <code>_</code>, e label lowercase sem espaço. O usuário pode escrever <code>{{Persona Model}}</code>, <code>{{a1b2_c3d4}}</code> ou o UUID cru. Todos resolvem para o mesmo valor. Colisão de label sobrescreve silenciosamente.</li>
+      <li><strong>Roda uma vez no início da execução.</strong> Depois disso o schema é mutado in-place por <code>updateSchemaWithNodeOutput</code> a cada nó completado. Nunca regenerado. A memória <code>[[project_substitution_engine]]</code> avisa que existem 57 sync sites tocando esse schema no <code>FluxService</code>.</li>
+      <li><strong>Saída.</strong> <code>nodeSubstitutionSchema: { [key]: { [field]: string } }</code>. Pronto para ser consumido por <code>applySubstitutionToObject</code> em cada iteração do loop. Zero I/O. Puro CPU. Complexidade <code>O(N × F)</code>.</li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto:</strong> este é o <strong>motor de referência</strong> — o que faz um node poder escrever <code>{{model_1}}</code> ou <code>{{Persona Model}}</code> no prompt e receber o output do node upstream substituído. A memória <code>[[project_substitution_engine]]</code> avisa que esse engine tem <strong>57 sync sites</strong> em <code>FluxService</code> lendo/mutando o schema — não é regex simples, envolve resolução de field-paths e aliases humanos.
+    <strong>Contexto.</strong> Este é o motor de referência. Permite que um nó escreva <code>{{model_1}}</code> ou <code>{{Persona Model}}</code> no prompt e receba o output do nó upstream substituído. A memória <code>[[project_substitution_engine]]</code> avisa que o engine tem 57 sync sites em <code>FluxService</code> lendo e mutando o schema. Não é regex simples. Envolve resolução de field-paths e aliases humanos.
   </div>
 
   <div class="overview-mini">
@@ -216,7 +216,7 @@
       <a href="#fn-e" class="overview-chip"><span class="lbl">E</span>Ciclo de vida no run</a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado final: <code>nodeSubstitutionSchema: { [key]: { [field]: value } }</code> pronto pra ser consumido por <code>applySubstitutionToObject</code> em cada iteração.
+      Resultado final. <code>nodeSubstitutionSchema: { [key]: { [field]: value } }</code>. Pronto para ser consumido por <code>applySubstitutionToObject</code> em cada iteração.
     </div>
   </div>
 
@@ -234,10 +234,10 @@
         private readonly basedOnType: Record&lt;nodeType, string[]&gt;
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Definir <em>quais campos</em> de <code>node.data</code> valem a pena publicar no schema, por tipo de nó. Nó não listado é ignorado; campo não listado (mesmo existindo em <code>data</code>) não vira substituível.
+        <strong>Propósito.</strong> Define quais campos de <code>node.data</code> valem a pena publicar no schema, por tipo de nó. Nó não listado é ignorado. Campo não listado (mesmo existindo em <code>data</code>) não vira substituível.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> pense nesta whitelist como o <em>cadastrador</em> do sistema de referência — é uma lista escrita à mão dizendo "para cada tipo de nó, esses aqui são os campos que podem ser citados via <code>{{placeholder}}</code>". Um <code>commandTextNode</code>, por exemplo, expõe <code>prompt</code>, <code>persona</code>, <code>content</code>, <code>text</code>; um <code>sqlQuerier</code> expõe <code>host</code>, <code>query</code> e etc. Se o tipo do nó nem aparece no cadastro, ele é ignorado sem log; se o campo não está listado, ele existe em memória mas ninguém consegue referenciar. É por isso que criar um novo tipo de nó e esquecer de atualizar esta lista gera <strong>bug silencioso</strong>: o placeholder simplesmente não resolve, sem barulho nenhum.
+        <strong>Em resumo.</strong> Esta whitelist é o cadastro do sistema de referência. É uma lista escrita à mão indicando "para cada tipo de nó, estes são os campos que podem ser referenciados via <code>{{placeholder}}</code>". Um <code>commandTextNode</code>, por exemplo, expõe <code>prompt</code>, <code>persona</code>, <code>content</code>, <code>text</code>. Um <code>sqlQuerier</code> expõe <code>host</code>, <code>query</code>, etc. Se o tipo do nó não aparece no cadastro, é ignorado sem log. Se o campo não está listado, existe em memória mas ninguém consegue referenciar. Por isso, criar um novo tipo de nó e esquecer de atualizar esta lista gera bug silencioso. O placeholder não resolve. Sem alerta.
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
@@ -258,9 +258,9 @@
           </div>
           <div class="arrow">↓</div>
           <div class="box decision">
-            <div class="box-title">Nó não listado = skip silencioso</div>
+            <div class="box-title">Nó não listado gera skip silencioso</div>
             <div class="box-desc">
-              <code>if (!relevantFields) continue;</code> — sem log, sem erro. Se algum tipo de nó novo tiver campo textual que deveria ser substituível, alguém <em>tem</em> que atualizar essa lista à mão.
+              <code>if (!relevantFields) continue;</code>. Sem log, sem erro. Se algum tipo de nó novo tem campo textual que deveria ser substituível, alguém precisa atualizar essa lista manualmente.
             </div>
             <div class="box-file">node-reference-substitution.service.ts:89-91</div>
           </div>
@@ -268,16 +268,16 @@
         <div class="fn-asides">
           <div class="aside warn">
             <div class="aside-title">⚠️ Manutenção manual</div>
-            Esta é uma das <em>hand-maintained lists</em> do projeto — igual ao MCP schema catalog (ver CLAUDE.md). Adicionar tipo novo de nó com campo referenciável sem atualizar aqui = placeholder <code>{{new_field}}</code> nunca resolve. Bug silencioso.
+            Esta é uma das listas hand-maintained do projeto. Igual ao MCP schema catalog (ver CLAUDE.md). Adicionar tipo novo de nó com campo referenciável sem atualizar aqui faz com que o placeholder <code>{{new_field}}</code> nunca resolva. Bug silencioso.
           </div>
           <div class="aside info">
             <div class="aside-title">🎯 Por que só campos textuais?</div>
-            Placeholder <code>{{x}}</code> só faz sentido substituir por string. Campos como <code>modelId</code>, <code>temperature</code>, <code>fluxId</code> não entram — não são conteúdo referenciável.
-            <br><br>Exceção: <code>modelSettings</code> em <code>commandTextNode</code> — é objeto, e vira JSON string pelo fallback de (C).
+            O placeholder <code>{{x}}</code> só faz sentido substituir por string. Campos como <code>modelId</code>, <code>temperature</code>, <code>fluxId</code> não entram. Não são conteúdo referenciável.
+            <br><br>Exceção. <code>modelSettings</code> em <code>commandTextNode</code>. É objeto e vira JSON string pelo fallback do (C).
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 Tipos que <strong>não</strong> estão na lista</div>
-            <code>varInputNode</code>, <code>fluxObject</code>, <code>nodesBox</code>, <code>arrayNode</code> (só <code>content</code>, não outputs internos), <code>conditionNode</code>, <code>fluxBox</code>/<code>libraryNode</code>. Nós de fluxo/storage não expõem output substituível.
+            <div class="aside-title">🔧 Tipos que não estão na lista</div>
+            <code>varInputNode</code>, <code>fluxObject</code>, <code>nodesBox</code>, <code>arrayNode</code> (só <code>content</code>, não outputs internos), <code>conditionNode</code>, <code>fluxBox</code>, <code>libraryNode</code>. Nós de fluxo e storage não expõem output substituível.
           </div>
         </div>
       </div>
@@ -289,7 +289,7 @@
     <div class="fn-card-header">
       <div class="fn-title">
         <span class="badge migrated" style="background:#3B82F6;color:white">B</span>
-        <code>Loop principal — build entry por node</code>
+        <code>Loop principal · build entry por node</code>
       </div>
       <div class="fn-loc">node-reference-substitution.service.ts:82-140</div>
     </div>
@@ -298,17 +298,17 @@
         generateSchemaFromNodes(nodes: any[]): { [key]: { [field]: value } }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Iterar sobre todos os nodes, ignorar os não-mapeados, e pra cada mapeado montar uma <code>entry</code> extraindo os campos da whitelist. Retorna o schema final.
+        <strong>Propósito.</strong> Itera sobre todos os nós, ignora os não mapeados e, para cada mapeado, monta uma <code>entry</code> extraindo os campos da whitelist. Retorna o schema final.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> se a whitelist do Card A é o cadastro, esta função é o <em>montador</em> — ela pega o cadastro na mão e sai visitando um nó de cada vez pra construir a agenda de referências do agente. Pra cada nó: confere se o tipo está na lista, calcula um "apelido" baseado no label (tipo "Persona Model" vira <code>personamodel</code>), abre um bolso vazio (<code>entry</code>), copia pra dentro dele só os campos que o cadastro permite, e no fim passa pro Card D pra ser arquivado sob 3 chaves. É <strong>rodado uma única vez</strong> no começo do run — depois disso o schema é mutado in-place a cada nó executado, nunca regenerado. Zero I/O, puro processamento em memória.
+        <strong>Em resumo.</strong> Se a whitelist do Card A é o cadastro, esta função é o montador. Pega o cadastro e visita um nó por vez para construir a agenda de referências do agente. Para cada nó. Verifica se o tipo está na lista. Calcula um apelido baseado no label ("Persona Model" vira <code>personamodel</code>). Abre uma <code>entry</code> vazia. Copia para dentro dela apenas os campos que o cadastro permite. Passa para o Card D para ser arquivado sob 3 chaves. Roda uma única vez no início da execução. Depois disso, o schema é mutado in-place a cada nó executado. Nunca regenerado. Zero I/O. Puro processamento em memória.
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
             <div class="box-title"><span class="badge step">B1</span> <code>const schema = {}</code></div>
             <div class="box-desc">
-              Objeto vanilla — não é Map. Chaves podem colidir se nodeId contiver caracteres esquisitos, mas UUIDs são seguros.
+              Objeto vanilla. Não é Map. Chaves podem colidir se <code>nodeId</code> contiver caracteres inesperados. UUIDs são seguros.
             </div>
             <div class="box-file">node-reference-substitution.service.ts:83</div>
           </div>
@@ -316,7 +316,7 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">B2</span> Loop <code>for (const node of nodes)</code></div>
             <div class="box-desc">
-              Passa 1 vez por cada node. Skips: sem <code>type</code> mapeado, sem <code>id</code> (<code>stableKey</code>).
+              Passa uma vez por cada nó. Skips. Sem <code>type</code> mapeado. Sem <code>id</code> (<code>stableKey</code>).
             </div>
             <div class="box-file">node-reference-substitution.service.ts:85-97</div>
           </div>
@@ -329,7 +329,7 @@
   .<span class="t">replace</span>(/\s/g, <span class="s">''</span>);
             </div>
             <div class="box-desc">
-              Ex.: label <code>"Persona Model"</code> → labelKey <code>"personamodel"</code>. Sem espaços, tudo minúsculo. Usado pra permitir <code>{{Persona Model}}</code> no template resolver pra <code>{{personamodel}}</code>.
+              Exemplo. Label <code>"Persona Model"</code> vira <code>labelKey "personamodel"</code>. Sem espaços, tudo minúsculo. Usado para permitir que <code>{{Persona Model}}</code> no template resolva para <code>{{personamodel}}</code>.
             </div>
             <div class="box-file">node-reference-substitution.service.ts:99-101</div>
           </div>
@@ -337,8 +337,8 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">B4</span> Extrai fields (loop interno)</div>
             <div class="box-desc">
-              <code>for (const field of relevantFields) { ... }</code> — ver Card C pro tratamento de valor.
-              <br><br>Depois de popular a <code>entry</code>, chama Card D pra indexar sob as 3 chaves.
+              <code>for (const field of relevantFields) { ... }</code>. Ver Card C para o tratamento de valor.
+              <br><br>Após popular a <code>entry</code>, chama o Card D para indexar sob as três chaves.
             </div>
             <div class="box-file">node-reference-substitution.service.ts:105-140</div>
           </div>
@@ -346,15 +346,15 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Complexidade O(N × F)</div>
-            N = nodes, F = campos médios por tipo (~4). Puro CPU, sem I/O. Trivial em qualquer flow real.
+            N é o número de nós. F é o número médio de campos por tipo (~4). Puro CPU. Sem I/O. Trivial em qualquer flow real.
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ Chamado 1× por run</div>
-            <strong>Só</strong> no início do loop (linha 3149-3152 do flux.service). O schema é depois <em>mutado in-place</em> pelo <code>updateSchemaWithNodeOutput</code> em cada iteração (não regerado). Se algum handler zera o schema por acidente, os handlers seguintes rodam sem substituição.
+            <div class="aside-title">⚠️ Chamado uma vez por execução</div>
+            Só no início do loop (linha 3149-3152 do <code>flux.service</code>). O schema é depois mutado in-place pelo <code>updateSchemaWithNodeOutput</code> em cada iteração. Não é regerado. Se algum handler zera o schema por acidente, os handlers seguintes rodam sem substituição.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 Sem paginação</div>
-            Um flow com 500 nós = 500 entries em memória. Cada entry pode ter valor grande se algum field for <code>content</code> stringificado (JSON de arrays). Ver Card C.
+            Um flow com 500 nós gera 500 entries em memória. Cada entry pode ter valor grande se algum campo for <code>content</code> stringificado (JSON de arrays). Ver Card C.
           </div>
         </div>
       </div>
@@ -375,10 +375,10 @@
         for (const field of relevantFields) { let value = node.data[field]; if (object) value = value.text ?? value.content ?? value.result ?? JSON.stringify(value); entry[field] = value; }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Normalizar o valor pra sempre ser string. Se <code>node.data[field]</code> é objeto (comum em outputs), tenta extrair <code>text</code>/<code>content</code>/<code>result</code>; se nada bate, cai em <code>JSON.stringify</code>. Se é undefined, não cria a chave.
+        <strong>Propósito.</strong> Normaliza o valor para que seja sempre string. Se <code>node.data[field]</code> é objeto (comum em outputs), tenta extrair <code>text</code>, <code>content</code> ou <code>result</code>. Se nada bate, cai em <code>JSON.stringify</code>. Se é undefined, não cria a chave.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> imagine essa parte como o <em>tradutor</em> que garante que tudo que vai pro schema saia como texto — porque, no final, o <code>{{placeholder}}</code> vai ser jogado dentro de um prompt de LLM, e prompt é string. Se o campo já é primitivo (string/número/boolean), passa direto; se é objeto, ela tenta pescar em ordem: primeiro <code>text</code>, depois <code>content</code>, depois <code>result</code>; se nenhum bate, serializa o objeto inteiro como JSON. Se o campo está <code>undefined</code>, nem cria a entrada. Detalhe importante: essa ordem <code>text &gt; content &gt; result</code> é <strong>silenciosa e frágil</strong> — se um handler grava os dois, quem ganha é <code>text</code>, e mudar essa precedência num refactor pode quebrar coisas sem aviso. Também é aqui que a memória infla: um único <code>result</code> de 2MB fica <em>inteiro</em> no schema e é replicado em cada substituição.
+        <strong>Em resumo.</strong> Esta parte é o tradutor. Garante que tudo que vai para o schema saia como texto, porque no fim o <code>{{placeholder}}</code> é injetado dentro de um prompt de LLM, e prompt é string. Se o campo já é primitivo (string, number, boolean), passa direto. Se é objeto, tenta em ordem. Primeiro <code>text</code>, depois <code>content</code>, depois <code>result</code>. Se nenhum bate, serializa o objeto inteiro como JSON. Se o campo é <code>undefined</code>, não cria a entrada. A precedência <code>text &gt; content &gt; result</code> é silenciosa e frágil. Se um handler grava os dois, <code>text</code> ganha. Mudar essa precedência em refactor pode quebrar coisas sem aviso. Também é aqui que a memória cresce. Um único <code>result</code> de 2MB fica inteiro no schema e é replicado em cada substituição.
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
@@ -417,25 +417,25 @@
           </div>
           <div class="arrow">↓</div>
           <div class="box decision">
-            <div class="box-title">Resultado: <code>entry[field]: string | number | boolean</code></div>
+            <div class="box-title">Resultado. <code>entry[field]: string | number | boolean</code></div>
             <div class="box-desc">
-              Nunca objeto — sempre coerced. Isso permite <code>String.replace</code> funcionar direto no <code>applySubstitutionToObject</code>.
+              Nunca objeto. Sempre coerced. Permite que <code>String.replace</code> funcione direto no <code>applySubstitutionToObject</code>.
             </div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside warn">
             <div class="aside-title">⚠️ Precedência <code>text &gt; content &gt; result</code></div>
-            Se o objeto tem <em>ambos</em> <code>text</code> e <code>content</code> setados (raro mas acontece), <code>text</code> ganha. Se um handler grava <code>{text: 'x', content: {...json_grande...}}</code>, o placeholder <code>{{node}}</code> resolve pra <code>'x'</code>, não pra JSON.
-            <br><br>Se essa precedência mudar em refactor, quebra silenciosamente handlers que dependem dela.
+            Se o objeto tem <code>text</code> e <code>content</code> setados (raro mas acontece), <code>text</code> ganha. Se um handler grava <code>{text: 'x', content: {...json_grande...}}</code>, o placeholder <code>{{node}}</code> resolve para <code>'x'</code>, não para o JSON.
+            <br><br>Se essa precedência mudar em um refactor, quebra silenciosamente handlers que dependem dela.
           </div>
           <div class="aside info">
             <div class="aside-title">🎯 <code>JSON.stringify</code> fallback</div>
-            Quando o objeto não tem nenhum dos 3 campos padrão, vira JSON serializado. Ex.: <code>modelSettings</code> em commandTextNode. O prompt final vai ter uma string JSON literal — não é bonito mas funciona pra LLM ler.
+            Quando o objeto não tem nenhum dos 3 campos padrão, vira JSON serializado. Exemplo. <code>modelSettings</code> em <code>commandTextNode</code>. O prompt final tem uma string JSON literal. Não é elegante, mas funciona para o LLM ler.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 Grande contribuidor de RAM</div>
-            <code>content</code>/<code>result</code> podem ser payloads gigantes (respostas de LLM, resultados SQL). Se um único node tem <code>result</code> de 2MB, o schema carrega esses 2MB e todo <code>{{node}}</code> substituído replica isso na string final. Ver [[project_jsonb_fat_fields]] pro pattern relacionado.
+            <code>content</code> e <code>result</code> podem ser payloads grandes (respostas de LLM, resultados SQL). Se um único nó tem <code>result</code> de 2MB, o schema carrega esses 2MB e todo <code>{{node}}</code> substituído replica isso na string final. Ver [[project_jsonb_fat_fields]] para o pattern relacionado.
           </div>
         </div>
       </div>
@@ -456,10 +456,10 @@
         schema[stableKey] = entry; schema[refKey] = entry; schema[labelKey] = entry; // 3 keys, MESMA referência
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Aceitar 3 formatos diferentes de placeholder pro mesmo nó: UUID puro, UUID normalizado, e label humano. Todos apontam pra <em>mesma referência</em> — atualização em uma vaza pras outras.
+        <strong>Propósito.</strong> Aceita três formatos diferentes de placeholder para o mesmo nó. UUID puro, UUID normalizado e label humano. Todos apontam para a mesma referência. Atualização em uma delas reflete nas outras.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> pense nesta etapa como o <em>cartório</em> que registra o mesmo nó sob três nomes diferentes, mas todos apontando pro mesmo endereço. O nó vai pro arquivo: (1) sob o UUID puro (<code>a1b2-...</code>), (2) sob o UUID com pontos trocados por underscore (porque ponto em placeholder é usado como field access <code>{{x.y}}</code>), e (3) sob o label humano lowercase sem espaço (<code>personamodel</code>). O truque legal é que os três slots guardam a <em>mesma referência</em> pro objeto <code>entry</code> — então quando o output é atualizado depois, uma única mutação já reflete nas três chaves de graça. Isso é o que permite o usuário escrever <code>{{Persona Model}}</code>, <code>{{a1b2_c3d4_...}}</code> ou usar o UUID cru no template e todos resolverem pro mesmo valor. <strong>Perigo:</strong> se dois nós tiverem o mesmo label, o segundo sobrescreve o primeiro no slot do label, e <code>{{persona}}</code> vira ambíguo silenciosamente.
+        <strong>Em resumo.</strong> Esta etapa é o cartório que registra o mesmo nó sob três nomes diferentes, todos apontando para o mesmo endereço. O nó vai para o arquivo. Primeiro. Sob o UUID puro (<code>a1b2-...</code>). Segundo. Sob o UUID com pontos trocados por underscore (o ponto em placeholder é usado como field access <code>{{x.y}}</code>). Terceiro. Sob o label humano lowercase sem espaço (<code>personamodel</code>). Os três slots guardam a mesma referência ao objeto <code>entry</code>. Quando o output é atualizado depois, uma única mutação reflete nas três chaves automaticamente. Permite ao usuário escrever <code>{{Persona Model}}</code>, <code>{{a1b2_c3d4_...}}</code> ou o UUID cru no template. Todos resolvem para o mesmo valor. Cuidado. Se dois nós têm o mesmo label, o segundo sobrescreve o primeiro no slot do label. O <code>{{persona}}</code> vira ambíguo silenciosamente.
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
@@ -477,36 +477,36 @@ schema[stableKey] = entry;    <span class="c">// UUID puro: schema['a1b2-...']</
           <div class="box backend">
             <div class="box-title"><span class="badge step">D1</span> stableKey = node.id</div>
             <div class="box-desc">
-              UUID puro do node. Sempre presente (skip acima se ausente).
+              UUID puro do nó. Sempre presente (skip acima se ausente).
             </div>
           </div>
           <div class="arrow">↓</div>
           <div class="box backend">
             <div class="box-title"><span class="badge step">D2</span> refKey = id.replace(/\./g, '_')</div>
             <div class="box-desc">
-              Normaliza pontos (não permitidos em placeholder path <code>{{x.y}}</code> — colidiria com field access). Só entra no schema se difere do stableKey.
+              Normaliza pontos (não permitidos em placeholder path <code>{{x.y}}</code>. Colidiria com field access). Só entra no schema se difere do <code>stableKey</code>.
             </div>
           </div>
           <div class="arrow">↓</div>
           <div class="box backend">
             <div class="box-title"><span class="badge step">D3</span> labelKey (opcional)</div>
             <div class="box-desc">
-              Só se o label do node existe e não colide com as outras 2 chaves. Permite user escrever <code>{{Persona Model}}</code> no prompt e o replacer buscar <code>schema.personamodel</code> depois de normalizar.
+              Só se o label do nó existe e não colide com as outras duas chaves. Permite ao usuário escrever <code>{{Persona Model}}</code> no prompt. O replacer busca <code>schema.personamodel</code> após normalizar.
             </div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside warn">
             <div class="aside-title">⚠️ Colisão de labels</div>
-            2 nós com o mesmo label → o <em>último</em> ganha no schema. <code>{{persona}}</code> vira ambíguo. Front deveria proibir labels duplicados; se não, silenciosamente ignora um.
+            Dois nós com o mesmo label. O último ganha no schema. <code>{{persona}}</code> vira ambíguo. O front deveria proibir labels duplicados. Sem essa proteção, um é ignorado silenciosamente.
           </div>
           <div class="aside info">
             <div class="aside-title">🎯 Compartilhamento de referência</div>
-            As 3 chaves apontam pro MESMO objeto <code>entry</code>. Isso é intencional: <code>updateSchemaWithNodeOutput</code> só precisa mutar via <em>uma</em> chave e as outras 2 refletem automaticamente. Elegante.
+            As três chaves apontam para o mesmo objeto <code>entry</code>. É intencional. O <code>updateSchemaWithNodeOutput</code> só precisa mutar via uma chave. As outras duas refletem automaticamente.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 Placeholder syntax suportada</div>
-            <code>{{&lt;key&gt;.&lt;field&gt;}}</code> ou <code>{{&lt;key&gt;}}</code> (só a chave, resolve pro fallback do primeiro campo). O <code>replacePlaceholders</code> (linhas 5-22) faz split por <code>.</code> e caminha o objeto.
+            <code>{{&lt;key&gt;.&lt;field&gt;}}</code> ou <code>{{&lt;key&gt;}}</code> (só a chave, resolve para o fallback do primeiro campo). O <code>replacePlaceholders</code> (linhas 5-22) faz split por <code>.</code> e navega o objeto.
           </div>
         </div>
       </div>
@@ -527,17 +527,17 @@ schema[stableKey] = entry;    <span class="c">// UUID puro: schema['a1b2-...']</
         // 1x generate (aqui) → N× applySubstitutionToObject + updateSchemaWithNodeOutput (loop) → onMutateSchema (callback pra reatribuição)
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Mostrar como o schema criado aqui é consumido e mutado ao longo do run. Não é regenerado — é <em>vivido</em>. Cada nó completado enriquece o schema com seu output.
+        <strong>Propósito.</strong> Mostra como o schema criado aqui é consumido e mutado ao longo da execução. Não é regenerado. É atualizado ao vivo. Cada nó completado enriquece o schema com seu output.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> se as etapas anteriores <em>construíram</em> a agenda de referências, esta aqui é o <em>carteiro</em> que fica indo e vindo com essa agenda durante toda a execução. O ciclo por nó vira: (1) antes do handler rodar, chama <code>applySubstitutionToObject</code> que troca todos os <code>{{...}}</code> pelos valores do schema; (2) o handler executa em cima do nó já preenchido e produz um output; (3) esse output é gravado de volta no schema via <code>updateSchemaWithNodeOutput</code> pra ficar disponível pros nós seguintes; (4) como o schema é reatribuído (novo objeto raiz via spread), o callback <code>onMutateSchema</code> avisa "atenção, use esta nova referência agora". A memória <code>[[project_substitution_engine]]</code> alerta que existem <strong>57 lugares</strong> no <code>FluxService</code> tocando esse ciclo — por isso qualquer refactor do engine precisa mexer em todos ao mesmo tempo, não dá pra fazer troca cirúrgica.
+        <strong>Em resumo.</strong> Se as etapas anteriores construíram a agenda de referências, esta é o carteiro que leva e traz essa agenda durante toda a execução. O ciclo por nó vira. Primeiro. Antes do handler rodar, chama <code>applySubstitutionToObject</code>, que substitui todos os <code>{{...}}</code> pelos valores do schema. Segundo. O handler executa em cima do nó já preenchido e produz um output. Terceiro. Esse output é gravado de volta no schema via <code>updateSchemaWithNodeOutput</code> para ficar disponível para os nós seguintes. Quarto. Como o schema é reatribuído (novo objeto raiz via spread), o callback <code>onMutateSchema</code> sinaliza "use esta nova referência agora". A memória <code>[[project_substitution_engine]]</code> alerta que existem 57 lugares no <code>FluxService</code> tocando esse ciclo. Qualquer refactor do engine precisa mexer em todos ao mesmo tempo. Não dá para fazer troca cirúrgica.
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
             <div class="box-title"><span class="badge step">E1</span> <code>applySubstitutionToObject(node, schema)</code></div>
             <div class="box-desc">
-              Chamada 1× por iteração do loop (linha 3281). Recursivamente substitui todos os <code>{{...}}</code> em <code>node.data</code> — string, array, object. Retorna <em>novo</em> objeto (não muta original).
+              Chamada uma vez por iteração do loop (linha 3281). Substitui recursivamente todos os <code>{{...}}</code> em <code>node.data</code> (string, array, object). Retorna novo objeto. Não muta o original.
             </div>
             <div class="box-file">node-reference-substitution.service.ts:145-167</div>
           </div>
@@ -552,7 +552,7 @@ schema[stableKey] = entry;    <span class="c">// UUID puro: schema['a1b2-...']</
           <div class="box backend">
             <div class="box-title"><span class="badge step">E3</span> <code>updateSchemaWithNodeOutput(schema, nodeId, label, output)</code></div>
             <div class="box-desc">
-              Chamada após handler completar (linhas 3389, 3485, 3624, 3670, 4331 — múltiplos call sites). Cria novo schema com <code>...schema</code> spread, atualiza <code>entry.text/content/result</code>. As 3 chaves reindexam.
+              Chamada após o handler completar (linhas 3389, 3485, 3624, 3670, 4331. Múltiplos call-sites). Cria novo schema com <code>...schema</code> spread. Atualiza <code>entry.text</code>, <code>entry.content</code> ou <code>entry.result</code>. As três chaves reindexam.
             </div>
             <div class="box-file">node-reference-substitution.service.ts:169-216</div>
           </div>
@@ -560,7 +560,7 @@ schema[stableKey] = entry;    <span class="c">// UUID puro: schema['a1b2-...']</
           <div class="box cross">
             <div class="box-title"><span class="badge step">E4</span> <code>onMutateSchema(schema)</code> callback</div>
             <div class="box-desc">
-              Como o schema é <code>let</code> e reatribuído (spread), handlers precisam do callback <code>onMutateSchema</code> pra sinalizar "novo schema aqui, use este". Similar ao padrão de <code>onMutateObjectCallerData</code> em 1.5.
+              Como o schema é <code>let</code> e reatribuído (spread), handlers precisam do callback <code>onMutateSchema</code> para sinalizar "novo schema aqui, use este". Similar ao padrão de <code>onMutateObjectCallerData</code> em 1.5.
             </div>
             <div class="box-file">flux.service.ts:2464-2467</div>
           </div>
@@ -568,14 +568,14 @@ schema[stableKey] = entry;    <span class="c">// UUID puro: schema['a1b2-...']</
         <div class="fn-asides">
           <div class="aside warn">
             <div class="aside-title">⚠️ 57 sync sites (ver memória)</div>
-            [[project_substitution_engine]]: FluxService tem <strong>57 lugares</strong> que sincronizam o schema. Refactor de substitution não é regex swap — envolve tocar em todos esses sites simultaneamente.
+            [[project_substitution_engine]]. O <code>FluxService</code> tem 57 lugares que sincronizam o schema. Refactor de substitution não é regex swap. Envolve tocar em todos esses sites simultaneamente.
           </div>
           <div class="aside info">
             <div class="aside-title">🎯 Por que spread em <code>updateSchemaWithNodeOutput</code>?</div>
-            <code>const updatedSchema = { ...schema }</code> cria novo objeto raiz, mas as <em>entries</em> permanecem compartilhadas. Mutação pontual não invalida referências antigas — mas reatribuição sim, daí o callback <code>onMutateSchema</code>.
+            <code>const updatedSchema = { ...schema }</code> cria novo objeto raiz, mas as entries permanecem compartilhadas. Mutação pontual não invalida referências antigas. Reatribuição invalida. Por isso existe o callback <code>onMutateSchema</code>.
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 <code>processFlowWithSubstitution</code> — legacy</div>
+            <div class="aside-title">🔧 <code>processFlowWithSubstitution</code>. Legacy</div>
             Método na linha 241-267 do service que faz o mesmo ciclo (generate → apply → execute → update). Não é usado pela Fase 3 (que faz manualmente), mas está exportado. Possível dead code ou usado por endpoint alternativo.
           </div>
         </div>
@@ -584,21 +584,21 @@ schema[stableKey] = entry;    <span class="c">// UUID puro: schema['a1b2-...']</
   </div>
 
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo — o que sai de 2.3:</strong>
-    <br>• <code>nodeSubstitutionSchema: { [key]: { [field]: string } }</code> — mapa in-memory pronto pra <code>applySubstitutionToObject</code>
-    <br>• 1 a 3 chaves por node (UUID puro + UUID normalizado + label lowercase)
-    <br>• Valores coerced pra string (via <code>text ?? content ?? result ?? JSON.stringify</code>)
-    <br>• Zero I/O; puro CPU; O(N × F) onde F é ~4 campos por tipo
+    <strong>Resumo — o que sai de 2.3.</strong>
+    <br>• <code>nodeSubstitutionSchema: { [key]: { [field]: string } }</code>. Mapa in-memory pronto para <code>applySubstitutionToObject</code>.
+    <br>• De 1 a 3 chaves por nó (UUID puro, UUID normalizado, label lowercase).
+    <br>• Valores coerced para string (via <code>text ?? content ?? result ?? JSON.stringify</code>).
+    <br>• Zero I/O. Puro CPU. Complexidade O(N × F), com F em torno de 4 campos por tipo.
   </div>
 
   <div class="note">
-    <strong>Observações para migração:</strong>
-    <br>• <strong>Ver memória <a href="#">[[project_substitution_engine]]</a></strong>: 57 sync sites em FluxService. Refactor requer tocar em todos simultaneamente.
-    <br>• Worker <em>não</em> tem esse engine — recebe cada nó já pré-substituído (aplica <code>applySubstitutionToObject</code> antes do handoff). Migração pro worker preserva essa boundary.
-    <br>• A <code>basedOnType</code> é hand-maintained (igual MCP schema catalog). Ao adicionar novo tipo de nó com campo referenciável, <strong>tem</strong> que atualizar. Sem CI check — bug silencioso.
-    <br>• O <code>result</code>/<code>content</code>/<code>text</code> flattening carrega payloads gigantes pra memória. <strong>Não</strong> é seguro só preview-truncar (ver [[project_node_field_taxonomy]]) — placeholder pode precisar do valor completo.
-    <br>• Alternativa longo prazo: index-only schema — o schema guarda só <code>{nodeId, field}</code>, e o resolver busca o valor real sob demanda. Elimina duplicação em memória mas complica cache.
-    <br>• <code>processFlowWithSubstitution</code> (linhas 241-267) parece dead code — validar antes de qualquer limpeza.
+    <strong>Observações para migração.</strong>
+    <br>• Ver memória <a href="#">[[project_substitution_engine]]</a>. 57 sync sites em <code>FluxService</code>. Refactor exige tocar em todos simultaneamente.
+    <br>• O worker não tem esse engine. Recebe cada nó já pré-substituído. Aplica <code>applySubstitutionToObject</code> antes do handoff. Migração para o worker preserva essa boundary.
+    <br>• A <code>basedOnType</code> é hand-maintained (igual ao MCP schema catalog). Ao adicionar novo tipo de nó com campo referenciável, tem que atualizar. Sem CI check. Bug silencioso.
+    <br>• O flattening de <code>result</code>, <code>content</code> e <code>text</code> carrega payloads grandes para a memória. Não é seguro apenas preview-truncar (ver [[project_node_field_taxonomy]]). O placeholder pode precisar do valor completo.
+    <br>• Alternativa de longo prazo. Index-only schema. O schema guarda só <code>{nodeId, field}</code>. O resolver busca o valor real sob demanda. Elimina duplicação em memória. Complica cache.
+    <br>• O <code>processFlowWithSubstitution</code> (linhas 241-267) parece dead code. Validar antes de qualquer limpeza.
   </div>
 
   <div class="page-footer-nav">

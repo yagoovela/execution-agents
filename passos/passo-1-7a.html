@@ -123,22 +123,22 @@
     <h1>Passo 1.7a — Reset de nós com clearOnExecution por tipo</h1>
   </div>
   <div class="page-sub">
-    Bloco em <code>flux.service.ts:2724-2812</code>. Um <code>.map</code> gigantesco em <code>updatedFlows</code> que trata <strong>duas hierarquias distintas</strong> de reset: (1) <code>outputObjectNode</code> sempre limpa (fora do gate), (2) todo o resto testa <code>clearOnExecution</code> truthy e cai numa árvore de sub-branches por tipo. No fim, <code>conditionNode</code> zera o loop counter <em>também</em> fora do gate.
+    Bloco em <code>flux.service.ts:2724-2812</code>. Um <code>.map</code> extenso em <code>updatedFlows</code>. Trata duas hierarquias distintas de reset. Primeira. O <code>outputObjectNode</code> sempre limpa, fora do gate. Segunda. Todo o resto testa <code>clearOnExecution</code> truthy e cai em uma árvore de sub-branches por tipo. No final, <code>conditionNode</code> zera o loop counter, também fora do gate.
   </div>
 
   <div class="step-friendly">
     <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
     <ul>
-      <li><strong>Um único .map — três fatiamentos distintos:</strong> pra cada node em <code>updatedFlows</code>, primeiro testa se é <code>outputObjectNode</code> (limpeza incondicional), depois se <code>clearOnExecution</code> é truthy (aí cai numa árvore por tipo), e por último se é <code>conditionNode</code> (zera <code>currentLoopCounter</code>). Os dois "sempre limpa" (outputObjectNode e conditionNode) <strong>ignoram</strong> o gate do <code>clearOnExecution</code>.</li>
-      <li><strong>outputObjectNode — reset incondicional:</strong> tudo dele é output derivado, sempre limpa <code>text: ''</code> e <code>textData: []</code>. Não tem sentido preservar entre runs — o output é sempre re-gerado.</li>
-      <li><strong>fluxBox / libraryNode com clearOnExecution:</strong> <code>clearOnExecution</code> aqui é um <em>objeto</em> <code>{ campo1: true, campo2: false }</code>. Faz <code>Object.entries</code> e zera cada campo cuja flag é <code>true</code>. Isso é <em>por-campo</em>, não wholesale.</li>
-      <li><strong>Types que resetam por default:</strong> <code>commandTextNode</code>, <code>voiceBoxNode</code>, <code>imageGenerator</code>, <code>commandContentNode</code>, <code>audioReaderNode</code>, <code>apiCaller</code>, <code>mcpNode</code> — se <code>clearOnExecution</code> truthy, zeram <code>text: ''</code> e <code>canceled: false</code>. Sub-branches: <code>voiceBoxNode</code> retorna cedo com <code>{ canceled: false, audioUrl: '' }</code>; <code>commandContentNode</code> adiciona <code>text.result = ''</code>; <code>apiCaller</code>/<code>mcpNode</code> adicionam <code>{ response: null, errorMessage: null, errorStatusCode: null }</code>.</li>
-      <li><strong>conditionNode.currentLoopCounter — sempre 0:</strong> zerado fora do gate. Necessário porque loop counters seriam eternos entre runs. Mutação in-place — não retorna node novo, muta a referência (footgun sutil).</li>
+      <li><strong>Um único .map com três fatiamentos distintos.</strong> Para cada nó em <code>updatedFlows</code>, primeiro testa se é <code>outputObjectNode</code> (limpeza incondicional). Depois testa se <code>clearOnExecution</code> é truthy (cai em uma árvore por tipo). Por último, testa se é <code>conditionNode</code> (zera <code>currentLoopCounter</code>). Os dois "sempre limpa" (<code>outputObjectNode</code> e <code>conditionNode</code>) ignoram o gate do <code>clearOnExecution</code>.</li>
+      <li><strong>outputObjectNode com reset incondicional.</strong> Todo o conteúdo é output derivado. Sempre limpa <code>text: ''</code> e <code>textData: []</code>. Não faz sentido preservar entre execuções. O output é sempre regerado.</li>
+      <li><strong>fluxBox e libraryNode com clearOnExecution.</strong> Aqui <code>clearOnExecution</code> é um objeto <code>{ campo1: true, campo2: false }</code>. Executa <code>Object.entries</code> e zera cada campo cuja flag é <code>true</code>. O reset é por campo. Não é wholesale.</li>
+      <li><strong>Types que resetam por default.</strong> <code>commandTextNode</code>, <code>voiceBoxNode</code>, <code>imageGenerator</code>, <code>commandContentNode</code>, <code>audioReaderNode</code>, <code>apiCaller</code>, <code>mcpNode</code>. Se <code>clearOnExecution</code> é truthy, zeram <code>text: ''</code> e <code>canceled: false</code>. Sub-branches. <code>voiceBoxNode</code> retorna cedo com <code>{ canceled: false, audioUrl: '' }</code>. <code>commandContentNode</code> adiciona <code>text.result = ''</code>. <code>apiCaller</code> e <code>mcpNode</code> adicionam <code>{ response: null, errorMessage: null, errorStatusCode: null }</code>.</li>
+      <li><strong>conditionNode.currentLoopCounter sempre 0.</strong> Zerado fora do gate. Necessário porque loop counters seriam eternos entre execuções. É mutação in-place. Não retorna nó novo. Muta a referência. Footgun sutil.</li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto:</strong> essa é a "segunda pasada" de reset — o passo 1.5b tratou fluxObjects; agora 1.7a trata todos os outros types que têm output ou state runtime. Existe uma versão consolidada dessa lógica em <code>node-output-reset.ts</code> (<code>clearStaleNodeOutput</code>, <code>buildClearOnExecutionReset</code>), mas o apiV2 ainda usa o if/else inline aqui — <strong>discrepância viva</strong>.
+    <strong>Contexto.</strong> Esta é a segunda passada de reset. O passo 1.5b tratou <code>fluxObjects</code>. O 1.7a trata todos os outros types que têm output ou state runtime. Existe uma versão consolidada dessa lógica em <code>node-output-reset.ts</code> (<code>clearStaleNodeOutput</code>, <code>buildClearOnExecutionReset</code>). O <code>apiV2</code> ainda usa o if/else inline aqui. Discrepância ativa.
   </div>
 
   <div class="overview-mini">
@@ -155,7 +155,7 @@
       <a href="#fn-e" class="overview-chip"><span class="lbl">E</span>conditionNode.currentLoopCounter = 0</a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado: <code>updatedFlows</code> tem output limpo pros types listados + <code>currentLoopCounter = 0</code> em todos os conditionNodes.
+      Resultado. <code>updatedFlows</code> tem output limpo nos types listados. Todos os <code>conditionNodes</code> ficam com <code>currentLoopCounter = 0</code>.
     </div>
   </div>
 
@@ -173,10 +173,10 @@
         if (nd.type === 'outputObjectNode') { return { ...nd, data: { ...nd.data, text: '', textData: [] } }; }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Zera o output do <code>outputObjectNode</code> em <em>todos</em> os runs, sem gate. É o único type que faz reset incondicional dentro desse .map — o resto tudo depende do <code>clearOnExecution</code>.
+        <strong>Propósito.</strong> Zera o output do <code>outputObjectNode</code> em todas as execuções, sem gate. É o único type que faz reset incondicional dentro deste <code>.map</code>. O resto depende do <code>clearOnExecution</code>.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> <code>outputObjectNode</code> é o "endpoint" do agent — o que o run vai devolver como resposta. Seu output é <em>sempre</em> re-gerado a partir dos nodes upstream, então não faz sentido preservar entre runs. Por isso, o reset é hardcoded, não depende de flag. Duas keys são zeradas: <code>text</code> pra string vazia e <code>textData</code> pra array vazio — que é o formato que o output do agent tem (texto puro + array de itens estruturados). O <code>return</code> corta o resto do <code>.map</code> pra esse node — não passa pelo gate do <code>clearOnExecution</code> nem pelo bloco do <code>conditionNode</code>. Bug latente: um <code>outputObjectNode</code> que também tivesse <code>data.currentLoopCounter</code> (impossível na prática, mas em teoria) não seria zerado — o return atalha.
+        <strong>Em resumo.</strong> O <code>outputObjectNode</code> é o endpoint do agente. É o que a execução devolve como resposta. Seu output é sempre regerado a partir dos nós upstream. Não faz sentido preservar entre execuções. Por isso o reset é hardcoded. Não depende de flag. Duas chaves são zeradas. <code>text</code> vira string vazia. <code>textData</code> vira array vazio. É o formato do output do agente (texto puro e array de itens estruturados). O <code>return</code> corta o resto do <code>.map</code> para este nó. Não passa pelo gate do <code>clearOnExecution</code> nem pelo bloco do <code>conditionNode</code>. Bug latente. Um <code>outputObjectNode</code> que também tivesse <code>data.currentLoopCounter</code> (impossível na prática, mas em teoria) não seria zerado. O return atalha.
       </div>
 
       <div class="fn-body-cols">
@@ -201,22 +201,22 @@
           <div class="box decision">
             <div class="box-title">Return curto no .map</div>
             <div class="box-desc">
-              O <code>return</code> curta o resto do map pra esse node — nenhum outro branch (clearOnExecution, conditionNode) é testado.
+              O <code>return</code> corta o resto do map para este nó. Nenhum outro branch (<code>clearOnExecution</code>, <code>conditionNode</code>) é testado.
             </div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Por que sem gate?</div>
-            O output do agent é sempre re-gerado. Preservar <code>text</code> entre runs enganaria o próximo run mostrando a resposta velha se algo falhar no meio.
+            O output do agente é sempre regerado. Preservar <code>text</code> entre execuções enganaria a próxima execução mostrando a resposta antiga se algo falhar no meio.
           </div>
           <div class="aside">
             <div class="aside-title">📎 Duplicação com clearRunOutputForSeed</div>
-            <code>clearRunOutputForSeed</code> (passo 1.7b) também zera <code>outputObjectNode.text = ''</code>. Redundância intencional — sob-e desce mais uma vez pra garantir.
+            <code>clearRunOutputForSeed</code> (passo 1.7b) também zera <code>outputObjectNode.text = ''</code>. É redundância intencional. Passa de novo para garantir.
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ Return corta subsequent branches</div>
-            Se um outputObjectNode tivesse também <code>currentLoopCounter</code> (não tem em prática), o zero-loop-counter não roda. Feature: outputObjectNode nunca tem loop counter.
+            <div class="aside-title">⚠️ Return corta os branches seguintes</div>
+            Se um <code>outputObjectNode</code> tivesse <code>currentLoopCounter</code> (não tem na prática), o reset do loop counter não roda. Feature. <code>outputObjectNode</code> nunca tem loop counter.
           </div>
         </div>
       </div>
@@ -238,10 +238,10 @@
         if (clearOnExecution) { ... }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Porta única de entrada pros branches por-tipo. Só entra se <code>clearOnExecution</code> for truthy (undefined vira false pelo <code>|| false</code>). Tudo lá dentro depende disso — quem não tem a flag, atravessa o gate sem reset.
+        <strong>Propósito.</strong> Porta única de entrada para os branches por tipo. Só entra quando <code>clearOnExecution</code> é truthy. Undefined vira false pelo <code>|| false</code>. Todo o conteúdo depende dessa condição. Quem não tem a flag atravessa o gate sem reset.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> a mesma lógica de <code>Boolean(clearOnExecution)</code> do 1.5b, mas em vez de <code>Boolean()</code>, usa <code>|| false</code>. Diferença sutil: <code>Boolean({})</code> = <code>true</code>, mas <code>({}) || false</code> também = <code>{}</code> (que é truthy, então o <code>if</code> passa). Efeito prático: idêntico. O gate simplesmente separa "todo mundo com opt-in de clearing" (dentro do bloco) de "quem não quer" (nada acontece). Nota importante: <em>fluxObjects</em> também têm <code>clearOnExecution</code> mas foram tratados no 1.5b — se um fluxObject caísse aqui (impossível em prática, mas se o filter do 1.5b falhasse), esse bloco não sabe o que fazer com ele (não tem branch pra fluxObject).
+        <strong>Em resumo.</strong> Mesma lógica de <code>Boolean(clearOnExecution)</code> do 1.5b. Em vez de <code>Boolean()</code>, usa <code>|| false</code>. Diferença sutil. <code>Boolean({})</code> é <code>true</code>. <code>({}) || false</code> resulta em <code>{}</code> (truthy, então o <code>if</code> passa). Efeito prático idêntico. O gate separa quem tem opt-in de clearing (entra no bloco) de quem não tem (nada acontece). Nota importante. Os <code>fluxObjects</code> também têm <code>clearOnExecution</code>, mas foram tratados no 1.5b. Se um <code>fluxObject</code> caísse aqui (impossível na prática, mas se o filter do 1.5b falhasse), o bloco não saberia lidar. Não tem branch para <code>fluxObject</code>.
       </div>
 
       <div class="fn-body-cols">
@@ -279,15 +279,15 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Diferença semântica</div>
-            Em <code>fluxBox/libraryNode</code>, <code>clearOnExecution</code> é <em>objeto</em> ({key: bool}). Nos outros, é <em>boolean</em>. A branch acomoda os dois shapes sem checar formato explicitamente.
+            Em <code>fluxBox</code> e <code>libraryNode</code>, <code>clearOnExecution</code> é objeto ({key: bool}). Nos outros, é boolean. O branch acomoda os dois shapes sem verificar o formato explicitamente.
           </div>
           <div class="aside warn">
             <div class="aside-title">⚠️ fluxObject cai no gate mas sem branch</div>
-            Um fluxObject com <code>clearOnExecution</code> truthy passaria o gate mas não tem branch aqui — ficaria inalterado. Só funciona porque o 1.5b já cuidou dele em memória.
+            Um <code>fluxObject</code> com <code>clearOnExecution</code> truthy passaria o gate, mas não tem branch aqui. Ficaria inalterado. Só funciona porque o 1.5b já cuidou dele em memória.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 || false vs Boolean()</div>
-            <code>x || false</code> devolve <code>x</code> se truthy, senão <code>false</code>. <code>Boolean(x)</code> devolve <code>true</code>/<code>false</code>. Aqui o if trata igual, mas <code>clearOnExecution</code> na variável fica com o valor original — importante pro FN C que precisa iterar as chaves.
+            <code>x || false</code> devolve <code>x</code> quando truthy, senão <code>false</code>. <code>Boolean(x)</code> devolve <code>true</code> ou <code>false</code>. Aqui o <code>if</code> trata igual. Mas <code>clearOnExecution</code> na variável fica com o valor original. Importante para o FN C, que precisa iterar as chaves.
           </div>
         </div>
       </div>
@@ -308,10 +308,10 @@
         if (nd.type === 'fluxBox' || nd.type === 'libraryNode') { Object.entries(clearOnExecution).forEach(...) }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Iterar as chaves de <code>clearOnExecution</code> (objeto <code>{key: bool}</code>) e zerar cada campo do <code>data</code> cujo flag é <code>true</code> — <em>se</em> a chave já existe no <code>data</code>.
+        <strong>Propósito.</strong> Itera as chaves de <code>clearOnExecution</code> (objeto <code>{key: bool}</code>). Zera cada campo do <code>data</code> cuja flag é <code>true</code>. A condição é que a chave já exista no <code>data</code>.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> pra <code>fluxBox</code> e <code>libraryNode</code>, o usuário no editor pode escolher <em>por campo</em> qual output resetar — o <code>clearOnExecution</code> não é boolean, é um dicionário tipo <code>{ output1: true, output2: false, output3: true }</code>. Esse branch itera esse dicionário: pra cada par (<code>key</code>, <code>shouldClear</code>), se <code>shouldClear === true</code> e <code>key</code> existe em <code>newData</code>, zera pra string vazia. Curioso: se o <code>output1</code> for um array ou objeto no schema, ainda vira <code>''</code> — o clear é sempre string vazia, sem respeitar shape. Pode causar bugs downstream se algum handler esperar array e receber string. A helper equivalente em <code>node-output-reset.ts:94-114</code> (<code>buildClearOnExecutionReset</code>) é mais defensiva (usa <code>&amp;&amp; data[key] !== ''</code> pra não regravar quando já vazio), mas a versão inline do apiV2 não.
+        <strong>Em resumo.</strong> Para <code>fluxBox</code> e <code>libraryNode</code>, o usuário no editor pode escolher por campo qual output resetar. O <code>clearOnExecution</code> não é boolean. É um dicionário como <code>{ output1: true, output2: false, output3: true }</code>. Este branch itera o dicionário. Para cada par (<code>key</code>, <code>shouldClear</code>), se <code>shouldClear === true</code> e a chave existe em <code>newData</code>, zera para string vazia. Detalhe. Se <code>output1</code> for um array ou objeto no schema, ainda vira <code>''</code>. O clear é sempre string vazia. Não respeita o shape. Pode causar bugs downstream se algum handler esperar array e receber string. A helper equivalente em <code>node-output-reset.ts:94-114</code> (<code>buildClearOnExecutionReset</code>) é mais defensiva. Usa <code>&amp;&amp; data[key] !== ''</code> para não regravar quando já vazio. A versão inline do <code>apiV2</code> não faz isso.
       </div>
 
       <div class="fn-body-cols">
@@ -356,16 +356,16 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Sempre string vazia</div>
-            Não importa se o campo original é array/object/number — o clear é sempre <code>''</code>. Isso é a convenção do sistema: "output limpo = string vazia".
+            Não importa se o campo original é array, objeto ou number. O clear é sempre <code>''</code>. É a convenção do sistema. Output limpo equivale a string vazia.
           </div>
           <div class="aside warn">
             <div class="aside-title">⚠️ Discrepância com node-output-reset.ts</div>
-            A helper <code>buildClearOnExecutionReset</code> (node-output-reset.ts:94-114) é mais correta — usa <code>data[key] !== ''</code> pra evitar regravar quando já vazio, e retorna só o patch (não o data todo). A versão inline aqui é <em>legacy</em>, ainda não migrada pra usar a helper.
-            <br><br>Bug latente: se algum handler regravar output entre runs, essa versão inline pode zerar coisa nova que foi gravada.
+            A helper <code>buildClearOnExecutionReset</code> (<code>node-output-reset.ts:94-114</code>) é mais correta. Usa <code>data[key] !== ''</code> para evitar regravar quando já vazio. Retorna só o patch, não o data todo. A versão inline aqui é legacy. Ainda não migrada para usar a helper.
+            <br><br>Bug latente. Se algum handler regravar output entre execuções, esta versão inline pode zerar dados novos que acabaram de ser gravados.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 shouldClear === true strict</div>
-            <code>=== true</code> — comparação estrita. <code>shouldClear = 'true'</code> string ou <code>1</code> não passam. Só literal boolean.
+            <code>=== true</code>. Comparação estrita. Strings como <code>'true'</code> ou <code>1</code> não passam. Só literal boolean.
           </div>
         </div>
       </div>
@@ -386,10 +386,10 @@
         if (nd.type === 'commandTextNode' || 'voiceBoxNode' || 'imageGenerator' || 'commandContentNode' || 'audioReaderNode' || 'apiCaller' || 'mcpNode') { ... }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Reset genérico pros 7 types que têm output "chapado" (não por-campo como fluxBox). Sub-branches especiais pra <code>voiceBoxNode</code> (return cedo com audioUrl), <code>commandContentNode</code> (text.result:''), e <code>apiCaller/mcpNode</code> (response:null + error fields).
+        <strong>Propósito.</strong> Reset genérico para os 7 types que têm output plano (não por campo como <code>fluxBox</code>). Sub-branches especiais. <code>voiceBoxNode</code> tem return cedo com <code>audioUrl</code>. <code>commandContentNode</code> aplica <code>text.result: ''</code>. <code>apiCaller</code> e <code>mcpNode</code> aplicam <code>response: null</code> e os campos de erro.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> depois do gate <code>clearOnExecution</code>, se o node cai na lista dos 7 types, entra num sub-if inline enorme. A árvore é: primeiro <code>voiceBoxNode</code> tem um <code>return</code> cedo — ele é especial porque tem <code>audioUrl</code> em vez de <code>text</code>, e retorna direto com <code>{ canceled: false, audioUrl: '' }</code>. Depois define <code>newData</code> inicialmente <code>{}</code> e adiciona: <code>text: { ...nd.data.text, result: '' }</code> se é <code>commandContentNode</code> (esse type usa text como objeto aninhado com <code>result</code>); ou <code>{ response: null, errorMessage: null, errorStatusCode: null }</code> se é <code>apiCaller</code> ou <code>mcpNode</code>. Por fim, retorna <code>{ ...nd, data: { ...nd.data, text: '', canceled: false, ...newData } }</code> — <em>todos</em> os 7 types ganham <code>text: ''</code> e <code>canceled: false</code> como base, plus o newData específico. Curiosidade: <code>audioReaderNode</code>, <code>commandTextNode</code>, <code>imageGenerator</code> não têm <code>newData</code> especial — só levam o reset base. Nota: essa lógica tem uma versão já refatorada em <code>clearStaleNodeOutput</code> em <code>node-output-reset.ts:20-55</code> — mais limpa, includes <code>jsonRequestBody: ''</code> no apiCaller/mcpNode que essa versão inline <strong>não tem</strong>.
+        <strong>Em resumo.</strong> Após o gate <code>clearOnExecution</code>, se o nó cai na lista dos 7 types, entra em um sub-if inline extenso. Estrutura da árvore. Primeiro, <code>voiceBoxNode</code> tem um <code>return</code> cedo. É especial porque usa <code>audioUrl</code> em vez de <code>text</code>. Retorna direto com <code>{ canceled: false, audioUrl: '' }</code>. Depois define <code>newData</code> inicialmente como <code>{}</code> e adiciona campos. <code>text: { ...nd.data.text, result: '' }</code> quando é <code>commandContentNode</code> (este type usa <code>text</code> como objeto aninhado com <code>result</code>). Ou <code>{ response: null, errorMessage: null, errorStatusCode: null }</code> quando é <code>apiCaller</code> ou <code>mcpNode</code>. Por fim, retorna <code>{ ...nd, data: { ...nd.data, text: '', canceled: false, ...newData } }</code>. Todos os 7 types recebem <code>text: ''</code> e <code>canceled: false</code> como base, mais o <code>newData</code> específico. Observação. <code>audioReaderNode</code>, <code>commandTextNode</code> e <code>imageGenerator</code> não têm <code>newData</code> especial. Só recebem o reset base. Existe uma versão refatorada em <code>clearStaleNodeOutput</code> em <code>node-output-reset.ts:20-55</code>. Mais limpa. Inclui <code>jsonRequestBody: ''</code> em <code>apiCaller</code>/<code>mcpNode</code>, que a versão inline não tem.
       </div>
 
       <div class="fn-body-cols">
@@ -455,19 +455,19 @@
         <div class="fn-asides">
           <div class="aside warn">
             <div class="aside-title">⚠️ Discrepância com clearStaleNodeOutput</div>
-            A versão refatorada em <code>node-output-reset.ts:20-55</code> inclui <code>jsonRequestBody: ''</code> no reset de apiCaller/mcpNode. A versão inline <strong>não</strong> tem isso. Bug latente: request body velho pode vazar pro run novo em apiCaller.
+            A versão refatorada em <code>node-output-reset.ts:20-55</code> inclui <code>jsonRequestBody: ''</code> no reset de <code>apiCaller</code>/<code>mcpNode</code>. A versão inline não tem. Bug latente. Request body antigo pode vazar para a nova execução em <code>apiCaller</code>.
           </div>
           <div class="aside info">
             <div class="aside-title">🎯 Precedência do spread</div>
-            <code>{ text: '', canceled: false, ...newData }</code> — se <code>newData.text</code> existir (commandContentNode), sobrescreve o <code>text: ''</code>. Ordem intencional.
+            <code>{ text: '', canceled: false, ...newData }</code>. Se <code>newData.text</code> existir (<code>commandContentNode</code>), sobrescreve o <code>text: ''</code>. A ordem é intencional.
           </div>
           <div class="aside">
             <div class="aside-title">📎 audioReaderNode / imageGenerator sem newData</div>
-            Esses dois estão na lista de types mas nenhum sub-branch os trata especificamente. Recebem só <code>text: ''</code> + <code>canceled: false</code>.
+            Estão na lista de types, mas nenhum sub-branch os trata especificamente. Recebem só <code>text: ''</code> e <code>canceled: false</code>.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 Onde clearStaleNodeOutput é usado?</div>
-            <code>clearRunOutputForSeed</code> (passo 1.7b) chama <code>clearStaleNodeOutput</code>. Ou seja, existe caminho <em>duplicado</em> — esse .map inline + clearRunOutputForSeed <em>logo depois</em>. Legacy sobreposto com versão nova.
+            O <code>clearRunOutputForSeed</code> (passo 1.7b) chama <code>clearStaleNodeOutput</code>. Existe caminho duplicado. Este <code>.map</code> inline mais o <code>clearRunOutputForSeed</code> logo depois. Legacy sobreposto com a versão nova.
           </div>
         </div>
       </div>
@@ -488,10 +488,10 @@
         if (nd.type === 'conditionNode') { nd.data.currentLoopCounter = 0; }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Zerar o contador de loops <em>fora</em> do gate de <code>clearOnExecution</code>. É a única mutação in-place no .map — muta <code>nd.data.currentLoopCounter</code> diretamente sem retornar node novo.
+        <strong>Propósito.</strong> Zerar o contador de loops fora do gate de <code>clearOnExecution</code>. É a única mutação in-place no <code>.map</code>. Muta <code>nd.data.currentLoopCounter</code> diretamente sem retornar nó novo.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> <code>conditionNode</code> tem um contador de iterações usado pra terminar loops (semelhante a "for count &lt; 10"). Esse contador deve começar em zero pra cada run — se ficasse com o valor do run passado, o loop terminaria imediatamente ou não sairia. Curiosidade: o reset é <strong>mutação in-place</strong> — <code>nd.data.currentLoopCounter = 0</code> muta o objeto original, não retorna novo. Isso é diferente do resto do .map, que sempre spread cria novos. É um footgun sutil porque se algum código de <em>fora</em> tiver referência pro node original, essa mutação aparece lá também. Em prática, funciona porque o <code>getFlow.nodes</code> foi processado pelo <code>stripStaleErrorState</code> (passo 1.5a) que já criou cópias — a referência original do banco não é mais compartilhada. Mas fica como "convenção sem contract".
+        <strong>Em resumo.</strong> O <code>conditionNode</code> tem um contador de iterações usado para terminar loops (semelhante a "for count &lt; 10"). O contador deve começar em zero para cada execução. Se ficasse com o valor da execução anterior, o loop terminaria imediatamente ou não sairia. Observação. O reset é mutação in-place. <code>nd.data.currentLoopCounter = 0</code> muta o objeto original. Não retorna novo. É diferente do resto do <code>.map</code>, que sempre cria novos via spread. É um footgun sutil. Se algum código externo tiver referência para o nó original, essa mutação aparece lá também. Na prática, funciona porque o <code>getFlow.nodes</code> foi processado pelo <code>stripStaleErrorState</code> (passo 1.5a), que já criou cópias. A referência original do banco não é mais compartilhada. Mas fica como convenção sem contract.
       </div>
 
       <div class="fn-body-cols">
@@ -512,26 +512,26 @@
           <div class="box decision">
             <div class="box-title">Efeito no updatedFlows</div>
             <div class="box-desc">
-              O node retornado é o <em>mesmo</em> objeto (mutado in-place), não uma cópia. Se algum código já leu <code>nd.data.currentLoopCounter</code> antes desse map, viu o valor velho — a mutação só afeta reads depois.
+              O nó retornado é o mesmo objeto, mutado in-place, não uma cópia. Se algum código já leu <code>nd.data.currentLoopCounter</code> antes deste map, viu o valor antigo. A mutação só afeta leituras posteriores.
             </div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside warn">
             <div class="aside-title">⚠️ Única mutação in-place do .map</div>
-            Todos os outros branches criam objetos novos via spread. Só o conditionNode muta a referência original. Inconsistência de estilo — pode ser refactor accident ou intenção obscura.
+            Todos os outros branches criam objetos novos via spread. Só o <code>conditionNode</code> muta a referência original. Inconsistência de estilo. Pode ser refactor accident ou intenção obscura.
           </div>
           <div class="aside info">
             <div class="aside-title">🎯 Fora do gate clearOnExecution</div>
-            Loop counter <strong>sempre</strong> reseta, independente de flag. Faz sentido: um loop counter velho quebra semântica de loop.
+            O loop counter sempre reseta, independente de flag. Faz sentido. Um loop counter antigo quebra a semântica de loop.
           </div>
           <div class="aside">
             <div class="aside-title">📎 Onde currentLoopCounter é usado</div>
-            No handler do <code>conditionNode</code> na fase 3 do apiV2. Incrementa a cada iteração do loop, testa contra <code>data.maxLoop</code> pra decidir se continua.
+            No handler do <code>conditionNode</code> na Fase 3 do <code>apiV2</code>. Incrementa a cada iteração do loop. Testa contra <code>data.maxLoop</code> para decidir se continua.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 Como isso combina com outputObjectNode</div>
-            Se um node é <em>ambos</em> outputObjectNode e conditionNode (impossível no schema), o <code>return</code> de A curta antes de E. Em prática, types são exclusivos.
+            Se um nó fosse <code>outputObjectNode</code> e <code>conditionNode</code> ao mesmo tempo (impossível no schema), o <code>return</code> do A cortaria antes do E. Na prática, os types são exclusivos.
           </div>
         </div>
       </div>
@@ -539,20 +539,20 @@
   </div>
 
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo — o que sai de 1.7a:</strong>
-    <br>• <code>updatedFlows</code> mutado: <code>outputObjectNode</code> zerado (sempre); nodes com clearOnExecution truthy resetados por type
-    <br>• <code>conditionNode.currentLoopCounter</code> = 0 em <em>todos</em> os conditionNodes
-    <br>• Alocações: N nodes novos (spread), 1 mutação in-place (conditionNode)
-    <br>• Zero I/O — puro compute em memória
+    <strong>Resumo — o que sai de 1.7a.</strong>
+    <br>• <code>updatedFlows</code> mutado. <code>outputObjectNode</code> zerado sempre. Nós com <code>clearOnExecution</code> truthy resetados por type.
+    <br>• <code>conditionNode.currentLoopCounter = 0</code> em todos os <code>conditionNodes</code>.
+    <br>• Alocações. N nós novos (spread) e uma mutação in-place (<code>conditionNode</code>).
+    <br>• Zero I/O. Puro compute em memória.
   </div>
 
   <div class="note">
-    <strong>Observações para migração:</strong>
-    <br>• <strong>Discrepância crítica com node-output-reset.ts</strong>: esse .map inline é uma <em>versão legacy</em> das helpers em <code>node-output-reset.ts</code>. As helpers têm o <code>jsonRequestBody: ''</code> pro apiCaller e são mais defensivas. Migração deve usar as helpers e deletar o inline — mas <em>testar rigorosamente</em> por causa da assimetria.
-    <br>• Mutação in-place do <code>currentLoopCounter</code> quebra pattern de imutabilidade — no worker, precisaria retornar node novo ou explicitar contract.
-    <br>• A árvore de branches por type é <em>manutenção infeliz</em>: adicionar um novo node type que precisa reset exige tocar aqui, <code>clearStaleNodeOutput</code>, <code>buildFluxObjectClearOnExecution</code>, <code>clearRunOutputForSeed</code>. Fácil esquecer.
-    <br>• Prioridade média-alta: se o worker rodar sem esse reset, resposta do run anterior "vaza" pro novo — bug visível pra usuário.
-    <br>• <strong>Watch out</strong>: se qualquer parte migrar antes das outras, os dois paths podem divergir silenciosamente (backend legacy resetando um jeito, worker resetando outro). Consolidar tudo em node-output-reset.ts <em>antes</em> de migrar.
+    <strong>Observações para migração.</strong>
+    <br>• Discrepância crítica com <code>node-output-reset.ts</code>. Este <code>.map</code> inline é uma versão legacy das helpers em <code>node-output-reset.ts</code>. As helpers têm <code>jsonRequestBody: ''</code> para <code>apiCaller</code> e são mais defensivas. A migração deve usar as helpers e apagar o inline. Teste rigorosamente por causa da assimetria.
+    <br>• A mutação in-place de <code>currentLoopCounter</code> quebra o pattern de imutabilidade. No worker, precisa retornar nó novo ou explicitar o contract.
+    <br>• A árvore de branches por type dificulta a manutenção. Adicionar um novo node type que precisa de reset exige tocar aqui, em <code>clearStaleNodeOutput</code>, <code>buildFluxObjectClearOnExecution</code> e <code>clearRunOutputForSeed</code>. Fácil esquecer.
+    <br>• Prioridade média-alta. Se o worker rodar sem esse reset, a resposta da execução anterior vaza para a nova. Bug visível para o usuário.
+    <br>• Atenção. Se qualquer parte migrar antes das outras, os dois caminhos podem divergir silenciosamente. O backend legacy resetaria de um jeito. O worker de outro. Consolide tudo em <code>node-output-reset.ts</code> antes de migrar.
   </div>
 
   <div class="page-footer-nav">

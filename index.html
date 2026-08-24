@@ -165,7 +165,7 @@
   .badge.opt      { background: #FEE2E2; color: #991B1B; font-size: 9px; }
   .badge.ess      { background: #DCFCE7; color: #14532D; font-size: 9px; }
 
-  /* Node clicável (redireciona pra página de detalhamento) */
+  /* Node clicável (redireciona para a página de detalhamento) */
   .clickable-node {
     display: block;
     text-decoration: none;
@@ -884,7 +884,7 @@
           <span class="badge step">1.0a</span> Setup inicial pré-tudo
         </div>
         <div class="box-desc">
-          <code>sessionId</code> trimmed · contadores <code>totalTokensUsed/Cost</code> + closure <code>onUpdateTokens</code> · <code>runLogProcessId</code> resolvido em cascata de 4 fontes · <code>chatbotSocketByRun</code> registrado se <code>socketId</code> · <code>isNestedRunLog</code> flag pra gates downstream.
+          <code>sessionId</code> trimmed · contadores <code>totalTokensUsed/Cost</code> + closure <code>onUpdateTokens</code> · <code>runLogProcessId</code> resolvido em cascata de 4 fontes · <code>chatbotSocketByRun</code> registrado se <code>socketId</code> · <code>isNestedRunLog</code> flag para gates downstream.
         </div>
         <div class="box-file">flux.service.ts:2319-2337</div>
         <div class="click-hint">
@@ -901,7 +901,7 @@
           <span class="badge step">1.0b</span> Resolução do <code>runTypeEnum</code>
         </div>
         <div class="box-desc">
-          Switch de 24 linhas mapeando <code>runType</code> (string) pro enum <code>FlowLogRunType</code>. Mapeamento direto por valor + default por prefixo pra <code>flow-caller-node</code>/<code>library-node</code>/<code>WEBHOOK</code>.
+          Switch de 24 linhas mapeando <code>runType</code> (string) para o enum <code>FlowLogRunType</code>. Mapeamento direto por valor + default por prefixo para <code>flow-caller-node</code>/<code>library-node</code>/<code>WEBHOOK</code>.
         </div>
         <div class="box-file">flux.service.ts:2339-2374</div>
         <div class="click-hint">
@@ -948,7 +948,7 @@
         </div>
       </a>
       <div style="width:520px;max-width:100%;background:#EFF6FF;border-left:4px solid #3B82F6;padding:10px 14px;border-radius:6px;font-size:12px;color:#1E3A8A;margin-top:6px">
-        <strong>📝 Nota:</strong> Precisamos estruturar melhor o que precisamos documentar, pra que, e o que é importante para o time de produto/dev.
+        <strong>📝 Nota:</strong> Precisamos estruturar melhor o que precisamos documentar, para que, e o que é importante para o time de produto/dev.
       </div>
       <div class="arrow">↓</div>
 
@@ -1069,7 +1069,7 @@
         <div class="box-desc">
           <strong>Bloco de 361 linhas</strong> (2827-3189). Muito mais complexo que "resolve variáveis".
           <br><br>
-          <strong>Fallback <code>dataInput</code> (2829-2850)</strong>: se <code>body.variableInputs</code> vazio E <code>body.dataInput</code> definido E existe pelo menos um <code>varInputNode</code>, sintetiza um input single-shot pro primeiro <code>varInputNode</code>. Aceita <code>dataInput</code> como string OU objeto <code>{ inputText, text }</code>.
+          <strong>Fallback <code>dataInput</code> (2829-2850)</strong>: se <code>body.variableInputs</code> vazio E <code>body.dataInput</code> definido E existe pelo menos um <code>varInputNode</code>, sintetiza um input single-shot para o primeiro <code>varInputNode</code>. Aceita <code>dataInput</code> como string OU objeto <code>{ inputText, text }</code>.
           <br><br>
           <strong>Para cada <code>variableInput</code></strong> (2853+):
           <br>• Se <code>node.type === 'varInputNode'</code>:
@@ -1077,15 +1077,15 @@
           <br>&nbsp;&nbsp;→ Ramo <code>isExtraction === true</code> (2893-3008):
           <br>&nbsp;&nbsp;&nbsp;&nbsp;- Links: <code>extractionService.extractTextFromLink({ fileSrc, fileMimetype, flowId, user, typeOCR })</code> — <code>typeOCR</code> ∈ {<code>mistral_ocr</code>, <code>mistral_vision</code>, <code>google_ocr</code>}, default <code>mistral_ocr</code>
           <br>&nbsp;&nbsp;&nbsp;&nbsp;- Files (base64): <code>generateFileKeyFromBase64</code> → <code>awsService.uploadFile(buffer, key, mimetype)</code> → mesmo OCR
-          <br>&nbsp;&nbsp;&nbsp;&nbsp;- Try/catch por link e por file — falhas viram string de erro concatenada em <code>extractText</code> (o flow <strong>não</strong> aborta)
+          <br>&nbsp;&nbsp;&nbsp;&nbsp;- Try/catch por link e por file — falhas viram string de erro concatenada em <code>extractText</code>. O flow <strong>não</strong> aborta.
           <br>&nbsp;&nbsp;→ Ramo <code>isExtraction === false</code> (3010-3071):
           <br>&nbsp;&nbsp;&nbsp;&nbsp;- Links: só concatena URLs em <code>extractText</code> (sem OCR)
           <br>&nbsp;&nbsp;&nbsp;&nbsp;- Files: upload S3 igual, mas guarda só URLs
-          <br>• Se <code>node.type !== 'varInputNode'</code> (3128-3188): rota de <em>fileUrl fallback</em> — trata inputs pra outros tipos de nó com upload S3 mas sem OCR
+          <br>• Se <code>node.type !== 'varInputNode'</code> (3128-3188): rota de <em>fileUrl fallback</em>. Trata entradas para outros tipos de nó com upload S3 mas sem OCR.
           <br><br>
-          <strong>Após loop</strong>: para cada <code>varInputNode</code> resolvido, chama <code>addConnectToNodes({ edges, nds, nodeData: { id, data: { text, uploadedFiles, extractText, isExtraction, links, files } }, onMutateSchema, objectCallerData })</code> — propaga o input pros nós conectados pelas arestas. Depois <code>persistInputNodeData(...)</code> grava no banco (<code>flows_nodes.data</code>).
+          <strong>Após loop</strong>: para cada <code>varInputNode</code> resolvido, chama <code>addConnectToNodes({ edges, nds, nodeData: { id, data: { text, uploadedFiles, extractText, isExtraction, links, files } }, onMutateSchema, objectCallerData })</code> . Propaga a entrada para os nós conectados pelas arestas. Depois <code>persistInputNodeData(...)</code> grava no banco (<code>flows_nodes.data</code>).
           <br><br>
-          <em>Bloco pesado que roda antes do scheduler — é onde PDF/imagem/áudio viram texto pro LLM. Cada nível de sub-flow (nodesBox/libraryNode/fluxBox) roda esse mesmo mecanismo de novo, com o custo pago em cascata.</em>
+          <em>Bloco pesado que roda antes do scheduler. É onde PDF/imagem/áudio viram texto para o LLM. Cada nível de sub-flow (nodesBox/libraryNode/fluxBox) roda esse mesmo mecanismo de novo, com o custo pago em cascata.</em>
         </div>
         <div class="box-file">flux.service.ts:2827-3189</div>
         <div class="click-hint">
@@ -1106,7 +1106,7 @@
     <div class="section-header">
       <div class="section-number">2</div>
       <div class="section-title">FASE 2 — Setup da execução</div>
-      <div class="section-desc">Fase 2 do doc (passos 8–10) — <strong>base do algoritmo que vai ser reimplementado</strong></div>
+      <div class="section-desc">Fase 2 do doc (passos 8–10). <strong>Base do algoritmo que vai ser reimplementado.</strong></div>
     </div>
 
     <div class="flow-column">
@@ -1196,7 +1196,7 @@
 
     <div class="note">
       <strong>Ponto crítico:</strong> O <code>nodeSubstitutionSchema</code> é mutado in-place ao longo do loop (a memória cita ~57 sync sites).
-      O worker <strong>não tem</strong> engine equivalente — recebe cada nó já pré-substituído pelo backend.
+      O worker <strong>não tem</strong> engine equivalente. Recebe cada nó já pré-substituído pelo backend.
     </div>
   </div>
 
@@ -1260,8 +1260,8 @@
           <div class="box-title"><span class="badge step">3.4</span> runLogCollector.startNode() + chargeContext.enterWith() <span class="badge cross">cross</span></div>
           <div class="box-desc">
             Abre <code>RunLogNode</code> hierárquico (aninhado no root criado no <a href="#step-1-4" style="color:#3B82F6;text-decoration:underline">1.4</a>) e ativa <strong>dois</strong> AsyncLocalStorage por nó:
-            <br>• <code>chargeContext.enterWith({ execId: runLogProcessId, nodeId: node.id })</code> — capturado por qualquer <code>charge-tokens</code> feito durante o handler pra atribuir o custo ao nó certo
-            <br>• <code>if (cancelWatch) nodeCancelContext.enterWith(cancelWatch.entry)</code> — só se o watch de cancel foi armado no <a href="#" onclick="return false" style="color:#3B82F6">2.2a</a>. Handlers que chamam <code>await</code> podem consultar esse contexto pra abortar cedo.
+            <br>• <code>chargeContext.enterWith({ execId: runLogProcessId, nodeId: node.id })</code> — capturado por qualquer <code>charge-tokens</code> feito durante o handler para atribuir o custo ao nó certo
+            <br>• <code>if (cancelWatch) nodeCancelContext.enterWith(cancelWatch.entry)</code> — só se o watch de cancel foi armado no <a href="#" onclick="return false" style="color:#3B82F6">2.2a</a>. Handlers que chamam <code>await</code> podem consultar esse contexto para abortar cedo.
           </div>
           <div class="box-file">flux.service.ts:3316-3322</div>
           <div class="click-hint">
@@ -1468,7 +1468,7 @@
             </div>
             <div class="box-desc">
               Quando <code>nodesBox</code> / <code>libraryNode</code> / <code>fluxBox</code> executam um sub-flow, o mesmo mecanismo de <code>varInputNode</code>+OCR
-              (<a href="passos/passo-1-8.html" style="color:#6B21A8;text-decoration:underline">passo 1.8</a>) roda <strong>de novo</strong> pra resolver os inputs do sub-flow, usando <code>callerData.textData</code> / <code>fileLinkData</code> em vez de <code>body.variableInputs</code>.
+              (<a href="passos/passo-1-8.html" style="color:#6B21A8;text-decoration:underline">passo 1.8</a>) roda <strong>de novo</strong> para resolver as entradas do sub-flow, usando <code>callerData.textData</code> / <code>fileLinkData</code> em vez de <code>body.variableInputs</code>.
               <br>Cada nível de aninhamento paga o custo de extração/OCR novamente.
             </div>
             <div class="box-file">flux.service.ts:5464-5533 (nodesBox), 5819+ (libraryNode/fluxBox)</div>
@@ -1532,7 +1532,7 @@
             <span class="badge step">3.5b</span> <code>publishInApiNodeOutput()</code> + <code>persistSmallMemoryEntries()</code>
           </div>
           <div class="box-desc">
-            Só pra nós inline (não-Temporal, não worker-routed). <code>publishInApiNodeOutput</code> = equivalente inline de W8/W9 do worker; <code>persistSmallMemoryEntries</code> descarrega no banco só campos leves pra reduzir RAM.
+            Só para nós inline (não-Temporal, não worker-routed). <code>publishInApiNodeOutput</code> = equivalente inline de W8/W9 do worker; <code>persistSmallMemoryEntries</code> descarrega no banco só campos leves para reduzir RAM.
           </div>
           <div class="box-file">flux.service.ts:4562-4581</div>
           <div class="click-hint">
@@ -1570,13 +1570,13 @@
             No catch, na ordem:
             <br>1. <code>cancelWatch?.wasAborted()</code> (4703-4718) — se o run foi cancelado durante o handler, muda para o caminho de cancel (não trata como erro real). Seta <code>stoppedByCancel = true</code> e break.
             <br>2. <code>const detail = extractWorkflowError(error)</code> (4723) — normaliza erro de Temporal + Node em <code>{ message, code, cause }</code>.
-            <br>3. <code>clearFailedNodeOutput({ node, myUpdatedNodes, nodeSubstitutionSchema })</code> (4725) — remove output parcial do nó falhado do schema pra próximos nós não referenciarem lixo.
+            <br>3. <code>clearFailedNodeOutput({ node, myUpdatedNodes, nodeSubstitutionSchema })</code> (4725) — remove saída parcial do nó falhado do schema para próximos nós não referenciarem lixo.
             <br>4. <code>runLogCollector?.endNode({ status: 'error', errorMessage, ... })</code> (4739-4748) — fecha o RunLogNode com erro.
             <br>5. <code>loggerService.error(...)</code> (4750-4766) — Winston com <code>error_type</code>, stack, flow, user.
-            <br>6. <code>recordInApiNodeError({ nodeId, executionId, errorMessage })</code> (4771-4787) — grava row de erro em <code>node_executions</code> pra trace uniforme (mesma tabela dos nós Temporal).
+            <br>6. <code>recordInApiNodeError({ nodeId, executionId, errorMessage })</code> (4771-4787) — grava linha de erro em <code>node_executions</code> para trace uniforme (mesma tabela dos nós Temporal).
             <br>7. <code>stoppedByNodeFailure = true</code>; break do while.
             <br><br>
-            <strong>Marcação de rota morta em condition</strong>: quando é <code>conditionNode</code> que falhou, chama <code>completeCondition(schedState, nodeId, DEAD_HANDLE)</code> antes do break — o scheduler propaga "morte" pros nós downstream inalcançáveis, que aparecem em <a href="#step-4-1" style="color:#3B82F6;text-decoration:underline">4.1</a> como <code>dead</code> e não como <code>unprocessed</code>.
+            <strong>Marcação de rota morta em condition</strong>: quando é <code>conditionNode</code> que falhou, chama <code>completeCondition(schedState, nodeId, DEAD_HANDLE)</code> antes do break — o scheduler propaga "morte" para os nós downstream inalcançáveis, que aparecem em <a href="#step-4-1" style="color:#3B82F6;text-decoration:underline">4.1</a> como <code>dead</code> e não como <code>unprocessed</code>.
           </div>
           <div class="box-file">flux.service.ts:4702-4794 (try/catch) · flux.service.ts:5342+ (catch top-level em 5.1)</div>
           <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (soft fail + catch + recordInApiNodeError)</span><span class="click-hint-arrow">→</span></div>
@@ -1666,7 +1666,7 @@
           <span class="badge step">4.1b</span> Limpeza de <code>flow-global.data.logs</code>
         </div>
         <div class="box-desc">
-          Housekeeping menor no nó global: zera <code>data.logs</code> pra não ser persistido gordo no próximo <code>UPDATE flows_nodes</code>.
+          Housekeeping menor no nó global: zera <code>data.logs</code> para não ser persistido gordo no próximo <code>UPDATE flows_nodes</code>.
         </div>
         <div class="box-file">flux.service.ts:4851-4855</div>
         <div class="click-hint">
@@ -1732,7 +1732,7 @@
           <br>&nbsp;&nbsp;• <code>persistInputNodeData()</code> grava <code>text</code> e <code>textData</code> definitivos (nasce do <a href="#step-4-6" style="color:#3B82F6;text-decoration:underline">4.6</a> mas concretiza aqui)
           <br>&nbsp;&nbsp;• Extrai textos e URLs de anexos que virarão payload de email/webhook
           <br><br>
-          <strong>2. Download de attachments (5041-5070)</strong> — pra cada URL identificada como anexo (S3, external), baixa via <code>httpService</code>/AWS SDK e monta buffer pra API do provider.
+          <strong>2. Download de attachments (5041-5070)</strong> — para cada URL identificada como anexo (S3, external), baixa via <code>httpService</code>/AWS SDK e monta buffer para a API do provider.
           <br><br>
           <strong>3. ⚠ Dedup Redis <em>duplo</em> (5094-5160)</strong> — protege contra duplicação de email em 2 cenários diferentes:
           <br>&nbsp;&nbsp;• <strong>Nível 1 — dedup por run</strong>: chave <code>email-sent:${flowId}:${nodeId}:${runLogProcessId}</code>, TTL <strong>24h</strong>, <code>SET NX</code>. Evita reenvio se o mesmo run for reexecutado (retry manual, crash+resume). Se <code>NX</code> falhar → skip com log.
@@ -1741,7 +1741,7 @@
           <br><br>
           <strong>4. Envio via provider (5164-5195)</strong>:
           <br>&nbsp;&nbsp;• Provider integrado (EmailJs, SendGrid, ...) — API-key do <code>UserIntegration</code>
-          <br>&nbsp;&nbsp;• Fallback pra <code>SMTP</code> nativo
+          <br>&nbsp;&nbsp;• Fallback para <code>SMTP</code> nativo
           <br>&nbsp;&nbsp;• Ou webhook direto se o nó marca <code>useWebhook</code>
           <br><br>
           <strong>5. Callback HTTP consolidado (5164-5195)</strong> — se o request original veio com <code>callbackUrl</code>, dispara POST com <code>{ processId, outputs, tokens, cost }</code>. Diferente do callback da fila (que é feito pelo processor no <a href="#" onclick="return false" style="color:#3B82F6">1.1</a>).
@@ -1761,9 +1761,9 @@
           <br><br>
           <strong>2. Montagem do <code>assistantAnswer</code> (5259-5266)</strong> — junta o output dos <code>outputObjectNode</code> num único texto que representa a resposta do assistente naquele turn.
           <br><br>
-          <strong>3. Append em SessionState (5273-5286)</strong> — loop por <code>sessionAppends</code>: <code>await this.sessionStateService.appendEntries({ scopeType: 'chat', scopeId, sessionKey, entries, ownerUserId })</code>. É aqui que o histórico "cresce" persistentemente pra próximas invocações com o mesmo <code>sessionId</code>.
+          <strong>3. Append em SessionState (5273-5286)</strong> — loop por <code>sessionAppends</code>: <code>await this.sessionStateService.appendEntries({ scopeType: 'chat', scopeId, sessionKey, entries, ownerUserId })</code>. É aqui que o histórico "cresce" persistentemente para próximas invocações com o mesmo <code>sessionId</code>.
           <br><br>
-          <strong>4. <code>chatLogRepository.save(...)</code> (5305-5313)</strong> — grava row estruturada em <code>chat_logs</code> com <code>{ flowId, sessionId, userMessage, assistantAnswer, tokens, cost, timestamp }</code>. É a fonte pra UI de histórico e pra billing por sessão.
+          <strong>4. <code>chatLogRepository.save(...)</code> (5305-5313)</strong> — grava row estruturada em <code>chat_logs</code> com <code>{ flowId, sessionId, userMessage, assistantAnswer, tokens, cost, timestamp }</code>. É a fonte para a UI de histórico e para billing por sessão.
         </div>
         <div class="box-file">flux.service.ts:5223-5314</div>
         <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (sessionAppends + appendEntries + chatLogs)</span><span class="click-hint-arrow">→</span></div>

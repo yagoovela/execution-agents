@@ -182,24 +182,24 @@
     <h1>Passo 2.2 — Variáveis mutáveis de execução</h1>
   </div>
   <div class="page-sub">
-    Bloco em <code>flux.service.ts:3146-3197</code>. Declara todo o <strong>estado in-memory</strong> que o loop principal da Fase 3 vai mutar em cada iteração: cópia dos nós, schema de substituição, input do user, sets de progresso, flags de parada e setup de cancelamento. É onde a <em>RAM cresce</em> em runs grandes.
+    Bloco em <code>flux.service.ts:3146-3197</code>. Declara todo o estado in-memory que o loop principal da Fase 3 muta a cada iteração. Cópia dos nós, schema de substituição, entrada do usuário, sets de progresso, flags de parada e setup de cancelamento. É onde a RAM cresce em execuções grandes.
   </div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
     <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
     <ul>
-      <li><strong>Abre a "mesa de trabalho" do run:</strong> cria as três estruturas centrais que os handlers vão mexer o tempo todo — <code>myUpdatedNodes</code> (cópia viva dos nós), <code>myTexts</code> (sacola de outputs textuais) e <code>nodeSubstitutionSchema</code> (o dicionário <code>{{label}}</code> → valor). É a principal fonte de <em>pressure de RAM</em> em runs grandes.</li>
-      <li><strong>Formata o input do usuário como chat message:</strong> pega o primeiro <code>variableInputs[0]</code> do request, empacota como <code>{role:'user', content, timestamp}</code> pra ser prependado no histórico antes de despachar pra LLM. Se veio arquivo, cola a URL no <code>content</code> com <code>\n</code>.</li>
-      <li><strong>Instala os "trackers de progresso":</strong> <code>processedNodeIds</code> (quem já rodou), <code>lastExecutedNodeId</code> (pra saber onde cancelar), <code>idx</code> (contador de debug) e <code>scheduledId</code> (variável de controle do <code>while</code> — quando vem <code>null</code>, loop encerra).</li>
-      <li><strong>Prepara três "botões de emergência":</strong> flags <code>stoppedByLoopBehavior</code>, <code>stoppedByNodeFailure</code>, <code>stoppedByCancel</code> começam <em>false</em> e podem ser setadas durante o run pra indicar por que o loop parou antes do fim natural.</li>
-      <li><strong>Configura o cancelamento:</strong> decide se este run deve escutar cancel (sub-runs herdam do pai), resolve a <code>cancelRunKey</code> e faz o <em>único I/O</em> deste passo — um <code>await</code> no <code>featureFlagsService</code> pra saber se cancel <em>in-flight</em> (interromper nó no meio) está ligado.</li>
-      <li><strong>Saída:</strong> ~13 variáveis no escopo do <code>try</code> do <code>apiV2()</code>, capturadas por closure pelos handlers da Fase 3 — este é o <em>maior blocker</em> pra migrar handlers pro worker, porque quase tudo aqui é estado mutado por closure.</li>
+      <li><strong>Abre a mesa de trabalho da execução.</strong> Cria as três estruturas centrais que os handlers manipulam o tempo todo. <code>myUpdatedNodes</code> (cópia viva dos nós). <code>myTexts</code> (coleção de outputs textuais). <code>nodeSubstitutionSchema</code> (dicionário <code>{{label}}</code> → valor). É a principal fonte de pressão de RAM em execuções grandes.</li>
+      <li><strong>Formata a entrada do usuário como chat message.</strong> Pega o primeiro <code>variableInputs[0]</code> do request e empacota como <code>{role:'user', content, timestamp}</code>. Fica pronto para prependar no histórico antes de despachar para o LLM. Se veio arquivo, cola a URL no <code>content</code> com <code>\n</code>.</li>
+      <li><strong>Instala os trackers de progresso.</strong> <code>processedNodeIds</code> (quais nós já rodaram). <code>lastExecutedNodeId</code> (para saber onde cancelar). <code>idx</code> (contador de debug). <code>scheduledId</code> (variável de controle do <code>while</code>; quando vem <code>null</code>, o loop encerra).</li>
+      <li><strong>Prepara três botões de emergência.</strong> As flags <code>stoppedByLoopBehavior</code>, <code>stoppedByNodeFailure</code> e <code>stoppedByCancel</code> começam <em>false</em>. Podem ser ativadas durante a execução para indicar por que o loop parou antes do fim natural.</li>
+      <li><strong>Configura o cancelamento.</strong> Decide se a execução deve escutar cancel (sub-runs herdam do pai). Resolve a <code>cancelRunKey</code>. Faz o único I/O do passo. Um <code>await</code> no <code>featureFlagsService</code> para descobrir se o cancel in-flight (interromper nó no meio) está ligado.</li>
+      <li><strong>Saída.</strong> Cerca de 13 variáveis no escopo do <code>try</code> do <code>apiV2()</code>. Capturadas por closure pelos handlers da Fase 3. É o maior blocker para migrar handlers para o worker. Quase tudo aqui é estado mutado por closure.</li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto:</strong> a maioria dessas variáveis existem porque o loop mistura <em>orquestração</em> (scheduler) com <em>estado do domínio</em> (nodes atualizados, tokens gastos, etc.). Cada handler de Fase 3 pode <em>ler</em> ou <em>mutar</em> qualquer uma delas. Isso é <strong>o principal blocker</strong> pra migrar handlers pro worker — o worker não tem acesso a nada disso; recebe cada nó já pré-substituído e retorna output puro.
+    <strong>Contexto.</strong> A maioria dessas variáveis existe porque o loop mistura orquestração (scheduler) com estado do domínio (nós atualizados, tokens gastos, etc.). Cada handler da Fase 3 pode ler ou mutar qualquer uma delas. Este é o principal blocker para migrar handlers para o worker. O worker não tem acesso a nada disso. Recebe cada nó já pré-substituído e retorna output puro.
   </div>
 
   <div class="overview-mini">
@@ -216,7 +216,7 @@
       <a href="#fn-e" class="overview-chip"><span class="lbl">E</span>Cancellation setup</a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado final: ~13 variáveis no escopo do <code>try</code> em <code>apiV2()</code>, capturadas por closure pelos handlers da Fase 3.
+      Resultado final. Cerca de 13 variáveis no escopo do <code>try</code> em <code>apiV2()</code>. Capturadas por closure pelos handlers da Fase 3.
     </div>
   </div>
 
@@ -234,17 +234,17 @@
         let myUpdatedNodes = [...newFlows]; let myTexts = []; let nodeSubstitutionSchema = generateSchemaFromNodes(myUpdatedNodes);
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Estado central do run — a "verdade viva" dos nós enquanto o loop roda. <code>myUpdatedNodes</code> começa como cópia rasa do array preparado nas Fases 1 e é mutado a cada handler que grava output; <code>nodeSubstitutionSchema</code> é o mapa <code>{{label}}</code> → valor que <code>applySubstitutionToObject</code> usa em cada iteração.
+        <strong>Propósito.</strong> Estado central da execução. A "verdade viva" dos nós enquanto o loop roda. <code>myUpdatedNodes</code> começa como cópia rasa do array preparado nas Fases 1. Cada handler que grava output muta esse array. <code>nodeSubstitutionSchema</code> é o mapa <code>{{label}}</code> → valor que <code>applySubstitutionToObject</code> usa em cada iteração.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> pense nesse bloco como a <em>mesa de trabalho</em> onde o agente vai montar tudo. Antes de começar a executar nó por nó, o backend abre três "gavetas" na memória: uma cópia da lista de nós que vai sendo pintada de novo a cada saída (o <code>myUpdatedNodes</code>), uma sacolinha vazia pra ir juntando o texto que os nós gerarem (o <code>myTexts</code>), e um <em>dicionário rápido</em> de referências — quem responde por <code>{{label}}</code>, quem responde por <code>{{nodeId}}</code> — que é o schema de substituição. Todo handler da Fase 3 vai mexer nessas três coisas o tempo todo, e é justamente aqui que a RAM engorda em agentes grandes, porque esse "estoque vivo" cresce junto com <code>previewResponses</code>, <code>contentData</code> e streams parciais.
+        <strong>Em resumo.</strong> Este bloco é a mesa de trabalho onde o agente monta tudo. Antes de executar nó por nó, o backend abre três estruturas na memória. Cópia da lista de nós, atualizada a cada saída (o <code>myUpdatedNodes</code>). Coleção vazia para acumular o texto que os nós gerarem (o <code>myTexts</code>). Um dicionário rápido de referências (quem responde por <code>{{label}}</code>, quem responde por <code>{{nodeId}}</code>), que é o schema de substituição. Todo handler da Fase 3 manipula essas três estruturas o tempo todo. É onde a RAM cresce em agentes grandes. Esse estado vivo cresce junto com <code>previewResponses</code>, <code>contentData</code> e streams parciais.
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
             <div class="box-title"><span class="badge step">A1</span> <code>myUpdatedNodes = [...newFlows]</code></div>
             <div class="box-desc">
-              Spread cria novo array, mas as <strong>referências dos nodes</strong> são compartilhadas. Handlers mutam <code>node.data</code> direto (e-c/writers no loop legacy). Contribui pra confusão de "quem mutou o quê" e pra crescimento in-memory.
+              O spread cria um array novo, mas as referências dos nós são compartilhadas. Handlers mutam <code>node.data</code> diretamente (writers no loop legacy). Contribui para a confusão de "quem mutou o quê" e para o crescimento in-memory.
             </div>
             <div class="box-file">flux.service.ts:3146</div>
           </div>
@@ -252,7 +252,7 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">A2</span> <code>myTexts = []</code></div>
             <div class="box-desc">
-              Coleção de outputs textuais dos nós que geraram texto (chat responses, streams). Handlers de <code>commandTextNode</code>/<code>textGenerator</code> apendam aqui. Usado depois pra montar <code>finalResult</code>.
+              Coleção de outputs textuais dos nós que geraram texto (chat responses, streams). Handlers de <code>commandTextNode</code> e <code>textGenerator</code> fazem append aqui. Usada depois para montar <code>finalResult</code>.
             </div>
             <div class="box-file">flux.service.ts:3147</div>
           </div>
@@ -262,7 +262,7 @@
             <div class="box backend">
               <div class="box-title"><span class="badge step">A3</span> Monta schema in-memory</div>
               <div class="box-desc">
-                3 chaves por node: <code>schema[nodeId]</code>, <code>schema[nodeId_normalizado]</code>, <code>schema[label_lowercase]</code>. Ver <a href="passo-2-3.html">passo 2.3</a> pra detalhamento completo desta função.
+                Três chaves por nó. <code>schema[nodeId]</code>, <code>schema[nodeId_normalizado]</code>, <code>schema[label_lowercase]</code>. Ver <a href="passo-2-3.html">passo 2.3</a> para o detalhamento completo desta função.
               </div>
               <div class="box-file">node-reference-substitution.service.ts:82-143</div>
             </div>
@@ -270,16 +270,16 @@
         </div>
         <div class="fn-asides">
           <div class="aside warn">
-            <div class="aside-title">⚠️ Fonte principal de pressure de RAM</div>
-            <code>myUpdatedNodes</code> carrega <em>todo</em> o node.data — incluindo <code>previewResponses</code> (10 últimas respostas), <code>contentData</code>, <code>text</code>, streams parciais... A cada iteração handlers gordos podem clonar/expandir. Em agente com 50 text-gen + 20 arrayNode loops, chega a centenas de MB. Ver [[project_jsonb_fat_fields]].
+            <div class="aside-title">⚠️ Fonte principal de pressão de RAM</div>
+            O <code>myUpdatedNodes</code> carrega todo o <code>node.data</code>. Inclui <code>previewResponses</code> (10 últimas respostas), <code>contentData</code>, <code>text</code>, streams parciais. A cada iteração, handlers pesados podem clonar ou expandir. Em agente com 50 text-gen e 20 arrayNode loops, chega a centenas de MB. Ver [[project_jsonb_fat_fields]].
           </div>
           <div class="aside info">
             <div class="aside-title">🎯 Por que <code>let</code> e não <code>const</code>?</div>
-            <code>myUpdatedNodes</code> e <code>nodeSubstitutionSchema</code> são <strong>reatribuídos</strong> em alguns pontos do loop (não só mutados). Ex.: dentro do arrayNode, <code>newNodes = [...myUpdatedNodes]</code> depois <code>myUpdatedNodes = newNodes</code>. O <code>onMutateSchema</code> callback também reatribui o schema inteiro.
+            <code>myUpdatedNodes</code> e <code>nodeSubstitutionSchema</code> são reatribuídos em alguns pontos do loop, não só mutados. Exemplo. Dentro do <code>arrayNode</code>, <code>newNodes = [...myUpdatedNodes]</code> e depois <code>myUpdatedNodes = newNodes</code>. O callback <code>onMutateSchema</code> também reatribui o schema inteiro.
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 <code>newFlows</code> — de onde vem</div>
-            É o <code>updatedFlows</code> das Fases 1 (após 1.6/1.7) renomeado pra <code>newFlows</code> em algum ponto acima do 3146. Já inclui todas as hidratações de chat, objetos e token Google.
+            <div class="aside-title">🔧 <code>newFlows</code>. Origem</div>
+            É o <code>updatedFlows</code> das Fases 1 (após 1.6 e 1.7) renomeado para <code>newFlows</code> em algum ponto acima da linha 3146. Já inclui todas as hidratações de chat, objetos e token Google.
           </div>
         </div>
       </div>
@@ -300,10 +300,10 @@
         const object = [{ role: 'user', content: inputText + inputFileUrl, timestamp: ... }]
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Empacotar o input do usuário no shape de <em>chat message</em> ({role, content, timestamp}) pra ser prependado no histórico de chat quando o run começa. Só o <strong>primeiro</strong> <code>variableInput</code> é considerado.
+        <strong>Propósito.</strong> Empacota a entrada do usuário no shape de chat message (<code>{role, content, timestamp}</code>). Fica pronta para ser prependada no histórico de chat quando a execução começa. Só o primeiro <code>variableInput</code> é considerado.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> essa é a etapa do <em>carteiro</em> — pega o que o usuário digitou no request e transforma numa "carta" no formato que a LLM entende (<code>{role:'user', content:'...', timestamp:'...'}</code>). Se veio anexo, cola a URL no final do texto com um <code>\n</code>. É essa carta que vai ser <strong>prependada</strong> no histórico do chat antes de despachar pro modelo. Detalhe importante: ela só olha o <em>primeiro</em> item de <code>variableInputs</code> — se o cliente mandou vários, os outros ficam sendo ignorados aqui e só chegam nos handlers específicos mais tarde.
+        <strong>Em resumo.</strong> Esta etapa é o carteiro. Pega o que o usuário digitou no request e transforma em uma mensagem no formato que o LLM entende (<code>{role:'user', content:'...', timestamp:'...'}</code>). Se veio anexo, cola a URL no final do texto com um <code>\n</code>. Essa mensagem é prependada no histórico do chat antes do despacho para o modelo. Só olha o primeiro item de <code>variableInputs</code>. Se o cliente mandou vários, os outros ficam ignorados aqui e só chegam nos handlers específicos depois.
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
@@ -321,7 +321,7 @@
           <div class="box backend">
             <div class="box-title">Uso downstream</div>
             <div class="box-desc">
-              Consumido pelos handlers de chat (fluxObject + commandTextNode com <code>chat=true</code>) pra prependar o turno do user no <code>entries[]</code> antes de mandar pra LLM.
+              Consumido pelos handlers de chat (<code>fluxObject</code> e <code>commandTextNode</code> com <code>chat=true</code>) para prependar o turno do usuário no <code>entries[]</code> antes de enviar ao LLM.
             </div>
           </div>
         </div>
@@ -329,14 +329,15 @@
           <div class="aside warn">
             <div class="aside-title">⚠️ Só <code>variableInputs[0]</code></div>
             Se o request mandar múltiplos inputs (chat multi-turno, múltiplos arquivos), só o índice 0 vira <code>object</code>. Os demais só chegam via <code>body.variableInputs</code> nos handlers específicos.
+
           </div>
           <div class="aside info">
             <div class="aside-title">🎯 Timestamp em <code>en-US</code></div>
-            Formato: <code>M/D/YYYY, H:MM:SS AM/PM</code>. Salvo direto no <code>entries</code> do chat sem normalizar pra ISO. Se o cliente/log downstream tenta parsear como ISO, quebra.
+            Formato. <code>M/D/YYYY, H:MM:SS AM/PM</code>. Salvo direto no <code>entries</code> do chat sem normalizar para ISO. Se o cliente ou log downstream tenta parsear como ISO, quebra.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 <code>inputFileUrl</code> concat</div>
-            Se veio arquivo, a URL é apendada ao content com <code>\n</code>. LLM tem que interpretar isso como "aqui tá o link do arquivo" sem hint estruturado. Simples mas frágil — melhor seria <code>content: [{type:'text'}, {type:'file_url'}]</code> multimodal.
+            Se veio arquivo, a URL é anexada ao <code>content</code> com <code>\n</code>. O LLM tem que interpretar isso como "aqui está o link do arquivo" sem hint estruturado. Simples e frágil. Melhor seria <code>content: [{type:'text'}, {type:'file_url'}]</code> multimodal.
           </div>
         </div>
       </div>
@@ -357,17 +358,17 @@
         const processedNodeIds = new Set&lt;string&gt;(); let lastExecutedNodeId = null; let idx = 0; let scheduledId: string | null;
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Trackers de progresso do loop. <code>processedNodeIds</code> é o histórico "quem já rodou" (usado pra dedupe/skip); <code>lastExecutedNodeId</code> serve pra <code>finishCancelledNode</code>; <code>idx</code> é contador visual (log/debug); <code>scheduledId</code> é a variável de controle do while.
+        <strong>Propósito.</strong> Trackers de progresso do loop. <code>processedNodeIds</code> é o histórico "quem já rodou" (usado para dedupe e skip). <code>lastExecutedNodeId</code> serve para o <code>finishCancelledNode</code>. <code>idx</code> é contador visual (log/debug). <code>scheduledId</code> é a variável de controle do <code>while</code>.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> aqui é o <em>caderninho de presença</em> do loop. <code>processedNodeIds</code> é o <strong>Set</strong> que anota quem já rodou (pra ninguém rodar duas vezes num subrun); <code>lastExecutedNodeId</code> é o "último a ser chamado" — importante pra saber onde parar caso o user cancele no meio; <code>idx</code> é só um contador de posição pra debug; e <code>scheduledId</code> é a variável-chave, a que o <code>while</code> lê a cada volta: enquanto o scheduler devolve um id, o loop continua; quando vem <code>null</code>, a festa acabou. Junto com <code>totalTokensUsed</code>/<code>totalCost</code> declarados lá em cima, formam o "painel de instrumentos" da execução.
+        <strong>Em resumo.</strong> Este bloco é o registro de presença do loop. <code>processedNodeIds</code> é o <code>Set</code> que anota quem já rodou. Evita rodar duas vezes em um subrun. <code>lastExecutedNodeId</code> é o último a ser chamado. Importante para saber onde parar se o usuário cancelar no meio. <code>idx</code> é apenas um contador de posição para debug. <code>scheduledId</code> é a variável-chave. O <code>while</code> lê essa variável a cada volta. Enquanto o scheduler devolve um id, o loop continua. Quando vem <code>null</code>, a execução acaba. Junto com <code>totalTokensUsed</code> e <code>totalCost</code>, declarados antes, formam o painel de instrumentos da execução.
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
             <div class="box-title"><span class="badge step">C1</span> <code>processedNodeIds: Set&lt;string&gt;</code></div>
             <div class="box-desc">
-              Adicionado em cada iteração via <code>processedNodeIds.add(id)</code> logo depois de <code>const id = scheduledId</code>. Usado pra evitar reprocessamento em subruns de fluxBox/libraryNode.
+              Adicionado em cada iteração via <code>processedNodeIds.add(id)</code> logo após <code>const id = scheduledId</code>. Usado para evitar reprocessamento em subruns de <code>fluxBox</code> e <code>libraryNode</code>.
             </div>
             <div class="box-file">flux.service.ts:3179, 3245</div>
           </div>
@@ -375,7 +376,7 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">C2</span> <code>lastExecutedNodeId</code></div>
             <div class="box-desc">
-              Atualizado a cada nó processado. Usado pelo cancellation handling pra saber onde parou e escrever um "cancelled at node X" no run log.
+              Atualizado a cada nó processado. Usado pelo handling de cancelamento para saber onde parou e escrever "cancelled at node X" no run log.
             </div>
             <div class="box-file">flux.service.ts:3183, 3246</div>
           </div>
@@ -383,23 +384,23 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">C3</span> <code>scheduledId</code></div>
             <div class="box-desc">
-              Recebe o retorno de <code>nextReady(schedState)</code> em cada volta do <code>while</code>. Se <code>null</code>, o loop encerra.
+              Recebe o retorno de <code>nextReady(schedState)</code> em cada volta do <code>while</code>. Se retornar <code>null</code>, o loop encerra.
             </div>
             <div class="box-file">flux.service.ts:3197, 3227, 3229</div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 <code>totalTokensUsed</code>/<code>totalCost</code> — declarados antes</div>
-            Estas duas variáveis (também consumidas aqui) foram declaradas na linha 2277-2278, no início do <code>apiV2()</code>. Elas acumulam ao longo do run via <code>onUpdateTokens</code> (callback que handlers chamam com <code>(tokensUsed, cost)</code>).
+            <div class="aside-title">🎯 <code>totalTokensUsed</code> e <code>totalCost</code>. Declarados antes</div>
+            Estas duas variáveis (também consumidas aqui) foram declaradas na linha 2277-2278, no início do <code>apiV2()</code>. Acumulam ao longo da execução via <code>onUpdateTokens</code>. É o callback que handlers chamam com <code>(tokensUsed, cost)</code>.
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ <code>idx</code> nunca é incrementado no código lido</div>
-            Declarado como <code>let idx = 0</code> em 3196 mas não achei incremento no snippet 3146-3197. Deve ser incrementado dentro do body do while — se removido silenciosamente, é dead-code. Grepar por <code>idx++</code> pra confirmar.
+            <div class="aside-title">⚠️ <code>idx</code> não é incrementado no trecho lido</div>
+            Declarado como <code>let idx = 0</code> em 3196, mas não há incremento no snippet 3146-3197. Deve ser incrementado dentro do body do <code>while</code>. Se foi removido silenciosamente, é dead-code. Grep por <code>idx++</code> para confirmar.
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 Set vs Array pra <code>processedNodeIds</code></div>
-            Set (O(1) has) — correto. Se vira Array (O(n) includes), agente com 200 nós fica lento em subrun checks.
+            <div class="aside-title">🔧 Set vs Array para <code>processedNodeIds</code></div>
+            Set (O(1) has). Correto. Se virasse Array (O(n) includes), agente com 200 nós ficaria lento em subrun checks.
           </div>
         </div>
       </div>
@@ -420,10 +421,10 @@
         let stoppedByLoopBehavior = false; let stoppedByNodeFailure = false; let stoppedByCancel = false;
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> 3 flags booleanas mutuamente <strong>não</strong>-exclusivas que indicam por que o loop parou antes do fim natural. Usadas na finalização pra reportar status corretos ao caller / logs.
+        <strong>Propósito.</strong> Três flags booleanas não exclusivas que indicam por que o loop parou antes do fim natural. Usadas na finalização para reportar status correto ao caller e aos logs.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> são três <em>botões de emergência</em> que ficam desligados no começo e podem ser apertados durante o run. O primeiro (<code>stoppedByLoopBehavior</code>) é o arrayNode dizendo "olha, atingi minha condição de parada configurada"; o segundo (<code>stoppedByNodeFailure</code>) é um handler que estourou um erro fatal e não dá pra continuar; o terceiro (<code>stoppedByCancel</code>) é o user apertando "cancelar" pela API. Nenhum deles é exclusivo — teoricamente os três podem virar <code>true</code> na mesma iteração, e no fim quem reporta o status é a <em>última</em> flag setada. O ideal seria trocar essas três variáveis por um único enum <code>status</code>, mas isso é refactor pra depois.
+        <strong>Em resumo.</strong> São três botões de emergência. Começam desligados e podem ser ativados durante a execução. O primeiro (<code>stoppedByLoopBehavior</code>) é o <code>arrayNode</code> sinalizando "atingi a condição de parada configurada". O segundo (<code>stoppedByNodeFailure</code>) é um handler que lançou erro fatal e a execução não pode continuar. O terceiro (<code>stoppedByCancel</code>) é o usuário disparando o cancel pela API. Nenhum é exclusivo. Teoricamente os três podem virar <code>true</code> na mesma iteração. No fim, quem reporta o status é a última flag ativada. O ideal seria trocar essas três variáveis por um único enum <code>status</code>. Refactor futuro.
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
@@ -432,7 +433,7 @@
             <div class="cascade-step">
               <span class="cascade-num">1</span>
               <span class="cond"><code>stoppedByLoopBehavior</code></span>
-              <span class="result call">arrayNode com <code>stopOn*</code> config</span>
+              <span class="result call"><code>arrayNode</code> com <code>stopOn*</code> config</span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">2</span>
@@ -442,29 +443,29 @@
             <div class="cascade-step">
               <span class="cascade-num">3</span>
               <span class="cond"><code>stoppedByCancel</code></span>
-              <span class="result deny">user cancelou o run (3.5 cancel check)</span>
+              <span class="result deny">usuário cancelou a execução (3.5 cancel check)</span>
             </div>
           </div>
           <div class="arrow">↓</div>
           <div class="box backend">
             <div class="box-title">Consumo</div>
             <div class="box-desc">
-              Cada uma gera <code>break</code> no while ou skip. Na finalização, o <code>runLogCollector.finalize()</code> recebe <code>status</code> derivado dessas flags.
+              Cada uma gera <code>break</code> no <code>while</code> ou skip. Na finalização, o <code>runLogCollector.finalize()</code> recebe <code>status</code> derivado dessas flags.
             </div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Não exclusivas</div>
-            Teoricamente as 3 podem virar <code>true</code> na mesma iteração (um handler falha, ao mesmo tempo user cancela, dentro de um arrayNode). Prioridade no report é a última setada — não há tie-break explícito.
+            Teoricamente as três podem virar <code>true</code> na mesma iteração (um handler falha e, ao mesmo tempo, o usuário cancela dentro de um <code>arrayNode</code>). A prioridade no report é a última ativada. Não há tie-break explícito.
           </div>
           <div class="aside warn">
             <div class="aside-title">⚠️ 3 booleans em vez de 1 enum</div>
-            <code>status: 'ok' | 'loop' | 'failure' | 'cancel'</code> resolveria a ambiguidade e reduziria a superfície de bugs de "esqueci de setar essa flag". Refactor trivial mas quebra call sites que checam individualmente.
+            <code>status: 'ok' | 'loop' | 'failure' | 'cancel'</code> resolveria a ambiguidade e reduziria a superfície de bugs de "esqueci de setar essa flag". Refactor trivial. Quebra call-sites que verificam individualmente.
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 <code>stoppedByCancel</code> — novo pós-doc</div>
-            Introduzido junto com o feature flag <code>NODE_CANCEL_IN_FLIGHT_FLAG</code>. As outras 2 vieram do doc original.
+            <div class="aside-title">🔧 <code>stoppedByCancel</code>. Novo pós-doc</div>
+            Introduzido junto com o feature flag <code>NODE_CANCEL_IN_FLIGHT_FLAG</code>. As outras duas vieram do doc original.
           </div>
         </div>
       </div>
@@ -485,17 +486,17 @@
         const cancelWatchEnabled = shouldWatchCancellation({...}); const cancelRunKey = resolveCancelRunKey({...}); const inFlightEnabled = await featureFlagsService.isEnabled(NODE_CANCEL_IN_FLIGHT_FLAG);
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Configurar o mecanismo de cancelamento. Decide se este run deve <em>escutar</em> pedidos de cancel (não vale pra sub-runs, por exemplo), calcula a <code>runKey</code> que o cliente vai usar pra pedir cancel, e busca o feature flag pra ver se o cancel <em>in-flight</em> (durante execução de um nó) está ativo.
+        <strong>Propósito.</strong> Configura o mecanismo de cancelamento. Decide se a execução deve escutar pedidos de cancel (não se aplica a sub-runs, por exemplo). Calcula a <code>runKey</code> que o cliente usa para solicitar cancel. Busca o feature flag para saber se o cancel in-flight (durante a execução de um nó) está ativo.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> aqui o backend monta o <em>botão de pânico</em> do run. Primeiro pergunta "vale a pena ficar de olho em cancel pra esse tipo de execução?" (sub-runs não escutam — quem escuta é o pai); depois calcula qual é a <em>chave</em> que o cliente vai usar pra pedir cancel (se é sub-run, herda a do pai — cancelar o pai cancela os filhos automaticamente, elegante); e por último faz um <code>await</code> no serviço de feature flag pra descobrir se o modo <em>agressivo</em> está ligado — o modo que interrompe um nó <strong>no meio</strong> da execução, não só entre nós. Esse é o <strong>único I/O</strong> desse passo inteiro, e se o feature flag service ficar lento, atrasa qualquer execução de agente.
+        <strong>Em resumo.</strong> O backend monta o botão de emergência da execução. Primeiro pergunta se vale a pena escutar cancel para este tipo de execução. Sub-runs não escutam. Quem escuta é o pai. Depois calcula qual é a chave que o cliente vai usar para pedir cancel. Se é sub-run, herda a do pai. Cancelar o pai cancela os filhos automaticamente. Por último, faz um <code>await</code> no serviço de feature flag para descobrir se o modo agressivo está ligado. Esse modo interrompe um nó no meio da execução, não só entre nós. É o único I/O deste passo inteiro. Se o feature flag service ficar lento, atrasa toda execução de agente.
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
             <div class="box-title"><span class="badge step">E1</span> <code>shouldWatchCancellation({ runType, isNestedRun })</code></div>
             <div class="box-desc">
-              Retorna <code>false</code> se este é sub-run (fluxBox/libraryNode dentro de outro run) OU se o runType não suporta cancel. Sub-runs herdam o watch do pai.
+              Retorna <code>false</code> se é sub-run (<code>fluxBox</code> ou <code>libraryNode</code> dentro de outra execução) ou se o <code>runType</code> não suporta cancel. Sub-runs herdam o watch do pai.
             </div>
             <div class="box-file">flux.service.ts:3184-3187</div>
           </div>
@@ -503,7 +504,7 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">E2</span> <code>resolveCancelRunKey({ runLogProcessId, parentRunId })</code></div>
             <div class="box-desc">
-              Se é sub-run, herda a key do pai (<code>parentCancelRunKey</code>) — cancel do parent cancela filhos. Se é top-level, usa o próprio <code>runLogProcessId</code> como key.
+              Se é sub-run, herda a key do pai (<code>parentCancelRunKey</code>). Cancel do pai cancela filhos. Se é top-level, usa o próprio <code>runLogProcessId</code> como key.
             </div>
             <div class="box-file">flux.service.ts:3188-3191</div>
           </div>
@@ -511,7 +512,7 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">E3</span> <code>await featureFlagsService.isEnabled(NODE_CANCEL_IN_FLIGHT_FLAG)</code></div>
             <div class="box-desc">
-              Único <code>await</code> de I/O em toda 2.2. Consulta o service de feature flags. Se true, cancel pode interromper um nó <em>no meio</em> da execução; se false, só entre nós.
+              Único <code>await</code> de I/O em toda 2.2. Consulta o service de feature flags. Se <code>true</code>, o cancel pode interromper um nó no meio da execução. Se <code>false</code>, só entre nós.
             </div>
             <div class="box-file">flux.service.ts:3192-3194</div>
           </div>
@@ -519,15 +520,15 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 <code>NODE_CANCEL_IN_FLIGHT_FLAG</code></div>
-            Feature flag experimental que ativa o <code>cancelWatch</code> por nó. Sem ela, cancel só é checado entre iterações do while (não interrompe um nó em execução). Com ela, cada nó ganha um <code>cancelWatch</code> que checa periodicamente e pode abortar.
+            Feature flag experimental que ativa o <code>cancelWatch</code> por nó. Sem ela, o cancel só é checado entre iterações do <code>while</code>. Não interrompe um nó em execução. Com ela, cada nó ganha um <code>cancelWatch</code> que verifica periodicamente e pode abortar.
           </div>
           <div class="aside warn">
             <div class="aside-title">⚠️ Fetch de feature flag é blocking</div>
-            É um await no meio do setup do loop. Se o service de feature flag ficar lento, atrasa <strong>toda</strong> execução de agente. Vale cachear o valor por curta janela ou pré-resolver no boot.
+            É um <code>await</code> no meio do setup do loop. Se o serviço de feature flag ficar lento, atrasa toda execução de agente. Vale cachear o valor por curta janela ou pré-resolver no boot.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 Herança de cancel</div>
-            fluxBox/libraryNode passam <code>parentCancelRunKey</code> quando chamam <code>apiV2()</code> pro sub-flow. Cancel do parent = cancel do child porque compartilham a mesma key. Elegante.
+            <code>fluxBox</code> e <code>libraryNode</code> passam <code>parentCancelRunKey</code> ao chamar <code>apiV2()</code> para o sub-flow. Cancel do pai equivale ao cancel do filho porque compartilham a mesma key.
           </div>
         </div>
       </div>
@@ -535,23 +536,23 @@
   </div>
 
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo — o que sai de 2.2:</strong>
-    <br>• <code>myUpdatedNodes</code> · <code>myTexts</code> · <code>nodeSubstitutionSchema</code> — estado central do domínio
-    <br>• <code>object</code> — mensagem do user formatada pra chat
-    <br>• <code>processedNodeIds</code> · <code>lastExecutedNodeId</code> · <code>idx</code> · <code>scheduledId</code> — progresso
-    <br>• 3 flags de stop
-    <br>• <code>cancelWatchEnabled</code> · <code>cancelRunKey</code> · <code>inFlightEnabled</code> — cancellation
-    <br>• I/O: 1 await (feature flag)
+    <strong>Resumo — o que sai de 2.2.</strong>
+    <br>• <code>myUpdatedNodes</code>, <code>myTexts</code>, <code>nodeSubstitutionSchema</code>. Estado central do domínio.
+    <br>• <code>object</code>. Mensagem do usuário formatada para chat.
+    <br>• <code>processedNodeIds</code>, <code>lastExecutedNodeId</code>, <code>idx</code>, <code>scheduledId</code>. Progresso.
+    <br>• Três flags de stop.
+    <br>• <code>cancelWatchEnabled</code>, <code>cancelRunKey</code>, <code>inFlightEnabled</code>. Cancelamento.
+    <br>• I/O. Um <code>await</code> (feature flag).
   </div>
 
   <div class="note">
-    <strong>Observações para migração:</strong>
-    <br>• <strong>Este é o maior blocker pra o worker</strong>: quase tudo aqui é estado mutado por closure. O worker precisa receber cada nó pré-substituído e devolver output puro — <code>myUpdatedNodes</code>, <code>nodeSubstitutionSchema</code>, <code>myTexts</code> ficam obrigatoriamente no backend.
-    <br>• <code>myUpdatedNodes</code> é o principal driver da pressure de RAM em runs grandes (ver [[project_jsonb_fat_fields]]). Migrar handlers pesados (textGenerator, imageGenerator, sqlQuerier) pro worker <em>não</em> resolve isso — o problema é o schema in-memory, não o handler.
-    <br>• <code>onUpdateTokens</code>/<code>onMutateSchema</code>/<code>onMutateObjectCallerData</code> são callbacks que dependem de closure. No worker isso vira <code>await http.post('/worker/charge-tokens', ...)</code> — 1 round-trip por evento.
-    <br>• Idealmente 2.2 vira uma classe <code>RunState</code> encapsulada, e handlers recebem/retornam via metódos explícitos em vez de mutar variáveis livres. Trabalho grande mas destrava o worker.
-    <br>• <code>inFlightEnabled</code> deveria ser fetch antes do loop (já é) mas com cache. Não é caso pra latência crítica hoje.
-    <br>• As flags de stop viram um enum <code>runStatus</code> num refactor futuro — semântica melhor + tie-break explícito.
+    <strong>Observações para migração.</strong>
+    <br>• Este é o maior blocker para o worker. Quase tudo aqui é estado mutado por closure. O worker precisa receber cada nó pré-substituído e devolver output puro. <code>myUpdatedNodes</code>, <code>nodeSubstitutionSchema</code> e <code>myTexts</code> ficam obrigatoriamente no backend.
+    <br>• O <code>myUpdatedNodes</code> é o principal driver da pressão de RAM em execuções grandes (ver [[project_jsonb_fat_fields]]). Migrar handlers pesados (<code>textGenerator</code>, <code>imageGenerator</code>, <code>sqlQuerier</code>) para o worker não resolve. O problema é o schema in-memory, não o handler.
+    <br>• <code>onUpdateTokens</code>, <code>onMutateSchema</code> e <code>onMutateObjectCallerData</code> são callbacks que dependem de closure. No worker, isso vira <code>await http.post('/worker/charge-tokens', ...)</code>. Um round-trip por evento.
+    <br>• Idealmente, o 2.2 vira uma classe <code>RunState</code> encapsulada. Handlers recebem e retornam via métodos explícitos em vez de mutar variáveis livres. Trabalho grande. Destrava o worker.
+    <br>• <code>inFlightEnabled</code> deveria ser buscado antes do loop (já é) com cache. Não é caso de latência crítica hoje.
+    <br>• As flags de stop viram um enum <code>runStatus</code> em um refactor futuro. Semântica melhor e tie-break explícito.
   </div>
 
   <div class="page-footer-nav">

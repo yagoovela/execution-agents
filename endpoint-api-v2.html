@@ -397,14 +397,14 @@
     </span>
   </div>
 
-  <h1>POST /flux/api-v2 — 3 modos de resposta</h1>
-  <p class="subtitle">Sync rápido · Sync lento com polling · Callback assíncrono</p>
+  <h1>POST /flux/api-v2. 3 modos de resposta.</h1>
+  <p class="subtitle">Sync rápido · Sync lento com polling · Callback assíncrono.</p>
 
   <!-- ============================================ -->
   <h2><span class="num">1</span> Visão geral</h2>
 
   <p>
-    O endpoint canônico para disparar execução de agente. Suporta três modos de resposta que dependem de <strong>dois fatores</strong>: se o caller passou <code>callback_url</code>, e se o flow completa em menos de 2 minutos.
+    O endpoint canônico para disparar execução de agente. Suporta três modos de resposta que dependem de <strong>dois fatores</strong>. Se o caller passou <code>callback_url</code>. Se o flow completa em menos de 2 minutos.
   </p>
 
   <div class="overview-card">
@@ -429,19 +429,19 @@
           <td><code>flowId</code></td>
           <td><code>uuid</code></td>
           <td class="req">SIM</td>
-          <td>ID do flow a executar</td>
+          <td>ID do flow a executar.</td>
         </tr>
         <tr>
           <td><code>callback_url</code></td>
           <td><code>string (URL válida, HTTPS)</code></td>
           <td class="opt">opcional</td>
-          <td>Se presente, ativa <strong>modo C (callback)</strong>. Backend retorna 200 imediato e workflow chama essa URL ao terminar.</td>
+          <td>Se presente, ativa <strong>modo C (callback)</strong>. Backend retorna 200 imediato. Workflow chama essa URL ao terminar.</td>
         </tr>
         <tr>
           <td><code>versionId</code></td>
           <td><code>uuid</code></td>
           <td class="opt">opcional</td>
-          <td>Se presente, executa uma versão específica. Senão usa a deployed atual.</td>
+          <td>Se presente, executa uma versão específica. Caso contrário, usa a deployed atual.</td>
         </tr>
       </tbody>
     </table>
@@ -449,7 +449,7 @@
 
   <h3>Body</h3>
   <p>
-    Payload livre — vira o input dos <code>variableInputNodes</code> do flow. Fica disponível dentro dos nós via <code>{{input.&lt;field&gt;}}</code>.
+    Payload livre. Vira a entrada dos <code>variableInputNodes</code> do flow. Fica disponível dentro dos nós via <code>{{input.&lt;field&gt;}}</code>.
   </p>
 
   <div class="response-block">
@@ -483,23 +483,23 @@
 
     <div class="dt-arms">
       <div class="dt-arm">
-        <div class="dt-label">NÃO — Modo síncrono</div>
+        <div class="dt-label">NÃO. Modo síncrono.</div>
         <div class="dt-sub">Backend chama <code>handle.result({ timeout: '2m' })</code> e espera.</div>
         <div class="dt-leaf">
-          <strong>Modo A — Sync rápido</strong>
-          Flow completa em &lt;2min → retorna <code>200</code> com o output completo
+          <strong>Modo A. Sync rápido.</strong>
+          Flow completa em &lt;2min. Retorna <code>200</code> com a saída completa.
         </div>
         <div class="dt-leaf b">
-          <strong>Modo B — Sync lento</strong>
-          Passa de 2min → retorna <code>202</code> com URL de polling. Workflow continua rodando.
+          <strong>Modo B. Sync lento.</strong>
+          Passa de 2min. Retorna <code>202</code> com URL de polling. Workflow continua rodando.
         </div>
       </div>
 
       <div class="dt-arm">
-        <div class="dt-label">SIM — Modo assíncrono</div>
-        <div class="dt-sub">Backend não espera — retorna imediato e delega notificação ao workflow.</div>
+        <div class="dt-label">SIM. Modo assíncrono.</div>
+        <div class="dt-sub">Backend não espera. Retorna imediato. Delega notificação ao workflow.</div>
         <div class="dt-leaf c">
-          <strong>Modo C — Callback</strong>
+          <strong>Modo C. Callback.</strong>
           Retorna <code>200</code> imediato com <code>flowExecutionId</code>. Workflow POSTa no <code>callback_url</code> ao terminar.
         </div>
       </div>
@@ -507,7 +507,7 @@
   </div>
 
   <!-- ============================================ -->
-  <h2><span class="num">4</span> Modo A — Sync rápido (&lt; 2 min, sem callback)</h2>
+  <h2><span class="num">4</span> Modo A. Sync rápido (&lt; 2 min, sem callback).</h2>
 
   <div class="scenario a">
     <div class="scenario-header">
@@ -516,7 +516,7 @@
     </div>
 
     <div class="scenario-when">
-      <strong>Quando este modo:</strong> caller <em>não</em> passou <code>callback_url</code> e o flow completa em menos de 2 minutos. Backend segura a conexão HTTP até o workflow acabar e entrega o output no response.
+      <strong>Quando este modo:</strong> caller <em>não</em> passou <code>callback_url</code> e o flow completa em menos de 2 minutos. Backend mantém a conexão HTTP até o workflow acabar. Entrega a saída no response.
     </div>
 
     <div class="seq">
@@ -542,29 +542,29 @@
         <span class="seq-num">4</span>
         <span class="actor backend">Backend</span>
         <span class="seq-arrow">⏳</span>
-        <span class="seq-desc"><code>handle.result({ timeout: '2m' })</code> — bloqueia até o workflow terminar OU passar 2min</span>
+        <span class="seq-desc"><code>handle.result({ timeout: '2m' })</code>. Bloqueia até o workflow terminar OU passar 2min.</span>
       </div>
       <div class="seq-event">
         <span class="seq-num">5</span>
         <span class="actor workflow">Workflow</span>
         <span class="seq-arrow">→</span>
-        <span class="seq-desc"><span class="actor temporal">Temporal</span> &nbsp; retorna output após ~30s (ex.: agente completou)</span>
+        <span class="seq-desc"><span class="actor temporal">Temporal</span> &nbsp; retorna saída após ~30s (ex.: agente completou).</span>
       </div>
       <div class="seq-event">
         <span class="seq-num">6</span>
         <span class="actor temporal">Temporal</span>
         <span class="seq-arrow">→</span>
-        <span class="seq-desc"><span class="actor backend">Backend</span> &nbsp; <code>handle.result()</code> resolve com o payload de output</span>
+        <span class="seq-desc"><span class="actor backend">Backend</span> &nbsp; <code>handle.result()</code> resolve com o payload de saída.</span>
       </div>
       <div class="seq-event">
         <span class="seq-num">7</span>
         <span class="actor backend">Backend</span>
         <span class="seq-arrow">→</span>
-        <span class="seq-desc"><span class="actor caller">Caller</span> &nbsp; <code>200 OK</code> + JSON com <code>flowExecutionId</code>, <code>output</code>, <code>tokens</code>, <code>cost</code></span>
+        <span class="seq-desc"><span class="actor caller">Caller</span> &nbsp; <code>200 OK</code> + JSON com <code>flowExecutionId</code>, <code>output</code>, <code>tokens</code>, <code>cost</code>.</span>
       </div>
     </div>
 
-    <h3>Response — 200 OK</h3>
+    <h3>Response. 200 OK.</h3>
     <div class="response-block">
 <span class="status ok">200 OK</span>
 {
@@ -582,7 +582,7 @@
   </div>
 
   <!-- ============================================ -->
-  <h2><span class="num">5</span> Modo B — Sync lento (≥ 2 min, sem callback)</h2>
+  <h2><span class="num">5</span> Modo B. Sync lento (≥ 2 min, sem callback).</h2>
 
   <div class="scenario b">
     <div class="scenario-header">
@@ -591,7 +591,7 @@
     </div>
 
     <div class="scenario-when">
-      <strong>Quando este modo:</strong> caller <em>não</em> passou <code>callback_url</code> mas o flow demora mais de 2 minutos. Backend faz timeout no <code>handle.result</code>, retorna URL de polling e <strong>o workflow continua rodando independentemente</strong> — desligar o HTTP não afeta a execução.
+      <strong>Quando este modo:</strong> caller <em>não</em> passou <code>callback_url</code> mas o flow demora mais de 2 minutos. Backend faz timeout no <code>handle.result</code>. Retorna URL de polling. <strong>O workflow continua rodando independentemente</strong>. Desligar o HTTP não afeta a execução.
     </div>
 
     <div class="seq">
@@ -611,19 +611,19 @@
         <span class="seq-num">3</span>
         <span class="actor backend">Backend</span>
         <span class="seq-arrow">⏳</span>
-        <span class="seq-desc"><code>handle.result({ timeout: '2m' })</code> — bloqueia esperando…</span>
+        <span class="seq-desc"><code>handle.result({ timeout: '2m' })</code>. Bloqueia esperando…</span>
       </div>
       <div class="seq-event wait">
         <span class="seq-num">4</span>
         <span class="actor backend">Backend</span>
         <span class="seq-arrow">✕</span>
-        <span class="seq-desc">Após 2min sem completar → <code>WorkflowExecutionTimeoutError</code>. Backend captura mas <strong>não cancela</strong> o workflow.</span>
+        <span class="seq-desc">Após 2min sem completar, <code>WorkflowExecutionTimeoutError</code>. Backend captura mas <strong>não cancela</strong> o workflow.</span>
       </div>
       <div class="seq-event">
         <span class="seq-num">5</span>
         <span class="actor backend">Backend</span>
         <span class="seq-arrow">→</span>
-        <span class="seq-desc"><span class="actor caller">Caller</span> &nbsp; <code>202 Accepted</code> + <code>flowExecutionId</code> + URL de polling</span>
+        <span class="seq-desc"><span class="actor caller">Caller</span> &nbsp; <code>202 Accepted</code> + <code>flowExecutionId</code> + URL de polling.</span>
       </div>
       <div class="seq-event wait">
         <span class="seq-num">6</span>
@@ -635,17 +635,17 @@
         <span class="seq-num">7</span>
         <span class="actor workflow">Workflow</span>
         <span class="seq-arrow">→</span>
-        <span class="seq-desc"><span class="actor db">DB</span> &nbsp; Ao terminar, FASE 4 escreve output em <code>node_executions</code> e status em <code>flow_executions</code></span>
+        <span class="seq-desc"><span class="actor db">DB</span> &nbsp; Ao terminar, FASE 4 escreve a saída em <code>node_executions</code> e status em <code>flow_executions</code>.</span>
       </div>
       <div class="seq-event">
         <span class="seq-num">8</span>
         <span class="actor caller">Caller</span>
         <span class="seq-arrow">→</span>
-        <span class="seq-desc"><span class="actor backend">Backend</span> &nbsp; <code>GET /flux/api-v2/executions/{flowExecutionId}</code> (polling) — retorna status atual + output se completo</span>
+        <span class="seq-desc"><span class="actor backend">Backend</span> &nbsp; <code>GET /flux/api-v2/executions/{flowExecutionId}</code> (polling). Retorna status atual + saída se completo.</span>
       </div>
     </div>
 
-    <h3>Response — 202 Accepted</h3>
+    <h3>Response. 202 Accepted.</h3>
     <div class="response-block">
 <span class="status accepted">202 Accepted</span>
 {
@@ -657,21 +657,21 @@
     </div>
 
     <div class="callout warn">
-      <strong>Importante:</strong> o timeout do <em>backend</em> (2 min) é totalmente independente do timeout do <em>workflow</em> no Temporal (default 6h). Se a conexão HTTP cair antes dos 2min, o workflow ainda continua rodando — o cliente pode consultar o status a qualquer momento via polling.
+      <strong>Importante:</strong> o timeout do <em>backend</em> (2 min) é totalmente independente do timeout do <em>workflow</em> no Temporal (default 6h). Se a conexão HTTP cair antes dos 2min, o workflow ainda continua rodando. O cliente pode consultar o status a qualquer momento via polling.
     </div>
   </div>
 
   <!-- ============================================ -->
-  <h2><span class="num">6</span> Modo C — Callback (com <code>callback_url</code>)</h2>
+  <h2><span class="num">6</span> Modo C. Callback (com <code>callback_url</code>).</h2>
 
   <div class="scenario c">
     <div class="scenario-header">
-      <span class="scenario-title">Backend retorna 200 imediato, callback recebe o output quando pronto</span>
+      <span class="scenario-title">Backend retorna 200 imediato. Callback recebe a saída quando pronta.</span>
       <span class="scenario-status callback">200 OK (imediato)</span>
     </div>
 
     <div class="scenario-when">
-      <strong>Quando este modo:</strong> caller passou <code>?callback_url=https://meu-servico/webhook</code>. Ideal para orquestração assíncrona (o caller não precisa manter conexão aberta e nem fazer polling).
+      <strong>Quando este modo:</strong> caller passou <code>?callback_url=https://meu-servico/webhook</code>. Ideal para orquestração assíncrona. O caller não precisa manter conexão aberta e nem fazer polling.
     </div>
 
     <div class="seq">
@@ -685,7 +685,7 @@
         <span class="seq-num">2</span>
         <span class="actor backend">Backend</span>
         <span class="seq-arrow">→</span>
-        <span class="seq-desc"><span class="actor db">DB</span> &nbsp; INSERT <code>flow_executions</code> (com <code>callback_url</code> guardado na row) + snapshot</span>
+        <span class="seq-desc"><span class="actor db">DB</span> &nbsp; INSERT <code>flow_executions</code> (com <code>callback_url</code> guardado na linha) + snapshot.</span>
       </div>
       <div class="seq-event">
         <span class="seq-num">3</span>
@@ -709,17 +709,17 @@
         <span class="seq-num">6</span>
         <span class="actor workflow">Workflow</span>
         <span class="seq-arrow">→</span>
-        <span class="seq-desc"><span class="actor callback">Callback URL</span> &nbsp; FASE 4.5: activity POSTa no <code>callback_url</code> com o output. Retry policy: 5 tentativas com backoff exponencial.</span>
+        <span class="seq-desc"><span class="actor callback">Callback URL</span> &nbsp; FASE 4.5. Activity POSTa no <code>callback_url</code> com a saída. Retry policy: 5 tentativas com backoff exponencial.</span>
       </div>
       <div class="seq-event">
         <span class="seq-num">7</span>
         <span class="actor callback">Callback URL</span>
         <span class="seq-arrow">→</span>
-        <span class="seq-desc"><span class="actor workflow">Workflow</span> &nbsp; Retorna 2xx = entregue com sucesso. 4xx/5xx = re-tenta segundo policy.</span>
+        <span class="seq-desc"><span class="actor workflow">Workflow</span> &nbsp; Retorna 2xx = entregue com sucesso. 4xx/5xx = re-tenta segundo a policy.</span>
       </div>
     </div>
 
-    <h3>Response inicial — 200 OK</h3>
+    <h3>Response inicial. 200 OK.</h3>
     <div class="response-block">
 <span class="status ok">200 OK</span>
 {
@@ -731,7 +731,7 @@
 }
     </div>
 
-    <h3>Payload que o Backend POSTa no callback_url</h3>
+    <h3>Payload que o Backend POSTa no callback_url.</h3>
     <div class="response-block">
 <span class="comment">POST https://meu-servico/webhook</span>
 <span class="comment">Headers:</span>
@@ -755,11 +755,11 @@
     </div>
 
     <div class="callout tip">
-      <strong>Entrega garantida:</strong> Temporal executa o callback como uma <em>activity</em> com <code>RetryPolicy</code> (5 tentativas, backoff exponencial de 1s até 60s). Se após 5 falhas o receptor ainda estiver fora, a activity vira falha não-recuperável e o Backend registra em <code>flow_executions.callback_status = 'failed'</code>. O caller pode consultar via polling mesmo assim.
+      <strong>Entrega garantida:</strong> Temporal executa o callback como uma <em>activity</em> com <code>RetryPolicy</code> (5 tentativas, backoff exponencial de 1s até 60s). Se após 5 falhas o receptor ainda estiver fora, a activity vira falha não-recuperável. O Backend registra em <code>flow_executions.callback_status = 'failed'</code>. O caller pode consultar via polling mesmo assim.
     </div>
 
     <div class="callout info">
-      <strong>Dedup dupla:</strong> callback herda o padrão já existente na FASE 4.5 — deduplicação por <code>flowExecutionId</code> em Redis (TTL 24h) + hash SHA-256 do body (TTL 90s). Evita entrega dupla se o worker crashar entre o POST e a confirmação.
+      <strong>Dedup dupla:</strong> callback herda o padrão já existente na FASE 4.5. Deduplicação por <code>flowExecutionId</code> em Redis (TTL 24h) + hash SHA-256 do body (TTL 90s). Evita entrega dupla se o worker crashar entre o POST e a confirmação.
     </div>
   </div>
 
@@ -775,7 +775,7 @@
 
   <p>Usado pelos modos B (polling manual) e C (opcional, se o caller quer também checar status). Lê de <code>flow_executions</code> + <code>node_executions</code> para montar a resposta.</p>
 
-  <h3>Response — enquanto rodando (200 OK)</h3>
+  <h3>Response. Enquanto rodando (200 OK).</h3>
   <div class="response-block">
 <span class="status ok">200 OK</span>
 {
@@ -793,7 +793,7 @@
 }
   </div>
 
-  <h3>Response — completou (200 OK)</h3>
+  <h3>Response. Completou (200 OK).</h3>
   <div class="response-block">
 <span class="status ok">200 OK</span>
 {
@@ -807,7 +807,7 @@
 }
   </div>
 
-  <h3>Response — falhou (200 OK — retorna status, não HTTP error)</h3>
+  <h3>Response. Falhou (200 OK. Retorna status, não HTTP error).</h3>
   <div class="response-block">
 <span class="status ok">200 OK</span>
 {
@@ -822,7 +822,7 @@
 }
   </div>
 
-  <h3>Response — não existe (404)</h3>
+  <h3>Response. Não existe (404).</h3>
   <div class="response-block">
 <span class="status error">404 Not Found</span>
 { <span class="k">"error"</span>: <span class="s">"flow_execution_not_found"</span> }
@@ -839,37 +839,37 @@
       <tbody>
         <tr>
           <td><code>400</code></td>
-          <td>Body inválido, <code>flowId</code> ausente, <code>callback_url</code> mal formada (não é HTTPS ou não é URL válida)</td>
+          <td>Body inválido, <code>flowId</code> ausente, <code>callback_url</code> mal formada (não é HTTPS ou não é URL válida).</td>
           <td><code>{ error: "invalid_request", details: "..." }</code></td>
         </tr>
         <tr>
           <td><code>401</code></td>
-          <td>API-key ausente ou inválida</td>
+          <td>API-key ausente ou inválida.</td>
           <td><code>{ error: "unauthorized" }</code></td>
         </tr>
         <tr>
           <td><code>403</code></td>
-          <td>API-key não tem acesso ao <code>flowId</code>, ou workspace sem créditos</td>
+          <td>API-key não tem acesso ao <code>flowId</code>, ou workspace sem créditos.</td>
           <td><code>{ error: "forbidden", reason: "..." }</code></td>
         </tr>
         <tr>
           <td><code>404</code></td>
-          <td><code>flowId</code> não existe</td>
+          <td><code>flowId</code> não existe.</td>
           <td><code>{ error: "flow_not_found" }</code></td>
         </tr>
         <tr>
           <td><code>422</code></td>
-          <td>Flow tem config inválida detectada em <code>validateDag</code> (refs quebradas, ciclos irrecuperáveis)</td>
+          <td>Flow tem config inválida detectada em <code>validateDag</code> (refs quebradas, ciclos irrecuperáveis).</td>
           <td><code>{ error: "invalid_flow", details: [...] }</code></td>
         </tr>
         <tr>
           <td><code>429</code></td>
-          <td>Rate limit do workspace excedido</td>
+          <td>Rate limit do workspace excedido.</td>
           <td><code>{ error: "rate_limited", retryAfter: 60 }</code></td>
         </tr>
         <tr>
           <td><code>500</code></td>
-          <td>Erro no backend antes de conseguir enfileirar no Temporal</td>
+          <td>Erro no backend antes de conseguir enfileirar no Temporal.</td>
           <td><code>{ error: "internal_error" }</code></td>
         </tr>
       </tbody>
@@ -885,25 +885,25 @@
 
   <h3>Timeout do backend ≠ timeout do workflow</h3>
   <p>
-    O <code>handle.result({ timeout: '2m' })</code> é um timeout <strong>do lado do Backend</strong> (SDK do Temporal esperando pela conclusão). O workflow em si tem timeout próprio configurado no <code>StartWorkflowOptions.workflowExecutionTimeout</code>, tipicamente 6h. Se o backend faz timeout aos 2min, ele apenas <em>desiste de esperar</em> — o workflow continua com seu próprio timer.
+    O <code>handle.result({ timeout: '2m' })</code> é um timeout <strong>do lado do Backend</strong> (SDK do Temporal esperando pela conclusão). O workflow em si tem timeout próprio configurado no <code>StartWorkflowOptions.workflowExecutionTimeout</code>, tipicamente 6h. Se o backend faz timeout aos 2min, ele apenas <em>desiste de esperar</em>. O workflow continua com seu próprio timer.
   </p>
 
   <h3>Idempotência do POST</h3>
   <p>
-    <code>WorkflowId = flowExecutionId</code> + <code>WorkflowIdReusePolicy = REJECT_DUPLICATE</code> garantem que uma segunda chamada do backend com o mesmo <code>flowExecutionId</code> (crash + retry) não dispara uma segunda execução. Mas o backend gera novo <code>flowExecutionId</code> a cada request, então requests repetidos do caller são runs distintos — se quiser idempotência no nível do request, o caller deve enviar um <code>Idempotency-Key</code> no header (opcional, pode virar feature futura).
+    <code>WorkflowId = flowExecutionId</code> + <code>WorkflowIdReusePolicy = REJECT_DUPLICATE</code> garantem que uma segunda chamada do backend com o mesmo <code>flowExecutionId</code> (crash + retry) não dispara uma segunda execução. O backend gera novo <code>flowExecutionId</code> a cada request. Requests repetidos do caller são execuções distintas. Para idempotência no nível do request, o caller deve enviar um <code>Idempotency-Key</code> no header (opcional, pode virar feature futura).
   </p>
 
-  <h3>Callback URL — validação</h3>
+  <h3>Callback URL. Validação.</h3>
   <ul style="font-size:13px;color:#334155;padding-left:20px;line-height:1.7">
-    <li>Precisa ser HTTPS (rejeitado em modo dev com HTTP se <code>NODE_ENV=production</code>)</li>
-    <li>Não pode apontar pra IPs privados (SSRF prevention) — validação de DNS + faixas RFC1918/loopback</li>
-    <li>Não pode apontar pro próprio domínio da API (loop protection)</li>
-    <li>Tem timeout de 30s por tentativa; após 5 retries falhos, marca callback como <code>failed</code></li>
+    <li>Precisa ser HTTPS (rejeitado em modo dev com HTTP se <code>NODE_ENV=production</code>).</li>
+    <li>Não pode apontar para IPs privados (SSRF prevention). Validação de DNS + faixas RFC1918/loopback.</li>
+    <li>Não pode apontar para o próprio domínio da API (loop protection).</li>
+    <li>Tem timeout de 30s por tentativa. Após 5 retries falhos, marca callback como <code>failed</code>.</li>
   </ul>
 
   <h3>Ordem de garantia do callback</h3>
   <p>
-    O callback dispara <strong>depois</strong> de todos os passos de FASE 4 completarem (persist output, flow_logs, chat session, etc.). Se você recebe o webhook, todos os artefatos do run já estão no banco — é seguro consultar o polling endpoint no callback handler pra pegar detalhes extras (per-node breakdown, telemetria).
+    O callback dispara <strong>depois</strong> de todos os passos da FASE 4 completarem (persist output, flow_logs, chat session, etc.). Se você recebe o webhook, todos os artefatos da execução já estão no banco. É seguro consultar o polling endpoint no callback handler para pegar detalhes extras (per-node breakdown, telemetria).
   </p>
 
   <div style="text-align:center;margin-top:40px">

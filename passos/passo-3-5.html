@@ -181,24 +181,28 @@
     <h1>Passo 3.5 — Dispatch: Temporal vs Inline</h1>
   </div>
   <div class="page-sub">
-    Bloco em <code>flux.service.ts:3299-4438</code> (grande <code>if</code> em cascata por <code>node.type</code>). Decide se o nó vai executar via <code>processNodeViaTemporal()</code> (worker Temporal) ou via handler inline no próprio backend. A decisão é <strong>uma cascata de checks</strong> por tipo/provider, sem tabela de rotas.
+    Bloco em <code>flux.service.ts:3299-4438</code> (grande <code>if</code> em cascata por <code>node.type</code>). Decide se o nó vai executar via <code>processNodeViaTemporal()</code> (worker Temporal) ou via handler inline no próprio backend. A decisão é <strong>uma cascata de checks</strong> por tipo e provider, sem tabela de rotas.
   </div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
     <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
     <ul>
-      <li><strong>Escolhe entre 2 caminhos por nó:</strong> ou o nó vai pro <em>worker Temporal</em> (processo separado, isolado) ou fica <em>inline</em> no próprio backend. Não há tabela nem registry — a decisão é uma cascata de <code>if</code>s hardcoded por tipo (e por provider, no caso de integrações).</li>
-      <li><strong>Lista VIP hardcoded no worker:</strong> <code>isTemporalNode</code> tem 6 tipos fixos (<code>commandTextNode</code>, <code>scripting</code>, <code>apiCaller</code>, <code>mathFunction</code>, <code>counterNode</code>, <code>outputController</code>). Se o tipo bate, sobe pro Temporal e nada mais é discutido.</li>
-      <li><strong>Migração provider-a-provider pra integrações:</strong> <code>isWorkerRoutedIntegration</code> olha o <code>provider</code> do nó (stripe, slack, notion, zapier, hubspot só pull...) e roteia pro worker só se o provider estiver no Set <code>MIGRATED_INTEGRATION_PROVIDERS</code>. Permite migrar 1 provider por semana sem quebrar os outros.</li>
-      <li><strong>Todo mundo migrado passa pelo mesmo envelope:</strong> <code>processNodeViaTemporal</code> resolve arrays de referência, abre row em <code>node_executions</code>, starta o workflow com id determinístico, <em>bloqueia esperando resultado</em> (síncrono!), agrega charges via <code>sumChargesByExecution</code> e devolve o envelope pro loop. Sem paralelismo entre irmãos.</li>
-      <li><strong>~17 handlers legacy inline pra tudo que não foi:</strong> cascata gigante de <code>if (node.type === 'X') { await this.handlerX(...) }</code> em ~1000 linhas do <code>FluxService.apiV2</code> — desde <code>imageGenerator</code>, <code>webSearch</code>, <code>voiceBoxNode</code> até orquestradores estruturais (<code>arrayNode</code>, <code>conditionNode</code>, <code>nodesBox</code>, <code>fluxBox</code>) que dependem de state compartilhado com o loop.</li>
-      <li><strong>Saída:</strong> nó executado por um dos 2 caminhos (ou nem — tipos passivos tipo <code>comment</code>/<code>label</code>/<code>GLOBAL_STARTER</code> pulam); <code>myUpdatedNodes</code>, <code>myTexts</code> e <code>nodeSubstitutionSchema</code> refletem output — pipeline pronto pra 3.6 (<code>updateSchemaWithNodeOutput</code>).</li>
+      <li><strong>Escolhe entre 2 caminhos por nó.</strong> O nó vai para o <em>worker Temporal</em> (processo separado, isolado) ou fica <em>inline</em> no próprio backend. Não há tabela nem registry. A decisão é uma cascata de <code>if</code>s hardcoded por tipo (e por provider, no caso de integrações).</li>
+      <li><strong>Lista VIP hardcoded no worker.</strong> <code>isTemporalNode</code> tem 6 tipos fixos (<code>commandTextNode</code>, <code>scripting</code>, <code>apiCaller</code>, <code>mathFunction</code>, <code>counterNode</code>, <code>outputController</code>). Se o tipo bate, sobe para o Temporal e nada mais é discutido.</li>
+      <li><strong>Migração provider a provider para integrações.</strong> <code>isWorkerRoutedIntegration</code> olha o <code>provider</code> do nó (stripe, slack, notion, zapier, hubspot só pull...) e roteia para o worker só se o provider estiver no Set <code>MIGRATED_INTEGRATION_PROVIDERS</code>. Permite migrar 1 provider por semana sem quebrar os outros.</li>
+      <li><strong>Todo mundo migrado passa pelo mesmo envelope.</strong> <code>processNodeViaTemporal</code> resolve arrays de referência, abre linha em <code>node_executions</code>, dispara o workflow com id determinístico, <em>bloqueia esperando resultado</em> (síncrono!), agrega charges via <code>sumChargesByExecution</code> e devolve o envelope ao loop. Sem paralelismo entre irmãos.</li>
+      <li><strong>~17 handlers legacy inline para tudo que não foi.</strong> Cascata gigante de <code>if (node.type === 'X') { await this.handlerX(...) }</code> em ~1000 linhas de <code>FluxService.apiV2</code>. Desde <code>imageGenerator</code>, <code>webSearch</code>, <code>voiceBoxNode</code> até orquestradores estruturais (<code>arrayNode</code>, <code>conditionNode</code>, <code>nodesBox</code>, <code>fluxBox</code>) que dependem de state compartilhado com o loop.</li>
+      <li><strong>Saída.</strong> Nó executado por um dos 2 caminhos (ou nem: tipos passivos como <code>comment</code>, <code>label</code>, <code>GLOBAL_STARTER</code> pulam). <code>myUpdatedNodes</code>, <code>myTexts</code> e <code>nodeSubstitutionSchema</code> refletem a saída. Pipeline pronto para 3.6 (<code>updateSchemaWithNodeOutput</code>).</li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto:</strong> este é o <em>heart</em> da execução híbrida. Cada nó cai em uma das 3 rotas: (1) <strong>Temporal</strong> — worker isolado (blocking wait no backend); (2) <strong>Inline legacy</strong> — handler no próprio backend; (3) <strong>Sem handler</strong> — tipos passivos (comment, label, group, GLOBAL_STARTER). O critério de roteamento é <code>isTemporalNode(type) || isWorkerRoutedIntegration(processedNode)</code>. Tudo o mais cai em inline (memória <code>[[project_execution_architecture]]</code>).
+    <strong>Contexto.</strong> Este é o <em>coração</em> da execução híbrida. Cada nó cai em uma das 3 rotas.
+    <br>(1) <strong>Temporal</strong>: worker isolado (blocking wait no backend).
+    <br>(2) <strong>Inline legacy</strong>: handler no próprio backend.
+    <br>(3) <strong>Sem handler</strong>: tipos passivos (comment, label, group, GLOBAL_STARTER).
+    <br>O critério de roteamento é <code>isTemporalNode(type) || isWorkerRoutedIntegration(processedNode)</code>. Todo o resto cai em inline (memória <code>[[project_execution_architecture]]</code>).
   </div>
 
   <!-- Overview chain -->
@@ -216,7 +220,7 @@
       <a href="#fn-e" class="overview-chip"><span class="lbl">E</span>Handlers inline (dispatch fallback)</a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado: nó terminou de executar de um dos dois lados. <code>myUpdatedNodes</code>, <code>myTexts</code>, <code>nodeSubstitutionSchema</code> foram atualizados (pra ambos os paths — mas por caminhos diferentes). O loop cai em 3.6 <code>updateSchemaWithNodeOutput</code>.
+      Resultado. O nó terminou de executar de um dos dois lados. <code>myUpdatedNodes</code>, <code>myTexts</code> e <code>nodeSubstitutionSchema</code> foram atualizados (para ambos os paths, por caminhos diferentes). O loop cai em 3.6 <code>updateSchemaWithNodeOutput</code>.
     </div>
   </div>
 
@@ -236,10 +240,10 @@
         private isTemporalNode(type: string): boolean
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Whitelist hardcoded dos node types que <em>por padrão</em> vão pro worker Temporal. Não considera provider — o tipo já implica worker. É a rota "canônica" migrada.
+        <strong>Propósito.</strong> Whitelist hardcoded dos node types que <em>por padrão</em> vão para o worker Temporal. Não considera provider. O tipo já implica worker. É a rota canônica migrada.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> é a <em>lista VIP do worker</em>. Um array literal com 6 nomes: <code>commandTextNode</code>, <code>scripting</code>, <code>apiCaller</code>, <code>mathFunction</code>, <code>counterNode</code>, <code>outputController</code>. Se o tipo do nó tá nessa lista, ele vai pro Temporal. Fim. Sem tabela de config, sem env var, sem registro no banco — é código hardcoded que exige deploy pra mudar. Esses 6 são os "puros" — sem estado compartilhado com o loop, sem <code>objectCallerData</code>, sem <code>onMutateSchema</code>, sem dependência do scheduler. Foram os primeiros migrados justamente por causa disso. O <code>commandTextNode</code> (LLM) foi o primeiro-primeiro, porque justifica o overhead de start-workflow-wait-result com a duração natural de segundos que uma chamada de LLM tem. Se você adicionar um novo tipo pro worker, precisa editar <em>duas</em> listas: essa aqui (pra o backend saber que deve rotear) <strong>e</strong> o switch em <code>process-single-node.workflow.ts:78</code> (pra o worker saber como executar). Sincronizar duas listas é frágil — se você esquecer o worker, chega no default: <code>throw "Node type X not supported"</code>. Sem fallback, sem retry, sem retorno inline. Fail-hard. Todos os 6 tipos VIP acabam chamando <em>uma única</em> função no backend (<code>processNodeViaTemporal</code>) — o dispatch por tipo real acontece <strong>dentro do worker</strong>.
+        <strong>Em resumo.</strong> É a <em>lista VIP do worker</em>. Um array literal com 6 nomes: <code>commandTextNode</code>, <code>scripting</code>, <code>apiCaller</code>, <code>mathFunction</code>, <code>counterNode</code>, <code>outputController</code>. Se o tipo do nó está nessa lista, vai para o Temporal. Fim. Sem tabela de config, sem env var, sem registro no banco. É código hardcoded que exige deploy para mudar. Esses 6 são os "puros". Sem estado compartilhado com o loop, sem <code>objectCallerData</code>, sem <code>onMutateSchema</code>, sem dependência do scheduler. Foram os primeiros migrados por causa disso. O <code>commandTextNode</code> (LLM) foi o primeiro-primeiro. Justifica o overhead de start-workflow-wait-result com a duração natural de segundos que uma chamada de LLM tem. Se um novo tipo entra no worker, é preciso editar <em>duas</em> listas. Esta aqui (para o backend saber que deve rotear) <strong>e</strong> o switch em <code>process-single-node.workflow.ts:78</code> (para o worker saber como executar). Sincronizar duas listas é frágil. Se esquecer o worker, chega no default: <code>throw "Node type X not supported"</code>. Sem fallback, sem retry, sem retorno inline. Fail-hard. Todos os 6 tipos VIP acabam chamando <em>uma única</em> função no backend (<code>processNodeViaTemporal</code>). O dispatch por tipo real acontece <strong>dentro do worker</strong>.
       </div>
 
       <div class="fn-body-cols">
@@ -278,19 +282,19 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Ordem histórica de migração</div>
-            Esses foram os primeiros migrados — os "puros" (sem estado compartilhado com o backend). <code>commandTextNode</code> foi o primeiro (LLM streaming) porque justifica o custo/latência do Temporal com a duração natural das chamadas de LLM (segundos).
-            <br><br>Tipos que ainda dependem de <code>objectCallerData</code>/<code>onMutateSchema</code> ficaram legacy (nodesBox, arrayNode, condition, fluxBox).
+            Esses foram os primeiros migrados. Os "puros" (sem estado compartilhado com o backend). <code>commandTextNode</code> foi o primeiro (LLM streaming) porque justifica o custo e a latência do Temporal com a duração natural das chamadas de LLM (segundos).
+            <br><br>Tipos que ainda dependem de <code>objectCallerData</code> ou <code>onMutateSchema</code> ficaram legacy (nodesBox, arrayNode, condition, fluxBox).
           </div>
 
           <div class="aside warn">
             <div class="aside-title">⚠️ Lista hardcoded, sem tabela</div>
-            Não há registry no banco nem config file. Adicionar um novo tipo pro worker exige editar este array E o switch dentro de <code>process-single-node.workflow.ts:78</code> (worker) — sincronizar duas listas.
-            <br><br>Se o worker não tem handler pro tipo, chega no default: <code>throw "Node type X not supported"</code>. Fail-hard.
+            Não há registry no banco nem config file. Adicionar um novo tipo para o worker exige editar este array E o switch dentro de <code>process-single-node.workflow.ts:78</code> (worker). Sincronizar duas listas.
+            <br><br>Se o worker não tem handler para o tipo, chega no default: <code>throw "Node type X not supported"</code>. Fail-hard.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 processNodeViaTemporal chama uma workflow única</div>
-            Todos os 6 types chamam <code>processSingleNode</code> workflow no worker. É dentro do workflow que o switch por tipo acontece (worker-side). O backend não distingue — só faz start(handle) + await.
+            Todos os 6 tipos chamam <code>processSingleNode</code> workflow no worker. É dentro do workflow que o switch por tipo acontece (worker-side). O backend não distingue. Só faz start(handle) e await.
           </div>
         </div>
       </div>
@@ -313,10 +317,10 @@
         export function isWorkerRoutedIntegration(node: ThirdPartyIntegrationNodeLike | undefined): boolean
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Roteamento <em>dependente de provider</em>. Um mesmo <code>type='thirdPartyIntegration'</code> pode ir pro worker (se provider ∈ whitelist) ou ficar inline (se não). Permite migração gradual, provider por provider, sem quebrar quem ainda não migrou.
+        <strong>Propósito.</strong> Roteamento <em>dependente de provider</em>. Um mesmo <code>type='thirdPartyIntegration'</code> pode ir para o worker (se provider ∈ whitelist) ou ficar inline (se não). Permite migração gradual, provider por provider, sem quebrar quem ainda não migrou.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> é a mesma ideia da lista VIP (fn A), <em>mas por provider dentro de um tipo</em>. Todo <code>thirdPartyIntegration</code> é o mesmo tipo pro backend, mas o <em>provider</em> (stripe, slack, notion, salesforce, klaviyo, shopify...) diz o que ele faz de fato. Migrar todos os providers de uma vez pro worker seria arriscado — cada um tem SDK próprio, autenticação própria, quirks próprios. A solução: um <code>Set&lt;string&gt;</code> com os providers migrados (<code>MIGRATED_INTEGRATION_PROVIDERS</code> — hoje tem stripe, wordpress, slack, notion, zapier, hubspot só pra pull). Cada semana pode entrar um novo — sem quebrar os outros. Se o provider tá no Set, roteia pro worker; se não, cai pro handler inline no backend. Um detalhe fino: recebe <code>processedNode</code> (não <code>node</code>), porque o provider <em>poderia</em> vir via <code>{{...}}</code> de outro nó (raro mas possível) — sem substitution prévia, provider dinâmico não bateria com o Set. Também tem granularidade máxima: <em>hubspot só pull</em> — o pull tá no worker, mas <em>push/update</em> ainda ficam inline. Essa granularidade fina (provider + operation) vive dentro do <em>switch do worker</em>, não expressa por essa função. Bom template pra <code>isTemporalNode</code> — que ainda é hardcoded no service.
+        <strong>Em resumo.</strong> É a mesma ideia da lista VIP (fn A), <em>mas por provider dentro de um tipo</em>. Todo <code>thirdPartyIntegration</code> é o mesmo tipo para o backend. O <em>provider</em> (stripe, slack, notion, salesforce, klaviyo, shopify...) diz o que ele faz de fato. Migrar todos os providers de uma vez para o worker seria arriscado. Cada um tem SDK próprio, autenticação própria, quirks próprios. A solução. Um <code>Set&lt;string&gt;</code> com os providers migrados (<code>MIGRATED_INTEGRATION_PROVIDERS</code>). Hoje tem stripe, wordpress, slack, notion, zapier, hubspot só para pull. Cada semana pode entrar um novo. Sem quebrar os outros. Se o provider está no Set, roteia para o worker. Se não, cai para o handler inline no backend. Um detalhe fino. Recebe <code>processedNode</code> (não <code>node</code>). O provider <em>poderia</em> vir via <code>{{...}}</code> de outro nó (raro mas possível). Sem substitution prévia, provider dinâmico não bateria com o Set. Também tem granularidade máxima. <em>hubspot só pull</em>. O pull está no worker, mas <em>push e update</em> ainda ficam inline. Essa granularidade fina (provider + operation) vive dentro do <em>switch do worker</em>. Não é expressa por esta função. Bom template para <code>isTemporalNode</code>, que ainda é hardcoded no serviço.
       </div>
 
       <div class="fn-body-cols">
@@ -346,7 +350,7 @@
               Extrai provider do node de duas fontes possíveis:
               <br>• <code>type === 'thirdPartyIntegration'</code>: lê <code>node.data.provider</code> diretamente
               <br>• Tipos dedicados (<code>hubSpotCRM</code>, <code>slackChannel</code>, etc.): mapeia via <code>DEDICATED_INTEGRATION_PROVIDER_BY_NODE_TYPE</code>
-              <br><br>Retorna string (provider name) ou empty.
+              <br><br>Retorna string (nome do provider) ou vazio.
             </div>
             <div class="box-file">shared/integration/integration-executable-node.ts:25-37</div>
           </div>
@@ -395,19 +399,19 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Por que dispatch por provider é bom</div>
-            Deixa migrar 1 provider por vez sem quebrar os outros. Ex: enquanto Salesforce ainda tá inline, Slack já pode ir pro worker. Se algo quebrar, é isolado por provider.
-            <br><br>Mesmo tipo (<code>thirdPartyIntegration</code>) chega no worker com contract genérico — o worker resolve o provider internamente.
+            Deixa migrar 1 provider por vez sem quebrar os outros. Ex.: enquanto Salesforce ainda está inline, Slack já pode ir para o worker. Se algo quebrar, é isolado por provider.
+            <br><br>Mesmo tipo (<code>thirdPartyIntegration</code>) chega no worker com contrato genérico. O worker resolve o provider internamente.
           </div>
 
           <div class="aside warn">
             <div class="aside-title">⚠️ Recebe processedNode, não node</div>
             <code>isWorkerRoutedIntegration(processedNode)</code>. Isso é importante porque um provider dinâmico via <code>{{...}}</code> só resolve depois do passo 3.3. Sem substitution, provider viria como string com placeholder e não bateria com o Set.
-            <br><br>Na prática, provider dinâmico é raro — mas o pattern é defensivo.
+            <br><br>Na prática, provider dinâmico é raro. O padrão é defensivo.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 hubspot só pull</div>
-            No worker, o handler de hubspot tem só <code>pull</code> — <code>push</code>/<code>update</code> ainda são inline. É a granularidade máxima do sistema: por (provider, operation). Não expressa nesta função — vive no switch do worker.
+            No worker, o handler de hubspot tem só <code>pull</code>. <code>push</code> e <code>update</code> ainda são inline. É a granularidade máxima do sistema: por (provider, operation). Não expressa nesta função. Vive no switch do worker.
           </div>
         </div>
       </div>
@@ -430,10 +434,10 @@
         export function isIntegrationExecutableNodeType(nodeType): nodeType is IntegrationExecutableProviderNodeType
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Type guard TS. Retorna true pra <code>thirdPartyIntegration</code> ou <code>mcpNode</code> — tipos que <em>têm</em> a semântica de "chama integração externa" mas cuja decisão de worker vs inline depende de <code>isWorkerRoutedIntegration</code>. É usado <em>depois</em> do dispatch pra roteear pro handler inline correto quando o provider não migrou.
+        <strong>Propósito.</strong> Type guard TS. Retorna true para <code>thirdPartyIntegration</code> ou <code>mcpNode</code>. São tipos que <em>têm</em> a semântica de "chama integração externa", mas cuja decisão de worker versus inline depende de <code>isWorkerRoutedIntegration</code>. É usado <em>depois</em> do dispatch para rotear ao handler inline correto quando o provider não migrou.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> pensa nas 3 funções assim: <code>isTemporalNode</code> pergunta "esse <strong>tipo</strong> está VIP?", <code>isWorkerRoutedIntegration</code> pergunta "esse tipo <strong>+ provider</strong> está VIP?", e essa aqui pergunta só "esse é um tipo <strong>que fala com integração externa</strong>, independente de estar migrado ou não?" — retorna true pra <code>thirdPartyIntegration</code> ou <code>mcpNode</code>. É usada logo <em>depois</em> do <code>isWorkerRoutedIntegration</code>, como um <em>else if</em>: "ok, esse é um nó de integração <strong>mas</strong> o provider não tá migrado — pra qual handler inline eu chamo?". Aí escolhe entre <code>thirdPartyIntegrationNode</code> ou <code>mcpNode</code> (linhas 3456, 3468). Ela é <em>secundária</em>, complementar — o principal roteamento é o dupla worker/inline. Ela existe pra dar a granularidade do fallback correto: sem ela, o dispatcher inline não saberia qual handler chamar entre os dois. Também é o <em>único</em> desses 3 checks com syntax de type guard TS (<code>: nodeType is IntegrationExecutableProviderNodeType</code>) — depois do check, o TS narrow o tipo, permitindo o destructuring sem cast. Puro açúcar de compile-time, mas melhora legibilidade.
+        <strong>Em resumo.</strong> Pense nas 3 funções assim. <code>isTemporalNode</code> pergunta "este <strong>tipo</strong> está VIP?". <code>isWorkerRoutedIntegration</code> pergunta "este tipo <strong>+ provider</strong> está VIP?". E esta aqui pergunta só "este é um tipo <strong>que fala com integração externa</strong>, independente de estar migrado ou não?". Retorna true para <code>thirdPartyIntegration</code> ou <code>mcpNode</code>. É usada logo <em>depois</em> do <code>isWorkerRoutedIntegration</code>, como um <em>else if</em>. "Ok, este é um nó de integração <strong>mas</strong> o provider não está migrado. Para qual handler inline eu chamo?" Escolhe entre <code>thirdPartyIntegrationNode</code> ou <code>mcpNode</code> (linhas 3456, 3468). É <em>secundária</em>, complementar. O principal roteamento é o dupla worker versus inline. Existe para dar a granularidade do fallback correto. Sem ela, o dispatcher inline não saberia qual handler chamar entre os dois. Também é o <em>único</em> desses 3 checks com sintaxe de type guard TS (<code>: nodeType is IntegrationExecutableProviderNodeType</code>). Depois do check, o TS faz narrow do tipo, permitindo o destructuring sem cast. Puro açúcar de compile-time. Melhora legibilidade.
       </div>
 
       <div class="fn-body-cols">
@@ -464,7 +468,7 @@
   ...
 }
               </div>
-              É um "second layer" — combina os dois checks em cascata pra decidir o método específico.
+              É um "second layer". Combina os dois checks em cascata para decidir o método específico.
             </div>
             <div class="box-file">flux.service.ts:3453-3491</div>
           </div>
@@ -473,7 +477,7 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Type guard TypeScript</div>
-            A syntax <code>: nodeType is IntegrationExecutableProviderNodeType</code> é type narrow — depois do check, o TS sabe que nodeType é um dos tipos específicos, permitindo destructuring seguro. Ferramenta puramente de compile-time.
+            A sintaxe <code>: nodeType is IntegrationExecutableProviderNodeType</code> é type narrow. Depois do check, o TS sabe que nodeType é um dos tipos específicos. Permite destructuring seguro. Ferramenta puramente de compile-time.
           </div>
 
           <div class="aside">
@@ -488,7 +492,7 @@
 
           <div class="aside helper">
             <div class="aside-title">🔧 Ordem no dispatch importa</div>
-            No código: <code>if (isWorkerRouted) → temporal · else if (isIntegrationExecutable) → inline específico · else → outros ifs</code>. Se invertesse, um provider migrado do tipo <code>thirdPartyIntegration</code> cairia no inline errado.
+            No código: <code>if (isWorkerRouted) → temporal · else if (isIntegrationExecutable) → inline específico · else → outros ifs</code>. Invertendo, um provider migrado do tipo <code>thirdPartyIntegration</code> cairia no inline errado.
           </div>
         </div>
       </div>
@@ -511,10 +515,10 @@
         private async processNodeViaTemporal({ node, processedNode, userId, sessionId, runId, flowId, flowVersionHistoryId, myUpdatedNodes, myTexts, nodeSubstitutionSchema, edges, onMutateSchema, objectCallerData, onUpdateTokens, ... })
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Envelope único de todas as chamadas ao worker. Faz o <code>INSERT node_executions</code> com input resolvido (T2), starta o workflow com workflowId determinístico (T3), <em>bloqueia</em> esperando resultado (T4), agrega charges via <code>sumChargesByExecution</code> (T6), atualiza <code>myUpdatedNodes/myTexts/schema</code>. Retorna esse envelope pro loop.
+        <strong>Propósito.</strong> Envelope único de todas as chamadas ao worker. Faz o <code>INSERT node_executions</code> com entrada resolvida (T2), dispara o workflow com workflowId determinístico (T3), <em>bloqueia</em> esperando resultado (T4), agrega charges via <code>sumChargesByExecution</code> (T6), atualiza <code>myUpdatedNodes</code>, <code>myTexts</code> e schema. Retorna esse envelope ao loop.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> é o <em>escritório central</em> que despacha trabalho pro worker Temporal. Não importa se é <code>scripting</code>, <code>commandTextNode</code>, <code>apiCaller</code> ou qualquer outro tipo VIP — todos passam por esse mesmo envelope. Ele faz o pipeline: resolve arrays de referência (<code>promptData</code>/<code>contentData</code>) numa passada extra pra garantir que o worker receba input 100% resolvido; abre uma row em <code>node_executions</code> com <code>execId=uuid()</code> e <code>workflowId</code> determinístico (<code>node-process-${nodeId}-${execId}</code> — mesmo id em retry = idempotente); starta o workflow no Temporal server; e aí vem o <em>ponto sensível arquitetural</em>: <strong>backend fica travado esperando</strong> via <code>handle.result()</code>. É <em>síncrono</em>. Não tem paralelismo entre irmãos, mesmo que o scheduler tenha 3 nós prontos ao mesmo tempo. O worker escala verticalmente handlers (pode ter várias máquinas rodando o mesmo tipo em paralelo, mas o backend orquestra 1 nó por vez). Depois do worker retornar, faz SELECT em <code>node_executions.outputData</code> (se veio como <code>{__claimRef}</code>, resolve GET no S3), agrega <code>token_transactions</code> gravados pelo worker via <code>sumChargesByExecution</code>, e retorna um envelope <code>{ myUpdatedNodes, myTexts, nodeSubstitutionSchema }</code> pra o loop reatribuir. Se algo der throw no worker, sobe direto pro try do loop e vira erro fatal do nó (passo 3.8). Não tem fallback pra inline — worker offline ou bug no handler = run inteiro bloqueado.
+        <strong>Em resumo.</strong> É o <em>escritório central</em> que despacha trabalho para o worker Temporal. Não importa se é <code>scripting</code>, <code>commandTextNode</code>, <code>apiCaller</code> ou qualquer outro tipo VIP. Todos passam por esse mesmo envelope. O pipeline. Resolve arrays de referência (<code>promptData</code>, <code>contentData</code>) numa passada extra para garantir que o worker receba entrada 100% resolvida. Abre uma linha em <code>node_executions</code> com <code>execId=uuid()</code> e <code>workflowId</code> determinístico (<code>node-process-${nodeId}-${execId}</code>. Mesmo id em retry = idempotente). Dispara o workflow no Temporal server. Aí vem o <em>ponto sensível arquitetural</em>. <strong>Backend fica travado esperando</strong> via <code>handle.result()</code>. É <em>síncrono</em>. Não tem paralelismo entre irmãos, mesmo que o scheduler tenha 3 nós prontos ao mesmo tempo. O worker escala verticalmente handlers (pode ter várias máquinas rodando o mesmo tipo em paralelo, mas o backend orquestra 1 nó por vez). Depois do worker retornar, faz SELECT em <code>node_executions.outputData</code>. Se veio como <code>{__claimRef}</code>, resolve GET no S3. Agrega <code>token_transactions</code> gravados pelo worker via <code>sumChargesByExecution</code>. Retorna um envelope <code>{ myUpdatedNodes, myTexts, nodeSubstitutionSchema }</code> para o loop reatribuir. Se algo der throw no worker, sobe direto para o try do loop e vira erro fatal do nó (passo 3.8). Não tem fallback para inline. Worker offline ou bug no handler equivale a execução inteira bloqueada.
       </div>
 
       <div class="fn-body-cols">
@@ -522,7 +526,7 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">D1</span> Preparação — resolve edge fields</div>
             <div class="box-desc">
-              Resolve arrays de referência de edges (<code>promptData</code>, <code>contentData</code>, <code>textData</code>) via <code>resolveTextDataFromSchema</code> — <em>já</em> substituindo referências antes do handoff pro worker. Worker recebe input completamente resolvido.
+              Resolve arrays de referência de edges (<code>promptData</code>, <code>contentData</code>, <code>textData</code>) via <code>resolveTextDataFromSchema</code>. <em>Já</em> substitui referências antes do handoff para o worker. O worker recebe entrada completamente resolvida.
             </div>
             <div class="box-file">flux.service.ts:639-680</div>
           </div>
@@ -531,8 +535,8 @@
           <div class="box db">
             <div class="box-title"><span class="badge step">D2</span> createNodeExecution (INSERT node_executions)</div>
             <div class="box-desc">
-              Cria row com <code>execId = uuid()</code>, <code>metadata: { workflowId: buildNodeWorkflowId(nodeId, execId), runKind, runType, runId }</code>. Input passa por <code>serializeWithClaimCheck</code> — &gt;256KB vai pra S3.
-              <br><br><code>buildNodeWorkflowId</code>: <code>node-process-${nodeId}-${execId}</code> (temporal/workflow-ids.ts:1-2). Determinístico pra idempotência de retries.
+              Cria linha com <code>execId = uuid()</code>, <code>metadata: { workflowId: buildNodeWorkflowId(nodeId, execId), runKind, runType, runId }</code>. A entrada passa por <code>serializeWithClaimCheck</code>. &gt;256KB vai para S3.
+              <br><br><code>buildNodeWorkflowId</code>: <code>node-process-${nodeId}-${execId}</code> (temporal/workflow-ids.ts:1-2). Determinístico para idempotência de retries.
             </div>
           </div>
           <div class="arrow">↓</div>
@@ -540,7 +544,7 @@
           <div class="box worker">
             <div class="box-title"><span class="badge step">D3</span> temporalService.client.start('processSingleNode', ...)</div>
             <div class="box-desc">
-              <code>const handle = await client.start('processSingleNode', { args: [...], workflowId })</code>. Enfileira workflow no Temporal server. Se workflowId já existe (retry), Temporal reusa — não duplica.
+              <code>const handle = await client.start('processSingleNode', { args: [...], workflowId })</code>. Enfileira workflow no Temporal server. Se workflowId já existe (retry), o Temporal reusa. Não duplica.
             </div>
           </div>
           <div class="arrow">↓</div>
@@ -548,7 +552,7 @@
           <div class="box backend" style="background:#FEF3C7;border-left-color:#F59E0B">
             <div class="box-title"><span class="badge step">D4</span> ⏳ BLOCKING WAIT — await handle.result()</div>
             <div class="box-desc">
-              Backend fica <strong>travado</strong> até o worker terminar. Sem paralelismo entre irmãos — mesmo se 3 nós estivessem prontos ao mesmo tempo, o loop processa 1 por vez.
+              Backend fica <strong>travado</strong> até o worker terminar. Sem paralelismo entre irmãos. Mesmo se 3 nós estivessem prontos ao mesmo tempo, o loop processa 1 por vez.
               <br><br>Timeout do workflow herda da config Temporal (default varia por deploy).
             </div>
           </div>
@@ -557,7 +561,7 @@
           <div class="box db">
             <div class="box-title"><span class="badge step">D5</span> SELECT outputData FROM node_executions</div>
             <div class="box-desc">
-              Após workflow terminar, backend faz SELECT de <code>node_executions.outputData</code>. Se veio como <code>{__claimRef}</code>, resolve GET no S3 + <code>JSON.parse</code>.
+              Depois do workflow terminar, o backend faz SELECT de <code>node_executions.outputData</code>. Se veio como <code>{__claimRef}</code>, resolve GET no S3 e <code>JSON.parse</code>.
             </div>
           </div>
           <div class="arrow">↓</div>
@@ -565,7 +569,7 @@
           <div class="box db">
             <div class="box-title"><span class="badge step">D6</span> sumChargesByExecution(execId, nodeId)</div>
             <div class="box-desc">
-              Agrega <code>token_transactions</code> gravados pelo worker via HTTP <code>/worker/charge-tokens</code> (W7). Retorna <code>{ tokens, cost }</code> que somam em <code>totalTokensUsed</code>/<code>totalCost</code>.
+              Agrega <code>token_transactions</code> gravados pelo worker via HTTP <code>/worker/charge-tokens</code> (W7). Retorna <code>{ tokens, cost }</code>, que somam em <code>totalTokensUsed</code> e <code>totalCost</code>.
             </div>
             <div class="box-file">tokenTransactionService.sumChargesByExecution</div>
           </div>
@@ -574,7 +578,7 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">D7</span> Retorna envelope</div>
             <div class="box-desc">
-              <code>return { myUpdatedNodes, myTexts, nodeSubstitutionSchema }</code>. Loop reatribui essas variáveis (linha 3336-3338 etc.). Notavelmente, <code>myUpdatedNodes</code> é um <em>novo array</em>, não mutação.
+              <code>return { myUpdatedNodes, myTexts, nodeSubstitutionSchema }</code>. O loop reatribui essas variáveis (linhas 3336-3338 etc.). <code>myUpdatedNodes</code> é um <em>novo array</em>, não mutação.
             </div>
           </div>
         </div>
@@ -582,24 +586,24 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Blocking wait = síncrono</div>
-            Cada nó Temporal custa ~150-500ms de overhead (start + wait) além do próprio trabalho. Mesmo agentes puramente Temporal-eligible perdem paralelismo — o worker <em>poderia</em> fazer batch, mas o backend orquestra 1 por vez.
+            Cada nó Temporal custa ~150-500ms de overhead (start + wait) além do próprio trabalho. Mesmo agentes puramente Temporal-eligible perdem paralelismo. O worker <em>poderia</em> fazer batch, mas o backend orquestra 1 por vez.
             <br><br>Nesse modelo, worker é <em>escala vertical de handlers</em>, não paralelismo horizontal.
           </div>
 
           <div class="aside warn">
             <div class="aside-title">⚠️ Erros do worker propagam como throw</div>
-            Se <code>handle.result()</code> lançar (workflow falhou), o throw sobe pro try do loop (3.8 — tratamento de erro por nó) que marca <code>errorMessage</code>/<code>errorStatusCode</code> no node.data e potencialmente <code>stoppedByNodeFailure=true</code>.
-            <br><br>Path Temporal <em>não</em> tem fallback pra inline — se worker está com bug, o run inteiro fica bloqueado.
+            Se <code>handle.result()</code> lançar (workflow falhou), o throw sobe para o try do loop (3.8, tratamento de erro por nó). Marca <code>errorMessage</code> e <code>errorStatusCode</code> em node.data e potencialmente <code>stoppedByNodeFailure=true</code>.
+            <br><br>Path Temporal <em>não</em> tem fallback para inline. Se o worker está com bug, a execução inteira fica bloqueada.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 processNodeViaTemporal é chamado múltiplas vezes</div>
-            No dispatch, cada tipo Temporal (scripting, commandTextNode, apiCaller, mathFunction, counter, outputController) chama <code>processNodeViaTemporal</code> com o mesmo shape de args. É o único hook — o worker é que faz o switch por tipo internamente (<code>processSingleNode.workflow.ts:78</code>).
+            No dispatch, cada tipo Temporal (scripting, commandTextNode, apiCaller, mathFunction, counter, outputController) chama <code>processNodeViaTemporal</code> com o mesmo shape de args. É o único hook. O worker é que faz o switch por tipo internamente (<code>processSingleNode.workflow.ts:78</code>).
           </div>
 
           <div class="aside">
             <div class="aside-title">📎 objectCallerData e onMutateSchema no path Temporal</div>
-            São passados como args, mas <em>apenas os valores atuais</em>. O worker não pode mutar de volta — quando retorna, o backend confia no <code>result.nodeSubstitutionSchema</code> (worker atualiza baseado nas suas próprias regras). O padrão de closure mutation do path inline não existe aqui.
+            São passados como args, mas <em>apenas os valores atuais</em>. O worker não pode mutar de volta. Quando retorna, o backend confia no <code>result.nodeSubstitutionSchema</code> (worker atualiza baseado nas próprias regras). O padrão de closure mutation do path inline não existe aqui.
           </div>
         </div>
       </div>
@@ -622,10 +626,13 @@
         Cascata de ~17 if (node.type === '...') { await this.someHandler({...}) }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Path <em>legacy</em> — nós que ainda não foram migrados pro worker rodam direto no backend. Cada tipo tem seu handler dedicado no próprio <code>FluxService</code> (métodos privados/públicos que fazem SQL, chamam APIs externas, gravam <code>flows_nodes.data</code>). Padrão que causa problema de perf de FE em agentes grandes.
+        <strong>Propósito.</strong> Path <em>legacy</em>. Nós que ainda não foram migrados para o worker rodam direto no backend. Cada tipo tem seu handler dedicado no próprio <code>FluxService</code> (métodos privados ou públicos que fazem SQL, chamam APIs externas, gravam <code>flows_nodes.data</code>). Padrão que causa problema de perf de FE em agentes grandes.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> é o <em>armário do "ainda não migrei"</em>. Se o nó não é VIP nem worker-routed, cai numa cascata gigante de <code>if (node.type === 'X') { await this.handlerX(...) }</code> que ocupa mais de 1000 linhas dentro de <code>FluxService.apiV2</code>. São ~17 branches: <code>voiceBoxNode</code>, <code>imageGenerator</code>, <code>pullData</code>/<code>pushData</code> (Google Sheets), <code>webSearch</code>/<code>webCrawling</code>, <code>conditionNode</code>, <code>nodesBox</code>, <code>arrayNode</code> (loop!), <code>fluxBox</code>/<code>libraryNode</code> (sub-flows), <code>reportBuilder</code>, <code>audioReaderNode</code>, <code>commandContentNode</code>, e mais. Cada um roda inline no processo do backend — faz chamada à API externa (ElevenLabs, Ideogram, FAL, SerpAPI...), grava <code>flows_nodes.data</code> com <code>previewResponses</code>/<code>contentData</code>/<code>text</code> gordos. Aí <code>recordInApiNodeError</code> fecha a row de <code>node_executions</code> aberta em 3.4-D. Tem 2 grupos: (1) <em>leaf handlers</em> — fazem trabalho simples e podem migrar pro worker em algum momento (imageGenerator, webSearch, etc.); (2) <em>orquestradores estruturais</em> — <code>arrayNode</code>, <code>conditionNode</code>, <code>nodesBox</code>, <code>fluxBox</code>, <code>libraryNode</code> — dependem de state compartilhado com o loop principal (<code>schedState</code>, <code>objectCallerData</code>, <code>runLogCollector</code>, closures como <code>onMutateSchema</code>). Esses são o <em>boss final</em> da migração: exigem refactor arquitetural do próprio orquestrador, não portação de handler. Também tem <em>tipos passivos</em> que nem caem em nenhum <code>if</code>: <code>varInputNode</code>, <code>GLOBAL_STARTER</code>, <code>comment</code>, <code>label</code>, <code>group</code> — servem só como fonte de dado ou visual, sem execução ativa.
+        <strong>Em resumo.</strong> É o <em>armário do "ainda não migrei"</em>. Se o nó não é VIP nem worker-routed, cai numa cascata gigante de <code>if (node.type === 'X') { await this.handlerX(...) }</code> que ocupa mais de 1000 linhas dentro de <code>FluxService.apiV2</code>. São ~17 branches: <code>voiceBoxNode</code>, <code>imageGenerator</code>, <code>pullData</code> e <code>pushData</code> (Google Sheets), <code>webSearch</code> e <code>webCrawling</code>, <code>conditionNode</code>, <code>nodesBox</code>, <code>arrayNode</code> (loop), <code>fluxBox</code> e <code>libraryNode</code> (sub-flows), <code>reportBuilder</code>, <code>audioReaderNode</code>, <code>commandContentNode</code>, e mais. Cada um roda inline no processo do backend. Chama API externa (ElevenLabs, Ideogram, FAL, SerpAPI...) e grava <code>flows_nodes.data</code> com <code>previewResponses</code>, <code>contentData</code> e <code>text</code> gordos. Depois <code>recordInApiNodeError</code> fecha a linha de <code>node_executions</code> aberta em 3.4-D. Existem 2 grupos.
+        <br>(1) <em>leaf handlers</em>: fazem trabalho simples e podem migrar para o worker em algum momento (imageGenerator, webSearch, etc.).
+        <br>(2) <em>Orquestradores estruturais</em>: <code>arrayNode</code>, <code>conditionNode</code>, <code>nodesBox</code>, <code>fluxBox</code>, <code>libraryNode</code>. Dependem de state compartilhado com o loop principal (<code>schedState</code>, <code>objectCallerData</code>, <code>runLogCollector</code>, closures como <code>onMutateSchema</code>). Esses são o <em>boss final</em> da migração. Exigem refactor arquitetural do próprio orquestrador, não portação de handler.
+        <br>Também há <em>tipos passivos</em> que nem caem em nenhum <code>if</code>: <code>varInputNode</code>, <code>GLOBAL_STARTER</code>, <code>comment</code>, <code>label</code>, <code>group</code>. Servem só como fonte de dado ou visual, sem execução ativa.
       </div>
 
       <div class="fn-body-cols">
@@ -635,16 +642,16 @@
             <div class="box-desc">
               <table class="field-table">
                 <tr><th>Type</th><th>Linha</th><th>O que faz</th></tr>
-                <tr><td>voiceBoxNode</td><td>3364</td><td>TTS (ElevenLabs) → grava mp3 em S3</td></tr>
+                <tr><td>voiceBoxNode</td><td>3364</td><td>TTS (ElevenLabs). Grava mp3 em S3.</td></tr>
                 <tr><td>pullData / pushData</td><td>3397 / 3415</td><td>Google Sheets integration</td></tr>
-                <tr><td>thirdPartyIntegration (não migrado)</td><td>3453</td><td>Adapter genérico pra provider inline</td></tr>
+                <tr><td>thirdPartyIntegration (não migrado)</td><td>3453</td><td>Adapter genérico para provider inline</td></tr>
                 <tr><td>mcpNode</td><td>3453+</td><td>MCP server call (não migrado ainda)</td></tr>
                 <tr><td>conditionNode</td><td>3540</td><td>Avalia condição, chama completeCondition</td></tr>
                 <tr><td>nodesBox</td><td>3575</td><td>Object caller (muta objectCallerData)</td></tr>
                 <tr><td>commandContentNode</td><td>3651</td><td>Content generation com pipeline específico</td></tr>
                 <tr><td>webSearch / webCrawling</td><td>3701 / 3719</td><td>SerpAPI / Firecrawl</td></tr>
-                <tr><td>arrayNode</td><td>3738 (grande)</td><td>Loop iteration — reentra no scheduler internamente</td></tr>
-                <tr><td>fluxBox / libraryNode</td><td>4350 / 4394</td><td>Sub-flow — chama apiV2 recursivo</td></tr>
+                <tr><td>arrayNode</td><td>3738 (grande)</td><td>Loop iteration. Reentra no scheduler internamente.</td></tr>
+                <tr><td>fluxBox / libraryNode</td><td>4350 / 4394</td><td>Sub-flow. Chama apiV2 recursivo.</td></tr>
                 <tr><td>reportBuilder</td><td>4463</td><td>Geração de report PDF</td></tr>
                 <tr><td>sqlQuerier (legacy branch)</td><td>4479</td><td>Compat com versão antiga</td></tr>
                 <tr><td>imageGenerator</td><td>6972</td><td>Fal / Ideogram / Replicate</td></tr>
@@ -657,7 +664,7 @@
           <div class="box db">
             <div class="box-title"><span class="badge step">E2</span> Cada handler termina com UPDATE flows_nodes.data</div>
             <div class="box-desc">
-              Grava campos <strong>gordos</strong> no JSONB de <code>flows_nodes</code>: <code>previewResponses</code>, <code>contentData</code>, <code>text</code>. <em>Cabe</em> na row mas com o tempo enche o JSONB (memória <code>[[project_jsonb_fat_fields]]</code>) e é o principal ofensor de perf de FE.
+              Grava campos <strong>gordos</strong> no JSONB de <code>flows_nodes</code>: <code>previewResponses</code>, <code>contentData</code>, <code>text</code>. <em>Cabe</em> na linha, mas com o tempo enche o JSONB (memória <code>[[project_jsonb_fat_fields]]</code>). É o principal ofensor de perf de FE.
             </div>
           </div>
           <div class="arrow">↓</div>
@@ -665,7 +672,7 @@
           <div class="box cross">
             <div class="box-title"><span class="badge step">E3</span> recordInApiNodeError (audit trail)</div>
             <div class="box-desc">
-              Depois do handler, chama <code>recordInApiNodeError</code> (flux.service.ts:1842, 3303-3316, 4593-4720) pra fechar a row de <code>node_executions</code> aberta em 3.4-D (<code>recordLegacyNodeStart</code>). Isso garante trace uniforme entre paths.
+              Depois do handler, chama <code>recordInApiNodeError</code> (flux.service.ts:1842, 3303-3316, 4593-4720) para fechar a linha de <code>node_executions</code> aberta em 3.4-D (<code>recordLegacyNodeStart</code>). Isso garante trace uniforme entre paths.
             </div>
           </div>
         </div>
@@ -673,20 +680,20 @@
         <div class="fn-asides">
           <div class="aside warn">
             <div class="aside-title">⚠️ 17 branches sem factory</div>
-            É um switch gigante em <code>if</code>s empilhados dentro de <code>FluxService.apiV2</code>. Cada tipo novo adiciona mais uma branch. Sem registry, sem visitor pattern — pura cascata que ocupa ~1000 linhas.
-            <br><br>Split em métodos privados é o que salva legibilidade — mas a orquestração aqui é acoplada demais pra refactor incremental.
+            É um switch gigante em <code>if</code>s empilhados dentro de <code>FluxService.apiV2</code>. Cada tipo novo adiciona mais uma branch. Sem registry, sem visitor pattern. Pura cascata que ocupa ~1000 linhas.
+            <br><br>Split em métodos privados é o que salva legibilidade. A orquestração aqui é acoplada demais para refactor incremental.
           </div>
 
           <div class="aside info">
             <div class="aside-title">🎯 Fallback esperado</div>
-            Tipos como <code>conditionNode</code>, <code>arrayNode</code>, <code>nodesBox</code>, <code>fluxBox</code> <em>não devem</em> migrar tão cedo — dependem de state compartilhado com o loop (<code>schedState</code>, <code>objectCallerData</code>, <code>runLogCollector</code>). Migração dessas cabeças de dispatch é um refactor arquitetural, não portação de handler.
+            Tipos como <code>conditionNode</code>, <code>arrayNode</code>, <code>nodesBox</code>, <code>fluxBox</code> <em>não devem</em> migrar tão cedo. Dependem de state compartilhado com o loop (<code>schedState</code>, <code>objectCallerData</code>, <code>runLogCollector</code>). Migração dessas cabeças de dispatch é refactor arquitetural, não portação de handler.
             <br><br>Nesse sentido, o path inline é permanente enquanto essas dependências existirem.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 Tipos sem handler</div>
-            <code>varInputNode</code>, <code>GLOBAL_STARTER</code>, <code>GLOBAL_OUTPUTS</code>, <code>comment</code>, <code>label</code>, <code>group</code> — não caem em nenhum <code>if</code>. O loop faz o schema update em 3.6 (o input já está no data desses tipos) e prossegue.
-            <br><br>São nós "passivos" — presença no DAG mas sem execução ativa. Ex: <code>varInputNode</code> só serve como fonte de dado pra referências <code>{{...}}</code>.
+            <code>varInputNode</code>, <code>GLOBAL_STARTER</code>, <code>GLOBAL_OUTPUTS</code>, <code>comment</code>, <code>label</code>, <code>group</code>. Não caem em nenhum <code>if</code>. O loop faz o schema update em 3.6 (a entrada já está no data desses tipos) e prossegue.
+            <br><br>São nós "passivos". Presença no DAG mas sem execução ativa. Ex.: <code>varInputNode</code> só serve como fonte de dado para referências <code>{{...}}</code>.
           </div>
         </div>
       </div>
@@ -696,20 +703,20 @@
   <!-- SUMMARY -->
   <div class="note info" style="margin-top:32px">
     <strong>Resumo — o que sai de 3.5:</strong>
-    <br>• Nó rodou por um dos caminhos: <strong>Temporal</strong> (com <code>processNodeViaTemporal</code> em envelope síncrono) OU <strong>inline</strong> (handler direto em <code>FluxService</code>) OU <strong>no-op</strong> (tipos passivos)
-    <br>• <code>myUpdatedNodes</code>, <code>myTexts</code>, <code>nodeSubstitutionSchema</code> refletem output do handler
-    <br>• Path Temporal grava <code>node_executions.outputData</code>; path inline grava <code>flows_nodes.data</code> (gordo) + <code>node_executions</code> (row de trace)
-    <br>• Loop prossegue pra 3.6 (updateSchemaWithNodeOutput) — deixa output visível pros próximos nós
+    <br>• Nó rodou por um dos caminhos: <strong>Temporal</strong> (com <code>processNodeViaTemporal</code> em envelope síncrono), <strong>inline</strong> (handler direto em <code>FluxService</code>) ou <strong>no-op</strong> (tipos passivos).
+    <br>• <code>myUpdatedNodes</code>, <code>myTexts</code> e <code>nodeSubstitutionSchema</code> refletem a saída do handler.
+    <br>• Path Temporal grava <code>node_executions.outputData</code>. Path inline grava <code>flows_nodes.data</code> (gordo) e <code>node_executions</code> (linha de trace).
+    <br>• Loop prossegue para 3.6 (updateSchemaWithNodeOutput). Deixa a saída visível para os próximos nós.
   </div>
 
   <div class="note">
     <strong>Observações para migração:</strong>
-    <br>• Estado atual: <strong>2 caminhos híbridos</strong> pra evitar big-bang. Cada tipo migra individualmente conforme o worker ganha suporte. Nenhum fallback backend↔worker: se worker não tem handler, é erro fatal (<code>throw "Node type X not supported"</code>).
-    <br>• Ordem de migração <em>recomendada</em>: (1) providers de integração 1 por 1 via <code>MIGRATED_INTEGRATION_PROVIDERS</code>; (2) tipos leaf (imageGenerator, webSearch, webCrawling, pullData/pushData) — não dependem de state do loop; (3) o boss final: <code>arrayNode</code>, <code>conditionNode</code>, <code>nodesBox</code>, <code>fluxBox</code>, <code>libraryNode</code> — exigem refactor do próprio loop (buildSchedulerState + state pattern do worker).
-    <br>• O blocking wait em <code>processNodeViaTemporal</code> é <strong>arquitetural</strong>. Mesmo depois de migrar tudo, se o backend continuar orquestrando, o "loop 1 nó por vez" persiste. Paralelismo real exige migrar o próprio orquestrador pro worker (via <code>processAgent</code> workflow — hoje um stub comentado).
-    <br>• <code>isTemporalNode</code> hoje é hardcode. Convertê-lo num registry (config file ou tabela) permitiria toggle por env sem deploy. Melhoria fácil de tocar durante a migração.
-    <br>• <code>isWorkerRoutedIntegration</code> já é config-friendly (Set exportável). Bom template pra <code>isTemporalNode</code>.
-    <br>• É <strong>o coração da migração</strong> — todas as decisões arquiteturais da migração passam por aqui. Cada checkbox do plano de migração afeta essas 3 funções + o switch do worker. Documentar em detalhe é pré-requisito de qualquer refactor.
+    <br>• Estado atual: <strong>2 caminhos híbridos</strong> para evitar big-bang. Cada tipo migra individualmente conforme o worker ganha suporte. Nenhum fallback backend ↔ worker. Se o worker não tem handler, é erro fatal (<code>throw "Node type X not supported"</code>).
+    <br>• Ordem de migração <em>recomendada</em>. (1) Providers de integração 1 por 1 via <code>MIGRATED_INTEGRATION_PROVIDERS</code>. (2) Tipos leaf (imageGenerator, webSearch, webCrawling, pullData, pushData). Não dependem de state do loop. (3) O boss final: <code>arrayNode</code>, <code>conditionNode</code>, <code>nodesBox</code>, <code>fluxBox</code>, <code>libraryNode</code>. Exigem refactor do próprio loop (buildSchedulerState mais state pattern do worker).
+    <br>• O blocking wait em <code>processNodeViaTemporal</code> é <strong>arquitetural</strong>. Mesmo depois de migrar tudo, se o backend continuar orquestrando, o "loop 1 nó por vez" persiste. Paralelismo real exige migrar o próprio orquestrador para o worker (via <code>processAgent</code> workflow, hoje um stub comentado).
+    <br>• <code>isTemporalNode</code> hoje é hardcoded. Convertê-lo num registry (config file ou tabela) permitiria toggle por env sem deploy. Melhoria fácil de tocar durante a migração.
+    <br>• <code>isWorkerRoutedIntegration</code> já é config-friendly (Set exportável). Bom template para <code>isTemporalNode</code>.
+    <br>• É <strong>o coração da migração</strong>. Todas as decisões arquiteturais da migração passam por aqui. Cada checkbox do plano de migração afeta essas 3 funções e o switch do worker. Documentar em detalhe é pré-requisito de qualquer refactor.
   </div>
 
   <div class="page-footer-nav">

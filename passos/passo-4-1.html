@@ -84,21 +84,21 @@
 <div class="page-nav"><div class="breadcrumb"><a href="../index.html">📋 Execução de Agente</a><span class="sep">›</span><span>Passo 4.1 — Detalhamento</span></div><a href="../index.html#step-4-1" class="back-btn">← Voltar ao diagrama</a></div>
 
 <div class="page-header"><span class="icon">🔍</span><h1>Passo 4.1 — Detecção de nós não-processados</h1></div>
-<div class="page-sub">Bloco em <code>flux.service.ts:4735-4778</code>. Após loop principal terminar, compara <code>schedState.nodeIds</code> com <code>completed ∪ dead</code>. Se sobrar algum id, loga error (Winston) com <code>error_type='flow_truncated'</code> — mas só se run não foi cancelado nem parou por node failure/loop.</div>
+<div class="page-sub">Bloco em <code>flux.service.ts:4735-4778</code>. Depois que o loop principal termina, compara <code>schedState.nodeIds</code> com <code>completed ∪ dead</code>. Se sobrar algum id, grava um error via Winston com <code>error_type='flow_truncated'</code>. O log só sai quando a execução não foi cancelada nem parou por node failure ou loop.</div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
     <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
     <ul>
-      <li><strong>Faz o check post-mortem:</strong> depois que o loop terminou, faz a conta <code>nodeIds - (completed + dead)</code> pra ver se sobrou algum nó <em>reachable</em> que nunca foi executado nem podado.</li>
-      <li><strong>Cancel tem cleanup próprio:</strong> se o run foi cancelado, calcula o <code>stoppedAtNodeId</code>, persiste em <code>runCancellationService</code> e dispara WebSocket com status <code>CANCELLED</code> pra cada nó pendente — cliente vê UI cinza em cada um.</li>
-      <li><strong>Peneira os motivos legítimos:</strong> só loga warning se sobrou nó órfão E o run <em>não</em> parou por loop natural, node failure ou cancel. Nesses 3 casos, unprocessed é esperado.</li>
-      <li><strong>Quando aparece, é bug de verdade:</strong> log Winston com <code>error_type='flow_truncated'</code> e <code>unprocessedNodeIds.slice(0, 20)</code> — string de alto sinal que SRE monitora em dashboards.</li>
-      <li><strong>Saída:</strong> pura <em>observabilidade</em>. Não altera retorno do run nem afeta 4.2+ — só emite logs e (em caso de cancel) atualiza WebSocket/DB de cancelamento.</li>
+      <li><strong>Faz o check post-mortem.</strong> Depois que o loop termina, calcula <code>nodeIds - (completed + dead)</code>. Detecta nós <em>reachable</em> que nunca foram executados nem podados.</li>
+      <li><strong>Cancel tem cleanup próprio.</strong> Se a execução foi cancelada, calcula o <code>stoppedAtNodeId</code>. Persiste em <code>runCancellationService</code>. Dispara WebSocket com status <code>CANCELLED</code> para cada nó pendente. O cliente vê a UI cinza em cada um.</li>
+      <li><strong>Filtra os motivos legítimos.</strong> Só grava warning se sobrou nó órfão e a execução não parou por loop natural, node failure ou cancel. Nesses 3 casos, o unprocessed é esperado.</li>
+      <li><strong>Quando aparece, é bug real.</strong> O log Winston sai com <code>error_type='flow_truncated'</code> e <code>unprocessedNodeIds.slice(0, 20)</code>. É uma string de alto sinal, monitorada por SRE em dashboards.</li>
+      <li><strong>Saída.</strong> Pura observabilidade. Não altera o retorno da execução nem afeta 4.2 em diante. Apenas emite logs. No caso de cancel, atualiza WebSocket e o banco de cancelamento.</li>
     </ul>
   </div>
 
-<div class="note info"><strong>Contexto:</strong> não é bloqueante — apenas <strong>observabilidade</strong>. Detecta bugs de scheduler ou branches órfãs. Se todos os nós reachable já eram esperados em cadeias que não seriam completadas por design (ex: loop stoppedByLoopBehavior), o check é skipado — não é warning nesses casos.</div>
+<div class="note info"><strong>Contexto.</strong> Não é bloqueante. Trata apenas de observabilidade. Detecta bugs de scheduler ou branches órfãs. Quando todos os nós reachable já eram esperados em cadeias que não seriam completadas por design (por exemplo, loop <code>stoppedByLoopBehavior</code>), o check é pulado. Nesses casos não há warning.</div>
 
 <div class="overview-mini"><div class="overview-mini-title">Cadeia em 4.1</div><div class="overview-chain">
 <a href="#fn-a" class="overview-chip"><span class="lbl">A</span>unprocessedNodeIds calc</a><span class="overview-sep">→</span>
@@ -111,8 +111,8 @@
 <div class="fn-card-header"><div class="fn-title"><span class="badge migrated" style="background:#EAB308;color:white">A</span><code>unprocessedNodeIds calc</code></div><div class="fn-loc">flux.service.ts:4735-4737</div></div>
 <div class="fn-card-body">
 <div class="fn-signature">const unprocessedNodeIds = [...schedState.nodeIds].filter(nid =&gt; !schedState.completed.has(nid) &amp;&amp; !schedState.dead.has(nid));</div>
-<div class="fn-purpose"><strong>Propósito:</strong> Diferença set-teórica: nós reachable menos os que já foram processados (completed) menos os que foram podados (dead). O que sobra é "não-processado" — nunca foi executado por algum motivo.</div>
-<div class="fn-friendly"><strong>Em resumo:</strong> é o <em>check post-mortem</em>. Depois que o loop terminou (por natural exhaustion ou por break), pergunta: "quem foi convidado pra festa mas nunca chegou nem foi expulso?". Compara <code>schedState.nodeIds</code> (todos os reachable) contra <code>completed</code> (chegaram e saíram) e <code>dead</code> (foram cancelados/podados por branch). O restante é o <em>ghost</em> — nodes que deveriam ter rodado mas ficaram presos, geralmente porque tinham dependência em algum nó que nunca completou (ou por bug no scheduler que esqueceu de destravá-los, ou por design como <code>stoppedByNodeFailure</code>/<code>stoppedByCancel</code>/<code>stoppedByLoopBehavior</code>). Não afeta retorno nem UI — só vai pro Winston pra debug. Em runs normais, sempre vazio (todos os nós reachable rodam ou morrem). Em runs abortados por qualquer razão, tem lista de nós que não chegaram na vez deles — natural, não é bug.</div>
+<div class="fn-purpose"><strong>Propósito.</strong> Faz uma diferença de conjuntos. Toma os nós reachable e remove os processados (<code>completed</code>) e os podados (<code>dead</code>). O que sobra é considerado não-processado. Esses nós nunca executaram por algum motivo.</div>
+<div class="fn-friendly"><strong>Em resumo.</strong> Este é o check post-mortem. Depois que o loop termina por natural exhaustion ou por break, o código pergunta quais nós foram convocados mas nunca chegaram a rodar nem foram descartados. Compara <code>schedState.nodeIds</code> (todos os reachable) contra <code>completed</code> (rodaram e saíram) e <code>dead</code> (cancelados ou podados por branch). O restante é uma lista de nós fantasmas. Esses nós deveriam ter rodado mas ficaram presos. Em geral a causa é dependência em algum nó que nunca completou. Também pode ser bug no scheduler que esqueceu de destravá-los. Ou pode ser por design em <code>stoppedByNodeFailure</code>, <code>stoppedByCancel</code> ou <code>stoppedByLoopBehavior</code>. Não afeta retorno nem UI. Só vai para o Winston para debug. Em execuções normais, a lista fica sempre vazia. Todos os nós reachable rodam ou morrem. Em execuções abortadas por qualquer razão, a lista contém os nós que não chegaram na vez deles. É natural, não é bug.</div>
 
 <div class="fn-body-cols"><div class="fn-main">
 <div class="code-block"><span class="k">const</span> unprocessedNodeIds = [...schedState.nodeIds].<span class="t">filter</span>(
@@ -121,16 +121,16 @@
 );</div>
 </div>
 <div class="fn-asides">
-<div class="aside info"><div class="aside-title">🎯 Set difference simples</div><code>nodeIds - (completed + dead)</code>. O <code>processedNodeIds</code> (do fn B de 3.2) tem <em>outra</em> lista — mas essa é usada pro log final, não pra unprocessed.</div>
-<div class="aside"><div class="aside-title">📎 Spread do Set</div><code>[...schedState.nodeIds]</code> converte Set em array pra usar <code>.filter</code>. Custo O(n) em nós reachable.</div>
+<div class="aside info"><div class="aside-title">🎯 Diferença de conjuntos simples</div><code>nodeIds - (completed + dead)</code>. O <code>processedNodeIds</code> vindo da função B de 3.2 tem outra lista. Essa segunda é usada no log final, não para unprocessed.</div>
+<div class="aside"><div class="aside-title">📎 Spread do Set</div><code>[...schedState.nodeIds]</code> converte o Set em array para usar <code>.filter</code>. Custo O(n) em nós reachable.</div>
 </div></div></div></div>
 
 <div class="fn-card collapsed" id="fn-b">
 <div class="fn-card-header"><div class="fn-title"><span class="badge migrated" style="background:#3B82F6;color:white">B</span><code>Cancel footprint (path especial)</code></div><div class="fn-loc">flux.service.ts:4738-4758</div></div>
 <div class="fn-card-body">
 <div class="fn-signature">if (stoppedByCancel) { const footprint = resolveCancelledRunFootprint(...); await runCancellationService.markCancelled(...); emitCancelledRunStatuses(...); }</div>
-<div class="fn-purpose"><strong>Propósito:</strong> Se run foi cancelado, precisa fazer bookkeeping extra: marca no service de cancellation qual foi o último nó a rodar, quais ficaram pendentes, e emite status='CANCELLED' via WebSocket pra cada nó pendente. Cliente vê UI cinza em cada nó não-executado.</div>
-<div class="fn-friendly"><strong>Em resumo:</strong> quando cancel acontece, o unprocessedNodeIds fica grande (tudo depois do ponto de cancel), mas em vez de logar isso como "flow truncado" (que seria alarme falso), o backend faz cleanup específico de cancel: (1) <code>resolveCancelledRunFootprint</code> calcula qual nó parou o run (<code>stoppedAtNodeId</code>) e o resto que ficou pendente (<code>notExecutedNodeIds</code>); (2) <code>runCancellationService.markCancelled</code> persiste esses detalhes no banco (marca a row de <code>flow_run_states</code> como cancelado com metadata); (3) <code>emitCancelledRunStatuses</code> dispara WebSocket pra cada id pendente com status='CANCELLED'. UI recebe múltiplos updates e pinta cada nó pendente de cinza. Esse footprint é útil pra dashboard "onde exatamente o cancel aconteceu?".</div>
+<div class="fn-purpose"><strong>Propósito.</strong> Se a execução foi cancelada, o backend faz bookkeeping extra. Marca no serviço de cancellation qual foi o último nó a rodar e quais ficaram pendentes. Emite status <code>CANCELLED</code> via WebSocket para cada nó pendente. O cliente vê a UI cinza em cada nó não executado.</div>
+<div class="fn-friendly"><strong>Em resumo.</strong> Quando o cancel acontece, o <code>unprocessedNodeIds</code> cresce. Ele passa a conter tudo o que vinha depois do ponto de cancel. Registrar isso como "flow truncado" seria alarme falso. O backend faz um cleanup específico. Primeiro, <code>resolveCancelledRunFootprint</code> calcula qual nó parou a execução (<code>stoppedAtNodeId</code>) e a lista pendente (<code>notExecutedNodeIds</code>). Segundo, <code>runCancellationService.markCancelled</code> persiste esses detalhes no banco. Marca a linha de <code>flow_run_states</code> como cancelada com metadata. Terceiro, <code>emitCancelledRunStatuses</code> dispara WebSocket para cada id pendente com status <code>CANCELLED</code>. A UI recebe múltiplos updates e pinta cada nó pendente de cinza. O footprint é útil para o dashboard mostrar onde o cancel aconteceu.</div>
 
 <div class="fn-body-cols"><div class="fn-main">
 <div class="code-block"><span class="k">if</span> (stoppedByCancel) {
@@ -150,37 +150,37 @@
 }</div>
 </div>
 <div class="fn-asides">
-<div class="aside info"><div class="aside-title">🎯 Cancel é first-class</div>Não é só "erro suprimido" — tem service dedicado (<code>runCancellationService</code>), tabela dedicada (<code>flow_run_states</code>), notificação dedicada. Path bem separado.</div>
-<div class="aside helper"><div class="aside-title">🔧 lastExecutedNodeId</div>Populado ao longo do loop em 3.2 (a cada iteração). Aqui é usado pra saber onde exatamente o cancel pegou — informação valiosa pra debug e telemetria.</div>
+<div class="aside info"><div class="aside-title">🎯 Cancel é first-class</div>Não é apenas um erro suprimido. Tem serviço dedicado (<code>runCancellationService</code>), tabela dedicada (<code>flow_run_states</code>) e notificação dedicada. O caminho é bem separado.</div>
+<div class="aside helper"><div class="aside-title">🔧 lastExecutedNodeId</div>Populado ao longo do loop em 3.2, a cada iteração. Aqui identifica onde o cancel pegou. Informação valiosa para debug e telemetria.</div>
 </div></div></div></div>
 
 <div class="fn-card collapsed" id="fn-c">
 <div class="fn-card-header"><div class="fn-title"><span class="badge migrated" style="background:#10B981;color:white">C</span><code>Gate: quando logar warning</code></div><div class="fn-loc">flux.service.ts:4759-4763</div></div>
 <div class="fn-card-body">
 <div class="fn-signature">if (unprocessedNodeIds.length &gt; 0 &amp;&amp; !stoppedByLoopBehavior &amp;&amp; !stoppedByNodeFailure &amp;&amp; !stoppedByCancel) { loggerService.error(...) }</div>
-<div class="fn-purpose"><strong>Propósito:</strong> Warning só se: (i) tem nós não-processados; (ii) run <em>não</em> parou por loop behavior (loop natural exhaustion não é bug); (iii) run <em>não</em> falhou (fail-fast deixa nós pendentes por design); (iv) run <em>não</em> foi cancelado (também deixa nós pendentes). Só warn se for cenário inesperado.</div>
-<div class="fn-friendly"><strong>Em resumo:</strong> é a <em>peneira dos motivos legítimos</em>. Tem 3 razões válidas pra ter nós não-processados sem ser bug: (1) o loop tinha um <code>arrayNode</code> que terminou naturalmente e deixou o resto do subgrafo desconectado (<code>stoppedByLoopBehavior=true</code>); (2) algum nó falhou fatal (<code>stoppedByNodeFailure=true</code>) — fail-fast semantics; (3) usuário cancelou (<code>stoppedByCancel=true</code>). Nesses 3 casos, é esperado ter unprocessed — não loga. Só loga se <em>nenhum</em> desses aconteceu, mas ainda assim sobrou nó não-executado — isso é bug no scheduler ou grafo mal montado. Rara em produção normal — quando aparece nos logs, alguém precisa investigar. Uma vez detectado, o log traz <code>unprocessedNodeIds.slice(0, 20)</code> (limita pra não estourar log com agentes gigantes) e <code>flow_truncated</code> como error_type.</div>
+<div class="fn-purpose"><strong>Propósito.</strong> O warning só aparece em quatro condições simultâneas. Deve haver nós não-processados. A execução não pode ter parado por loop behavior. Loop natural exhaustion não é bug. A execução não pode ter falhado. Fail-fast deixa nós pendentes por design. A execução não pode ter sido cancelada. Cancel também deixa nós pendentes. Só grava warning em cenário inesperado.</div>
+<div class="fn-friendly"><strong>Em resumo.</strong> Esta é a filtragem dos motivos legítimos. Existem 3 razões válidas para ter nós não-processados sem ser bug. Primeiro, o loop tinha um <code>arrayNode</code> que terminou naturalmente e deixou o resto do subgrafo desconectado (<code>stoppedByLoopBehavior=true</code>). Segundo, algum nó falhou fatal (<code>stoppedByNodeFailure=true</code>). Semântica fail-fast. Terceiro, o usuário cancelou (<code>stoppedByCancel=true</code>). Nesses 3 casos o unprocessed é esperado. O log não sai. Só sai se nenhum desses aconteceu e ainda assim sobrou nó não executado. Isso indica bug no scheduler ou grafo mal montado. Raro em produção normal. Quando aparece nos logs, alguém precisa investigar. O log traz <code>unprocessedNodeIds.slice(0, 20)</code>. O slice limita o volume para agentes gigantes. O <code>error_type</code> é <code>flow_truncated</code>.</div>
 
 <div class="fn-body-cols"><div class="fn-main">
 <div class="cascade"><div class="cascade-title">🪜 4 condições combinadas (AND)</div>
-<div class="cascade-step"><span class="cascade-num">1</span><span class="cond">unprocessedNodeIds.length &gt; 0</span><span class="result deny">tem nó órfão</span></div>
+<div class="cascade-step"><span class="cascade-num">1</span><span class="cond">unprocessedNodeIds.length &gt; 0</span><span class="result deny">há nó órfão</span></div>
 <div class="cascade-step"><span class="cascade-num">2</span><span class="cond">!stoppedByLoopBehavior</span><span class="result pass">não foi loop natural</span></div>
 <div class="cascade-step"><span class="cascade-num">3</span><span class="cond">!stoppedByNodeFailure</span><span class="result pass">não foi fail-fast</span></div>
 <div class="cascade-step"><span class="cascade-num">4</span><span class="cond">!stoppedByCancel</span><span class="result pass">não foi cancel</span></div>
-<div class="cascade-step"><span class="cascade-num">5</span><span class="cond">todas as 4 verdade</span><span class="result deny">LOG error (flow_truncated)</span></div>
+<div class="cascade-step"><span class="cascade-num">5</span><span class="cond">todas as 4 verdadeiras</span><span class="result deny">grava error (flow_truncated)</span></div>
 </div>
 </div>
 <div class="fn-asides">
-<div class="aside warn"><div class="aside-title">⚠️ Rare log = high signal</div>Quando aparece nos logs, é sinal forte de bug. Não é ruído — cada instância vale ser investigada.</div>
-<div class="aside"><div class="aside-title">📎 stoppedByLoopBehavior</div>Setado no handler de conditionNode em 3.11 quando <code>idxCondition &lt; -1</code>. Loop iterativo terminou naturalmente.</div>
+<div class="aside warn"><div class="aside-title">⚠️ Log raro é sinal forte</div>Quando aparece nos logs, é indicativo forte de bug. Não é ruído. Cada instância merece investigação.</div>
+<div class="aside"><div class="aside-title">📎 stoppedByLoopBehavior</div>Definido no handler de <code>conditionNode</code> em 3.11 quando <code>idxCondition &lt; -1</code>. Indica que o loop iterativo terminou naturalmente.</div>
 </div></div></div></div>
 
 <div class="fn-card collapsed" id="fn-d">
 <div class="fn-card-header"><div class="fn-title"><span class="badge migrated" style="background:#8B5CF6;color:white">D</span><code>loggerService.error (Winston)</code></div><div class="fn-loc">flux.service.ts:4765-4777</div></div>
 <div class="fn-card-body">
 <div class="fn-signature">this.loggerService.error({ message: 'Flow run ended before processing all connected nodes...', metadata: { status: 500, error_type: 'flow_truncated', ... } });</div>
-<div class="fn-purpose"><strong>Propósito:</strong> Log estruturado Winston com <code>error_type='flow_truncated'</code>. Payload: mensagem com contagem <code>(processed/total)</code>, ids não-processados (max 20), flowId, sessionId, user. Vai pra stdout (captured pelo container/log aggregator em prod).</div>
-<div class="fn-friendly"><strong>Em resumo:</strong> Winston, o logger padrão de NestJS na base. Nível 'error' — mais alto que warn ou info, disparado por telemetria. O <code>error_type: 'flow_truncated'</code> é chave-clave pra dashboards de alertas (SRE monitora essa string). A mensagem inclui contagem <code>(processedNodeIds.size/allNodesIds.length)</code> — dá contexto rápido: "processou 8 de 12 nós". Slicing em 20 (<code>unprocessedNodeIds.slice(0, 20)</code>) é defensivo — se algum agente tem 500 nós órfãos, log ficaria enorme. Estrutura padrão do project (metadata JSON, sem PII de conteúdo).</div>
+<div class="fn-purpose"><strong>Propósito.</strong> Log estruturado via Winston com <code>error_type='flow_truncated'</code>. O payload traz mensagem com contagem <code>(processed/total)</code>, ids não-processados (máximo 20), <code>flowId</code>, <code>sessionId</code> e user. Sai em stdout. Em produção, é capturado pelo container ou pelo log aggregator.</div>
+<div class="fn-friendly"><strong>Em resumo.</strong> O Winston é o logger padrão do NestJS na base. Nível <code>error</code> é o mais alto e dispara telemetria. O <code>error_type: 'flow_truncated'</code> é a chave para dashboards de alertas. O SRE monitora essa string. A mensagem inclui a contagem <code>(processedNodeIds.size/allNodesIds.length)</code>. Dá contexto rápido, por exemplo "processou 8 de 12 nós". O <code>slice(0, 20)</code> em <code>unprocessedNodeIds</code> é defensivo. Sem ele, um agente com 500 nós órfãos geraria um log enorme. A estrutura é o padrão do projeto (metadata JSON, sem PII de conteúdo).</div>
 
 <div class="fn-body-cols"><div class="fn-main">
 <div class="code-block"><span class="k">this</span>.loggerService.<span class="t">error</span>({
@@ -198,12 +198,12 @@
 });</div>
 </div>
 <div class="fn-asides">
-<div class="aside info"><div class="aside-title">🎯 Sem side effects</div>Só log. Não modifica estado, não retorna, não altera Fase 4.2+ downstream. Puro observability.</div>
+<div class="aside info"><div class="aside-title">🎯 Sem side effects</div>Apenas grava log. Não modifica estado, não retorna nada, não altera a Fase 4.2 em diante. Pura observabilidade.</div>
 </div></div></div></div>
 
-<div class="note info" style="margin-top:32px"><strong>Resumo — o que sai de 4.1:</strong><br>• Em run normal (sem stop flags): nenhum log, <code>unprocessedNodeIds</code> deveria estar vazio<br>• Em cancel: <code>runCancellationService.markCancelled</code> + emitStatuses (WebSocket)<br>• Em bug: log Winston com flow_truncated + ids afetados<br>• Pura observabilidade — não altera retorno do run</div>
+<div class="note info" style="margin-top:32px"><strong>Resumo — o que sai de 4.1.</strong><br>• Em execução normal, sem stop flags, não há log. O <code>unprocessedNodeIds</code> deve estar vazio.<br>• Em cancel, dispara <code>runCancellationService.markCancelled</code> mais <code>emitStatuses</code> via WebSocket.<br>• Em bug, sai log Winston com <code>flow_truncated</code> e os ids afetados.<br>• Pura observabilidade. Não altera o retorno da execução.</div>
 
-<div class="note"><strong>Observações para migração:</strong><br>• É <strong>diagnóstico</strong> — se scheduler no worker for confiável, esse check pode virar assertion (throw em dev, log em prod).<br>• Cancel footprint precisa continuar existindo pra UX de cancel — dashboard mostra "cancelou no nó X" pro usuário.<br>• Pode ficar por último no plano de migração — não bloqueia nada.</div>
+<div class="note"><strong>Observações para migração.</strong><br>• É diagnóstico. Se o scheduler no worker for confiável, este check pode virar assertion. Throw em dev, log em produção.<br>• O cancel footprint precisa continuar existindo para a UX de cancel. O dashboard mostra "cancelou no nó X" para o usuário.<br>• Pode ficar por último no plano de migração. Não bloqueia nada.</div>
 
 <div class="page-footer-nav"><a href="../index.html#step-4-1" class="back-btn">← Voltar ao diagrama principal</a></div>
 </div>

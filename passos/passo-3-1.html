@@ -356,23 +356,23 @@
     <h1>Passo 3.1 — nextReady(schedState)</h1>
   </div>
   <div class="page-sub">
-    Bloco em <code>flux.service.ts:3227</code> (condição do <code>while</code>) e <code>scheduler.ts:295-308</code> (função). O scheduler devolve o próximo nó pronto pra executar — <strong>in-degree zero</strong> nas arestas ativas, respeitando branches mortos por <code>completeCondition</code>.
+    Bloco em <code>flux.service.ts:3227</code> (condição do <code>while</code>) e <code>scheduler.ts:295-308</code> (função). O scheduler devolve o próximo nó pronto para executar. O critério é <strong>in-degree zero</strong> nas arestas ativas, respeitando branches mortos por <code>completeCondition</code>.
   </div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
     <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
     <ul>
-      <li><strong>Chama o próximo da fila:</strong> o loop principal pergunta <code>nextReady(state)</code> e recebe o <em>id</em> do próximo nó pronto — <code>shift()</code> FIFO na fila <code>ready</code>, sem prioridade nem justiça.</li>
-      <li><strong>Descarta senha repetida ou morta:</strong> antes de entregar um id, confere 3 listas — <code>dead</code> (branch podado), <code>completed</code> (já rodou), <code>scheduled</code> (dedupe de duplicatas na fila) — e pula silenciosamente qualquer id que caia numa delas.</li>
-      <li><strong>Painel de controle é o <code>SchedulerState</code>:</strong> um struct in-memory com Sets/Maps que guarda todo o DAG do run — nós, dependências, contadores de predecessores (normais e gating), arestas condicionais. É <em>portável</em> (TypeScript puro) mas <em>frágil</em> (se o backend cai, some inteiro).</li>
-      <li><strong>Feedback loop via <code>markCompleted</code> e <code>completeCondition</code>:</strong> quando um nó termina, o "secretário" resolve dependências dos vizinhos e empurra pra <code>ready</code> quem ficou com 0 pendências; para bifurcações, o "juiz" mata os handles não-tomados (inclusive o sentinel <code>DEAD_HANDLE</code> em caso de erro fatal).</li>
-      <li><strong>Saída:</strong> <code>scheduledId</code> — o próximo <code>nodeId</code> pra Fase 3 processar, ou <code>null</code> quando a fila secou e o loop passa pra Fase 4. Zero I/O, 100% in-memory.</li>
+      <li><strong>Chama o próximo da fila.</strong> O loop principal pergunta <code>nextReady(state)</code> e recebe o <em>id</em> do próximo nó pronto. Usa <code>shift()</code> FIFO na fila <code>ready</code>, sem prioridade nem justiça.</li>
+      <li><strong>Descarta ids repetidos ou mortos.</strong> Antes de entregar um id, confere 3 listas: <code>dead</code> (branch podado), <code>completed</code> (já rodou) e <code>scheduled</code> (deduplicação de duplicatas na fila). Ignora silenciosamente qualquer id que caia numa delas.</li>
+      <li><strong>Painel de controle é o <code>SchedulerState</code>.</strong> Struct in-memory com Sets e Maps que guarda todo o DAG da execução. Inclui nós, dependências, contadores de predecessores (normais e gating) e arestas condicionais. É <em>portável</em> em TypeScript puro. É <em>frágil</em>: se o backend cai, some inteiro.</li>
+      <li><strong>Feedback loop via <code>markCompleted</code> e <code>completeCondition</code>.</strong> Quando um nó termina, o "secretário" resolve dependências dos vizinhos. Empurra para <code>ready</code> quem ficou com 0 pendências. Para bifurcações, o "juiz" mata os handles não-tomados. Inclui o sentinel <code>DEAD_HANDLE</code> em caso de erro fatal.</li>
+      <li><strong>Saída.</strong> <code>scheduledId</code> é o próximo <code>nodeId</code> para a Fase 3 processar. Recebe <code>null</code> quando a fila esvaziou e o loop passa para a Fase 4. Zero I/O, 100% in-memory.</li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto:</strong> essa é a condição de parada do loop principal da Fase 3. Enquanto <code>nextReady</code> retornar um <code>id</code>, o backend processa mais um nó. Quando devolve <code>null</code>, o loop termina e passa pra Fase 4 (finalização). Toda a lógica de DAG scheduling — resolver dependências, marcar branches mortos, propagar condições — vive no <code>SchedulerState</code> mutável que foi construído no <a href="passo-2-1.html">passo 2.1</a>.
+    <strong>Contexto.</strong> Esta é a condição de parada do loop principal da Fase 3. Enquanto <code>nextReady</code> retornar um <code>id</code>, o backend processa mais um nó. Quando devolve <code>null</code>, o loop termina e passa para a Fase 4 (finalização). Toda a lógica de DAG scheduling vive no <code>SchedulerState</code> mutável, construído no <a href="passo-2-1.html">passo 2.1</a>. Isso inclui resolver dependências, marcar branches mortos e propagar condições.
   </div>
 
   <!-- Overview chain -->
@@ -388,7 +388,7 @@
       <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>completeCondition (branches mortos)</a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado: variável local <code>scheduledId</code> recebe o próximo <code>nodeId</code> ou <code>null</code>. O nó é marcado como <code>scheduled</code> no state (deduplicação) antes de sair da função.
+      Resultado. A variável local <code>scheduledId</code> recebe o próximo <code>nodeId</code> ou <code>null</code>. O nó é marcado como <code>scheduled</code> no state (deduplicação) antes de sair da função.
     </div>
   </div>
 
@@ -408,10 +408,10 @@
         export function nextReady(state: SchedulerState): string | null
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Dá <code>shift()</code> na fila FIFO <code>state.ready</code> até achar o primeiro nó que <em>não</em> está em <code>dead</code>, <code>completed</code> ou <code>scheduled</code>. Retorna esse id (e marca como <code>scheduled</code> pra não voltar) ou <code>null</code> se a fila secou.
+        <strong>Propósito.</strong> Chama <code>shift()</code> na fila FIFO <code>state.ready</code> até achar o primeiro nó que <em>não</em> está em <code>dead</code>, <code>completed</code> ou <code>scheduled</code>. Retorna esse id e o marca como <code>scheduled</code> para não voltar. Retorna <code>null</code> se a fila esvaziou.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> pense como um <em>guichê de senha</em> de banco. Tem uma fila de gente pronta pra ser atendida (<code>ready</code>). O guichê chama o próximo da fila, mas antes de mandar ele pra frente confere 3 listas: já foi atendido hoje? (<code>completed</code>) foi cancelado? (<code>dead</code>) ou já foi chamado por outro guichê? (<code>scheduled</code>). Se cair em qualquer uma dessas listas, descarta a senha e chama a próxima — sem ficar reclamando, sem log. Se a fila secou, retorna <code>null</code> — o "banco fechou" e o loop principal encerra. É <strong>FIFO puro</strong>, sem prioridade, sem justiça — a ordem de chegada é a ordem de execução. E o guichê nunca chama o mesmo nome duas vezes: ao devolver um id, ele adiciona no set <code>scheduled</code> como um "sim, esse já saiu daqui" — assim, se o mesmo id aparecer duplicado na fila (o que acontece quando dois predecessores resolvem em cascata), o segundo <code>shift</code> silenciosamente pula.
+        <strong>Em resumo.</strong> Pense como um <em>guichê de senha</em> de banco. Existe uma fila de gente pronta para ser atendida (<code>ready</code>). O guichê chama o próximo da fila. Antes de mandar para a frente, confere 3 listas. Já foi atendido hoje (<code>completed</code>)? Foi cancelado (<code>dead</code>)? Já foi chamado por outro guichê (<code>scheduled</code>)? Se cair em qualquer uma dessas listas, descarta a senha e chama a próxima. Sem reclamar, sem log. Se a fila esvaziou, retorna <code>null</code>. O "banco fechou" e o loop principal encerra. É <strong>FIFO puro</strong>, sem prioridade nem justiça. A ordem de chegada é a ordem de execução. E o guichê nunca chama o mesmo nome duas vezes. Ao devolver um id, adiciona no set <code>scheduled</code>. Assim, se o mesmo id aparecer duplicado na fila (dois predecessores resolvem em cascata), o segundo <code>shift</code> pula silenciosamente.
       </div>
 
       <div class="fn-body-cols">
@@ -437,27 +437,27 @@
             <div class="cascade-step">
               <span class="cascade-num">1</span>
               <span class="cond">está em <code>dead</code>?</span>
-              <span class="result deny">skip (branch podado)</span>
+              <span class="result deny">pula (branch podado)</span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">2</span>
               <span class="cond">está em <code>completed</code>?</span>
-              <span class="result deny">skip (nó já rodou)</span>
+              <span class="result deny">pula (nó já rodou)</span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">3</span>
               <span class="cond">está em <code>scheduled</code>?</span>
-              <span class="result deny">skip (dedupe)</span>
+              <span class="result deny">pula (deduplicação)</span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">4</span>
               <span class="cond">nenhum dos acima</span>
-              <span class="result pass">add em <code>scheduled</code> + return id</span>
+              <span class="result pass">adiciona em <code>scheduled</code> e retorna id</span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">5</span>
               <span class="cond">fila esvaziou</span>
-              <span class="result pass">return <code>null</code> (fim do loop)</span>
+              <span class="result pass">retorna <code>null</code> (fim do loop)</span>
             </div>
           </div>
         </div>
@@ -465,22 +465,22 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Por que shift() e não priority queue?</div>
-            É FIFO puro. A ordem que os nós entraram em <code>ready</code> é a ordem que executam. Como <code>buildSchedulerState</code> inicializa a fila com os nós de in-degree zero e depois cada <code>markCompleted</code> pode empurrar novos (quando o último predecessor resolve), o efeito prático é uma <strong>BFS topológica</strong> — mas o scheduler <em>não</em> promete essa ordem.
+            É FIFO puro. A ordem que os nós entraram em <code>ready</code> é a ordem que executam. O <code>buildSchedulerState</code> inicializa a fila com os nós de in-degree zero. Cada <code>markCompleted</code> pode empurrar novos quando o último predecessor resolve. O efeito prático é uma <strong>BFS topológica</strong>. O scheduler <em>não</em> promete essa ordem.
           </div>
 
           <div class="aside">
             <div class="aside-title">📎 A fila pode ter entradas duplicadas</div>
-            Um mesmo nó pode ser <code>push</code>-ado 2× se dois predecessores resolvem em sequência muito próxima antes do primeiro <code>nextReady</code> tirá-lo. O set <code>scheduled</code> serve exatamente pra descartar as duplicatas no segundo <code>shift</code>.
+            Um mesmo nó pode receber <code>push</code> duas vezes. Isso ocorre quando dois predecessores resolvem em sequência próxima antes do primeiro <code>nextReady</code> retirá-lo. O set <code>scheduled</code> descarta as duplicatas no segundo <code>shift</code>.
           </div>
 
           <div class="aside warn">
             <div class="aside-title">⚠️ Sem priority, sem fairness</div>
-            Não há garantia de <em>quando</em> um nó específico vai rodar em relação a outros também prontos. Pra qualquer refactor que precise controlar ordem (SLA, timeout por nó, retry policy), a estrutura atual não expõe hooks — precisa mexer no <code>SchedulerState</code>.
+            Não há garantia de <em>quando</em> um nó específico vai rodar em relação a outros também prontos. Para qualquer refactor que precise controlar ordem (SLA, timeout por nó, retry policy), a estrutura atual não expõe hooks. Exige alterar o <code>SchedulerState</code>.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 O que o loop faz depois do return</div>
-            Recebe o <code>id</code> em <code>scheduledId</code>, entra no corpo do <code>while</code> em <code>flux.service.ts:3229</code> — o que engatilha a checagem de cancelamento (3229-3239), a busca de <code>node</code> em <code>myUpdatedNodes</code> (3241) e a cadeia dos passos 3.2 → 3.11.
+            Recebe o <code>id</code> em <code>scheduledId</code> e entra no corpo do <code>while</code> em <code>flux.service.ts:3229</code>. Isso dispara a checagem de cancelamento (3229-3239), a busca de <code>node</code> em <code>myUpdatedNodes</code> (3241) e a cadeia dos passos 3.2 até 3.11.
           </div>
         </div>
       </div>
@@ -503,10 +503,10 @@
         interface SchedulerState { nodeIds; forwardDeps; ready; completed; dead; scheduled; totalPreds; resolvedPreds; deadPreds; gatingPairs; totalGatingPreds; resolvedGatingPreds; deadGatingPreds; conditionEdges; }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Estado mutável in-memory do DAG scheduler. Todo o loop da Fase 3 opera sobre esse struct — <code>nextReady</code> lê 3 sets, <code>markCompleted</code> resolve predecessores dos vizinhos, <code>completeCondition</code> mata branches não-tomadas.
+        <strong>Propósito.</strong> Estado mutável in-memory do DAG scheduler. Todo o loop da Fase 3 opera sobre esse struct. <code>nextReady</code> lê 3 sets. <code>markCompleted</code> resolve predecessores dos vizinhos. <code>completeCondition</code> mata branches não-tomadas.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> é o <em>painel de controle</em> do agente. Imagina uma sala com um quadro branco enorme onde tudo do run tá desenhado — quais nós existem, quem depende de quem, quantos predecessores cada um ainda tá esperando, quem já rodou, quem morreu em uma branch podada, quem tá na fila. Nada disso vive no banco durante o run: é tudo Sets e Maps em heap do backend. É o "cérebro" que fica aberto enquanto o agente executa, e todas as funções — <code>nextReady</code>, <code>markCompleted</code>, <code>completeCondition</code>, <code>resolvePred</code> — não fazem nada além de <em>ler e escrever nesse quadro</em>. Por causa disso, o scheduler é <strong>portável</strong> (é TypeScript puro, sem Nest/DB/Redis), mas também é <strong>frágil</strong>: se o processo do backend cair no meio, o quadro some inteiro — não tem checkpoint, não tem crash recovery. É esse trade-off que a migração pro Temporal quer resolver: mover o "quadro" pra o próprio <code>WorkflowHistory</code> do Temporal, que persiste tudo automaticamente.
+        <strong>Em resumo.</strong> É o <em>painel de controle</em> do agente. Imagine uma sala com um quadro branco enorme onde tudo da execução está desenhado. Quais nós existem, quem depende de quem, quantos predecessores cada um ainda espera, quem já rodou, quem morreu em branch podado, quem está na fila. Nada disso vive no banco durante a execução. É tudo Sets e Maps no heap do backend. É o "cérebro" que fica aberto enquanto o agente executa. Todas as funções (<code>nextReady</code>, <code>markCompleted</code>, <code>completeCondition</code>, <code>resolvePred</code>) apenas leem e escrevem nesse quadro. Por causa disso, o scheduler é <strong>portável</strong> (TypeScript puro, sem Nest, DB ou Redis). Também é <strong>frágil</strong>. Se o processo do backend cai no meio, o quadro some inteiro. Não há checkpoint nem crash recovery. É esse trade-off que a migração para o Temporal resolve. Move o "quadro" para o próprio <code>WorkflowHistory</code> do Temporal, que persiste tudo automaticamente.
       </div>
 
       <div class="fn-body-cols">
@@ -549,18 +549,18 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Por que 3 sets separados?</div>
-            <strong>completed</strong> = terminou com sucesso ou erro tratado.<br><strong>dead</strong> = nunca vai rodar (branch podado).<br><strong>scheduled</strong> = já entregue por <code>nextReady</code>, aguardando o <code>markCompleted</code>.
+            <strong>completed</strong>: terminou com sucesso ou erro tratado.<br><strong>dead</strong>: nunca vai rodar (branch podado).<br><strong>scheduled</strong>: já entregue por <code>nextReady</code>, aguardando o <code>markCompleted</code>.
             <br><br>Um nó nunca está em mais de um set ao mesmo tempo. Isso permite o <code>continue</code> em cascata em O(1).
           </div>
 
           <div class="aside">
             <div class="aside-title">📎 dead ≠ completed</div>
-            Em Fase 4, o warning "nós não-processados" (4.1) compara todos os <code>nodeIds</code> com a união <code>completed ∪ dead</code>. Se sobrar alguém, foi bug de scheduling.
+            Em Fase 4, o warning "nós não-processados" (4.1) compara todos os <code>nodeIds</code> com a união <code>completed ∪ dead</code>. Se sobrar alguém, houve bug de scheduling.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 gatingPairs</div>
-            <code>Set&lt;string&gt;</code> com strings <code>"src→dst"</code> representando arestas <code>control</code> ou <code>condition</code>. Usado pra saber quando <em>todos</em> os caminhos gating pra um nó morreram — nesse caso o nó vai pro set <code>dead</code>, não pro <code>ready</code>, mesmo com <code>resolvedPreds === totalPreds</code>.
+            <code>Set&lt;string&gt;</code> com strings <code>"src→dst"</code> representando arestas <code>control</code> ou <code>condition</code>. Detecta quando <em>todos</em> os caminhos gating para um nó morreram. Nesse caso o nó vai para o set <code>dead</code>, não para <code>ready</code>, mesmo com <code>resolvedPreds === totalPreds</code>.
           </div>
         </div>
       </div>
@@ -583,10 +583,10 @@
         export function markCompleted(state: SchedulerState, id: string): void
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Fecha o loop de <code>nextReady</code>. Depois que um nó terminou, esta função marca ele como <code>completed</code> e itera os <code>forwardDeps</code> (quem dependia dele) chamando <code>resolvePred</code>. Cada vizinho tem seu <code>resolvedPreds</code> incrementado — se bater com <code>totalPreds</code>, entra em <code>ready</code>.
+        <strong>Propósito.</strong> Fecha o loop de <code>nextReady</code>. Depois que um nó terminou, esta função marca o nó como <code>completed</code> e itera os <code>forwardDeps</code> (quem dependia dele) chamando <code>resolvePred</code>. Cada vizinho tem seu <code>resolvedPreds</code> incrementado. Se bate com <code>totalPreds</code>, entra em <code>ready</code>.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> é o <em>secretário</em> do guichê — quando alguém termina o atendimento e sai, ele passa em cada mesa que dependia dessa pessoa e coloca um "check" no formulário. Ex: se o nó B esperava input do A, quando A termina, o secretário vai na "ficha" do B e escreve "ok, A já resolveu, falta só o C". Se essa foi a última pendência do B (todos os predecessores dele resolveram), o secretário empurra B pra <em>fila do guichê</em> (<code>ready</code>) — pronto pra ser atendido. É a única forma de nós novos entrarem em <code>ready</code> depois da inicialização. Detalhe importante: um "check" pode ser <em>dead</em> ou <em>vivo</em> — se A morreu numa branch podada, o secretário ainda "resolve" a dependência do B, mas marca essa resolução como fantasma. Se <em>todos</em> os predecessores gating do B forem fantasmas, B também vira dead e nunca vai pro <code>ready</code>. E é idempotente: se por bug o mesmo id chegar 2×, o secretário identifica pelo <code>state.completed.has(id)</code> e ignora — nada de dupla contagem.
+        <strong>Em resumo.</strong> É o <em>secretário</em> do guichê. Quando alguém termina o atendimento e sai, ele passa em cada mesa que dependia dessa pessoa e coloca um "check" no formulário. Exemplo. O nó B esperava entrada do A. Quando A termina, o secretário vai na "ficha" do B e escreve "ok, A já resolveu, falta só o C". Se essa foi a última pendência do B (todos os predecessores resolveram), o secretário empurra B para a <em>fila do guichê</em> (<code>ready</code>). É a única forma de nós novos entrarem em <code>ready</code> depois da inicialização. Um "check" pode ser <em>dead</em> ou <em>vivo</em>. Se A morreu numa branch podada, o secretário ainda "resolve" a dependência do B, mas marca essa resolução como fantasma. Se <em>todos</em> os predecessores gating do B forem fantasmas, B também vira dead e nunca vai para <code>ready</code>. É idempotente. Se por bug o mesmo id chegar duas vezes, o secretário identifica pelo <code>state.completed.has(id)</code> e ignora. Nada de dupla contagem.
       </div>
 
       <div class="fn-body-cols">
@@ -605,7 +605,7 @@
             <div class="nested-flow-title">↳ resolvePred(state, source, target, predWasDead) — scheduler.ts:310-350</div>
             <div class="box backend">
               <div class="box-desc">
-                Incrementa <code>resolvedPreds[target]</code> e, se <code>predWasDead=true</code>, também <code>deadPreds[target]</code>.
+                Incrementa <code>resolvedPreds[target]</code>. Se <code>predWasDead=true</code>, também incrementa <code>deadPreds[target]</code>.
                 <br>Regras:
                 <br>• Se <em>todos</em> os gating predecessors do target morreram → <code>state.dead.add(target)</code>.
                 <br>• Se <code>resolvedPreds[target] === totalPreds[target]</code> e não é dead → <code>state.ready.push(target)</code>.
@@ -620,18 +620,18 @@
           <div class="aside info">
             <div class="aside-title">🎯 Quem chama markCompleted?</div>
             É o passo 3.11 do diagrama. Depois de um nó rodar (via Temporal ou inline), o loop chama:
-            <br>• <code>markCompleted(schedState, id)</code> pra nós normais
-            <br>• <code>completeCondition(schedState, id, handle)</code> pra nós de decisão (que pode setar branches como <code>dead</code>)
+            <br>• <code>markCompleted(schedState, id)</code> para nós normais
+            <br>• <code>completeCondition(schedState, id, handle)</code> para nós de decisão (pode setar branches como <code>dead</code>)
           </div>
 
           <div class="aside">
             <div class="aside-title">📎 Idempotência</div>
-            O early-return em <code>state.completed.has(id)</code> permite chamar <code>markCompleted</code> várias vezes com o mesmo id sem quebrar contadores. É uma proteção — em condições especiais (arrayNode iterando o body, retries) pode chegar 2× no mesmo id.
+            O early-return em <code>state.completed.has(id)</code> permite chamar <code>markCompleted</code> várias vezes com o mesmo id sem quebrar contadores. É uma proteção. Em condições especiais (arrayNode iterando o body, retries) pode chegar duas vezes no mesmo id.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 Predecessores dead são "resolvidos"</div>
-            <code>resolvePred</code> incrementa <code>resolvedPreds</code> <em>independente</em> de <code>predWasDead</code>. A ideia é: um branch morto ainda "resolve" a dependência (ele não vai empurrar dado, mas também não está pendente). Se sobrar dado suficiente por outras arestas, o nó ainda pode rodar.
+            <code>resolvePred</code> incrementa <code>resolvedPreds</code> <em>independente</em> de <code>predWasDead</code>. A ideia é simples. Um branch morto ainda "resolve" a dependência. Não empurra dado, mas também não está pendente. Se sobrar dado suficiente por outras arestas, o nó ainda pode rodar.
           </div>
         </div>
       </div>
@@ -654,10 +654,10 @@
         export function completeCondition(state: SchedulerState, conditionId: string, takenHandle: string | null): void
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Versão especializada de <code>markCompleted</code> pra nós de decisão (<code>conditionNode</code> etc.). Marca o nó como <code>completed</code> <em>e</em> propaga "dead" pra todas as arestas <code>condition</code> saindo desse nó por handles <em>não-tomadas</em>. As arestas do handle tomado propagam normalmente.
+        <strong>Propósito.</strong> Versão especializada de <code>markCompleted</code> para nós de decisão (<code>conditionNode</code> etc.). Marca o nó como <code>completed</code> <em>e</em> propaga "dead" para todas as arestas <code>condition</code> saindo desse nó por handles <em>não-tomadas</em>. As arestas do handle tomado propagam normalmente.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> é o <em>juiz</em> de uma bifurcação. Quando um <code>conditionNode</code> avalia "se x &gt; 10 vai por A, senão vai por B", o juiz precisa fechar oficialmente a rota que <em>não</em> foi escolhida — senão nós desse lado ficariam eternamente esperando input que nunca chega. Ele recebe o <code>takenHandle</code> (ex: <code>'outputHandle-0'</code>) e percorre todas as arestas condition saindo do nó: pras que combinam com o handle tomado, faz a "resolução viva" (nó destino recebe input normal); pras outras, marca como <code>predWasDead=true</code> — o secretário do próximo nó registra "essa dependência morreu, não vai vir dado". Se todos os caminhos gating de um nó a jusante morrerem, esse nó também vira dead — cascata de morte propagando pra baixo. Existe também um <em>sentinela especial</em> chamado <code>DEAD_HANDLE</code>: quando um nó de decisão <em>falha</em> antes de decidir (bug, timeout, throw), o loop chama <code>completeCondition(id, DEAD_HANDLE)</code> — todos os handles são considerados não-tomados, matando o subgrafo inteiro pra evitar que sucessores rodem com dados <code>undefined</code>. Único perigo: o nome do handle é <strong>literal string</strong> — um typo (<code>'outputHandle-0'</code> vs <code>'outputHandel-0'</code>) faz o juiz matar a rota errada silenciosamente.
+        <strong>Em resumo.</strong> É o <em>juiz</em> de uma bifurcação. Quando um <code>conditionNode</code> avalia "se x &gt; 10 vai por A, senão vai por B", o juiz precisa fechar oficialmente a rota que <em>não</em> foi escolhida. Sem isso, nós desse lado ficariam eternamente esperando entrada que nunca chega. Ele recebe o <code>takenHandle</code> (ex.: <code>'outputHandle-0'</code>) e percorre todas as arestas condition saindo do nó. Para as arestas que combinam com o handle tomado, faz a "resolução viva" (nó destino recebe entrada normal). Para as outras, marca como <code>predWasDead=true</code>. O secretário do próximo nó registra "essa dependência morreu, não vai vir dado". Se todos os caminhos gating de um nó a jusante morrerem, esse nó também vira dead. Cascata de morte propagando para baixo. Existe também um <em>sentinela especial</em> chamado <code>DEAD_HANDLE</code>. Quando um nó de decisão <em>falha</em> antes de decidir (bug, timeout, throw), o loop chama <code>completeCondition(id, DEAD_HANDLE)</code>. Todos os handles são considerados não-tomados. Isso mata o subgrafo inteiro e evita que sucessores rodem com dados <code>undefined</code>. Único perigo. O nome do handle é <strong>literal string</strong>. Um typo (<code>'outputHandle-0'</code> versus <code>'outputHandel-0'</code>) faz o juiz matar a rota errada silenciosamente.
       </div>
 
       <div class="fn-body-cols">
@@ -665,7 +665,7 @@
           <div class="box decision">
             <div class="box-title"><span class="badge step">D1</span> Percorre conditionEdges[conditionId]</div>
             <div class="box-desc">
-              Pra cada aresta condicional saindo desse nó, decide:
+              Para cada aresta condicional saindo desse nó, decide:
             </div>
           </div>
           <div class="arrow">↓</div>
@@ -680,7 +680,7 @@
             <div class="cascade-step">
               <span class="cascade-num">2</span>
               <span class="cond">edge.sourceHandle ≠ takenHandle (não-tomado)</span>
-              <span class="result deny">resolvePred(target, <code>predWasDead=true</code>) — propaga morte</span>
+              <span class="result deny">resolvePred(target, <code>predWasDead=true</code>). Propaga morte.</span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">3</span>
@@ -693,7 +693,7 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">D2</span> Marca completed</div>
             <div class="box-desc">
-              <code>state.completed.add(conditionId)</code>. Não passa por <code>markCompleted</code> — a lógica de propagação já foi feita acima.
+              <code>state.completed.add(conditionId)</code>. Não passa por <code>markCompleted</code>. A lógica de propagação já foi feita acima.
             </div>
             <div class="box-file">scheduler.ts:366-389</div>
           </div>
@@ -702,22 +702,22 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Onde DEAD_HANDLE aparece</div>
-            Sentinel usado pelo passo 3.8 (tratamento de erro por nó): se um nó falhar antes de decidir uma branch, o loop chama <code>completeCondition(schedState, id, DEAD_HANDLE)</code> pra matar <em>todos</em> os caminhos possíveis, evitando que sucessores rodem com input undefined.
+            Sentinel usado pelo passo 3.8 (tratamento de erro por nó). Se um nó falhar antes de decidir uma branch, o loop chama <code>completeCondition(schedState, id, DEAD_HANDLE)</code> para matar <em>todos</em> os caminhos possíveis. Isso evita que sucessores rodem com entrada undefined.
           </div>
 
           <div class="aside">
             <div class="aside-title">📎 Diferença de markCompleted</div>
-            <code>markCompleted</code> é agnóstico — assume que todas as arestas saindo do nó eram "vivas". <code>completeCondition</code> precisa distinguir handle tomado × não-tomado, e por isso lê <code>conditionEdges</code> (populado em <code>buildSchedulerState</code>).
+            <code>markCompleted</code> é agnóstico. Assume que todas as arestas saindo do nó eram "vivas". <code>completeCondition</code> precisa distinguir handle tomado versus não-tomado. Por isso lê <code>conditionEdges</code> (populado em <code>buildSchedulerState</code>).
           </div>
 
           <div class="aside warn">
             <div class="aside-title">⚠️ Handle name matters</div>
-            O <code>takenHandle</code> vem literal do return do handler do condition (<code>'outputHandle-0'</code>, <code>'outputHandle-1'</code>, <code>'conditionHandle-T0'</code>, etc.). Qualquer typo no handler faz o scheduler comparar contra a string errada e matar branches viáveis. Não há validação — footgun clássico.
+            O <code>takenHandle</code> vem literal do return do handler do condition (<code>'outputHandle-0'</code>, <code>'outputHandle-1'</code>, <code>'conditionHandle-T0'</code>, etc.). Qualquer typo no handler faz o scheduler comparar contra a string errada e matar branches viáveis. Não há validação. Footgun clássico.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 Onde isso é usado no loop</div>
-            Chamado em <code>flux.service.ts:3566-3571</code> (handler do <code>conditionNode</code>), <code>4013</code> (handler do <code>arrayNode</code> pra encerrar iteração), <code>4004-4006</code> (após erro fatal). É o passo 3.11 do diagrama pra tipos que decidem branches.
+            Chamado em <code>flux.service.ts:3566-3571</code> (handler do <code>conditionNode</code>), <code>4013</code> (handler do <code>arrayNode</code> para encerrar iteração) e <code>4004-4006</code> (após erro fatal). É o passo 3.11 do diagrama para tipos que decidem branches.
           </div>
         </div>
       </div>
@@ -727,19 +727,19 @@
   <!-- SUMMARY -->
   <div class="note info" style="margin-top:32px">
     <strong>Resumo — o que sai de 3.1:</strong>
-    <br>• <code>scheduledId: string | null</code> — id do próximo nó pronto ou <code>null</code>
-    <br>• Efeito colateral: se retornou id, o state teve <code>scheduled.add(id)</code>
-    <br>• Se retornou null, o loop da Fase 3 termina e o backend cai na Fase 4 (finalização)
-    <br>• Nenhum I/O: 100% in-memory (Sets e Maps)
+    <br>• <code>scheduledId: string | null</code>. Id do próximo nó pronto ou <code>null</code>.
+    <br>• Efeito colateral. Se retornou id, o state teve <code>scheduled.add(id)</code>.
+    <br>• Se retornou null, o loop da Fase 3 termina e o backend cai na Fase 4 (finalização).
+    <br>• Nenhum I/O. 100% in-memory (Sets e Maps).
   </div>
 
   <div class="note">
     <strong>Observações para migração:</strong>
-    <br>• O scheduler é puro TypeScript sem dependência de Nest/DB/Redis — <em>portável</em> pro worker sem refactor pesado. Mas...
-    <br>• ...ele é <strong>stateful in-memory</strong>. Todo o <code>SchedulerState</code> vive no heap do backend enquanto o agente executa. Pra rodar isso no worker (Temporal workflow), o state teria que ser serializable ou reconstituído a cada activity call.
-    <br>• A dedupe via <code>scheduled</code> depende de execução <em>single-threaded</em>. Se o worker executar irmãos em paralelo, dois <code>nextReady</code> concorrentes podem devolver ids diferentes; mas dois <code>markCompleted</code> concorrentes atualizando o mesmo <code>resolvedPreds</code> precisam de lock.
-    <br>• <code>completeCondition</code> + <code>DEAD_HANDLE</code> é o mecanismo central de branching — qualquer reimplementação precisa preservar semanticamente. Especial atenção pra <code>conditionNode</code>, <code>arrayNode</code> (iteração), fail-fast em erros e o warning de Fase 4.1.
-    <br>• É <strong>essencial</strong> — o loop inteiro colapsa sem ele. Deve ir pro plano de migração cedo, com o scheduler como uma das primeiras responsabilidades do worker (ou de um serviço dedicado consumido tanto por backend quanto worker).
+    <br>• O scheduler é puro TypeScript sem dependência de Nest, DB ou Redis. É <em>portável</em> para o worker sem refactor pesado.
+    <br>• É <strong>stateful in-memory</strong>. Todo o <code>SchedulerState</code> vive no heap do backend enquanto o agente executa. Para rodar isso no worker (Temporal workflow), o state teria que ser serializável ou reconstituído a cada activity call.
+    <br>• A deduplicação via <code>scheduled</code> depende de execução <em>single-threaded</em>. Se o worker executar irmãos em paralelo, dois <code>nextReady</code> concorrentes podem devolver ids diferentes. Dois <code>markCompleted</code> concorrentes atualizando o mesmo <code>resolvedPreds</code> exigem lock.
+    <br>• <code>completeCondition</code> mais <code>DEAD_HANDLE</code> é o mecanismo central de branching. Qualquer reimplementação precisa preservar a semântica. Especial atenção para <code>conditionNode</code>, <code>arrayNode</code> (iteração), fail-fast em erros e o warning da Fase 4.1.
+    <br>• É <strong>essencial</strong>. O loop inteiro colapsa sem ele. Deve entrar cedo no plano de migração, com o scheduler como uma das primeiras responsabilidades do worker (ou de um serviço dedicado consumido tanto por backend quanto worker).
   </div>
 
   <!-- FOOTER NAV -->

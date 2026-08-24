@@ -584,24 +584,24 @@
     <h1>Passo 1.1a — Serviços auxiliares acionados pela fila</h1>
   </div>
   <div class="page-sub">
-    Bloco em <code>apiV2Job.processor.ts:38-42</code> (injects) + <code>:63-108</code> (start/mid) + <code>:133-152</code> (catch). O processor grava rastreamento em <strong>duas tabelas independentes</strong>: <code>mcp_run_status</code> (via <code>McpRunStatusService</code>) e <code>flow_execution_status</code> (via <code>FlowExecutionStatusService</code>). Cada uma é opcional e ativada por gate diferente no payload.
+    Bloco em <code>apiV2Job.processor.ts:38-42</code> (injects), <code>:63-108</code> (start/mid) e <code>:133-152</code> (catch). O processor grava rastreamento em duas tabelas independentes. <code>mcp_run_status</code> via <code>McpRunStatusService</code>. E <code>flow_execution_status</code> via <code>FlowExecutionStatusService</code>. Cada uma é opcional. É ativada por gate diferente no payload.
   </div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
     <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
     <ul>
-      <li><strong>Dois rastreadores independentes convivendo:</strong> o processor injeta <code>McpRunStatusService</code> E <code>FlowExecutionStatusService</code> — cada um escreve numa tabela própria, com colunas parecidas mas separadas. Nenhum dos dois é obrigatório; ambos têm gate.</li>
-      <li><strong>Gate MCP:</strong> só grava em <code>mcp_run_status</code> se <code>params.mcpTracking</code> veio preenchido no payload — objeto com <code>{ workspaceId, agentId, tokenId }</code>. Isso só acontece quando o run foi disparado via MCP tool.</li>
-      <li><strong>Gate FES:</strong> só grava em <code>flow_execution_status</code> se <code>params.executionId</code> veio no payload. Esse ID é criado por endpoints HTTP de trigger que oferecem callback opt-in (o cliente cria o registro antes de enfileirar).</li>
-      <li><strong>Marcações em pares:</strong> antes do <code>apiV2</code> ⇒ <code>markRunning</code> (MCP) + <code>markInProgress</code> (FES). Depois do <code>apiV2</code> ⇒ <code>markFinished</code> (MCP) com status <code>completed</code>/<code>error</code> + <code>markCompleted</code>/<code>markError</code> (FES). Ambos recebem <code>durationMs</code>, tokens e cost.</li>
-      <li><strong>Catch replica tudo:</strong> em exception, ambas as marcações finais rodam de novo com <code>status: 'error'</code>, tokens <code>0</code>, cost <code>0</code>, e a mensagem do erro. Nada é deixado em <em>in_progress</em>.</li>
-      <li><strong>Consumo:</strong> MCP é lida pela API do MCP (endpoints de status/run history da tool). FES é lida por endpoints REST que polling do status de execuções trigadas — cliente consulta pelo <code>executionId</code>.</li>
+      <li><strong>Dois rastreadores independentes convivem.</strong> O processor injeta <code>McpRunStatusService</code> e <code>FlowExecutionStatusService</code>. Cada um escreve numa tabela própria com colunas parecidas mas separadas. Nenhum dos dois é obrigatório. Ambos têm gate.</li>
+      <li><strong>Gate MCP.</strong> Só grava em <code>mcp_run_status</code> se <code>params.mcpTracking</code> veio preenchido no payload. É um objeto com <code>{ workspaceId, agentId, tokenId }</code>. Só acontece quando a execução foi disparada via MCP tool.</li>
+      <li><strong>Gate FES.</strong> Só grava em <code>flow_execution_status</code> se <code>params.executionId</code> veio no payload. Esse ID é criado por endpoints HTTP de trigger que oferecem callback opt-in. O cliente cria o registro antes de enfileirar.</li>
+      <li><strong>Marcações em pares.</strong> Antes do <code>apiV2</code>, <code>markRunning</code> (MCP) e <code>markInProgress</code> (FES). Depois do <code>apiV2</code>, <code>markFinished</code> (MCP) com status <code>completed</code> ou <code>error</code>, e <code>markCompleted</code> ou <code>markError</code> (FES). Ambos recebem <code>durationMs</code>, tokens e cost.</li>
+      <li><strong>Catch replica tudo.</strong> Em exceção, ambas as marcações finais executam de novo com <code>status: 'error'</code>, tokens <code>0</code>, cost <code>0</code> e a mensagem do erro. Nada é deixado em <em>in_progress</em>.</li>
+      <li><strong>Consumo.</strong> MCP é lida pela API do MCP (endpoints de status e run history da tool). FES é lida por endpoints REST que fazem polling do status de execuções trigadas. O cliente consulta pelo <code>executionId</code>.</li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto:</strong> essas duas tabelas foram criadas em <em>épocas</em> diferentes pra necessidades parecidas. MCP surgiu pra atender a ferramenta MCP (agente conversando com Claude/etc.); FES surgiu pra callbacks REST v2 (webhooks confiáveis). Elas <strong>não se conversam</strong> — se o mesmo run precisar dos dois, o processor escreve nos dois lugares.
+    <strong>Contexto.</strong> Essas duas tabelas foram criadas em épocas diferentes para necessidades parecidas. MCP surgiu para atender a ferramenta MCP (agente conversando com Claude, etc.). FES surgiu para callbacks REST v2 (webhooks confiáveis). Elas não se conversam. Se a mesma execução precisar dos dois, o processor escreve nos dois lugares.
   </div>
 
   <!-- Overview chain -->
@@ -617,7 +617,7 @@
       <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>markCompleted / markError</a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado final: 0, 1 ou 2 rows atualizadas em tabelas diferentes conforme os gates. Colunas <code>tokens/cost/durationMs</code> só ficam corretas no happy path — no catch vão zeradas.
+      Resultado final. 0, 1 ou 2 linhas atualizadas em tabelas diferentes conforme os gates. Colunas <code>tokens</code>, <code>cost</code> e <code>durationMs</code> só ficam corretas no happy path. No catch vão zeradas.
     </div>
   </div>
 
@@ -638,10 +638,10 @@
         async markRunning(id: string): Promise&lt;void&gt;  // UPDATE mcp_run_status SET status='in_progress' WHERE id=$1
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Marca a row do MCP como <em>in_progress</em> — sinaliza que o job Bull saiu da <em>pending</em> (criada pelo endpoint MCP) e entrou em execução. <strong>Só executa se</strong> <code>params.mcpTracking</code> veio preenchido no payload.
+        <strong>Propósito.</strong> Marca a linha do MCP como <em>in_progress</em>. Sinaliza que o job Bull saiu de <em>pending</em> (criada pelo endpoint MCP) e entrou em execução. Só executa se <code>params.mcpTracking</code> veio preenchido no payload.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> pense nele como um <em>vigia da linha de produção</em>. Quando o run começa via MCP, existe uma row lá em <code>mcp_run_status</code> com status <em>pending</em> (criada pelo endpoint que chamou a tool). O processor entra em ação, vê que o payload tem <code>mcpTracking</code>, e sacode aquela row: "opa, agora está rodando de verdade". É uma única query <code>UPDATE</code> — nenhuma checagem de existência, nenhum retorno. Se o <code>processId</code> não bater com nada, o UPDATE some silenciosamente. E note o gate: se o run veio de outro caminho que não é MCP (ex.: um trigger interno de <code>flowCallerNode</code>), esse método <strong>nem é chamado</strong> — a tabela MCP ignora.
+        <strong>Em resumo.</strong> Quando a execução começa via MCP, existe uma linha em <code>mcp_run_status</code> com status <em>pending</em>. Foi criada pelo endpoint que chamou a tool. O processor vê que o payload tem <code>mcpTracking</code> e atualiza a linha para o novo estado. É uma única query <code>UPDATE</code>. Sem checagem de existência. Sem retorno. Se o <code>processId</code> não bate com nada, o UPDATE some silenciosamente. Se a execução veio de outro caminho que não é MCP (por exemplo, trigger interno de <code>flowCallerNode</code>), esse método não é chamado. A tabela MCP é ignorada.
       </div>
 
       <div class="fn-body-cols">
@@ -674,13 +674,13 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">📊 Tabela mcp_run_status</div>
-            Row = uma execução de run via MCP tool. Campos-chave (<code>mcp_run_status.entity.ts</code>):
+            Cada linha representa uma execução via MCP tool. Campos-chave (<code>mcp_run_status.entity.ts</code>):
             <table class="field-table">
               <tr><th>Campo</th><th>Descrição</th></tr>
-              <tr><td>id</td><td>UUID (= processId do job)</td></tr>
+              <tr><td>id</td><td>UUID (é o processId do job)</td></tr>
               <tr><td>workspaceId</td><td>MCP workspace (indexed)</td></tr>
-              <tr><td>agentId</td><td>Agente/flow que roda</td></tr>
-              <tr><td>status</td><td>pending / in_progress / completed / error</td></tr>
+              <tr><td>agentId</td><td>Agente ou flow que executa</td></tr>
+              <tr><td>status</td><td>pending, in_progress, completed ou error</td></tr>
               <tr><td>tokens</td><td>float, default 0</td></tr>
               <tr><td>cost</td><td>float, default 0</td></tr>
               <tr><td>durationMs</td><td>int, default 0</td></tr>
@@ -693,18 +693,18 @@
 
           <div class="aside">
             <div class="aside-title">🎯 Consumido por</div>
-            Endpoints do <code>app-mcp/</code> que retornam status de runs pro cliente MCP (Claude Desktop / etc.). O cliente faz polling nessa tabela via <code>findByProcessId</code>.
-            <br><br>Também usado por <code>resolveTriggeredByName</code> (mcp-run-status.service.ts:84-91) pra mostrar qual token disparou o run.
+            Endpoints do <code>app-mcp/</code> que retornam status de execuções para o cliente MCP (Claude Desktop, etc.). O cliente faz polling nessa tabela via <code>findByProcessId</code>.
+            <br><br>Também usado por <code>resolveTriggeredByName</code> (mcp-run-status.service.ts:84-91) para mostrar qual token disparou a execução.
           </div>
 
           <div class="aside warn">
             <div class="aside-title">⚠️ Sem checagem de existência</div>
-            <code>repository.update({ id }, ...)</code> silenciosamente não faz nada se o id não bater. Se o endpoint MCP não criou a row antes (via <code>createPending</code>), o marcaRunning some sem log. Debug ruim.
+            <code>repository.update({ id }, ...)</code> silenciosamente não faz nada se o id não bate. Se o endpoint MCP não criou a linha antes (via <code>createPending</code>), o <code>markRunning</code> some sem log. Dificulta o debug.
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 params.mcpTracking shape</div>
-            <code>{ workspaceId: string; agentId: string; tokenId: string }</code> — vem do <code>ApiV2QueueModel.params.mcpTracking</code> (models/apiV2JobModel.ts:28). O <code>tokenId</code> daqui vira o <code>mcpTokenId</code> passado pro <code>apiV2</code>.
+            <div class="aside-title">🔧 Formato de params.mcpTracking</div>
+            <code>{ workspaceId: string; agentId: string; tokenId: string }</code>. Vem de <code>ApiV2QueueModel.params.mcpTracking</code> (models/apiV2JobModel.ts:28). O <code>tokenId</code> daqui vira o <code>mcpTokenId</code> passado ao <code>apiV2</code>.
           </div>
         </div>
       </div>
@@ -727,16 +727,16 @@
         async markFinished(params: { id, status: 'completed' | 'error', tokens, cost, durationMs, errorMessage }): Promise&lt;void&gt;
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Fecha a row do MCP com resultado — status <code>completed</code> ou <code>error</code> + métricas totais. Chamado no <em>happy path</em> (com valores reais) e no <em>catch</em> (com zeros).
+        <strong>Propósito.</strong> Fecha a linha do MCP com resultado. Grava status <code>completed</code> ou <code>error</code>, mais as métricas totais. Chamado no happy path (com valores reais) e no catch (com zeros).
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> é o <em>fechamento da linha de produção</em> pra MCP. Recebe 6 campos e faz uma única query <code>UPDATE</code> populando todos: status, tokens, cost, durationMs, errorMessage. O tipo do <code>status</code> é apertado (só <code>'completed'</code> ou <code>'error'</code>, via <code>Extract&lt;McpRunStatusValue, ...&gt;</code>) — impossível marcar como <em>in_progress</em> por engano aqui. No happy path, o processor calcula os números reais (<code>result.totalTokensUsed</code>, <code>result.totalCost</code>, <code>Date.now() - startedAt</code>). No catch, hardcoded como <code>0</code>. Detalhe importante: a query <strong>não</strong> seta <code>updatedAt</code> manualmente — o TypeORM cuida disso via <code>@UpdateDateColumn</code>. E igual ao markRunning, se o <code>id</code> não existir, o UPDATE some sem barulho.
+        <strong>Em resumo.</strong> Fecha a linha do MCP. Recebe 6 campos e faz uma única query <code>UPDATE</code> populando todos: status, tokens, cost, durationMs e errorMessage. O tipo do <code>status</code> é restrito. Só <code>'completed'</code> ou <code>'error'</code>, via <code>Extract&lt;McpRunStatusValue, ...&gt;</code>. É impossível marcar como <em>in_progress</em> por engano aqui. No happy path, o processor calcula os números reais (<code>result.totalTokensUsed</code>, <code>result.totalCost</code>, <code>Date.now() - startedAt</code>). No catch, valores são hardcoded em <code>0</code>. A query não atribui <code>updatedAt</code> manualmente. O TypeORM cuida disso via <code>@UpdateDateColumn</code>. Igual ao <code>markRunning</code>, se o <code>id</code> não existe, o UPDATE some sem log.
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">B1</span> Chamada happy path (com métricas reais)</div>
+            <div class="box-title"><span class="badge step">B1</span> Chamada no happy path (com métricas reais)</div>
             <div class="code-block">
 <span class="k">if</span> (params.<span class="s">mcpTracking</span>) {
   <span class="k">await</span> this.mcpRunStatusService.<span class="t">markFinished</span>({
@@ -754,7 +754,7 @@
           <div class="arrow">↓</div>
 
           <div class="box backend">
-            <div class="box-title"><span class="badge step">B2</span> Chamada no catch (zeros hard-coded)</div>
+            <div class="box-title"><span class="badge step">B2</span> Chamada no catch (zeros hardcoded)</div>
             <div class="code-block">
 <span class="k">if</span> (params.<span class="s">mcpTracking</span>) {
   <span class="k">await</span> this.mcpRunStatusService.<span class="t">markFinished</span>({
@@ -772,7 +772,7 @@
           <div class="arrow">↓</div>
 
           <div class="box db">
-            <div class="box-title"><span class="badge step">B3</span> Impl — repository.update com 5 campos</div>
+            <div class="box-title"><span class="badge step">B3</span> Implementação. repository.update com 5 campos</div>
             <div class="code-block">
 <span class="k">await</span> this.repository.<span class="t">update</span>(
   { id: params.id },
@@ -791,23 +791,23 @@
 
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Extract type — status apertado</div>
-            <code>status: Extract&lt;McpRunStatusValue, 'completed' | 'error'&gt;</code> — o TS impede passar <em>pending</em> ou <em>in_progress</em> pro markFinished. Segurança de tipo pra evitar corromper a máquina de estado.
+            <div class="aside-title">🎯 Extract type. Status restrito</div>
+            <code>status: Extract&lt;McpRunStatusValue, 'completed' | 'error'&gt;</code>. O TypeScript impede passar <em>pending</em> ou <em>in_progress</em> para o <code>markFinished</code>. É segurança de tipo para evitar corromper a máquina de estado.
           </div>
 
           <div class="aside warn">
             <div class="aside-title">⚠️ Catch zera métricas reais</div>
-            Se o <code>apiV2</code> jogou exception <em>depois</em> de fazer calls caras pra provider (Anthropic, OpenAI), os tokens/cost reais ficam invisíveis nessa tabela. Fica <code>0</code>. Contabilidade fica bugada. Pra billing preciso, precisa cruzar com outras fontes (logs de provider, run_log).
+            Se o <code>apiV2</code> lançou exceção depois de fazer chamadas caras a provedores (Anthropic, OpenAI), os tokens e cost reais ficam invisíveis nessa tabela. Ficam em <code>0</code>. A contabilidade fica bugada. Para billing preciso, é necessário cruzar com outras fontes (logs de provider, run log).
           </div>
 
           <div class="aside">
-            <div class="aside-title">📎 Diferença vs markCancelled</div>
-            Existe também <code>markCancelled(id)</code> (mcp-run-status.service.ts:66-71) que grava <code>{ status: 'error', errorMessage: 'Run cancelled' }</code> sem tocar em tokens/cost. Usado por endpoint de cancel — <strong>não</strong> é chamado pelo processor aqui.
+            <div class="aside-title">📎 Diferença em relação a markCancelled</div>
+            Existe também <code>markCancelled(id)</code> (mcp-run-status.service.ts:66-71). Grava <code>{ status: 'error', errorMessage: 'Run cancelled' }</code> sem tocar em tokens e cost. Usado por endpoint de cancel. Não é chamado pelo processor aqui.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 Timestamps automáticos</div>
-            <code>updatedAt</code> é atualizado sozinho via <code>@UpdateDateColumn</code>. O <code>createdAt</code> foi setado no <code>createPending</code>. Não tem <em>finishedAt</em> explícito — o timestamp de fim é implicitamente o <code>updatedAt</code> da última mudança.
+            <code>updatedAt</code> é atualizado sozinho via <code>@UpdateDateColumn</code>. O <code>createdAt</code> foi atribuído em <code>createPending</code>. Não há <code>finishedAt</code> explícito. O timestamp de fim é implicitamente o <code>updatedAt</code> da última mudança.
           </div>
         </div>
       </div>
@@ -831,10 +831,10 @@
         async markInProgress(id: string): Promise&lt;void&gt;  // status='in_progress', startedAt=NOW()
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Marca a row em <code>flow_execution_status</code> como <em>in_progress</em> e <strong>grava o timestamp de início</strong>. É o análogo do <code>markRunning</code> pro rastreamento REST v2 (independente do MCP).
+        <strong>Propósito.</strong> Marca a linha em <code>flow_execution_status</code> como <em>in_progress</em> e grava o timestamp de início. É o análogo de <code>markRunning</code> para o rastreamento REST v2, independente do MCP.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> é o <em>equivalente do vigia, mas pra outra tabela</em>. Se o run veio de um endpoint REST v2 que oferece callback opt-in, o endpoint criou uma row <em>pending</em> em <code>flow_execution_status</code> antes de enfileirar (via <code>create</code>), e passou o <code>executionId</code> no payload. Aqui o processor confere: se o <code>executionId</code> existe, chama <code>markInProgress</code> — que faz o UPDATE trocando status pra <em>in_progress</em> <strong>e</strong> populando <code>startedAt</code> com <code>new Date()</code>. Essa diferença é importante em relação ao markRunning do MCP: <strong>FES tem startedAt/finishedAt explícitos</strong>, MCP não tem (só o updatedAt automático). Consequência: no FES, dá pra calcular a duração diretamente pelas colunas; no MCP, só via o campo <code>durationMs</code> que o processor calcula em memória.
+        <strong>Em resumo.</strong> Se a execução veio de um endpoint REST v2 que oferece callback opt-in, o endpoint criou uma linha <em>pending</em> em <code>flow_execution_status</code> antes de enfileirar (via <code>create</code>) e passou o <code>executionId</code> no payload. Aqui o processor confere. Se o <code>executionId</code> existe, chama <code>markInProgress</code>. Essa chamada faz o UPDATE trocando o status para <em>in_progress</em> e populando <code>startedAt</code> com <code>new Date()</code>. A diferença importante em relação ao <code>markRunning</code> do MCP é o timestamp explícito. FES tem <code>startedAt</code> e <code>finishedAt</code> explícitos. MCP não tem (só o <code>updatedAt</code> automático). Consequência. No FES, dá para calcular a duração diretamente pelas colunas. No MCP, só via o campo <code>durationMs</code> que o processor calcula em memória.
       </div>
 
       <div class="fn-body-cols">
@@ -872,10 +872,10 @@
             <div class="aside-title">📊 Tabela flow_execution_status</div>
             <table class="field-table">
               <tr><th>Campo</th><th>Descrição</th></tr>
-              <tr><td>id</td><td>UUID (= executionId do payload)</td></tr>
+              <tr><td>id</td><td>UUID (é o executionId do payload)</td></tr>
               <tr><td>flowId</td><td>uuid, indexed</td></tr>
               <tr><td>userId</td><td>uuid, indexed</td></tr>
-              <tr><td>status</td><td>pending / in_progress / completed / error</td></tr>
+              <tr><td>status</td><td>pending, in_progress, completed ou error</td></tr>
               <tr><td>callbackUrl</td><td>text, nullable</td></tr>
               <tr><td>output</td><td>jsonb, nullable</td></tr>
               <tr><td>errorMessage</td><td>text, nullable</td></tr>
@@ -884,24 +884,24 @@
               <tr><td>durationMs</td><td>int, nullable</td></tr>
               <tr><td>startedAt</td><td>timestamptz, nullable</td></tr>
               <tr><td>finishedAt</td><td>timestamptz, nullable</td></tr>
-              <tr><td>createdAt / updatedAt</td><td>auto</td></tr>
+              <tr><td>createdAt e updatedAt</td><td>automáticos</td></tr>
             </table>
           </div>
 
           <div class="aside">
             <div class="aside-title">🎯 Consumido por</div>
-            Endpoints REST que retornam status de execução: <code>findByIdForUser</code> (linha 76-81) recupera pela combinação <code>id + userId</code> — não vaza pra outro usuário.
+            Endpoints REST que retornam status de execução. <code>findByIdForUser</code> (linha 76-81) recupera pela combinação de <code>id</code> mais <code>userId</code>. Não vaza para outro usuário.
           </div>
 
           <div class="aside warn">
-            <div class="aside-title">⚠️ Row precisa existir antes</div>
-            Igual ao MCP, o <code>update({ id })</code> some se não tiver row. Quem cria é o endpoint que enfileira (via <code>create({ id, flowId, userId, callbackUrl })</code>). Se o cliente enfileirar sem criar antes, todo esse rastreamento é perdido.
+            <div class="aside-title">⚠️ A linha precisa existir antes</div>
+            Igual ao MCP, o <code>update({ id })</code> some se não há linha. Quem cria é o endpoint que enfileira (via <code>create({ id, flowId, userId, callbackUrl })</code>). Se o cliente enfileira sem criar antes, todo esse rastreamento é perdido.
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 startedAt vs createdAt</div>
-            <code>createdAt</code> = quando a row foi criada (pending) — geralmente milissegundos antes do enqueue.
-            <br><code>startedAt</code> = quando o job saiu de pending pra in_progress (aqui). A diferença mede tempo em fila.
+            <div class="aside-title">🔧 startedAt versus createdAt</div>
+            <code>createdAt</code>. Momento em que a linha foi criada em pending. Geralmente milissegundos antes do enqueue.
+            <br><code>startedAt</code>. Momento em que o job saiu de pending para in_progress (aqui). A diferença mede o tempo em fila.
           </div>
         </div>
       </div>
@@ -925,10 +925,10 @@
         async markError({ id, errorMessage, tokensUsed, totalCost, durationMs })
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Fecham a row do FES com resultado. <code>markCompleted</code> grava o <code>output</code> completo em jsonb e limpa o <code>errorMessage</code>; <code>markError</code> grava só a mensagem de erro. Ambos setam <code>finishedAt: new Date()</code>.
+        <strong>Propósito.</strong> Fecham a linha do FES com resultado. <code>markCompleted</code> grava o <code>output</code> completo em jsonb e limpa o <code>errorMessage</code>. <code>markError</code> grava só a mensagem de erro. Ambos atribuem <code>finishedAt: new Date()</code>.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> essa dupla é o <em>ponteiro final</em> da linha FES. O processor decide qual chamar olhando <code>result.nodeError</code>: se veio preenchido, <code>markError</code>; senão, <code>markCompleted</code>. A diferença essencial entre os dois: <code>markCompleted</code> salva o <code>result</code> inteiro no campo <code>output</code> (jsonb) — permite consultas futuras recuperarem o payload de resposta —, enquanto <code>markError</code> guarda só a string do erro. E os dois zeram tokens/cost <em>separadamente</em> quando o processor entrega <code>0</code> (no catch). Assim como no MCP, o <code>finishedAt</code> é o momento do UPDATE — não do fim real do <code>apiV2</code>, que teria sido milissegundos antes. Fica bem próximo, mas não é o mesmo timestamp.
+        <strong>Em resumo.</strong> Essa dupla é o fechamento da linha FES. O processor decide qual chamar olhando <code>result.nodeError</code>. Se veio preenchido, <code>markError</code>. Caso contrário, <code>markCompleted</code>. A diferença essencial entre os dois. <code>markCompleted</code> salva o <code>result</code> inteiro no campo <code>output</code> (jsonb). Permite que consultas futuras recuperem o payload de resposta. <code>markError</code> guarda só a string do erro. Os dois zeram tokens e cost separadamente quando o processor entrega <code>0</code> (no catch). Assim como no MCP, o <code>finishedAt</code> é o momento do UPDATE, não o fim real do <code>apiV2</code>, que teria sido milissegundos antes. Fica bem próximo, mas não é o mesmo timestamp.
       </div>
 
       <div class="fn-body-cols">
@@ -961,7 +961,7 @@
           <div class="arrow">↓</div>
 
           <div class="box db">
-            <div class="box-title"><span class="badge step">D2</span> markCompleted — grava output completo</div>
+            <div class="box-title"><span class="badge step">D2</span> markCompleted. Grava output completo</div>
             <div class="code-block">
 <span class="k">await</span> this.repository.<span class="t">update</span>(
   { id: params.id },
@@ -981,7 +981,7 @@
           <div class="arrow">↓</div>
 
           <div class="box db">
-            <div class="box-title"><span class="badge step">D3</span> markError — só errorMessage</div>
+            <div class="box-title"><span class="badge step">D3</span> markError. Só errorMessage</div>
             <div class="code-block">
 <span class="k">await</span> this.repository.<span class="t">update</span>(
   { id: params.id },
@@ -1002,7 +1002,7 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">D4</span> Catch replica só markError</div>
             <div class="box-desc">
-              No catch (linha 144-152), <em>sempre</em> markError com <code>tokensUsed: 0, totalCost: 0</code>. Nunca markCompleted.
+              No catch (linha 144-152), sempre <code>markError</code> com <code>tokensUsed: 0, totalCost: 0</code>. Nunca <code>markCompleted</code>.
             </div>
             <div class="box-file">apiV2Job.processor.ts:144-152</div>
           </div>
@@ -1010,24 +1010,24 @@
 
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 output no jsonb</div>
-            <code>output</code> é <code>jsonb nullable</code> — recebe o objeto <code>result</code> inteiro do <code>apiV2</code>. Isso inclui <code>outputs[]</code>, <code>totalTokensUsed</code>, <code>totalCost</code>, e potencialmente muito mais dependendo do run. Pode crescer bastante em runs grandes.
-            <br><br>Cliente REST que fizer GET no status vai ver isso tudo.
+            <div class="aside-title">🎯 output em jsonb</div>
+            <code>output</code> é <code>jsonb nullable</code>. Recebe o objeto <code>result</code> inteiro do <code>apiV2</code>. Inclui <code>outputs[]</code>, <code>totalTokensUsed</code>, <code>totalCost</code> e potencialmente muito mais, dependendo da execução. Pode crescer bastante em execuções grandes.
+            <br><br>O cliente REST que fizer GET no status vai ver tudo.
           </div>
 
           <div class="aside warn">
-            <div class="aside-title">⚠️ markError NÃO limpa output</div>
-            Diferente do markCompleted (que limpa <code>errorMessage: null</code>), o markError <strong>não</strong> zera o campo <code>output</code>. Se por algum motivo a row já tinha um output de tentativa anterior, ele fica. Baixo risco porque <code>attempts: 1</code>, mas latente.
+            <div class="aside-title">⚠️ markError não limpa output</div>
+            Diferente de <code>markCompleted</code> (que limpa <code>errorMessage: null</code>), o <code>markError</code> não zera o campo <code>output</code>. Se por algum motivo a linha já tinha um output de tentativa anterior, ele permanece. É baixo risco por <code>attempts: 1</code>, mas latente.
           </div>
 
           <div class="aside">
-            <div class="aside-title">📎 finishedAt = timestamp do UPDATE</div>
-            Não é o momento exato em que o <code>apiV2</code> retornou — é o UPDATE em si. A diferença é minúscula (o UPDATE roda logo depois), mas se o markCompleted travar (lock, connection pool), <code>finishedAt</code> mostra o tempo do UPDATE, não do fim de execução.
+            <div class="aside-title">📎 finishedAt é o timestamp do UPDATE</div>
+            Não é o momento exato em que o <code>apiV2</code> retornou. É o UPDATE em si. A diferença é mínima (o UPDATE roda logo depois). Se o <code>markCompleted</code> travar (lock, connection pool), <code>finishedAt</code> mostra o tempo do UPDATE, não do fim da execução.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 Nullish coalescing defensivo</div>
-            <code>result.totalTokensUsed ?? 0</code> e <code>result.totalCost ?? 0</code> — se o <code>apiV2</code> não populou (retornou undefined), o UPDATE ainda tem valores numéricos válidos. Coluna é <code>float default 0</code>, então preserva o tipo.
+            <code>result.totalTokensUsed ?? 0</code> e <code>result.totalCost ?? 0</code>. Se o <code>apiV2</code> não populou (retornou <code>undefined</code>), o UPDATE ainda tem valores numéricos válidos. A coluna é <code>float default 0</code>. Preserva o tipo.
           </div>
         </div>
       </div>
@@ -1036,20 +1036,20 @@
 
   <!-- SUMMARY -->
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo — o que sai de 1.1a:</strong>
-    <br>• <strong>0, 1 ou 2 rows atualizadas</strong> em tabelas independentes: <code>mcp_run_status</code> se <code>mcpTracking</code>, <code>flow_execution_status</code> se <code>executionId</code>. Um mesmo run pode escrever em zero, um ou nos dois.
-    <br>• Sequência em cada tabela: <code>pending</code> (criada por quem enfileirou) → <code>in_progress</code> (aqui, antes do apiV2) → <code>completed</code>/<code>error</code> (aqui, depois do apiV2 ou no catch).
-    <br>• Métricas: <code>tokens / cost / durationMs</code> corretas no happy path; zeradas no catch (mesmo se apiV2 já consumiu tokens caros antes do throw).
-    <br>• <code>flow_execution_status</code> tem <code>startedAt</code>/<code>finishedAt</code> explícitos e persiste o <code>output</code> em jsonb — <code>mcp_run_status</code> não.
+    <strong>Resumo. O que sai de 1.1a:</strong>
+    <br>0, 1 ou 2 linhas atualizadas em tabelas independentes. <code>mcp_run_status</code> se há <code>mcpTracking</code>. <code>flow_execution_status</code> se há <code>executionId</code>. Uma mesma execução pode escrever em zero, uma ou nas duas.
+    <br>Sequência em cada tabela. <code>pending</code> (criada por quem enfileirou), <code>in_progress</code> (aqui, antes do apiV2) e <code>completed</code> ou <code>error</code> (aqui, depois do apiV2 ou no catch).
+    <br>Métricas. <code>tokens</code>, <code>cost</code> e <code>durationMs</code> corretos no happy path. Zeram no catch mesmo se o apiV2 já consumiu tokens caros antes do throw.
+    <br><code>flow_execution_status</code> tem <code>startedAt</code> e <code>finishedAt</code> explícitos e persiste o <code>output</code> em jsonb. <code>mcp_run_status</code> não tem.
   </div>
 
   <div class="note">
     <strong>Observações para migração:</strong>
-    <br>• <strong>Duplicidade de rastreamento é o maior débito técnico aqui.</strong> Duas tabelas independentes, com colunas parecidas (tokens/cost/durationMs/status), gates separados, sem foreign key entre elas. Se o worker Temporal absorver a execução, é a hora ideal pra consolidar numa <code>flow_execution_status</code> unificada (com um campo <code>mcpRunId</code> nullable, se ainda precisar da granularidade MCP).
-    <br>• Se ficarem separadas, ambas viram atividades Temporal: <code>markInProgressActivity</code>, <code>markCompletedActivity</code>, <code>markErrorActivity</code>. Vantagem: Temporal garante que a atividade roda ao menos uma vez (retry configurável), corrigindo o problema atual de "row nunca sai de in_progress" quando o job estoura timeout do Bull.
-    <br>• <strong>Ordem importa:</strong> hoje o processor faz <code>markRunning</code> ANTES de <code>markInProgress</code>. Se migrar, é bom manter (algum código de status usa ordem cronológica). No Temporal fica <code>await activity(mcp); await activity(fes)</code>.
-    <br>• <strong>Riscos de deixar pra depois:</strong> o <code>tokens: 0 / cost: 0</code> no catch é um bug de contabilidade real — se um run gastou $10 em tokens e crashou no final, o billing perde essa cobrança. Vale corrigir junto: <code>result?.totalTokensUsed ?? tokensAcumuladosPorNodesJaExecutados</code>.
-    <br>• Se um serviço equivalente à <code>FlowExecutionStatusService</code> precisar ser criado ou renomeado no worker, o arquivo <code>src/app-api/flux/flow-execution-status.service.ts</code> é a fonte canônica atual — mover pra <code>src/shared/</code> ou <code>src/services/</code> antes da migração pra ser consumível pelo worker.
+    <br>Duplicidade de rastreamento é o maior débito técnico aqui. Duas tabelas independentes, com colunas parecidas (<code>tokens</code>, <code>cost</code>, <code>durationMs</code>, <code>status</code>), gates separados e sem foreign key entre elas. Se o worker Temporal absorver a execução, é o momento ideal para consolidar numa <code>flow_execution_status</code> unificada. Um campo <code>mcpRunId</code> nullable pode preservar a granularidade MCP.
+    <br>Se ficarem separadas, ambas viram activities Temporal. <code>markInProgressActivity</code>, <code>markCompletedActivity</code> e <code>markErrorActivity</code>. Vantagem. O Temporal garante que a activity executa pelo menos uma vez (retry configurável). Corrige o problema atual em que a linha nunca sai de in_progress quando o job estoura o timeout do Bull.
+    <br>Ordem importa. Hoje o processor faz <code>markRunning</code> antes de <code>markInProgress</code>. Se migrar, convém manter (algum código de status usa ordem cronológica). No Temporal, fica <code>await activity(mcp); await activity(fes)</code>.
+    <br>Riscos de deixar para depois. O <code>tokens: 0</code> e <code>cost: 0</code> no catch é um bug real de contabilidade. Se uma execução gastou $10 em tokens e falhou no final, o billing perde essa cobrança. Vale corrigir em conjunto. <code>result?.totalTokensUsed ?? tokensAcumuladosPorNodesJaExecutados</code>.
+    <br>Se um serviço equivalente ao <code>FlowExecutionStatusService</code> precisar ser criado ou renomeado no worker, o arquivo <code>src/app-api/flux/flow-execution-status.service.ts</code> é a fonte canônica atual. Mover para <code>src/shared/</code> ou <code>src/services/</code> antes da migração para ser consumível pelo worker.
   </div>
 
   <!-- FOOTER NAV -->

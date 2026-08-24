@@ -83,28 +83,28 @@
 <div class="page-nav"><div class="breadcrumb"><a href="../index.html">📋 Execução de Agente</a><span class="sep">›</span><span>Passo 5.2 — Detalhamento</span></div><a href="../index.html#step-5-2" class="back-btn">← Voltar ao diagrama</a></div>
 
 <div class="page-header"><span class="icon">📊</span><h1>Passo 5.2 — mcpRunStatusService.markFinished</h1></div>
-<div class="page-sub">Bloco em <code>apiV2Job.processor.ts:58-67</code> (path sucesso) e <code>80-88</code> (path erro). Não vive no <code>FluxService.apiV2</code> — vive no <em>processor do Bull queue</em>. Só roda quando request veio pelo endpoint MCP e o job foi enfileirado via Bull.</div>
+<div class="page-sub">Bloco em <code>apiV2Job.processor.ts:58-67</code> (caminho de sucesso) e <code>80-88</code> (caminho de erro). Não vive no <code>FluxService.apiV2</code>. Vive no <em>processor da fila Bull</em>. Só roda quando o request veio pelo endpoint MCP e o job foi enfileirado via Bull.</div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
     <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
     <ul>
-      <li><strong>Tracking dedicado do MCP:</strong> esse passo <em>não</em> vive no <code>FluxService</code>, e sim no <em>processor do Bull</em>. É opt-in via flag <code>mcpTracking</code> — se o run não veio pelo endpoint MCP, tudo aqui é pulado. Serve pra dashboards específicos (latência, error rate, tokens por MCP token).</li>
-      <li><strong>Pareamento <code>markRunning</code> / <code>markFinished</code>:</strong> na entrada do job, o processor grava a row em <code>mcp_run_status</code> com <code>status: 'in_progress'</code> e <code>startedAt=NOW()</code>. No fim, atualiza com o resultado — fecha o par do começo ao fim do lifecycle.</li>
-      <li><strong>Success path — deriva status de <code>nodeError</code>:</strong> quando <code>apiV2()</code> retorna sem lançar, o processor lê <code>result.nodeError</code>. Se null → <code>'completed'</code>; se string → <code>'error'</code> (nó falhou mas o run terminou). Grava <code>totalTokensUsed</code>, <code>totalCost</code>, <code>durationMs</code> e <code>errorMessage</code>.</li>
-      <li><strong>Error path — tokens/cost zerados:</strong> se <code>apiV2()</code> lançou (5.1), o catch do processor marca <code>status: 'error'</code> com <code>tokens: 0, cost: 0</code>. Limitação atual — o processor não tem acesso ao acumulador do run, então crash catastrófico fica <em>subcontado</em> em analytics de custo. Depois faz <code>throw error</code> pro Bull marcar o job failed.</li>
-      <li><strong>Saída:</strong> 1 UPDATE em <code>mcp_run_status</code> (só se veio via MCP), com status final, tokens, cost, duração e error. Cleanup do MCP fica separado de <code>execution_logs</code> pra não poluir queries dos outros run_types.</li>
+      <li><strong>Tracking dedicado do MCP.</strong> Esse passo <em>não</em> vive no <code>FluxService</code>. Vive no <em>processor do Bull</em>. É opt-in via flag <code>mcpTracking</code>. Se a execução não veio pelo endpoint MCP, tudo aqui é pulado. Serve para dashboards específicos: latência, error rate, tokens por token MCP.</li>
+      <li><strong>Pareamento <code>markRunning</code> / <code>markFinished</code>.</strong> Na entrada do job, o processor grava a linha em <code>mcp_run_status</code> com <code>status: 'in_progress'</code> e <code>startedAt=NOW()</code>. No fim, atualiza com o resultado. Fecha o par do começo ao fim do lifecycle.</li>
+      <li><strong>Success path. Deriva o status de <code>nodeError</code>.</strong> Quando o <code>apiV2()</code> retorna sem lançar, o processor lê <code>result.nodeError</code>. Se <code>null</code>, o status vira <code>'completed'</code>. Se string, o status vira <code>'error'</code> (nó falhou, mas a execução terminou). Grava <code>totalTokensUsed</code>, <code>totalCost</code>, <code>durationMs</code> e <code>errorMessage</code>.</li>
+      <li><strong>Error path. Tokens e cost zerados.</strong> Se o <code>apiV2()</code> lançou (5.1), o catch do processor marca <code>status: 'error'</code> com <code>tokens: 0, cost: 0</code>. Limitação atual. O processor não tem acesso ao acumulador da execução. Crash catastrófico fica <em>subcontado</em> em analytics de custo. Depois, faz <code>throw error</code> para o Bull marcar o job como failed.</li>
+      <li><strong>Saída.</strong> 1 UPDATE em <code>mcp_run_status</code>, só quando vem via MCP. Grava status final, tokens, cost, duração e erro. O cleanup do MCP fica separado de <code>execution_logs</code>. Não polui queries dos outros run_types.</li>
     </ul>
   </div>
 
-<div class="note info"><strong>Contexto:</strong> MCP (Model Context Protocol) é uma layer separada — permite outros LLMs chamarem o Flux como tool. Cada chamada MCP dispara um job Bull; esse tracking permite analytics de "quantos runs de MCP rodaram", latência, error rate por token MCP. Fora do main path do FluxService — vive no processor.</div>
+<div class="note info"><strong>Contexto.</strong> MCP (Model Context Protocol) é uma layer separada. Permite outros LLMs chamarem o Flux como tool. Cada chamada MCP dispara um job Bull. Esse tracking permite analytics de "quantas execuções de MCP rodaram", latência e error rate por token MCP. Fora do main path do FluxService. Vive no processor.</div>
 
 <div class="fn-card collapsed">
 <div class="fn-card-header"><div class="fn-title"><span class="badge step" style="background:#EAB308;color:white">A</span><code>markRunning (setup — passo 1.1)</code></div><div class="fn-loc">apiV2Job.processor.ts:48-50</div></div>
 <div class="fn-card-body">
 <div class="fn-signature">if (params.mcpTracking) { await this.mcpRunStatusService.markRunning(processId); }</div>
-<div class="fn-purpose"><strong>Propósito:</strong> Antes de chamar <code>fluxService.apiV2()</code>, se veio flag <code>mcpTracking=true</code>, o processor marca o run como em-execução em <code>mcp_run_status</code>. INSERT (ou UPDATE se existe) com <code>status='in_progress'</code>, <code>startedAt=NOW()</code>.</div>
-<div class="fn-friendly"><strong>Em resumo:</strong> passo 1.1 do diagrama menciona <code>markRunning</code>, mas o pareamento markRunning/markFinished é o que caracteriza esse subsistema — separado do restante do audit trail. Serve pra dashboards específicos do MCP: "quantos runs de mcpToken X estão rodando agora, quantos terminaram, latência média". A tabela <code>mcp_run_status</code> é dedicada — não é <code>execution_logs</code>. Motivação: MCP é uma layer de API pública com contract próprio (tokens de MCP, rate limiting por MCP client), e tracking granular ajuda gestão dessa layer.</div>
+<div class="fn-purpose"><strong>Propósito.</strong> Antes de chamar <code>fluxService.apiV2()</code>, se a flag <code>mcpTracking=true</code> veio no payload, o processor marca a execução como em execução em <code>mcp_run_status</code>. INSERT (ou UPDATE se a linha existe) com <code>status='in_progress'</code> e <code>startedAt=NOW()</code>.</div>
+<div class="fn-friendly"><strong>Em resumo.</strong> O passo 1.1 do diagrama menciona <code>markRunning</code>. O pareamento <code>markRunning</code>/<code>markFinished</code> caracteriza esse subsistema. Fica separado do restante do audit trail. Serve para dashboards específicos do MCP: "quantas execuções do <code>mcpToken</code> X estão rodando agora, quantas terminaram, latência média". A tabela <code>mcp_run_status</code> é dedicada. Não é <code>execution_logs</code>. Motivação. MCP é uma layer de API pública com contrato próprio: tokens de MCP e rate limiting por MCP client. Tracking granular ajuda a gerir essa layer.</div>
 
 <div class="fn-body-cols"><div class="fn-main">
 <div class="code-block"><span class="c">// apiV2Job.processor.ts:48</span>
@@ -112,18 +112,18 @@
   <span class="k">await</span> <span class="k">this</span>.mcpRunStatusService.<span class="t">markRunning</span>(processId);
 }</div>
 <div class="arrow">↓</div>
-<div class="box db"><div class="box-title">INSERT/UPDATE mcp_run_status</div><div class="box-desc">Row com <code>{ id: processId, status: 'in_progress', startedAt: NOW() }</code>. Sinal pra dashboard de MCP que existe run em execução.</div></div>
+<div class="box db"><div class="box-title">INSERT/UPDATE mcp_run_status</div><div class="box-desc">Linha com <code>{ id: processId, status: 'in_progress', startedAt: NOW() }</code>. Sinaliza para o dashboard de MCP que existe execução em curso.</div></div>
 </div>
 <div class="fn-asides">
-<div class="aside info"><div class="aside-title">🎯 mcpTracking flag</div>Vem no request quando endpoint é MCP-specific. Se false ou ausente, todo o tracking MCP é skipado — outros run_types não pagam esse custo.</div>
+<div class="aside info"><div class="aside-title">🎯 Flag mcpTracking</div>Chega no request quando o endpoint é específico de MCP. Se é <code>false</code> ou ausente, o tracking MCP inteiro é pulado. Outros run_types não pagam esse custo.</div>
 </div></div></div></div>
 
 <div class="fn-card collapsed">
 <div class="fn-card-header"><div class="fn-title"><span class="badge step" style="background:#3B82F6;color:white">B</span><code>markFinished (success path)</code></div><div class="fn-loc">apiV2Job.processor.ts:58-67</div></div>
 <div class="fn-card-body">
 <div class="fn-signature">await this.mcpRunStatusService.markFinished({ id: processId, status: result.nodeError ? 'error' : 'completed', tokens: result.totalTokensUsed, cost: result.totalCost, durationMs: Date.now() - startedAt, errorMessage: result.nodeError ?? null })</div>
-<div class="fn-purpose"><strong>Propósito:</strong> Após <code>fluxService.apiV2()</code> retornar (sem throw), fecha o tracking. Status = 'error' se <code>nodeError</code> presente no retorno, senão 'completed'. Grava tokens totais, cost total, duração em ms, errorMessage.</div>
-<div class="fn-friendly"><strong>Em resumo:</strong> pareamento com <code>markRunning</code>. Quando <code>apiV2()</code> retorna sem crash, o processor pega o <code>result</code> (que tem <code>nodeError</code>, <code>totalTokensUsed</code>, <code>totalCost</code>) e faz update na row de <code>mcp_run_status</code>. Status é derivado de <code>result.nodeError</code>: se null = 'completed' (sucesso limpo); se string = 'error' (algum nó falhou mas o run terminou sem crash top-level — a Fase 4 catch em 3.8 fez fail-fast). <code>durationMs</code> é <code>Date.now() - startedAt</code> — <code>startedAt</code> foi marcado pelo processor no início. Preciso pra latency dashboards. <code>errorMessage</code> é o próprio <code>nodeError</code> (a string amigável do 4.5) — dá pra MCP client mostrar UI apropriada. UPDATE via TypeORM.</div>
+<div class="fn-purpose"><strong>Propósito.</strong> Depois de o <code>fluxService.apiV2()</code> retornar (sem throw), fecha o tracking. Status vale <code>'error'</code> se <code>nodeError</code> está presente no retorno. Caso contrário, vale <code>'completed'</code>. Grava tokens totais, cost total, duração em ms e <code>errorMessage</code>.</div>
+<div class="fn-friendly"><strong>Em resumo.</strong> Pareamento com <code>markRunning</code>. Quando o <code>apiV2()</code> retorna sem crash, o processor pega o <code>result</code>. O <code>result</code> traz <code>nodeError</code>, <code>totalTokensUsed</code> e <code>totalCost</code>. O processor faz UPDATE na linha de <code>mcp_run_status</code>. O status é derivado de <code>result.nodeError</code>. Se é <code>null</code>, status vira <code>'completed'</code> (sucesso limpo). Se é string, status vira <code>'error'</code> (algum nó falhou, mas a execução terminou sem crash top-level; o catch da Fase 4 em 3.8 fez fail-fast). <code>durationMs</code> é <code>Date.now() - startedAt</code>. O <code>startedAt</code> foi marcado pelo processor no início. Preciso para dashboards de latência. <code>errorMessage</code> é o próprio <code>nodeError</code> (a string amigável do 4.5). Permite ao MCP client mostrar a UI apropriada. UPDATE via TypeORM.</div>
 
 <div class="fn-body-cols"><div class="fn-main">
 <div class="code-block"><span class="c">// apiV2Job.processor.ts:58</span>
@@ -139,16 +139,16 @@
 }</div>
 </div>
 <div class="fn-asides">
-<div class="aside info"><div class="aside-title">🎯 3 estados possíveis</div>Status: 'pending' (nunca setado explícito — default do INSERT), 'in_progress' (markRunning), 'completed' | 'error' (markFinished). Cancel não tem status próprio aqui — cancel de MCP é raro/inexistente.</div>
-<div class="aside"><div class="aside-title">📎 nodeError vs error crash</div>Se agente falhou por handler bug (fail-fast em 3.8), <code>nodeError</code> é string mas <code>apiV2</code> retornou normalmente. Se agente crashou catastrófico (5.1), <code>apiV2</code> lançou — vai pro fn C.</div>
+<div class="aside info"><div class="aside-title">🎯 3 estados possíveis</div>Status: <code>'pending'</code> (nunca setado explicitamente; default do INSERT), <code>'in_progress'</code> (<code>markRunning</code>), <code>'completed'</code> ou <code>'error'</code> (<code>markFinished</code>). Cancel não tem status próprio aqui. Cancel de MCP é raro ou inexistente.</div>
+<div class="aside"><div class="aside-title">📎 nodeError vs. crash</div>Se o agente falhou por bug de handler (fail-fast em 3.8), <code>nodeError</code> é string, mas o <code>apiV2</code> retornou normalmente. Se o agente crashou de forma catastrófica (5.1), o <code>apiV2</code> lançou. Nesse caso, o fluxo vai para o fn C.</div>
 </div></div></div></div>
 
 <div class="fn-card collapsed">
 <div class="fn-card-header"><div class="fn-title"><span class="badge step" style="background:#10B981;color:white">C</span><code>markFinished (error path)</code></div><div class="fn-loc">apiV2Job.processor.ts:80-88</div></div>
 <div class="fn-card-body">
 <div class="fn-signature">catch (error) { if (params.mcpTracking) { await mcpRunStatusService.markFinished({ id: processId, status: 'error', tokens: 0, cost: 0, durationMs, errorMessage: error.message }); } throw error; }</div>
-<div class="fn-purpose"><strong>Propósito:</strong> Se <code>fluxService.apiV2()</code> lançou (não retornou), o processor pega no catch. Marca <code>mcp_run_status</code> com status='error', tokens=0, cost=0 (não tem acesso ao acumulador), errorMessage=error.message. Re-throw pro Bull marcar o job como failed.</div>
-<div class="fn-friendly"><strong>Em resumo:</strong> paralelo do B, mas em catch. Diferença crítica: aqui não tem acesso ao <code>totalTokensUsed</code>/<code>totalCost</code> — o <code>result</code> nunca foi retornado. Passa 0 pra ambos. Isso é limitação do design atual — em teoria, o backend poderia expor essas variáveis via <code>chargeContext</code> ou outro pattern pra o processor recuperar. Mas hoje, run com crash catastrófico não é billed. Boa notícia pro user (não paga por crash), ruim pra analytics de custo real. <code>errorMessage</code> é a mensagem crua da exception. Depois faz <code>throw error</code> pra Bull marcar failed — sem isso o Bull não sabe que foi erro e faria retry.</div>
+<div class="fn-purpose"><strong>Propósito.</strong> Se o <code>fluxService.apiV2()</code> lançou (não retornou), o processor pega no catch. Marca <code>mcp_run_status</code> com <code>status='error'</code>, <code>tokens=0</code>, <code>cost=0</code> (o processor não tem acesso ao acumulador) e <code>errorMessage=error.message</code>. Faz re-throw para o Bull marcar o job como failed.</div>
+<div class="fn-friendly"><strong>Em resumo.</strong> Paralelo do fn B, mas em <code>catch</code>. Diferença crítica. Aqui o processor não tem acesso a <code>totalTokensUsed</code> nem <code>totalCost</code>. O <code>result</code> nunca foi retornado. Passa 0 para ambos. Limitação do design atual. Em teoria, o backend poderia expor essas variáveis via <code>chargeContext</code> ou outro padrão para o processor recuperar. Hoje, execução com crash catastrófico não é billed. Boa notícia para o user, que não paga pelo crash. Ruim para analytics de custo real. <code>errorMessage</code> é a mensagem crua da exception. Depois, o código faz <code>throw error</code>. Sem isso, o Bull acharia que o job foi OK e não trataria como erro.</div>
 
 <div class="fn-body-cols"><div class="fn-main">
 <div class="code-block"><span class="c">// apiV2Job.processor.ts:80</span>
@@ -167,32 +167,32 @@
 }</div>
 </div>
 <div class="fn-asides">
-<div class="aside warn"><div class="aside-title">⚠️ Tokens/cost zerados em crash</div>Se agente crashou no meio, tokens/cost já cobrados no banco (<code>token_transactions</code>) NÃO aparecem em <code>mcp_run_status</code>. Dashboard "custo por MCP token" fica subcontagem.</div>
-<div class="aside info"><div class="aside-title">🎯 Re-throw pra Bull</div>Sem <code>throw error</code>, Bull acharia job = OK (returned nothing). Precisa propagar pra retry logic funcionar.</div>
+<div class="aside warn"><div class="aside-title">⚠️ tokens/cost zerados em crash</div>Se o agente crashou no meio, tokens e cost já cobrados no banco (<code>token_transactions</code>) NÃO aparecem em <code>mcp_run_status</code>. O dashboard "custo por token MCP" fica com subcontagem.</div>
+<div class="aside info"><div class="aside-title">🎯 Re-throw para o Bull</div>Sem <code>throw error</code>, o Bull acharia que o job foi OK (returned nothing). O erro precisa propagar para a lógica de retry funcionar.</div>
 </div></div></div></div>
 
 <div class="fn-card collapsed">
 <div class="fn-card-header"><div class="fn-title"><span class="badge step" style="background:#8B5CF6;color:white">D</span><code>Tabela mcp_run_status</code></div><div class="fn-loc">mcp/entities/mcp-run-status.entity.ts</div></div>
 <div class="fn-card-body">
 <div class="fn-signature">@Entity('mcp_run_status') class McpRunStatus { id: string PK; status: 'pending' | 'in_progress' | 'completed' | 'error'; tokens: number; cost: number; durationMs: number; errorMessage: string; startedAt, endedAt: Date; }</div>
-<div class="fn-purpose"><strong>Propósito:</strong> Table dedicada pra MCP tracking. Uma row por processId (job Bull). Analytics: SUM tokens por mcpTokenId, latency percentiles, error rate. Separada de <code>execution_logs</code> pra não poluir queries de non-MCP com filtros.</div>
-<div class="fn-friendly"><strong>Em resumo:</strong> tabela pequena e focada. Uma row = um run MCP. Chave é o <code>processId</code> (mesmo do <code>runLogProcessId</code>) — permite JOIN com <code>execution_logs</code>, <code>space_run_logs</code>, <code>node_executions</code>. Colunas específicas de MCP tracking: <code>status</code> como enum-like (string mas com valores restritos), <code>durationMs</code> pra latency, <code>errorMessage</code> pra debug. Sem <code>flowId</code>/<code>userId</code> — dá pra JOIN se precisar via processId. Dashboard "meus MCP calls" filtra por <code>userId</code> via join.</div>
+<div class="fn-purpose"><strong>Propósito.</strong> Tabela dedicada para MCP tracking. Uma linha por <code>processId</code> (job Bull). Analytics: <code>SUM</code> de tokens por <code>mcpTokenId</code>, percentis de latência, error rate. Separada de <code>execution_logs</code> para não poluir queries de execuções não MCP com filtros.</div>
+<div class="fn-friendly"><strong>Em resumo.</strong> Tabela pequena e focada. Uma linha equivale a uma execução MCP. A chave é o <code>processId</code> (o mesmo do <code>runLogProcessId</code>). Permite JOIN com <code>execution_logs</code>, <code>space_run_logs</code> e <code>node_executions</code>. Colunas específicas de MCP tracking. <code>status</code> como enum-like (string com valores restritos). <code>durationMs</code> para latência. <code>errorMessage</code> para debug. Sem <code>flowId</code> nem <code>userId</code>. É possível fazer JOIN via <code>processId</code> quando preciso. O dashboard "meus MCP calls" filtra por <code>userId</code> via join.</div>
 
 <div class="fn-body-cols"><div class="fn-main">
 <div class="cascade"><div class="cascade-title">🪜 Ciclo de status</div>
 <div class="cascade-step"><span class="cascade-num">1</span><span class="cond">Job enqueued (markRunning)</span><span class="result call">'in_progress'</span></div>
-<div class="cascade-step"><span class="cascade-num">2</span><span class="cond">apiV2 returned OK (result.nodeError null)</span><span class="result pass">'completed'</span></div>
-<div class="cascade-step"><span class="cascade-num">3</span><span class="cond">apiV2 returned com nodeError</span><span class="result deny">'error'</span></div>
-<div class="cascade-step"><span class="cascade-num">4</span><span class="cond">apiV2 threw exception</span><span class="result deny">'error' (tokens=0, cost=0)</span></div>
+<div class="cascade-step"><span class="cascade-num">2</span><span class="cond">apiV2 retornou OK (result.nodeError null)</span><span class="result pass">'completed'</span></div>
+<div class="cascade-step"><span class="cascade-num">3</span><span class="cond">apiV2 retornou com nodeError</span><span class="result deny">'error'</span></div>
+<div class="cascade-step"><span class="cascade-num">4</span><span class="cond">apiV2 lançou exception</span><span class="result deny">'error' (tokens=0, cost=0)</span></div>
 </div>
 </div>
 <div class="fn-asides">
-<div class="aside info"><div class="aside-title">🎯 Por que separado de execution_logs</div>MCP tracking é opt-in por <code>mcpTracking</code> flag. Manter em tabela separada evita coluna nullable em <code>execution_logs</code> e poluição de queries pra outros run_types.</div>
+<div class="aside info"><div class="aside-title">🎯 Por que ficar separado de execution_logs</div>MCP tracking é opt-in pela flag <code>mcpTracking</code>. Manter em tabela separada evita coluna nullable em <code>execution_logs</code>. Também evita poluição de queries de outros run_types.</div>
 </div></div></div></div>
 
-<div class="note info" style="margin-top:32px"><strong>Resumo — o que sai de 5.2:</strong><br>• 1 UPDATE em <code>mcp_run_status</code> (só se veio via MCP)<br>• Row completa: status final, tokens, cost (0 em crash), duration, error<br>• Roda antes do throw propagar em erro path — cleanup garantido</div>
+<div class="note info" style="margin-top:32px"><strong>Resumo — o que sai de 5.2:</strong><br>• 1 UPDATE em <code>mcp_run_status</code>, só quando vem via MCP.<br>• Linha completa: status final, tokens, cost (0 em crash), duração e erro.<br>• Roda antes de o <code>throw</code> propagar no error path. Cleanup garantido.</div>
 
-<div class="note"><strong>Observações para migração:</strong><br>• MCP tracking é <strong>opcional e isolado</strong> — só afeta MCP endpoints. Migração pode ficar pra depois.<br>• Zerar tokens/cost em crash é dívida — refactor pode expor essas vars via chargeContext ou callback pro processor ler.<br>• Tabela dedicada é bom pattern (evita "God table" execution_logs) — manter.<br>• Não bloqueia migração de agentes normais.</div>
+<div class="note"><strong>Observações para migração:</strong><br>• MCP tracking é <strong>opcional e isolado</strong>. Só afeta endpoints MCP. A migração pode ficar para depois.<br>• Zerar tokens e cost em crash é dívida. Um refactor pode expor essas variáveis via <code>chargeContext</code> ou callback para o processor ler.<br>• Tabela dedicada é bom padrão. Evita "tabela deusa" em <code>execution_logs</code>. Manter.<br>• Não bloqueia migração de agentes normais.</div>
 
 <div class="page-footer-nav"><a href="../index.html#step-5-2" class="back-btn">← Voltar ao diagrama principal</a></div>
 </div>

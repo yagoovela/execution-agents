@@ -652,26 +652,26 @@
   <!-- PAGE HEADER -->
   <div class="page-header">
     <span class="icon">🕰️</span>
-    <h1>Flow Version — Como funciona hoje</h1>
+    <h1>Flow Version. Como funciona hoje.</h1>
   </div>
   <div class="page-sub">
-    Contexto para o <strong>Passo 1.3 da arquitetura v2</strong> (<em>Cria row <code>flow_executions</code> + congela snapshot</em>). Documenta o modelo <strong>atual</strong> de versionamento de flows — <code>flow_versions</code>, <code>flow_versions_histories</code>, <code>flow.deployedVersionId</code>, <code>currentHistoryId</code> — que a v2 substitui por uma tabela dedicada de snapshots por execução.
+    Contexto para o <strong>Passo 1.3 da arquitetura v2</strong> (<em>cria linha <code>flow_executions</code> + congela snapshot</em>). Documenta o modelo <strong>atual</strong> de versionamento de flows (<code>flow_versions</code>, <code>flow_versions_histories</code>, <code>flow.deployedVersionId</code>, <code>currentHistoryId</code>). A v2 substitui por uma tabela dedicada de snapshots por execução.
   </div>
 
   <!-- Step-level friendly summary -->
   <div class="step-friendly">
-    <div class="step-friendly-title">Em resumo — o versionamento de hoje em 5 pontos</div>
+    <div class="step-friendly-title">Em resumo. O versionamento de hoje em 5 pontos.</div>
     <ul>
       <li><strong>Versões são criadas em 3 momentos específicos:</strong> (1) ao habilitar version control (cria <code>V 1.0</code> deployada + <code>Staging</code> draft); (2) ao criar branch manual (endpoint <code>/versions/create</code>); (3) ao publicar (endpoint <code>/versions/push-to-production</code>, com bump automático de major ou minor). <em>Autosave nunca cria versão nova.</em></li>
-      <li><strong>Cada versão tem um ponteiro mutável <code>currentHistoryId</code></strong> que aponta pra row de <code>flow_versions_histories</code> "ativa". Nodes e edges são pendurados nessa history via FK <code>flow_version_history_id</code>. Trocar o ponteiro = trocar o snapshot que a versão "é".</li>
-      <li><strong>Salvar edições na Staging não cria uma nova history</strong> — a rotina <code>saveToVersion()</code> <em>upserta</em> in-place as rows de <code>flows_nodes</code>/<code>flows_nodes_edges</code> que já estão penduradas no <code>currentHistoryId</code> da versão. O snapshot que a gente chama de "imutável" é <em>rescrito por baixo</em>.</li>
-      <li><strong>Executar lê o snapshot via</strong> <code>resolveExecutionHistoryId()</code>, que resolve <code>flow.deployedVersionId → version.currentHistoryId</code> com <code>SELECT</code> fresco do Postgres em cada chamada — <em>sem lock, sem cache</em>.</li>
-      <li><strong>Consequência crítica:</strong> um <code>push-to-production</code> no meio de um run <code>UPDATE flows_versions SET current_history_id = novo</code>; se o run consultar <code>resolveExecutionHistoryId</code> novamente depois disso (multi-fase, retry, node paralelo), a <em>segunda metade</em> do run passa a ler um snapshot diferente. Não há garantia de reprodutibilidade. É esse buraco que o Passo 1.3 da v2 fecha, criando <code>flow_execution_snapshots</code> por run.</li>
+      <li><strong>Cada versão tem um ponteiro mutável <code>currentHistoryId</code></strong> que aponta para a linha de <code>flow_versions_histories</code> "ativa". Nodes e edges são pendurados nessa history via FK <code>flow_version_history_id</code>. Trocar o ponteiro significa trocar o snapshot que a versão "é".</li>
+      <li><strong>Salvar edições na Staging não cria uma nova history.</strong> A rotina <code>saveToVersion()</code> <em>upserta</em> in-place as linhas de <code>flows_nodes</code>/<code>flows_nodes_edges</code> que já estão penduradas no <code>currentHistoryId</code> da versão. O snapshot que chamamos de "imutável" é <em>reescrito por baixo</em>.</li>
+      <li><strong>Executar lê o snapshot via</strong> <code>resolveExecutionHistoryId()</code>. Resolve <code>flow.deployedVersionId → version.currentHistoryId</code> com <code>SELECT</code> fresco do Postgres em cada chamada. <em>Sem lock, sem cache.</em></li>
+      <li><strong>Consequência crítica:</strong> um <code>push-to-production</code> no meio de uma execução faz <code>UPDATE flows_versions SET current_history_id = novo</code>. Se a execução consultar <code>resolveExecutionHistoryId</code> novamente depois disso (multi-fase, retry, node paralelo), a <em>segunda metade</em> passa a ler um snapshot diferente. Não há garantia de reprodutibilidade. É esse buraco que o Passo 1.3 da v2 fecha, criando <code>flow_execution_snapshots</code> por execução.</li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Por que este documento existe:</strong> ao ler o Passo 1.3 da v2 ("INSERT bulk em <code>flow_execution_snapshots</code> — congela config no momento exato do enqueue"), é fácil pensar: <em>"mas já existe <code>flow_versions</code>, não dá pra reaproveitar?"</em>. A resposta é <strong>não</strong> — as tabelas atuais parecem versionamento, mas suas rows são mutáveis por design. Este HTML é a evidência de código pra justificar por que uma tabela nova é necessária. Todos os file:line neste documento apontam pro repositório <code>C:\enhanced-ai\Flux-Prompt\</code>.
+    <strong>Por que este documento existe:</strong> ao ler o Passo 1.3 da v2 ("INSERT bulk em <code>flow_execution_snapshots</code>. Congela config no momento exato do enqueue"), é fácil pensar: <em>"mas já existe <code>flow_versions</code>, não dá para reaproveitar?"</em>. A resposta é <strong>não</strong>. As tabelas atuais parecem versionamento, mas suas linhas são mutáveis por design. Este HTML é a evidência de código para justificar por que uma tabela nova é necessária. Todos os file:line neste documento apontam para o repositório <code>C:\enhanced-ai\Flux-Prompt\</code>.
   </div>
 
   <!-- ================================================== -->
@@ -683,12 +683,12 @@
   <table class="field-table">
     <thead><tr><th>Coluna</th><th>Tipo</th><th>Descrição</th></tr></thead>
     <tbody>
-      <tr><td>versionControlEnabled</td><td>boolean (default false)</td><td>Flag que liga o modo versionado. Sem isso, saves vão pra working copy (rows com <code>flow_version_history_id IS NULL</code>) e execução ignora versionamento inteiro. <em>flow.entity.ts:309-311</em></td></tr>
-      <tr><td>deployedVersionId</td><td>uuid (nullable)</td><td>FK pra <code>flow_versions.id</code> da versão que está "em produção" (a que <code>resolveExecutionHistoryId</code> usa como fallback padrão). <em>flow.entity.ts:313-315</em></td></tr>
-      <tr><td>lastPublisherVersionId</td><td>uuid (nullable)</td><td>ID da última versão-fonte que publicou (ex: Staging). Usado por <code>computeNextProductionVersionName</code> pra decidir se o próximo publish é minor ou major bump. <em>flow.entity.ts:317-319</em></td></tr>
+      <tr><td>versionControlEnabled</td><td>boolean (default false)</td><td>Flag que liga o modo versionado. Sem isso, saves vão para a working copy (linhas com <code>flow_version_history_id IS NULL</code>) e a execução ignora versionamento inteiro. <em>flow.entity.ts:309-311</em></td></tr>
+      <tr><td>deployedVersionId</td><td>uuid (nullable)</td><td>FK para <code>flow_versions.id</code> da versão que está "em produção" (a que <code>resolveExecutionHistoryId</code> usa como fallback padrão). <em>flow.entity.ts:313-315</em></td></tr>
+      <tr><td>lastPublisherVersionId</td><td>uuid (nullable)</td><td>ID da última versão-fonte que publicou (ex: Staging). Usado por <code>computeNextProductionVersionName</code> para decidir se o próximo publish é minor ou major bump. <em>flow.entity.ts:317-319</em></td></tr>
       <tr><td>currentProductionMajor</td><td>int (default 1)</td><td>Major atual da versão deployada (ex: 2 em "V 2.3"). Atualizado em <code>pushToProduction</code>. <em>flow.entity.ts:321-323</em></td></tr>
       <tr><td>currentProductionMinor</td><td>int (default 0)</td><td>Minor atual da versão deployada (ex: 3 em "V 2.3"). Atualizado em <code>pushToProduction</code>. <em>flow.entity.ts:325-327</em></td></tr>
-      <tr><td>snapshot / snapshotVersion</td><td>jsonb + int</td><td>Cache de topologia. Invalidado a cada save via <code>invalidateFlowSnapshot()</code>. Ortogonal ao version control — não substitui versionamento. <em>flow.entity.ts:329-333</em></td></tr>
+      <tr><td>snapshot / snapshotVersion</td><td>jsonb + int</td><td>Cache de topologia. Invalidado a cada save via <code>invalidateFlowSnapshot()</code>. Ortogonal ao version control. Não substitui versionamento. <em>flow.entity.ts:329-333</em></td></tr>
     </tbody>
   </table>
 
@@ -699,11 +699,11 @@
       <tr><td>id</td><td>uuid (PK)</td><td>Identifica a versão. <em>flow_version.entity.ts:18-20</em></td></tr>
       <tr><td>flow_id</td><td>uuid (FK, CASCADE)</td><td>Flow ao qual esta versão pertence. <em>:23-30</em></td></tr>
       <tr><td>versionName</td><td>string</td><td>Nome de display: <code>"V 1.0"</code>, <code>"V 2.3"</code>, <code>"Staging"</code>, <code>"v5"</code> (draft manual). Reescrito em <code>pushToProduction</code>. <em>:32-34</em></td></tr>
-      <tr><td>currentHistoryId</td><td>string (NOT NULL)</td><td><strong>Ponteiro mutável</strong> pra <code>flow_versions_histories.id</code>. É o UUID que amarra os nodes/edges "atuais" desta versão. <em>:36-38</em></td></tr>
-      <tr><td>isDeployed</td><td>boolean (default false)</td><td>Marca a versão-produção. Só uma por flow tem <code>true</code> — regra invisível no schema, garantida na aplicação. <em>:48-50</em></td></tr>
-      <tr><td>isStaging</td><td>boolean (default false)</td><td>Marca versão draft. Coluna existe mas hoje <em>não é lida</em> pela lógica — o nome <code>"Staging"</code> é a real identificação. <em>:44-46</em></td></tr>
+      <tr><td>currentHistoryId</td><td>string (NOT NULL)</td><td><strong>Ponteiro mutável</strong> para <code>flow_versions_histories.id</code>. É o UUID que amarra os nodes/edges "atuais" desta versão. <em>:36-38</em></td></tr>
+      <tr><td>isDeployed</td><td>boolean (default false)</td><td>Marca a versão-produção. Só uma por flow tem <code>true</code>. Regra invisível no schema, garantida na aplicação. <em>:48-50</em></td></tr>
+      <tr><td>isStaging</td><td>boolean (default false)</td><td>Marca versão draft. Coluna existe mas hoje <em>não é lida</em> pela lógica. O nome <code>"Staging"</code> é a real identificação. <em>:44-46</em></td></tr>
       <tr><td>updatedBy</td><td>string (NOT NULL)</td><td>User ID que fez a última alteração (edit ou publish). <em>:40-42</em></td></tr>
-      <tr><td colspan="3" style="color:#64748B;font-style:italic">Index composto em (<code>flow</code>, <code>versionName</code>) — <em>:16</em></td></tr>
+      <tr><td colspan="3" style="color:#64748B;font-style:italic">Index composto em (<code>flow</code>, <code>versionName</code>). <em>:16</em></td></tr>
     </tbody>
   </table>
 
@@ -713,15 +713,15 @@
     <tbody>
       <tr><td>id</td><td>uuid (PK)</td><td>ID do snapshot. É esse valor que vira <code>flows_nodes.flow_version_history_id</code>. <em>flow_version_history.entity.ts:16-18</em></td></tr>
       <tr><td>flow_version_id</td><td>uuid (FK, CASCADE)</td><td>Versão à qual este snapshot pertence. Uma versão pode ter várias histories acumuladas ao longo do tempo. <em>:20-30</em></td></tr>
-      <tr><td>versionName</td><td>string (nullable)</td><td>Metadata do momento em que o snapshot foi criado (ex: <code>"V 1.1"</code>, <code>"Published as V 1.1"</code>). Não é usado pra filtragem, só audit trail. <em>:36-38</em></td></tr>
+      <tr><td>versionName</td><td>string (nullable)</td><td>Metadata do momento em que o snapshot foi criado (ex: <code>"V 1.1"</code>, <code>"Published as V 1.1"</code>). Não é usado para filtragem, só audit trail. <em>:36-38</em></td></tr>
       <tr><td>updatedBy</td><td>string</td><td>User ID que criou. <em>:32-34</em></td></tr>
-      <tr><td colspan="3" style="color:#64748B;font-style:italic">Index composto em (<code>flowVersion</code>, <code>createdAt</code>) — <em>:14</em></td></tr>
+      <tr><td colspan="3" style="color:#64748B;font-style:italic">Index composto em (<code>flowVersion</code>, <code>createdAt</code>). <em>:14</em></td></tr>
       <tr><td colspan="3" style="color:#64748B;font-style:italic">Nodes e edges deste snapshot vivem em <code>flows_nodes</code> / <code>flows_nodes_edges</code> filtrados por <code>flow_version_history_id = X</code>.</td></tr>
     </tbody>
   </table>
 
   <div class="note">
-    <strong>⚠️ Padrão importante:</strong> <em>o dado real do agente (nodes/edges) não fica dentro das rows de <code>flows_versions_histories</code></em> — a history é só uma "etiqueta" que agrupa rows de <code>flows_nodes</code> e <code>flows_nodes_edges</code> via FK. Isso significa que: (1) editar o snapshot é fazer UPDATE nas rows-etiqueta, não na row da history; (2) "duplicar snapshot" é fazer INSERT bulk das rows filhas apontando pra uma history nova; (3) invalidar snapshot exige truncar rows filhas E a row-etiqueta.
+    <strong>⚠️ Padrão importante:</strong> <em>o dado real do agente (nodes/edges) não fica dentro das linhas de <code>flows_versions_histories</code></em>. A history é só uma "etiqueta" que agrupa linhas de <code>flows_nodes</code> e <code>flows_nodes_edges</code> via FK. Isso significa que: (1) editar o snapshot é fazer UPDATE nas linhas-etiqueta, não na linha da history; (2) "duplicar snapshot" é fazer INSERT bulk das linhas filhas apontando para uma history nova; (3) invalidar snapshot exige truncar linhas filhas E a linha-etiqueta.
   </div>
 
   <!-- ================================================== -->
@@ -741,7 +741,7 @@
       <a href="#fn-e" class="overview-chip"><span class="lbl">E</span>Race — mid-run publish</a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Ordem lógica: <strong>criar → editar → publicar → executar</strong>. O card E não é uma função — é a análise de <em>o que acontece se C e D se cruzam no tempo</em>.
+      Ordem lógica: <strong>criar → editar → publicar → executar</strong>. O card E não é uma função. É a análise de <em>o que acontece se C e D se cruzam no tempo</em>.
     </div>
   </div>
 
@@ -762,17 +762,17 @@
         async enableVersionControl(flowId: string, userId: string): Promise&lt;{ versionId: string }&gt;
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Migra um flow do modo working-copy (rows não versionadas) pro modo versionado. Chamada pelo <code>PATCH /flow/:id</code> quando o payload traz <code>versionControlEnabled: true</code> e o flow ainda não tinha (<code>flow.controller.ts:2377,2385</code>). Cria as duas versões iniciais + move os nodes/edges existentes pra dentro delas + apaga a working copy.
+        <strong>Propósito:</strong> migra um flow do modo working-copy (linhas não versionadas) para o modo versionado. Chamada pelo <code>PATCH /flow/:id</code> quando o payload traz <code>versionControlEnabled: true</code> e o flow ainda não tinha (<code>flow.controller.ts:2377,2385</code>). Cria as duas versões iniciais. Move os nodes/edges existentes para dentro delas. Apaga a working copy.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> pense nessa função como o <em>batismo</em> do flow no modo versionado. Antes dela, o agente vivia em rows "avulsas" (com <code>flow_version_history_id IS NULL</code>). Depois dela, o agente passa a ter <strong>duas foto-cópias</strong>: uma congelada como "V 1.0" (a versão de produção read-only inicial) e uma editável chamada "Staging" que os saves seguintes vão modificar. As duas nascem <em>idênticas</em>, porque o momento da migração é o único onde o snapshot "produção" e o "draft" contêm exatamente os mesmos nós. É uma transação atômica — se qualquer INSERT falhar, o flow volta pro modo não-versionado inteiro.
+        <strong>Em resumo:</strong> pense nessa função como o <em>batismo</em> do flow no modo versionado. Antes dela, o agente vivia em linhas "avulsas" (com <code>flow_version_history_id IS NULL</code>). Depois dela, o agente passa a ter <strong>duas foto-cópias</strong>. Uma congelada como "V 1.0" (a versão de produção read-only inicial). Uma editável chamada "Staging" que os saves seguintes vão modificar. As duas nascem <em>idênticas</em>. O momento da migração é o único em que o snapshot "produção" e o "draft" contêm exatamente os mesmos nós. É uma transação atômica. Se qualquer INSERT falhar, o flow volta ao modo não versionado inteiro.
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
             <div class="box-title">1. Wrap em transação (dataSource.transaction)</div>
-            <div class="box-desc">Toda operação abaixo é atômica: 4 tabelas, 2 INSERT bulk. Se falhar em qualquer ponto, rollback total.</div>
+            <div class="box-desc">Toda operação abaixo é atômica. 4 tabelas, 2 INSERT bulk. Se falhar em qualquer ponto, rollback total.</div>
             <div class="box-file">flow.service.ts:356</div>
           </div>
           <div class="arrow">↓</div>
@@ -782,15 +782,15 @@
             <div class="box-desc">
               <code>flowNodeService.findByFlowIdNonVersioned(flowId)</code>
               <br><code>flowEdgeService.findByFlowIdNonVersioned(flowId)</code>
-              <br>Traz TODOS os nodes/edges do flow que ainda não estão em nenhuma history (é a working copy do modo não-versionado).
+              <br>Traz TODOS os nodes/edges do flow que ainda não estão em nenhuma history (é a working copy do modo não versionado).
             </div>
             <div class="box-file">flow.service.ts:357-361 → flow-node.service.ts:55 / flow-edge.service.ts:23</div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box db">
-            <div class="box-title">3. Cleanup — apaga versões preexistentes (se re-enable)</div>
-            <div class="box-desc">Se o flow já teve version control ligado antes e agora está religando, essa etapa limpa <code>flows_versions</code> preexistentes pra recomeçar do zero.</div>
+            <div class="box-title">3. Cleanup. Apaga versões preexistentes (se re-enable).</div>
+            <div class="box-desc">Se o flow já teve version control ligado antes e agora está religando, essa etapa limpa <code>flows_versions</code> preexistentes para recomeçar do zero.</div>
             <div class="box-file">flow.service.ts:371-378</div>
           </div>
           <div class="arrow">↓</div>
@@ -825,7 +825,7 @@
             </div>
             <div class="cascade-step">
               <span class="cascade-num">2</span>
-              <span class="cond"><code>createHistorySnapshot(stagingVersion.id, nodes, edges)</code> — MESMOS dados</span>
+              <span class="cond"><code>createHistorySnapshot(stagingVersion.id, nodes, edges)</code>. MESMOS dados.</span>
               <span class="result pass">stagingHistory</span>
             </div>
             <div class="cascade-step">
@@ -838,7 +838,7 @@
           <div class="arrow">↓</div>
 
           <div class="box db" style="border-left-color:#EF4444">
-            <div class="box-title">6. DELETE das rows não-versionadas (destrutivo)</div>
+            <div class="box-title">6. DELETE das linhas não versionadas (destrutivo)</div>
             <div class="box-desc">Remove os <code>flows_nodes</code> e <code>flows_nodes_edges</code> com <code>flow_version_history_id IS NULL</code>. Depois desse ponto, ler working copy retorna vazio.</div>
             <div class="box-file">flow.service.ts:421-422</div>
           </div>
@@ -862,8 +862,8 @@
           <div class="box cross">
             <div class="box-title">8. Invalida snapshot cache + retorna stagingVersion.id</div>
             <div class="box-desc">
-              <code>invalidateFlowSnapshot(flowId)</code> — bumpa <code>snapshotVersion</code>, zera <code>snapshot</code> JSONB (cache ortogonal).
-              <br>Retorno: <code>{ versionId: stagingVersion.id }</code> — o frontend passa a editar a Staging.
+              <code>invalidateFlowSnapshot(flowId)</code>. Bumpa <code>snapshotVersion</code>. Zera <code>snapshot</code> JSONB (cache ortogonal).
+              <br>Retorno: <code>{ versionId: stagingVersion.id }</code>. O frontend passa a editar a Staging.
             </div>
             <div class="box-file">flow.service.ts:431-433</div>
           </div>
@@ -872,25 +872,25 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">💡 Por que duas versões iniciais?</div>
-            O modelo mental é <em>"produção + próxima release"</em>. <strong>V 1.0</strong> é read-only (execução usa ela como default), <strong>Staging</strong> é a editável (o canvas grava aqui). Publicar copia Staging → deployedVersion.
-            <br><br>É o mesmo padrão de <em>trunk vs release-branch</em> em VCS tradicional, só que sem histórico linear — só dois ponteiros mutáveis.
+            O modelo mental é <em>"produção + próxima release"</em>. <strong>V 1.0</strong> é read-only (execução usa ela como default). <strong>Staging</strong> é a editável (o canvas grava aqui). Publicar copia Staging → deployedVersion.
+            <br><br>É o mesmo padrão de <em>trunk vs release-branch</em> em VCS tradicional, só que sem histórico linear. Só dois ponteiros mutáveis.
           </div>
 
           <div class="aside">
             <div class="aside-title">🎯 Momento único de igualdade</div>
-            Este é o <strong>único</strong> instante da vida do flow em que "V 1.0" e "Staging" apontam pra conjuntos <em>iguais</em> de nodes/edges (rows duplicadas, IDs diferentes).
+            Este é o <strong>único</strong> instante da vida do flow em que "V 1.0" e "Staging" apontam para conjuntos <em>iguais</em> de nodes/edges (linhas duplicadas, IDs diferentes).
             <br><br>Depois do primeiro save na Staging, as duas divergem para sempre até o próximo <code>pushToProduction</code>.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 createHistorySnapshot()</div>
             <code>flow-version-history.service.ts:51-88</code>
-            <br><br>Cria a row em <code>flows_versions_histories</code> + faz UPSERT bulk paralelo dos nodes e edges via <code>flowNodeService.upsertNodesDataForHistory</code> e o equivalente de edges. Cada node/edge recebe um <em>novo</em> UUID e a FK <code>flow_version_history_id</code> apontando pra history criada.
+            <br><br>Cria a linha em <code>flows_versions_histories</code>. Faz UPSERT bulk paralelo dos nodes e edges via <code>flowNodeService.upsertNodesDataForHistory</code> e o equivalente de edges. Cada node/edge recebe um <em>novo</em> UUID e a FK <code>flow_version_history_id</code> apontando para a history criada.
           </div>
 
           <div class="aside warn">
             <div class="aside-title">⚠️ Destrutivo por design</div>
-            A etapa 6 <em>apaga</em> as rows não-versionadas. Se algum código externo (ex: batch, hook, integração) mantiver referência a UUIDs daquelas rows, quebra. Não há período de convivência.
+            A etapa 6 <em>apaga</em> as linhas não versionadas. Se algum código externo (ex: batch, hook, integração) mantiver referência a UUIDs daquelas linhas, quebra. Não há período de convivência.
           </div>
         </div>
       </div>
@@ -914,10 +914,10 @@
         async saveToVersion(flowId, versionId, userId, nodes, edges): Promise&lt;void&gt;
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Persistir edições do canvas quando o flow está em modo versionado. Chamada pelo <code>PATCH /flow/:id</code> (<code>flow.controller.ts:2088-2199</code>) sempre que o payload traz um <code>versionId</code> (ou quando <code>versionControlEnabled=true</code> e o body não especifica, caso em que o backend usa <code>flow.deployedVersionId</code> como fallback — <em>sim, dá pra escrever direto na versão deployada</em>).
+        <strong>Propósito:</strong> persistir edições do canvas quando o flow está em modo versionado. Chamada pelo <code>PATCH /flow/:id</code> (<code>flow.controller.ts:2088-2199</code>) sempre que o payload traz um <code>versionId</code> (ou quando <code>versionControlEnabled=true</code> e o body não especifica). Nesse caso o backend usa <code>flow.deployedVersionId</code> como fallback. <em>Sim, dá para escrever direto na versão deployada.</em>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> a função que <em>quebra a expectativa de imutabilidade</em>. Apesar de a gente chamar as histories de "snapshots", esta rotina não cria snapshot novo em save — ela <strong>reescreve</strong> os <code>flows_nodes</code> e <code>flows_nodes_edges</code> que já estão penduradas no <code>currentHistoryId</code> da versão. É por isso que "salvar na Staging" muda o dado da Staging <em>no lugar</em>: a history-etiqueta é a mesma, mas as rows filhas mudaram por baixo. Se você aponta uma execução pra essa versão enquanto o usuário está editando, o run vai colher rows num estado inconsistente entre o momento em que consultou nodes e o momento em que consultou edges (não há transação de leitura).
+        <strong>Em resumo:</strong> a função que <em>quebra a expectativa de imutabilidade</em>. Apesar de chamarmos as histories de "snapshots", esta rotina não cria snapshot novo em save. Ela <strong>reescreve</strong> os <code>flows_nodes</code> e <code>flows_nodes_edges</code> que já estão penduradas no <code>currentHistoryId</code> da versão. É por isso que "salvar na Staging" muda o dado da Staging <em>no lugar</em>. A history-etiqueta é a mesma, mas as linhas filhas mudaram por baixo. Se você aponta uma execução para essa versão enquanto o usuário está editando, a execução vai colher linhas em estado inconsistente entre o momento em que consultou nodes e o momento em que consultou edges (não há transação de leitura).
       </div>
 
       <div class="fn-body-cols">
@@ -925,8 +925,8 @@
           <div class="box backend">
             <div class="box-title">1. Wrap em transação (SERIALIZABLE)</div>
             <div class="box-desc">
-              <code>dataSource.transaction(async manager =&gt; ...)</code>
-              <br>Transação isolada por save — mas <em>não</em> bloqueia outros saves em paralelo se forem em rows diferentes.
+              <code>dataSource.transaction(async manager =&gt; ...)</code>.
+              <br>Transação isolada por save. Mas <em>não</em> bloqueia outros saves em paralelo se forem em linhas diferentes.
             </div>
             <div class="box-file">flow.service.ts:485</div>
           </div>
@@ -935,7 +935,7 @@
           <div class="box db">
             <div class="box-title">2. Lê o flow com <code>pessimistic_write</code> lock</div>
             <div class="box-desc">
-              Lock na row de <code>flows</code>, não nas rows de nodes/edges. Impede que <code>enableVersionControl</code> ou <code>pushToProduction</code> rodem simultaneamente <em>naquele flow</em>, mas <strong>não</strong> impede execução lendo os mesmos nodes.
+              Lock na linha de <code>flows</code>, não nas linhas de nodes/edges. Impede que <code>enableVersionControl</code> ou <code>pushToProduction</code> rodem simultaneamente <em>naquele flow</em>. <strong>Não</strong> impede execução lendo os mesmos nodes.
             </div>
             <div class="box-file">flow.service.ts:488</div>
           </div>
@@ -961,24 +961,24 @@
             <div class="box db">
               <div class="box-title">flowNodeService.upsertNodesDataForHistory(flowId, historyId, changedNodes, manager)</div>
               <div class="box-desc">
-                Para cada node recebido, faz UPSERT em <code>flows_nodes</code> WHERE <code>flow_version_history_id = historyId</code> AND <code>node_id IN (...)</code>. Nodes existentes têm colunas atualizadas (<code>data</code>, <code>positionX</code>, <code>positionY</code>, etc.); nodes novos são inseridos com essa mesma FK.
+                Para cada node recebido, faz UPSERT em <code>flows_nodes</code> WHERE <code>flow_version_history_id = historyId</code> AND <code>node_id IN (...)</code>. Nodes existentes têm colunas atualizadas (<code>data</code>, <code>positionX</code>, <code>positionY</code>, etc.). Nodes novos são inseridos com essa mesma FK.
               </div>
               <div class="box-file">flow-node.service.ts:253-281</div>
             </div>
             <div class="arrow">↓</div>
             <div class="box db">
               <div class="box-title">flowEdgeService.upsertEdgesForHistory(...)</div>
-              <div class="box-desc">Análogo pro edges. Mesmo padrão: filtra por historyId, upserta in-place.</div>
+              <div class="box-desc">Análogo para edges. Mesmo padrão: filtra por historyId, upserta in-place.</div>
               <div class="box-file">flow-edge.service.ts (análogo)</div>
             </div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box backend">
-            <div class="box-title">4. touchVersion — atualiza <code>updatedBy</code></div>
+            <div class="box-title">4. touchVersion. Atualiza <code>updatedBy</code>.</div>
             <div class="box-desc">
-              <code>UPDATE flows_versions SET updated_by = userId, updated_at = NOW() WHERE id = versionId</code>
-              <br><strong>Não</strong> mexe em <code>currentHistoryId</code>. O ponteiro fica igual — só as rows filhas mudaram.
+              <code>UPDATE flows_versions SET updated_by = userId, updated_at = NOW() WHERE id = versionId</code>.
+              <br><strong>Não</strong> mexe em <code>currentHistoryId</code>. O ponteiro fica igual. Só as linhas filhas mudaram.
             </div>
             <div class="box-file">flow-version.service.ts:32-39</div>
           </div>
@@ -987,7 +987,7 @@
           <div class="box cross">
             <div class="box-title">5. invalidateFlowSnapshot</div>
             <div class="box-desc">
-              <code>UPDATE flows SET snapshot = NULL, snapshot_version = snapshot_version + 1</code>
+              <code>UPDATE flows SET snapshot = NULL, snapshot_version = snapshot_version + 1</code>.
               <br>Zera o cache JSONB. Próxima leitura reconstrói.
             </div>
             <div class="box-file">flow.service.ts (invalidateFlowSnapshot)</div>
@@ -997,19 +997,19 @@
         <div class="fn-asides">
           <div class="aside warn">
             <div class="aside-title">⚠️ "Snapshot" não é snapshot</div>
-            Esta é a raiz do desalinhamento entre <em>nome</em> e <em>comportamento</em>. A history é uma etiqueta com FK, mas o dado real (<code>flows_nodes.data</code>) é UPDATE-in-place. Se o usuário está editando a Staging enquanto uma execução (por acidente ou intenção) aponta pra ela, as rows sob os pés do run mudam.
+            Esta é a raiz do desalinhamento entre <em>nome</em> e <em>comportamento</em>. A history é uma etiqueta com FK, mas o dado real (<code>flows_nodes.data</code>) é UPDATE-in-place. Se o usuário está editando a Staging enquanto uma execução (por acidente ou intenção) aponta para ela, as linhas sob os pés da execução mudam.
           </div>
 
           <div class="aside">
             <div class="aside-title">🎯 O que pode ser destino do save</div>
-            <strong>Padrão:</strong> versão informada no body (<code>body.versionId</code>) — normalmente Staging.
-            <br><br><strong>Fallback:</strong> se <code>versionControlEnabled=true</code> e <code>body.versionId</code> não veio, o backend escreve em <code>flow.deployedVersionId</code>. Isso significa que, por design, dá pra editar direto na versão de produção sem "publicar" — o cliente controla via UI, não via constraint de banco.
+            <strong>Padrão:</strong> versão informada no body (<code>body.versionId</code>). Normalmente Staging.
+            <br><br><strong>Fallback:</strong> se <code>versionControlEnabled=true</code> e <code>body.versionId</code> não veio, o backend escreve em <code>flow.deployedVersionId</code>. Isso significa que, por design, dá para editar direto na versão de produção sem "publicar". O cliente controla via UI, não via constraint de banco.
             <br><br><em>flow.controller.ts:2088-2089</em>
           </div>
 
           <div class="aside info">
-            <div class="aside-title">💡 Comparação: modo não-versionado</div>
-            Quando <code>versionControlEnabled=false</code>, o mesmo endpoint chama <code>upsertNodesData()</code> (sem "ForHistory"), que faz UPSERT nas rows onde <code>flow_version_history_id IS NULL</code>. Estrutural e semanticamente <em>a mesma coisa</em> — só muda o WHERE. Por isso o modo versionado não adiciona proteção real contra concorrência de escrita; adiciona só uma dimensão a mais de agrupamento.
+            <div class="aside-title">💡 Comparação: modo não versionado</div>
+            Quando <code>versionControlEnabled=false</code>, o mesmo endpoint chama <code>upsertNodesData()</code> (sem "ForHistory"). Faz UPSERT nas linhas onde <code>flow_version_history_id IS NULL</code>. Estrutural e semanticamente <em>a mesma coisa</em>. Só muda o WHERE. Por isso o modo versionado não adiciona proteção real contra concorrência de escrita. Adiciona só uma dimensão a mais de agrupamento.
           </div>
 
           <div class="aside helper">
@@ -1039,10 +1039,10 @@
         pushToProduction(flowId, body: { versionId }): Promise&lt;PushToProductionResponseDto&gt;
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Publica uma versão-fonte (tipicamente Staging) na versão deployada. Não cria uma versão-produção nova — <em>reusa</em> a mesma row de <code>flows_versions</code> com <code>isDeployed=true</code>, mas cria uma <strong>history nova</strong> e faz o ponteiro <code>currentHistoryId</code> apontar pra ela. A versão-fonte também recebe uma history de auditoria (<code>"Published as V X.Y"</code>), mantendo trilha.
+        <strong>Propósito:</strong> publica uma versão-fonte (tipicamente Staging) na versão deployada. Não cria uma versão-produção nova. <em>Reusa</em> a mesma linha de <code>flows_versions</code> com <code>isDeployed=true</code>. Cria uma <strong>history nova</strong> e faz o ponteiro <code>currentHistoryId</code> apontar para ela. A versão-fonte também recebe uma history de auditoria (<code>"Published as V X.Y"</code>), mantendo trilha.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> imagine que o flow tem duas prateleiras — a de "produção" (V 1.0) e a de "rascunho" (Staging). Publicar é: (1) tirar uma foto do estado atual da prateleira de rascunho; (2) colar essa foto na prateleira de produção como "V 1.1"; (3) trocar o rótulo interno da prateleira de produção pra apontar pra essa foto nova. A row antiga da prateleira de produção continua existindo com o mesmo ID — mas o ponteiro <code>currentHistoryId</code> agora aponta pra history "V 1.1" em vez de "V 1.0". A history antiga fica preservada em <code>flows_versions_histories</code> (audit trail histórico), mas <em>ninguém a consulta ativamente</em>: nenhuma execução vai ler "V 1.0" depois desse publish, porque <code>resolveExecutionHistoryId</code> sempre pega o <code>currentHistoryId</code> atual da versão deployada.
+        <strong>Em resumo:</strong> imagine que o flow tem duas prateleiras. A de "produção" (V 1.0) e a de "rascunho" (Staging). Publicar é: (1) tirar uma foto do estado atual da prateleira de rascunho; (2) colar essa foto na prateleira de produção como "V 1.1"; (3) trocar o rótulo interno da prateleira de produção para apontar para essa foto nova. A linha antiga da prateleira de produção continua existindo com o mesmo ID. O ponteiro <code>currentHistoryId</code> agora aponta para a history "V 1.1" em vez de "V 1.0". A history antiga fica preservada em <code>flows_versions_histories</code> (audit trail histórico). <em>Ninguém a consulta ativamente</em>. Nenhuma execução vai ler "V 1.0" depois desse publish, porque <code>resolveExecutionHistoryId</code> sempre pega o <code>currentHistoryId</code> atual da versão deployada.
       </div>
 
       <div class="fn-body-cols">
@@ -1050,8 +1050,8 @@
           <div class="box backend">
             <div class="box-title">1. Validações iniciais</div>
             <div class="box-desc">
-              • Fetch do <code>Flow</code>; assert <code>versionControlEnabled=true</code>
-              <br>• Fetch da <code>sourceVersion</code> (pelo <code>body.versionId</code>); assert que <strong>não</strong> é a versão já deployada (não faz sentido publicar sobre si mesma)
+              • Fetch do <code>Flow</code>. Assert <code>versionControlEnabled=true</code>.
+              <br>• Fetch da <code>sourceVersion</code> (pelo <code>body.versionId</code>). Assert que <strong>não</strong> é a versão já deployada (não faz sentido publicar sobre si mesma).
             </div>
             <div class="box-file">flow-version.controller.ts:176-192</div>
           </div>
@@ -1060,15 +1060,15 @@
           <div class="box db">
             <div class="box-title">2. Fetch da versão deployada atual</div>
             <div class="box-desc">
-              <code>flowVersionService.getDeployedVersion(flowId)</code>
-              <br><code>WHERE flow_id = $1 AND is_deployed = true</code> — deve retornar exatamente 1 row. Se não achou, throw <code>NotFoundException</code>.
+              <code>flowVersionService.getDeployedVersion(flowId)</code>.
+              <br><code>WHERE flow_id = $1 AND is_deployed = true</code>. Deve retornar exatamente 1 linha. Se não achou, throw <code>NotFoundException</code>.
             </div>
             <div class="box-file">flow-version.controller.ts:194 → flow-version.service.ts:48-60</div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="cascade">
-            <div class="cascade-title">🪜 3. computeNextProductionVersionName — decide bump</div>
+            <div class="cascade-title">🪜 3. computeNextProductionVersionName. Decide bump.</div>
             <div class="cascade-step">
               <span class="cascade-num">1</span>
               <span class="cond"><code>flow.lastPublisherVersionId IS NULL</code></span>
@@ -1094,9 +1094,9 @@
               <div class="box-title">createSnapshotFromHistory(sourceVersion.currentHistoryId, deployedVersion.id, ...)</div>
               <div class="box-desc">
                 <strong>Passos:</strong>
-                <br>• INSERT em <code>flows_versions_histories</code> — nova row com <code>flowVersion=deployedVersion.id</code> e <code>versionName='V 1.1'</code>
-                <br>• Chama <code>copyNodesAndEdgesFromHistory(sourceHistoryId, newHistory.id, ...)</code> — INSERT bulk copiando todas as rows de <code>flows_nodes</code> e <code>flows_nodes_edges</code> que estavam na sourceHistory pra apontar pra newHistory
-                <br>• Retorna a newHistory
+                <br>• INSERT em <code>flows_versions_histories</code>. Nova linha com <code>flowVersion=deployedVersion.id</code> e <code>versionName='V 1.1'</code>.
+                <br>• Chama <code>copyNodesAndEdgesFromHistory(sourceHistoryId, newHistory.id, ...)</code>. INSERT bulk copiando todas as linhas de <code>flows_nodes</code> e <code>flows_nodes_edges</code> que estavam na sourceHistory para apontar para newHistory.
+                <br>• Retorna a newHistory.
               </div>
               <div class="box-file">flow-version-history.service.ts:90-140</div>
             </div>
@@ -1104,7 +1104,7 @@
           <div class="arrow">↓</div>
 
           <div class="box db" style="border-left-color:#EF4444">
-            <div class="box-title">5. UPDATE do ponteiro na versão deployada — <em>overwrite crítico</em></div>
+            <div class="box-title">5. UPDATE do ponteiro na versão deployada. <em>Overwrite crítico.</em></div>
             <div class="code-block">
 <span class="k">UPDATE</span> flows_versions <span class="k">SET</span>
   current_history_id = newHistory.id,   <span class="c">-- ponteiro trocado</span>
@@ -1119,7 +1119,7 @@
           <div class="box db">
             <div class="box-title">6. History de auditoria na sourceVersion</div>
             <div class="box-desc">
-              INSERT em <code>flows_versions_histories</code> com <code>flowVersion=sourceVersion.id</code> e <code>versionName='Published as V 1.1'</code>. Não muda o <code>currentHistoryId</code> da sourceVersion — só cria um marcador linha do tempo.
+              INSERT em <code>flows_versions_histories</code> com <code>flowVersion=sourceVersion.id</code> e <code>versionName='Published as V 1.1'</code>. Não muda o <code>currentHistoryId</code> da sourceVersion. Só cria um marcador linha do tempo.
             </div>
             <div class="box-file">flow-version.controller.ts:213-220</div>
           </div>
@@ -1141,23 +1141,23 @@
         <div class="fn-asides">
           <div class="aside warn">
             <div class="aside-title">⚠️ Ponto exato onde a "imutabilidade" quebra</div>
-            A etapa 5 <strong>não</strong> cria uma versão-produção nova; ela troca o ponteiro da mesma row. Isso é intencional (design de "só uma versão deployada por vez"), mas significa que <em>qualquer execução em curso que resolva <code>flow.deployedVersionId → currentHistoryId</code> antes vs. depois da etapa 5 vê snapshots diferentes</em>. Ver card E.
+            A etapa 5 <strong>não</strong> cria uma versão-produção nova. Ela troca o ponteiro da mesma linha. Isso é intencional (design de "só uma versão deployada por vez"). Significa que <em>qualquer execução em curso que resolva <code>flow.deployedVersionId → currentHistoryId</code> antes vs. depois da etapa 5 vê snapshots diferentes</em>. Ver card E.
           </div>
 
           <div class="aside info">
             <div class="aside-title">💡 Nome semver mas não semver de verdade</div>
-            A distinção major/minor é <em>heurística</em>, não semântica. O critério é <em>"a source é a mesma da última vez?"</em>, não "houve breaking change?". Publicar duas vezes seguidas de Staging: <strong>ambos minor</strong>. Publicar de um branch draft manual novo depois de Staging: <strong>major</strong>. Isso não corresponde a semver clássico — é só uma convenção para separar "release iterativa" de "release de linha nova".
+            A distinção major/minor é <em>heurística</em>, não semântica. O critério é <em>"a source é a mesma da última vez?"</em>, não "houve breaking change?". Publicar duas vezes seguidas de Staging: <strong>ambos minor</strong>. Publicar de um branch draft manual novo depois de Staging: <strong>major</strong>. Isso não corresponde a semver clássico. É só uma convenção para separar "release iterativa" de "release de linha nova".
           </div>
 
           <div class="aside">
             <div class="aside-title">🎯 History acumulada é audit trail, não é usável</div>
-            Depois de N publishes, a versão deployada tem N rows em <code>flows_versions_histories</code> — mas só a última (a que o <code>currentHistoryId</code> aponta) é acessível pela execução. As histories antigas ficam ali como <em>trilha morta</em>: dá pra listar via <code>findByVersionId(versionId)</code> (<code>flow-version-history.service.ts:36-49</code>) mas não há endpoint que faça rollback — pra usar uma history antiga, teria que criar uma versão-branch nova apontando pra ela manualmente.
+            Depois de N publishes, a versão deployada tem N linhas em <code>flows_versions_histories</code>. Só a última (a que o <code>currentHistoryId</code> aponta) é acessível pela execução. As histories antigas ficam ali como <em>trilha morta</em>. Dá para listar via <code>findByVersionId(versionId)</code> (<code>flow-version-history.service.ts:36-49</code>). Não há endpoint que faça rollback. Para usar uma history antiga, teria que criar uma versão-branch nova apontando para ela manualmente.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 copyNodesAndEdgesFromHistory</div>
             <code>flow-version-history.service.ts:120-140</code>
-            <br><br>Faz <em>duplicação profunda</em>: <code>SELECT * FROM flows_nodes WHERE flow_version_history_id = source</code> → mapeia cada row pra uma row nova (novos UUIDs) apontando pra target history → <code>INSERT bulk</code>. Mesmo pra edges. É I/O pesado em agentes grandes — na v2, o Passo 1.3 propõe substituir por INSERT bulk direto em <code>flow_execution_snapshots</code>, evitando a etapa dupla.
+            <br><br>Faz <em>duplicação profunda</em>: <code>SELECT * FROM flows_nodes WHERE flow_version_history_id = source</code> → mapeia cada linha para uma linha nova (novos UUIDs) apontando para target history → <code>INSERT bulk</code>. Mesmo para edges. É I/O pesado em agentes grandes. Na v2, o Passo 1.3 propõe substituir por INSERT bulk direto em <code>flow_execution_snapshots</code>, evitando a etapa dupla.
           </div>
         </div>
       </div>
@@ -1181,10 +1181,10 @@
         async resolveExecutionHistoryId(flow: Flow, requestedVersionId?: string, requestedHistoryId?: string): Promise&lt;string | null&gt;
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Determinar de qual snapshot uma execução vai ler nodes e edges. Retorna <code>string</code> (historyId) → execução lê rows com aquele <code>flow_version_history_id</code>; retorna <code>null</code> → execução lê working copy. É chamada em cada ponto onde nodes/edges precisam ser resolvidos — <em>múltiplas vezes por run</em>, sem cache. Já detalhada no <a href="passo-1-3.html#fn-b">Passo 1.3 do diagrama v1 (fn-card B)</a>; aqui repetimos com foco no consumo downstream do valor.
+        <strong>Propósito:</strong> determinar de qual snapshot uma execução vai ler nodes e edges. Retorna <code>string</code> (historyId), a execução lê linhas com aquele <code>flow_version_history_id</code>. Retorna <code>null</code>, a execução lê working copy. É chamada em cada ponto onde nodes/edges precisam ser resolvidos. <em>Múltiplas vezes por execução</em>, sem cache. Já detalhada no <a href="passo-1-3.html#fn-b">Passo 1.3 do diagrama v1 (fn-card B)</a>. Aqui repetimos com foco no consumo downstream do valor.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> a função-árbitro que responde <em>"qual foto do agente eu leio agora?"</em>. Ela existe pra permitir três modos: (1) ler working copy (sem versionamento); (2) ler uma versão específica requisitada explicitamente (útil pra debug ou "run this old version"); (3) fallback pra versão deployada. O problema não está na lógica dela — está no fato de que <em>cada vez que ela é chamada, faz uma consulta SELECT fresca no Postgres em <code>flow_versions</code></em>. Se a resposta muda entre duas chamadas dentro do mesmo run (porque alguém publicou nesse intervalo), o run passa a ler snapshots inconsistentes.
+        <strong>Em resumo:</strong> a função-árbitro que responde <em>"qual foto do agente eu leio agora?"</em>. Ela existe para permitir três modos: (1) ler working copy (sem versionamento); (2) ler uma versão específica requisitada explicitamente (útil para debug ou "run this old version"); (3) fallback para versão deployada. O problema não está na lógica dela. Está no fato de que <em>cada vez que ela é chamada, faz uma consulta SELECT fresca no Postgres em <code>flow_versions</code></em>. Se a resposta muda entre duas chamadas dentro da mesma execução (porque alguém publicou nesse intervalo), a execução passa a ler snapshots inconsistentes.
       </div>
 
       <div class="fn-body-cols">
@@ -1224,9 +1224,9 @@
             <div class="box db">
               <div class="box-title">flowVersionService.findById(versionId)</div>
               <div class="box-desc">
-                <code>repo.findOne({ where: { id }, relations: ['flow'] })</code>
-                <br><strong>Query fresca no banco — sem cache, sem lock.</strong>
-                <br>Se não achou: throw <code>NotFoundException</code>. Senão: retorna a versão → extrai <code>.currentHistoryId</code>.
+                <code>repo.findOne({ where: { id }, relations: ['flow'] })</code>.
+                <br><strong>Query fresca no banco. Sem cache, sem lock.</strong>
+                <br>Se não achou: throw <code>NotFoundException</code>. Caso contrário: retorna a versão. Extrai <code>.currentHistoryId</code>.
               </div>
               <div class="box-file">flow-version.service.ts:17-30</div>
             </div>
@@ -1243,39 +1243,39 @@
           <div class="aside info">
             <div class="aside-title">💡 Múltiplos consumers downstream do historyId</div>
             Depois de resolvido, o historyId é usado em pelo menos <strong>8 pontos</strong> do <code>flux.service.ts</code>:
-            <br><br>• <code>getFlowWithNodesAndEdges(...)</code> — carregamento inicial (:54-68)
-            <br>• <code>executeSingleNode()</code> — re-resolve por nó (:790-791)
-            <br>• <code>createNodeExecution()</code> — INSERT em <code>node_executions</code> (:828-836)
-            <br>• Persist start no Temporal adapter (:1545-1556)
-            <br>• Persist success no Temporal adapter (:1577-1594)
-            <br>• <code>updateNodeOutputViaTemporal()</code> (:1725)
-            <br>• Legacy path INSERT (:1805-1814)
-            <br>• Save de node data (:2195-2198)
-            <br><br>Cada um desses é uma janela nova pra o historyId trocar entre chamadas.
+            <br><br>• <code>getFlowWithNodesAndEdges(...)</code>. Carregamento inicial (:54-68).
+            <br>• <code>executeSingleNode()</code>. Re-resolve por nó (:790-791).
+            <br>• <code>createNodeExecution()</code>. INSERT em <code>node_executions</code> (:828-836).
+            <br>• Persist start no Temporal adapter (:1545-1556).
+            <br>• Persist success no Temporal adapter (:1577-1594).
+            <br>• <code>updateNodeOutputViaTemporal()</code> (:1725).
+            <br>• Legacy path INSERT (:1805-1814).
+            <br>• Save de node data (:2195-2198).
+            <br><br>Cada um desses é uma janela nova para o historyId trocar entre chamadas.
           </div>
 
           <div class="aside">
             <div class="aside-title">🎯 3 fontes de historyId, precedência</div>
-            <strong>1. requestedHistoryId</strong> (uso interno raro; normalmente <code>undefined</code>)
-            <br><strong>2. requestedVersionId</strong> (query param na API — <code>?versionId=X</code>)
-            <br><strong>3. flow.deployedVersionId</strong> (default de produção)
-            <br><br>A cascata dá prioridade ao mais explícito. <em>Nunca há merge</em> — só o primeiro presente vence.
+            <strong>1. requestedHistoryId</strong> (uso interno raro; normalmente <code>undefined</code>).
+            <br><strong>2. requestedVersionId</strong> (query param na API. <code>?versionId=X</code>).
+            <br><strong>3. flow.deployedVersionId</strong> (default de produção).
+            <br><br>A cascata dá prioridade ao mais explícito. <em>Nunca há merge.</em> Só o primeiro presente vence.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 As duas queries "gêmeas" nos services</div>
             <strong>FlowNodeService:</strong>
-            <br>• <code>findByHistoryId(historyId)</code> — versionado
-            <br>&nbsp;&nbsp;<code>WHERE flow_version_history_id = X</code> (<code>:360</code>)
-            <br>• <code>findByFlowIdNonVersioned(flowId)</code> — working copy
-            <br>&nbsp;&nbsp;<code>WHERE flow_id = X AND flow_version_history_id IS NULL</code> (<code>:55</code>)
+            <br>• <code>findByHistoryId(historyId)</code>. Versionado.
+            <br>&nbsp;&nbsp;<code>WHERE flow_version_history_id = X</code> (<code>:360</code>).
+            <br>• <code>findByFlowIdNonVersioned(flowId)</code>. Working copy.
+            <br>&nbsp;&nbsp;<code>WHERE flow_id = X AND flow_version_history_id IS NULL</code> (<code>:55</code>).
             <br><br><strong>FlowEdgeService:</strong> mesma dupla (<code>:154</code> e <code>:23</code>).
             <br><br>Todo consumo de nodes/edges na execução decide entre esses dois <em>com base no retorno de resolveExecutionHistoryId</em>.
           </div>
 
           <div class="aside warn">
             <div class="aside-title">⚠️ node_executions grava historyId no momento do INSERT</div>
-            Quando um node executa, o backend faz INSERT em <code>node_executions</code> com o <code>flowVersionHistoryId</code> resolvido <em>naquele instante</em>. Se o historyId mudar antes do próximo nó rodar, a row do próximo nó grava um <em>historyId diferente</em> — o run resultante fica com evidências de ter rodado em <strong>dois snapshots distintos</strong>. Isso é observável em produção lendo <code>node_executions</code>.
+            Quando um node executa, o backend faz INSERT em <code>node_executions</code> com o <code>flowVersionHistoryId</code> resolvido <em>naquele instante</em>. Se o historyId mudar antes do próximo nó rodar, a linha do próximo nó grava um <em>historyId diferente</em>. A execução resultante fica com evidências de ter rodado em <strong>dois snapshots distintos</strong>. Isso é observável em produção lendo <code>node_executions</code>.
             <br><br><em>flux.service.ts:615-637 e :1545-1556</em>
           </div>
         </div>
@@ -1300,10 +1300,10 @@
         Cenário: execução do flow F começa em T0; usuário publica em T2; execução continua em T3.
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> demonstrar em código o motivo pelo qual o Passo 1.3 da v2 precisa criar <em>uma tabela nova</em> de snapshots (<code>flow_execution_snapshots</code>) em vez de reutilizar <code>flow_versions_histories</code>. Não é uma função — é a interação entre C (publish) e D (resolve) quando cruzam no tempo.
+        <strong>Propósito:</strong> demonstrar em código o motivo pelo qual o Passo 1.3 da v2 precisa criar <em>uma tabela nova</em> de snapshots (<code>flow_execution_snapshots</code>) em vez de reutilizar <code>flow_versions_histories</code>. Não é uma função. É a interação entre C (publish) e D (resolve) quando cruzam no tempo.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> a versão "deployada" parece imutável se você olhar apenas a row (o ID nunca muda), mas o <em>conteúdo</em> dela vive num ponteiro (<code>currentHistoryId</code>) que pode ser reescrito a qualquer segundo por um publish. Como a execução não faz early-binding — ela consulta o ponteiro <strong>de novo</strong> a cada nó ou fase — dá pra terminar um run onde <em>a metade inicial rodou com o snapshot X e a metade final rodou com o snapshot Y</em>. Isso não é edge case teórico: é o comportamento default do sistema. A única razão pela qual isso raramente causa bugs visíveis é porque publishes não são frequentes o suficiente pra cruzar com runs frequentes, e porque a maioria dos runs é curta. Mas <em>não há garantia arquitetural</em> — é sorte estatística.
+        <strong>Em resumo:</strong> a versão "deployada" parece imutável se você olhar apenas a linha (o ID nunca muda). O <em>conteúdo</em> dela vive num ponteiro (<code>currentHistoryId</code>) que pode ser reescrito a qualquer segundo por um publish. Como a execução não faz early-binding, ela consulta o ponteiro <strong>de novo</strong> a cada nó ou fase. Dá para terminar uma execução onde <em>a metade inicial rodou com o snapshot X e a metade final rodou com o snapshot Y</em>. Isso não é edge case teórico. É o comportamento default do sistema. A única razão pela qual isso raramente causa bugs visíveis é que publishes não são frequentes o suficiente para cruzar com execuções frequentes. E a maioria das execuções é curta. <em>Não há garantia arquitetural.</em> É sorte estatística.
       </div>
 
       <div class="fn-body-cols">
@@ -1314,20 +1314,20 @@
               <span class="timeline-t">T0</span>
               <div class="timeline-body">
                 Execução do flow F começa. Estado: <code>flow.deployedVersionId = V1</code> · <code>V1.currentHistoryId = S1</code> · nodes/edges vinculados a <code>S1</code>.
-                <br>Chama <code>resolveExecutionHistoryId(flow)</code> → resolve <code>S1</code>. Carrega topologia inicial de <code>S1</code>.
+                <br>Chama <code>resolveExecutionHistoryId(flow)</code>. Resolve <code>S1</code>. Carrega topologia inicial de <code>S1</code>.
               </div>
             </div>
             <div class="timeline-step">
               <span class="timeline-t">T1</span>
               <div class="timeline-body">
-                Node 1 executa. <code>createNodeExecution()</code> faz INSERT em <code>node_executions</code> com <code>flowVersionHistoryId = S1</code>. Output persiste normalmente.
+                Node 1 executa. <code>createNodeExecution()</code> faz INSERT em <code>node_executions</code> com <code>flowVersionHistoryId = S1</code>. Saída persiste normalmente.
               </div>
             </div>
             <div class="timeline-step">
               <span class="timeline-t">T2</span>
               <div class="timeline-body">
-                Outro usuário publica Staging. Endpoint <code>/versions/push-to-production</code> executa. Etapa 4 cria <code>S2</code>; etapa 5 faz <code>UPDATE flows_versions SET current_history_id = S2 WHERE id = V1</code>.
-                <br><strong>Nenhum lock impede isso — a execução em curso não tem transação aberta na row de <code>flow_versions</code>.</strong>
+                Outro usuário publica Staging. Endpoint <code>/versions/push-to-production</code> executa. Etapa 4 cria <code>S2</code>. Etapa 5 faz <code>UPDATE flows_versions SET current_history_id = S2 WHERE id = V1</code>.
+                <br><strong>Nenhum lock impede isso. A execução em curso não tem transação aberta na linha de <code>flow_versions</code>.</strong>
               </div>
             </div>
             <div class="timeline-step">
@@ -1340,7 +1340,7 @@
             <div class="timeline-step">
               <span class="timeline-t">T4+</span>
               <div class="timeline-body">
-                Se Node 2 precisa ler dependências que foram consultadas com <code>historyId = S2</code>, mas <code>S2</code> tem nodes/edges diferentes de <code>S1</code>, os inputs podem sair inconsistentes. Ex: um node de branch removido em S2 pode ainda ter output em <code>node_executions</code> como se tivesse rodado — mas não é acessível como dependência a partir da nova topologia.
+                Se Node 2 precisa ler dependências que foram consultadas com <code>historyId = S2</code>, mas <code>S2</code> tem nodes/edges diferentes de <code>S1</code>, as entradas podem sair inconsistentes. Ex: um node de branch removido em S2 pode ainda ter saída em <code>node_executions</code> como se tivesse rodado. Não é acessível como dependência a partir da nova topologia.
               </div>
             </div>
           </div>
@@ -1349,19 +1349,19 @@
           <div class="box decision">
             <div class="box-title">Por que não há proteção em código hoje</div>
             <div class="box-desc">
-              <strong>1.</strong> <code>resolveExecutionHistoryId</code> não recebe uma "execução ativa" como contexto — só o flow.
+              <strong>1.</strong> <code>resolveExecutionHistoryId</code> não recebe uma "execução ativa" como contexto. Só o flow.
               <br><strong>2.</strong> <code>flowVersionService.findById()</code> é uma query pura, sem lock (<code>findOne({ relations: ['flow'] })</code>).
-              <br><strong>3.</strong> O publish (<code>pushToProduction</code>) não checa se há runs pendentes daquele flow antes de sobrescrever.
-              <br><strong>4.</strong> O snapshot cache (<code>flow.snapshot</code> JSONB) é ortogonal — invalidado por save, mas não por publish, e nem é usado pela execução completa.
+              <br><strong>3.</strong> O publish (<code>pushToProduction</code>) não checa se há execuções pendentes daquele flow antes de sobrescrever.
+              <br><strong>4.</strong> O snapshot cache (<code>flow.snapshot</code> JSONB) é ortogonal. Invalidado por save, mas não por publish. Nem é usado pela execução completa.
             </div>
-            <div class="box-file">análise: 4 pontos combinam pra tornar o race inevitável no modelo atual</div>
+            <div class="box-file">análise: 4 pontos combinam para tornar o race inevitável no modelo atual</div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box worker">
             <div class="box-title">O que a v2 propõe (Passo 1.3)</div>
             <div class="box-desc">
-              INSERT bulk em uma tabela nova <code>flow_execution_snapshots(execution_id, node_id, node_data)</code> — cópia da config atual de <em>cada nó no momento exato do enqueue</em>, referenciada por <code>flowExecutionId</code>, não por <code>flowVersionHistoryId</code>. A partir daí, todo consumo dentro do workflow lê <em>desse snapshot</em>, que nunca é alterado por nenhum publish subsequente.
+              INSERT bulk em uma tabela nova <code>flow_execution_snapshots(execution_id, node_id, node_data)</code>. Cópia da config atual de <em>cada nó no momento exato do enqueue</em>. Referenciada por <code>flowExecutionId</code>, não por <code>flowVersionHistoryId</code>. A partir daí, todo consumo dentro do workflow lê <em>desse snapshot</em>, que nunca é alterado por nenhum publish subsequente.
               <br><br><strong>Ganho:</strong> imutabilidade real por execução, sem depender de tabelas de versionamento.
             </div>
             <div class="box-file">arquitetura-v2.html#step-1-3</div>
@@ -1373,27 +1373,27 @@
             <div class="aside-title">⚠️ Observável em produção</div>
             Rodando uma query em <code>node_executions</code> agrupando por <code>execId</code> e contando <code>DISTINCT flowVersionHistoryId</code>:
             <br><br><code>SELECT execId, COUNT(DISTINCT flowVersionHistoryId) c FROM node_executions GROUP BY execId HAVING c &gt; 1</code>
-            <br><br>Se aparecer <code>c &gt; 1</code> em alguma row, aquele run pegou o race. Não é hipotético — o dado grava o evento.
+            <br><br>Se aparecer <code>c &gt; 1</code> em alguma linha, aquela execução pegou o race. Não é hipotético. O dado grava o evento.
           </div>
 
           <div class="aside info">
             <div class="aside-title">💡 Por que raramente estoura</div>
             <strong>1.</strong> Publishes são operações raras (não é autosave).
-            <br><strong>2.</strong> Runs típicos são de segundos, minutos no máximo.
-            <br><strong>3.</strong> A maioria dos flows tem workflow serial curto — o intervalo entre <code>resolveExecutionHistoryId</code> consecutivos é pequeno.
-            <br><br>Mas: flows longos (loop, webhook wait, aprovação humana) <strong>sim</strong> ficam expostos. E o comportamento não é <em>errado</em> — a execução termina — só é <em>não-reprodutível</em>.
+            <br><strong>2.</strong> Execuções típicas são de segundos, minutos no máximo.
+            <br><strong>3.</strong> A maioria dos flows tem workflow serial curto. O intervalo entre <code>resolveExecutionHistoryId</code> consecutivos é pequeno.
+            <br><br>Flows longos (loop, webhook wait, aprovação humana) <strong>sim</strong> ficam expostos. O comportamento não é <em>errado</em>. A execução termina. Só é <em>não reprodutível</em>.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 Alternativas que não resolveriam</div>
-            <strong>Cache do historyId no início do run?</strong> Ajuda parcialmente, mas o backend também é acessado por adapters legados que não passam pelo Temporal, e cada um teria que implementar o cache.
-            <br><br><strong>Lock em <code>flow_versions</code> durante o run?</strong> Bloqueia publishes por segundos/minutos — inaceitável em produção.
+            <strong>Cache do historyId no início da execução?</strong> Ajuda parcialmente. O backend também é acessado por adapters legados que não passam pelo Temporal. Cada um teria que implementar o cache.
+            <br><br><strong>Lock em <code>flow_versions</code> durante a execução?</strong> Bloqueia publishes por segundos/minutos. Inaceitável em produção.
             <br><br><strong>Tabela nova por execução</strong> (v2) é a única saída sem trade-off operacional grave.
           </div>
 
           <div class="aside">
             <div class="aside-title">🎯 O que grava historyId "estável"</div>
-            <code>node_executions.flowVersionHistoryId</code> é <em>write-once</em>: uma vez inserido, não é atualizado (só <code>output</code>, <code>isError</code>, etc. são updated). Então o audit trail depois do fato é confiável — o problema é <em>o run em progresso</em>, não a análise post-mortem.
+            <code>node_executions.flowVersionHistoryId</code> é <em>write-once</em>. Uma vez inserido, não é atualizado (só <code>output</code>, <code>isError</code>, etc. são updated). O audit trail depois do fato é confiável. O problema é <em>a execução em progresso</em>, não a análise post-mortem.
           </div>
         </div>
       </div>
@@ -1402,20 +1402,20 @@
 
   <!-- SUMMARY -->
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo — o que este documento estabelece:</strong>
-    <br>• <strong>Versões são criadas em 3 momentos</strong> (enable, create branch, publish), <em>nunca</em> em save/autosave.
-    <br>• <code>flows_versions.currentHistoryId</code> é um <strong>ponteiro mutável</strong>: publish o reescreve; save reescreve as rows-filhas apontadas por ele.
-    <br>• Execução resolve o snapshot via <code>SELECT</code> fresco <em>em cada chamada</em> — sem cache, sem lock, sem early-binding.
-    <br>• Como a resolução é repetida N vezes por run e o ponteiro é global-por-versão, <strong>não existe garantia de leitura consistente por execução</strong>.
-    <br>• A tabela <code>node_executions</code> grava o historyId no INSERT — dá pra <em>detectar</em> execuções afetadas, mas não pra <em>prevenir</em> a inconsistência.
+    <strong>Resumo. O que este documento estabelece.</strong>
+    <br>• <strong>Versões são criadas em 3 momentos</strong> (enable, create branch, publish). <em>Nunca</em> em save/autosave.
+    <br>• <code>flows_versions.currentHistoryId</code> é um <strong>ponteiro mutável</strong>. Publish o reescreve. Save reescreve as linhas filhas apontadas por ele.
+    <br>• Execução resolve o snapshot via <code>SELECT</code> fresco <em>em cada chamada</em>. Sem cache, sem lock, sem early-binding.
+    <br>• Como a resolução é repetida N vezes por execução e o ponteiro é global por versão, <strong>não existe garantia de leitura consistente por execução</strong>.
+    <br>• A tabela <code>node_executions</code> grava o historyId no INSERT. Dá para <em>detectar</em> execuções afetadas. Não dá para <em>prevenir</em> a inconsistência.
   </div>
 
   <div class="note warn">
     <strong>Implicação direta para o Passo 1.3 da arquitetura v2:</strong>
-    <br>• Reaproveitar <code>flows_versions_histories</code> como "snapshot de execução" <strong>não funciona</strong> — as rows são compartilhadas entre runs e mutáveis por publish.
-    <br>• A tabela nova (<code>flow_execution_snapshots</code>) é obrigatória: precisa ser (a) escrita no enqueue, dentro da mesma transação que cria a row de <code>flow_executions</code>; (b) referenciada por <code>flowExecutionId</code>, não por <code>versionId</code>; (c) read-only depois de escrita — sem UPDATE em nenhum caminho.
-    <br>• Retirar <code>currentHistoryId</code> como fonte de verdade durante o run é a mudança conceitual central — o run passa a ser identificado pelo próprio ID, não pela versão.
-    <br>• <code>flow_versions</code> e <code>flow_versions_histories</code> continuam existindo para o <em>ciclo de edição e publicação</em>, mas deixam de ser lidos por execução ativa. Isso simplifica os 8 pontos de consumo em <code>flux.service.ts</code> — a maioria vira leitura de <code>flow_execution_snapshots</code> pelo ID.
+    <br>• Reaproveitar <code>flows_versions_histories</code> como "snapshot de execução" <strong>não funciona</strong>. As linhas são compartilhadas entre execuções e mutáveis por publish.
+    <br>• A tabela nova (<code>flow_execution_snapshots</code>) é obrigatória. Precisa ser (a) escrita no enqueue, dentro da mesma transação que cria a linha de <code>flow_executions</code>; (b) referenciada por <code>flowExecutionId</code>, não por <code>versionId</code>; (c) read-only depois de escrita. Sem UPDATE em nenhum caminho.
+    <br>• Retirar <code>currentHistoryId</code> como fonte de verdade durante a execução é a mudança conceitual central. A execução passa a ser identificada pelo próprio ID, não pela versão.
+    <br>• <code>flow_versions</code> e <code>flow_versions_histories</code> continuam existindo para o <em>ciclo de edição e publicação</em>. Deixam de ser lidos por execução ativa. Isso simplifica os 8 pontos de consumo em <code>flux.service.ts</code>. A maioria vira leitura de <code>flow_execution_snapshots</code> pelo ID.
   </div>
 
   <!-- FOOTER NAV -->

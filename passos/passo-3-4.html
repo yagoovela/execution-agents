@@ -181,24 +181,24 @@
     <h1>Passo 3.4 — runLogCollector.startNode() + chargeContext.enterWith()</h1>
   </div>
   <div class="page-sub">
-    Bloco em <code>flux.service.ts:3263-3316</code>. Duas coisas em paralelo: (1) <strong>abre um RunLogNode</strong> hierárquico no coletor pra rastrear a execução; (2) <strong>entra em contexto de cobrança</strong> via AsyncLocalStorage pra que qualquer serviço chamado abaixo consiga cobrar tokens/custo no nó certo sem receber execId/nodeId por argumento.
+    Bloco em <code>flux.service.ts:3263-3316</code>. Duas coisas em paralelo. (1) <strong>Abre um RunLogNode</strong> hierárquico no coletor para rastrear a execução. (2) <strong>Entra em contexto de cobrança</strong> via AsyncLocalStorage. Assim qualquer serviço chamado abaixo consegue cobrar tokens e custo no nó certo sem receber execId e nodeId por argumento.
   </div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
     <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
     <ul>
-      <li><strong>Coloca o crachá invisível de cobrança:</strong> <code>chargeContext.enterWith({ execId, nodeId })</code> injeta esses ids na <em>AsyncLocalStorage</em> — qualquer <code>await</code> abaixo (LLM, HTTP, DB) consegue ler o contexto sem receber por argumento. É o mecanismo central de bilhetagem por nó.</li>
-      <li><strong>Abre a pasta do nó no log hierárquico:</strong> <code>runLogCollector.startNode(...)</code> cria um <code>RunLogNode</code> novo com status <code>in_progress</code>, redige segredos (<code>apiKey</code>, <code>Authorization</code>) e empurra no <code>nodesBucket</code> — um ponteiro que muda por contexto (root, library, loop, sub-flow) e produz hierarquia sem esforço.</li>
-      <li><strong>Sub-run anchors delegam o log:</strong> <code>fluxBox</code> e <code>libraryNode</code> pulam o <code>startNode</code> (<code>genericRunLogNode = null</code>) — o handler deles cria um <code>subRun</code> aninhado próprio com toda a hierarquia interna. Evita registro duplicado na timeline.</li>
-      <li><strong>Trace uniforme via <code>recordLegacyNodeStart</code>:</strong> pra nós que <em>não</em> vão pelo Temporal, insere row com status running em <code>node_executions</code> — garante que a tabela de audit trail cubra os dois paths (inline e worker). Vira dead code quanto mais tipos migram.</li>
-      <li><strong>Debounce nas gravações:</strong> <code>spaceRunLogsService.scheduleUpsert</code> agrupa rajadas de <code>flushRoot</code> num único UPSERT (setTimeout keyed por processId) — sem isso, um run com 100 nós faria 200+ writes. No fim do run, <code>flushNow</code> força o write final.</li>
-      <li><strong>Saída:</strong> <code>chargeContext</code> ativa, <code>genericRunLogNode</code> vivo no coletor (ou <code>null</code> pra anchors), 1 INSERT em <code>node_executions</code> pra legacy, 1 UPSERT debounced em <code>space_run_logs</code>. Cross-cutting — não executa o nó, prepara <em>observabilidade e billing</em>.</li>
+      <li><strong>Coloca o crachá invisível de cobrança.</strong> <code>chargeContext.enterWith({ execId, nodeId })</code> injeta esses ids na <em>AsyncLocalStorage</em>. Qualquer <code>await</code> abaixo (LLM, HTTP, DB) consegue ler o contexto sem receber por argumento. É o mecanismo central de bilhetagem por nó.</li>
+      <li><strong>Abre a pasta do nó no log hierárquico.</strong> <code>runLogCollector.startNode(...)</code> cria um <code>RunLogNode</code> novo com status <code>in_progress</code>, ofusca segredos (<code>apiKey</code>, <code>Authorization</code>) e empurra no <code>nodesBucket</code>. Esse bucket é um ponteiro que muda por contexto (root, library, loop, sub-flow) e produz hierarquia sem esforço.</li>
+      <li><strong>Sub-run anchors delegam o log.</strong> <code>fluxBox</code> e <code>libraryNode</code> pulam o <code>startNode</code> (<code>genericRunLogNode = null</code>). O handler deles cria um <code>subRun</code> aninhado próprio com toda a hierarquia interna. Evita registro duplicado na timeline.</li>
+      <li><strong>Trace uniforme via <code>recordLegacyNodeStart</code>.</strong> Para nós que <em>não</em> vão pelo Temporal, insere linha com status running em <code>node_executions</code>. Garante que a tabela de audit trail cubra os dois paths (inline e worker). Vira dead code quanto mais tipos migram.</li>
+      <li><strong>Debounce nas gravações.</strong> <code>spaceRunLogsService.scheduleUpsert</code> agrupa rajadas de <code>flushRoot</code> num único UPSERT (setTimeout keyed por processId). Sem isso, uma execução com 100 nós faria 200+ writes. No fim da execução, <code>flushNow</code> força o write final.</li>
+      <li><strong>Saída.</strong> <code>chargeContext</code> ativa, <code>genericRunLogNode</code> vivo no coletor (ou <code>null</code> para anchors), 1 INSERT em <code>node_executions</code> para legacy, 1 UPSERT debounced em <code>space_run_logs</code>. Cross-cutting. Não executa o nó, prepara <em>observabilidade e billing</em>.</li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto:</strong> este passo é <em>cross-cutting</em> — não faz parte da lógica de execução do nó em si, mas prepara <strong>observabilidade</strong> e <strong>bilhetagem</strong> antes do handler rodar. Também aqui é feito o <code>recordLegacyNodeStart</code> pra nós que <em>não</em> vão pelo Temporal (INSERT em <code>node_executions</code> com status running) — garantindo audit trail uniforme entre paths.
+    <strong>Contexto.</strong> Este passo é <em>cross-cutting</em>. Não faz parte da lógica de execução do nó em si. Prepara <strong>observabilidade</strong> e <strong>bilhetagem</strong> antes do handler rodar. Também aqui é feito o <code>recordLegacyNodeStart</code> para nós que <em>não</em> vão pelo Temporal (INSERT em <code>node_executions</code> com status running). Garante audit trail uniforme entre paths.
   </div>
 
   <!-- Overview chain -->
@@ -216,7 +216,7 @@
       <a href="#fn-e" class="overview-chip"><span class="lbl">E</span>spaceRunLogsService.scheduleUpsert (autoflush)</a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado: <code>chargeContext.getStore()</code> retorna <code>{ execId, nodeId }</code> pra qualquer chamada async abaixo. <code>genericRunLogNode</code> vive na hierarquia do coletor (ou é null pra anchors de sub-run). <code>node_executions</code> ganha uma row de status running pra nós legacy.
+      Resultado. <code>chargeContext.getStore()</code> retorna <code>{ execId, nodeId }</code> para qualquer chamada async abaixo. <code>genericRunLogNode</code> vive na hierarquia do coletor (ou é null para anchors de sub-run). <code>node_executions</code> ganha uma linha de status running para nós legacy.
     </div>
   </div>
 
@@ -236,10 +236,10 @@
         chargeContext = new AsyncLocalStorage&lt;ChargeContext&gt;() · interface ChargeContext { execId?: string; nodeId?: string; }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Injeta <code>{ execId, nodeId }</code> no <em>async context</em> do Node.js. Qualquer chamada assíncrona feita dentro do <code>try</code> abaixo (LLM, HTTP, DB) que chame <code>chargeContext.getStore()</code> recebe esses valores <strong>sem precisar passar por argumento</strong>. É o mecanismo central de bilhetagem por nó.
+        <strong>Propósito.</strong> Injeta <code>{ execId, nodeId }</code> no <em>async context</em> do Node.js. Qualquer chamada assíncrona feita dentro do <code>try</code> abaixo (LLM, HTTP, DB) que chame <code>chargeContext.getStore()</code> recebe esses valores <strong>sem precisar passar por argumento</strong>. É o mecanismo central de bilhetagem por nó.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> é o <em>crachá invisível</em> que o funcionário coloca antes de começar a trabalhar — quem precisar saber "quem tá fazendo esse trabalho agora?" só olha pro crachá, ninguém precisa perguntar. Tecnicamente é <code>AsyncLocalStorage</code>, um recurso nativo do Node.js que carrega dados através de <em>async chains</em> sem poluir assinaturas de função. Antes do handler rodar, o loop chama <code>chargeContext.enterWith({ execId, nodeId })</code> — pronto, todo <code>await</code> feito dentro daquele contexto (chamada de LLM, HTTP externo, query TypeORM) enxerga esses valores via <code>chargeContext.getStore()</code>. Isso é <strong>essencial pra billing</strong>: quando o <code>AnthropicService</code> ou o <code>OpenAIService</code> vai cobrar tokens, ele nem sabe que tá rodando dentro de um agente — só chama <code>updateTokens(delta)</code>. O <code>ProductService</code> lê o contexto, extrai <code>execId+nodeId</code> e insere em <code>token_transactions</code> com metadata correta. Sem ALS, cada método provider precisaria receber esses ids por argumento explícito — e como esses services são compartilhados com rotas API públicas, isso poluiria a assinatura toda. Ponto de fragilidade: <code>enterWith</code> <em>não</em> é auto-limpo — se algum callback assíncrono escapar do try do nó, ele continua vendo o contexto antigo. Não acontece em prática (o try engloba tudo), mas é o tipo de coisa que quebra silenciosamente se o refactor não for cuidadoso.
+        <strong>Em resumo.</strong> É o <em>crachá invisível</em> que o funcionário coloca antes de começar a trabalhar. Quem precisar saber "quem está fazendo esse trabalho agora?" só olha para o crachá. Ninguém precisa perguntar. Tecnicamente é <code>AsyncLocalStorage</code>, recurso nativo do Node.js que carrega dados através de <em>async chains</em> sem poluir assinaturas de função. Antes do handler rodar, o loop chama <code>chargeContext.enterWith({ execId, nodeId })</code>. Pronto. Todo <code>await</code> feito dentro daquele contexto (chamada de LLM, HTTP externo, query TypeORM) enxerga esses valores via <code>chargeContext.getStore()</code>. Isso é <strong>essencial para billing</strong>. Quando o <code>AnthropicService</code> ou o <code>OpenAIService</code> vai cobrar tokens, nem sabe que está rodando dentro de um agente. Só chama <code>updateTokens(delta)</code>. O <code>ProductService</code> lê o contexto, extrai <code>execId</code> e <code>nodeId</code> e insere em <code>token_transactions</code> com metadata correta. Sem ALS, cada método provider precisaria receber esses ids por argumento explícito. Como esses serviços são compartilhados com rotas API públicas, isso poluiria a assinatura toda. Ponto de fragilidade. <code>enterWith</code> <em>não</em> é auto-limpo. Se algum callback assíncrono escapar do try do nó, continua vendo o contexto antigo. Não acontece em prática (o try engloba tudo). É o tipo de coisa que quebra silenciosamente se o refactor não for cuidadoso.
       </div>
 
       <div class="fn-body-cols">
@@ -260,7 +260,7 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">A1</span> enterWith no início do try</div>
             <div class="box-desc">
-              <code>chargeContext.enterWith({ execId: runLogProcessId, nodeId: node.id })</code>. Diferente de <code>.run(store, fn)</code>, o <code>enterWith</code> injeta no async chain <em>atual</em> sem envelope. Vale até o próximo <code>enterWith</code> ou fim do async context.
+              <code>chargeContext.enterWith({ execId: runLogProcessId, nodeId: node.id })</code>. Diferente de <code>.run(store, fn)</code>, o <code>enterWith</code> injeta no async chain <em>atual</em> sem envelope. Vale até o próximo <code>enterWith</code> ou até o fim do async context.
             </div>
             <div class="box-file">flux.service.ts:3263-3266</div>
           </div>
@@ -270,10 +270,10 @@
             <div class="nested-flow-title">↳ Consumo em ProductService.updateTokens — product.service.ts:1013-1015</div>
             <div class="box backend">
               <div class="box-desc">
-                <code>const ctx = chargeContext.getStore()</code>. Extrai <code>execId, nodeId</code> pra:
+                <code>const ctx = chargeContext.getStore()</code>. Extrai <code>execId</code> e <code>nodeId</code> para:
                 <br>• INSERT em <code>token_transactions</code> com <code>metadata: { execId, nodeId }</code>
-                <br>• Idempotência de cobrança (mesmo execId+nodeId+delta = mesmo record)
-                <br>• Agregação posterior via <code>sumChargesByExecution(execId, nodeId)</code> em 3.7/T6
+                <br>• Idempotência de cobrança (mesmo execId + nodeId + delta = mesmo record)
+                <br>• Agregação posterior via <code>sumChargesByExecution(execId, nodeId)</code> em 3.7 / T6
               </div>
               <div class="box-file">product/product.service.ts:1013-1015</div>
             </div>
@@ -283,23 +283,23 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Por que AsyncLocalStorage e não parâmetro?</div>
-            Passar <code>execId+nodeId</code> por argumento em <em>toda</em> chamada de LLM/HTTP/DB seria assinatura poluída. Provider services (Anthropic, OpenAI, etc.) são compartilhados por rotas API e por execução de agente — não podem ter esse contexto no signature.
-            <br><br>ALS resolve: contexto lexical num async chain sem envenenar interfaces.
+            Passar <code>execId</code> e <code>nodeId</code> por argumento em <em>toda</em> chamada de LLM, HTTP ou DB seria assinatura poluída. Provider services (Anthropic, OpenAI, etc.) são compartilhados por rotas API e por execução de agente. Não podem ter esse contexto na assinatura.
+            <br><br>ALS resolve. Contexto lexical num async chain sem envenenar interfaces.
           </div>
 
           <div class="aside warn">
             <div class="aside-title">⚠️ enterWith não é "escopado"</div>
-            Diferente de <code>.run(store, fn)</code>, o <code>enterWith</code> não é auto-limpo quando o try termina. Se o próximo nó também chamar <code>.enterWith</code>, o valor é sobrescrito — o que é ok pra este uso. Mas se algum callback assíncrono <em>escapar</em> do try (não deveria acontecer, mas...) ele continua vendo o contexto antigo.
+            Diferente de <code>.run(store, fn)</code>, o <code>enterWith</code> não é auto-limpo quando o try termina. Se o próximo nó também chamar <code>.enterWith</code>, o valor é sobrescrito. Ok para este uso. Se algum callback assíncrono <em>escapar</em> do try (não deveria acontecer), continua vendo o contexto antigo.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 nodeCancelContext usa o mesmo pattern</div>
-            Logo abaixo, linha 3268: <code>nodeCancelContext.enterWith(cancelWatch.entry)</code>. Também ALS, também injeta contexto pra que interceptors de fetch/axios possam abortar. Ver <a href="passo-3-4-cancellation.html">detalhamento do Cancellation check</a>.
+            Logo abaixo, linha 3268: <code>nodeCancelContext.enterWith(cancelWatch.entry)</code>. Também ALS. Também injeta contexto para que interceptors de fetch e axios possam abortar. Ver <a href="passo-3-4-cancellation.html">detalhamento do Cancellation check</a>.
           </div>
 
           <div class="aside">
             <div class="aside-title">📎 Sub-runs (fluxBox, libraryNode) reentram</div>
-            Quando um nó container dispara um sub-flow, o loop nested faz seu próprio <code>enterWith</code> com o novo nodeId dos nós de dentro. Voltando pro parent, o contexto do parent precisa ser restaurado — hoje isso é feito pela cadeia async natural (o parent segue seu próprio async context).
+            Quando um nó container dispara um sub-flow, o loop nested faz seu próprio <code>enterWith</code> com o novo nodeId dos nós de dentro. Ao voltar para o parent, o contexto do parent precisa ser restaurado. Hoje isso é feito pela cadeia async natural (o parent segue seu próprio async context).
           </div>
         </div>
       </div>
@@ -322,10 +322,10 @@
         const isSubRunAnchorNode = node.type === 'fluxBox' || node.type === 'libraryNode';
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Decide se o coletor deve criar um <code>RunLogNode</code> "achatado" ou pular. Nós container (<code>fluxBox</code>, <code>libraryNode</code>) delegam a criação do log pro handler deles, que chama <code>startFlowCallerSubRun</code>/<code>startLibrarySubRun</code> — cria um documento aninhado próprio com toda a hierarquia interna.
+        <strong>Propósito.</strong> Decide se o coletor deve criar um <code>RunLogNode</code> "achatado" ou pular. Nós container (<code>fluxBox</code>, <code>libraryNode</code>) delegam a criação do log ao handler deles. Este chama <code>startFlowCallerSubRun</code> ou <code>startLibrarySubRun</code> e cria um documento aninhado próprio com toda a hierarquia interna.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> é uma <em>peneira</em> pra evitar log duplicado. <code>fluxBox</code> e <code>libraryNode</code> são nós "container" — eles não fazem trabalho próprio, disparam <strong>outro agente inteiro</strong> internamente. Se o coletor criasse um <code>RunLogNode</code> simples aqui (o container) e depois o handler desses tipos criasse um <code>subRun</code> completo com toda a hierarquia do agente filho, o timeline da UI ficaria com <em>dois registros pro mesmo container</em>: um raso e um profundo — confuso. A solução: pra esses tipos, o coletor pula (<code>genericRunLogNode = null</code>) e delega a criação do log pro próprio handler, que via <code>startFlowCallerSubRun</code> constrói um <code>RunLogDocument</code> aninhado com todos os nós internos do sub-flow. Efeito colateral do <code>null</code>: o passo 3.9 (<code>endNode</code>) também é skipado — o handler é responsável por finalizar seu próprio sub-log. Também é o único lugar do loop com "conhecimento hardcoded" sobre esses dois tipos específicos — deveria idealmente ser uma flag no metadata do node type, não uma comparação inline. Refactor pequeno mas simbólico da direção da migração.
+        <strong>Em resumo.</strong> É uma <em>peneira</em> para evitar log duplicado. <code>fluxBox</code> e <code>libraryNode</code> são nós container. Não fazem trabalho próprio. Disparam <strong>outro agente inteiro</strong> internamente. Se o coletor criasse um <code>RunLogNode</code> simples aqui (o container) e depois o handler desses tipos criasse um <code>subRun</code> completo com toda a hierarquia do agente filho, o timeline da UI ficaria com <em>dois registros para o mesmo container</em>: um raso e um profundo. Confuso. A solução. Para esses tipos, o coletor pula (<code>genericRunLogNode = null</code>) e delega a criação do log ao próprio handler. Via <code>startFlowCallerSubRun</code>, o handler constrói um <code>RunLogDocument</code> aninhado com todos os nós internos do sub-flow. Efeito colateral do <code>null</code>. O passo 3.9 (<code>endNode</code>) também é pulado. O handler é responsável por finalizar o próprio sub-log. É o único lugar do loop com "conhecimento hardcoded" sobre esses dois tipos específicos. Idealmente seria uma flag no metadata do node type, não uma comparação inline. Refactor pequeno mas simbólico da direção da migração.
       </div>
 
       <div class="fn-body-cols">
@@ -354,12 +354,12 @@ genericRunLogNode = isSubRunAnchorNode
             </div>
             <div class="cascade-step">
               <span class="cascade-num">2</span>
-              <span class="cond">runLogCollector é falsy (nested run)</span>
+              <span class="cond">runLogCollector é falsy (execução aninhada)</span>
               <span class="result deny">genericRunLogNode = null</span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">3</span>
-              <span class="cond">tipo comum + coletor presente</span>
+              <span class="cond">tipo comum e coletor presente</span>
               <span class="result call">startNode() cria RunLogNode simples</span>
             </div>
           </div>
@@ -369,19 +369,19 @@ genericRunLogNode = isSubRunAnchorNode
           <div class="aside info">
             <div class="aside-title">🎯 Por que sub-runs pulam startNode?</div>
             <code>fluxBox</code> e <code>libraryNode</code> executam um <em>outro agente inteiro</em> internamente. Criar um <code>RunLogNode</code> flat aqui e depois um <code>subRun</code> completo lá dentro dobraria a informação e confundiria a UI da timeline.
-            <br><br>O handler desses tipos (<code>flux.service.ts:4350, 4394</code>) usa <code>runLogCollector.startFlowCallerSubRun(...)</code> pra criar um <code>RunLogDocument</code> aninhado no lugar.
+            <br><br>O handler desses tipos (<code>flux.service.ts:4350, 4394</code>) usa <code>runLogCollector.startFlowCallerSubRun(...)</code> para criar um <code>RunLogDocument</code> aninhado no lugar.
           </div>
 
           <div class="aside">
             <div class="aside-title">📎 Ordem entre substitution e startNode</div>
-            A ordem importa: <code>processedNode.data</code> (já resolvido) é o que vai pra <code>settings</code> do <code>RunLogNode</code>. Assim, o timeline mostra <em>input real</em> que o handler recebeu, não o template com <code>{{...}}</code>.
+            A ordem importa. <code>processedNode.data</code> (já resolvido) é o que vai para <code>settings</code> do <code>RunLogNode</code>. Assim, a timeline mostra a <em>entrada real</em> que o handler recebeu, não o template com <code>{{...}}</code>.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 Optional chaining nos dois lados</div>
             <code>runLogCollector?.startNode(...) ?? null</code>. Cobre 2 casos:
-            <br>• collector desabilitado (feature gate — retorna null internamente)
-            <br>• collector ausente inteiro (run nested sem forward do collector)
+            <br>• collector desabilitado (feature gate: retorna null internamente)
+            <br>• collector ausente inteiro (execução aninhada sem forward do collector)
           </div>
         </div>
       </div>
@@ -404,10 +404,10 @@ genericRunLogNode = isSubRunAnchorNode
         startNode(params: StartNodeParams): RunLogNode | null
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Cria um <code>RunLogNode</code> novo, redige segredos de <code>settings</code>/<code>input</code>, faz <code>push</code> no bucket ativo (<code>nodesBucket</code> — que aponta pra <code>rootDoc.nodes</code> OU pra <code>parentNode.innerSteps</code> se dentro de um loop/library), e dispara flush pro banco.
+        <strong>Propósito.</strong> Cria um <code>RunLogNode</code> novo, ofusca segredos de <code>settings</code> e <code>input</code>, faz <code>push</code> no bucket ativo (<code>nodesBucket</code>, que aponta para <code>rootDoc.nodes</code> ou para <code>parentNode.innerSteps</code> se dentro de um loop ou library) e dispara flush para o banco.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> é o <em>escrivão</em> que abre uma pasta pro nó atual na "árvore do run". Cada agente executando tem um <code>RunLogDocument</code> raiz — um JSON com todos os nós que rodaram, seus tempos, tokens, custos, aninhamento (sub-runs, loops). O escrivão preenche a capa da pasta agora (timestamp de início, tipo, label, input já resolvido, status <em>in_progress</em>), redige credenciais sensíveis (<code>redactSecrets</code> troca <code>apiKey</code>, <code>Authorization</code>, <code>password</code> por <code>[REDACTED]</code>) e empurra pra pilha ativa. O <em>pulo do gato</em> é o <code>nodesBucket</code> — um ponteiro que muda conforme o contexto: se tá no run raiz, aponta pra <code>rootDoc.nodes</code>; se tá dentro de um <code>libraryNode</code>, aponta pra <code>innerSteps</code> daquele parent; se tá numa iteração de <code>arrayNode</code>, também aponta pra <code>innerSteps</code>; se é um sub-flow (<code>fluxBox</code>), aponta pra um documento novo. Só trocar o ponteiro faz o mesmo <code>startNode</code> gerar hierarquia certa em qualquer contexto. Depois do <code>push</code>, chama <code>flushRoot</code> que dispara <code>spaceRunLogsService.scheduleUpsert</code> — o log vai pro banco de forma <em>debounced</em>, sem hammering. Se o run crashar antes de <code>endNode</code>, esse registro fica com <code>status='in_progress'</code> pra sempre — indicador visual de run interrompido.
+        <strong>Em resumo.</strong> É o <em>escrivão</em> que abre uma pasta para o nó atual na "árvore da execução". Cada agente executando tem um <code>RunLogDocument</code> raiz. É um JSON com todos os nós que rodaram, seus tempos, tokens, custos, aninhamento (sub-runs, loops). O escrivão preenche a capa da pasta agora (timestamp de início, tipo, label, entrada já resolvida, status <em>in_progress</em>). Ofusca credenciais sensíveis (<code>redactSecrets</code> troca <code>apiKey</code>, <code>Authorization</code>, <code>password</code> por <code>[REDACTED]</code>) e empurra para a pilha ativa. O ponto central é o <code>nodesBucket</code>. É um ponteiro que muda conforme o contexto. Se está na execução raiz, aponta para <code>rootDoc.nodes</code>. Se está dentro de um <code>libraryNode</code>, aponta para <code>innerSteps</code> daquele parent. Se está numa iteração de <code>arrayNode</code>, também aponta para <code>innerSteps</code>. Se é um sub-flow (<code>fluxBox</code>), aponta para um documento novo. Só trocar o ponteiro faz o mesmo <code>startNode</code> gerar hierarquia certa em qualquer contexto. Depois do <code>push</code>, chama <code>flushRoot</code>, que dispara <code>spaceRunLogsService.scheduleUpsert</code>. O log vai para o banco de forma <em>debounced</em>, sem hammering. Se a execução crashar antes de <code>endNode</code>, esse registro fica com <code>status='in_progress'</code> para sempre. Indicador visual de execução interrompida.
       </div>
 
       <div class="fn-body-cols">
@@ -434,10 +434,10 @@ genericRunLogNode = isSubRunAnchorNode
           <div class="arrow">↓</div>
 
           <div class="box backend">
-            <div class="box-title"><span class="badge step">C1</span> nodesBucket — o ponteiro que muda por contexto</div>
+            <div class="box-title"><span class="badge step">C1</span> nodesBucket: o ponteiro que muda por contexto</div>
             <div class="box-desc">
               <table class="field-table">
-                <tr><th>Contexto</th><th>nodesBucket aponta pra</th></tr>
+                <tr><th>Contexto</th><th>nodesBucket aponta para</th></tr>
                 <tr><td>root</td><td><code>rootDoc.nodes</code> (documento raiz)</td></tr>
                 <tr><td>library sub-run</td><td><code>parentNode.innerSteps</code> (dentro do library)</td></tr>
                 <tr><td>loop body</td><td><code>parentNode.innerSteps</code> (iteração do arrayNode)</td></tr>
@@ -455,7 +455,7 @@ genericRunLogNode = isSubRunAnchorNode
               <br>Erro: <code>errorMessage</code>, <code>errorDevMessage</code>, <code>errorCategory</code>, <code>errorField</code>.
               <br>Contabilidade: <code>tokens</code>, <code>cost</code>.
               <br>I/O: <code>settings</code>, <code>input</code>, <code>output</code>, <code>rawResponse</code>.
-              <br>Metadados: <code>attempts</code>, <code>modelId</code>, <code>modelProvider</code>, <code>execId</code>.
+              <br>Metadata: <code>attempts</code>, <code>modelId</code>, <code>modelProvider</code>, <code>execId</code>.
               <br>Hierarquia: <code>innerSteps: RunLogNode[]</code>, <code>subRun: RunLogDocument</code>.
             </div>
             <div class="box-file">space_run_logs/types/run-log.types.ts:5-29</div>
@@ -465,22 +465,22 @@ genericRunLogNode = isSubRunAnchorNode
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 redactSecrets antes de persistir</div>
-            <code>redactSecrets(settings)</code> percorre o objeto e substitui campos como <code>apiKey</code>, <code>password</code>, <code>authToken</code>, <code>Authorization</code> por strings placeholder tipo <code>[REDACTED]</code>. Isso <em>antes</em> do log ir pro banco — evita vazar credentials em <code>space_run_logs</code>.
+            <code>redactSecrets(settings)</code> percorre o objeto e substitui campos como <code>apiKey</code>, <code>password</code>, <code>authToken</code>, <code>Authorization</code> por strings placeholder tipo <code>[REDACTED]</code>. Isso ocorre <em>antes</em> do log ir para o banco. Evita vazar credenciais em <code>space_run_logs</code>.
           </div>
 
           <div class="aside">
             <div class="aside-title">📎 status='in_progress'</div>
-            Cria com status pendente. <code>endNode</code> (passo 3.9) atualiza pra <code>'success'</code> ou <code>'error'</code> conforme o outcome. Se o run crashar antes de <code>endNode</code>, o registro fica <code>in_progress</code> — indicador de <em>run interrompido</em> na timeline.
+            Cria com status pendente. <code>endNode</code> (passo 3.9) atualiza para <code>'success'</code> ou <code>'error'</code> conforme o outcome. Se a execução crashar antes de <code>endNode</code>, o registro fica <code>in_progress</code>. Indicador de <em>execução interrompida</em> na timeline.
           </div>
 
           <div class="aside warn">
             <div class="aside-title">⚠️ Push com referência viva</div>
-            O <code>push</code> insere a <em>referência</em> do objeto no array. Quando <code>endNode</code> em 3.9 chama <code>runLogCollector.endNode(genericRunLogNode, ...)</code>, ele muta o mesmo objeto — o array já contém a atualização. Sem re-lookup necessário.
+            O <code>push</code> insere a <em>referência</em> do objeto no array. Quando <code>endNode</code> em 3.9 chama <code>runLogCollector.endNode(genericRunLogNode, ...)</code>, muta o mesmo objeto. O array já contém a atualização. Sem re-lookup necessário.
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 flushRoot() ao final</div>
-            <code>this.flushRoot()</code> chama o callback <code>flush</code> registrado em <code>CollectorInit</code>. Nas configurações padrão, esse callback é <code>spaceRunLogsService.scheduleUpsert(...)</code> — que debounce-a o insert em <code>space_run_logs</code>.
+            <code>this.flushRoot()</code> chama o callback <code>flush</code> registrado em <code>CollectorInit</code>. Nas configurações padrão, esse callback é <code>spaceRunLogsService.scheduleUpsert(...)</code>. Ele aplica debounce no insert em <code>space_run_logs</code>.
           </div>
         </div>
       </div>
@@ -503,10 +503,10 @@ genericRunLogNode = isSubRunAnchorNode
         await this.recordLegacyNodeStart({ execId, nodeId, flowId, type, input, userId, sessionId, flowVersionHistoryId, runKind, runType, runId });
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Grava row em <code>node_executions</code> com status running <em>apenas</em> pra nós que <strong>não</strong> vão pelo Temporal (isTemporalNode=false) <em>e não</em> são worker-routed integrations. Por que? Trace uniforme — <code>node_executions</code> vira o audit trail canônico de todos os nós, independente do path.
+        <strong>Propósito.</strong> Grava linha em <code>node_executions</code> com status running <em>apenas</em> para nós que <strong>não</strong> vão pelo Temporal (isTemporalNode=false) <em>e não</em> são worker-routed integrations. Por quê? Trace uniforme. <code>node_executions</code> vira o audit trail canônico de todos os nós, independente do path.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> é uma <em>ponte de trace</em> pros nós que ficaram pra trás na migração. Nós Temporal já ganham row em <code>node_executions</code> naturalmente (o passo T2 dentro do <code>processNodeViaTemporal</code> faz isso — com <code>metadata.workflowId</code> populado). Mas quando um <code>conditionNode</code> ou <code>arrayNode</code> roda inline, sem worker, se ninguém escrevesse nada em <code>node_executions</code>, o audit trail ficaria "furado" — analytics, replay, timeline de UI perderiam registro desses nós. Essa função existe pra <em>preencher esse buraco</em>: pra nós legacy, insere uma row com <code>execId, flowId, nodeId, type, input, userId, sessionId, runKind='agent', runType, runId</code>, <em>sem</em> workflowId (marcador de "esse rodou inline"). O input passa por <code>serializeWithClaimCheck</code> — se &gt;256KB, vai pra S3 e a row grava só um <code>{__claimRef}</code>. Depois, quando o nó termina, <code>recordInApiNodeError</code> (linhas 4593-4720) fecha o ciclo escrevendo <code>outputData</code>, status e errorMessage. Ela é bonita porque é <strong>dead code em progresso</strong> — quanto mais tipos forem migrados pro worker, menos ela é chamada. Quando <em>tudo</em> for pro Temporal, ela vira 100% obsoleta e pode ser removida. É um bom termômetro do estado da migração: se ainda importa muito, tem trabalho pela frente.
+        <strong>Em resumo.</strong> É uma <em>ponte de trace</em> para os nós que ficaram para trás na migração. Nós Temporal já ganham linha em <code>node_executions</code> naturalmente. O passo T2 dentro do <code>processNodeViaTemporal</code> faz isso com <code>metadata.workflowId</code> populado. Quando um <code>conditionNode</code> ou <code>arrayNode</code> roda inline, sem worker, se ninguém escrevesse em <code>node_executions</code>, o audit trail ficaria "furado". Analytics, replay, timeline de UI perderiam registro desses nós. Esta função existe para <em>preencher esse buraco</em>. Para nós legacy, insere uma linha com <code>execId, flowId, nodeId, type, input, userId, sessionId, runKind='agent', runType, runId</code>, <em>sem</em> workflowId (marca "esse rodou inline"). A entrada passa por <code>serializeWithClaimCheck</code>. Se &gt;256KB, vai para S3 e a linha grava só um <code>{__claimRef}</code>. Depois, quando o nó termina, <code>recordInApiNodeError</code> (linhas 4593-4720) fecha o ciclo escrevendo <code>outputData</code>, status e errorMessage. Interessante porque é <strong>dead code em progresso</strong>. Quanto mais tipos migram para o worker, menos ela é chamada. Quando <em>tudo</em> for para o Temporal, vira 100% obsoleta e pode ser removida. Bom termômetro do estado da migração. Se ainda importa muito, há trabalho pela frente.
       </div>
 
       <div class="fn-body-cols">
@@ -536,8 +536,8 @@ genericRunLogNode = isSubRunAnchorNode
           <div class="box db">
             <div class="box-title"><span class="badge step">D1</span> INSERT em node_executions (status implícito running)</div>
             <div class="box-desc">
-              Row com <code>execId, flowId, nodeId, type, input, userId, sessionId, runKind='agent', runType, runId</code>. Sem <code>workflowId</code> (esse campo só é preenchido pra runs Temporal).
-              <br><br>Input passa por <code>serializeWithClaimCheck</code> — se &gt;256KB, vai pra S3 e a row grava um <code>{__claimRef: 's3://...'}</code>. Mesmo padrão do path Temporal.
+              Linha com <code>execId, flowId, nodeId, type, input, userId, sessionId, runKind='agent', runType, runId</code>. Sem <code>workflowId</code> (esse campo só é preenchido para execuções Temporal).
+              <br><br>A entrada passa por <code>serializeWithClaimCheck</code>. Se &gt;256KB, vai para S3 e a linha grava um <code>{__claimRef: 's3://...'}</code>. Mesmo padrão do path Temporal.
             </div>
             <div class="box-file">flux.service.ts:1842-1870</div>
           </div>
@@ -546,23 +546,23 @@ genericRunLogNode = isSubRunAnchorNode
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Por que trace uniforme?</div>
-            Analytics, replay, debug — todos querem uma tabela única de execuções. Se só nós Temporal aparecessem, um agente com mix de textGenerator (Temporal) e conditionNode (inline) teria histórico "furado".
-            <br><br>Também é o que permite o UI de execution log mostrar todos os passos numa timeline consistente.
+            Analytics, replay, debug. Todos querem uma tabela única de execuções. Se só nós Temporal aparecessem, um agente com mix de textGenerator (Temporal) e conditionNode (inline) teria histórico "furado".
+            <br><br>Também é o que permite à UI de execution log mostrar todos os passos numa timeline consistente.
           </div>
 
           <div class="aside">
             <div class="aside-title">📎 Quem escreve o "finish" desses rows?</div>
-            <code>recordInApiNodeError</code> (linha 3303, 4593-4720) escreve o resultado de nós legacy — status='FAILED'/'COMPLETED', outputData, errorMessage. Não é o worker (path Temporal usa <code>persistNodeSuccess</code>).
+            <code>recordInApiNodeError</code> (linha 3303, 4593-4720) escreve o resultado de nós legacy. Grava status='FAILED' ou 'COMPLETED', outputData e errorMessage. Não é o worker (path Temporal usa <code>persistNodeSuccess</code>).
           </div>
 
           <div class="aside warn">
             <div class="aside-title">⚠️ Async não-espera é tentador</div>
-            O <code>await</code> aqui atrasa o dispatch. Em nós rápidos (condition, math) esse INSERT vira ~5-10ms de latência por nó. Não é elegível pra remover porque o UPDATE seguinte precisa dessa row existir.
+            O <code>await</code> aqui atrasa o dispatch. Em nós rápidos (condition, math) esse INSERT vira ~5-10ms de latência por nó. Não é elegível para remover porque o UPDATE seguinte precisa dessa linha existir.
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 Diferença pro path Temporal</div>
-            No path Temporal, o INSERT em <code>node_executions</code> é feito por <code>createNodeExecution</code> dentro de <code>processNodeViaTemporal</code> (passo T2) — <em>com</em> <code>metadata.workflowId</code> populado. Aqui (legacy) o INSERT é sem workflow — indica execução inline no próprio processo do backend.
+            <div class="aside-title">🔧 Diferença para o path Temporal</div>
+            No path Temporal, o INSERT em <code>node_executions</code> é feito por <code>createNodeExecution</code> dentro de <code>processNodeViaTemporal</code> (passo T2). É feito <em>com</em> <code>metadata.workflowId</code> populado. Aqui (legacy) o INSERT é sem workflow. Indica execução inline no próprio processo do backend.
           </div>
         </div>
       </div>
@@ -585,10 +585,10 @@ genericRunLogNode = isSubRunAnchorNode
         scheduleUpsert(params: { spaceId; rootFlowId; doc: RunLogDocument }): void
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Callback registrado no <code>runLogCollector</code>. Cada <code>flushRoot</code> (disparado por startNode/endNode/finalize) agenda um UPSERT debounced em <code>space_run_logs</code>. Sem debounce, um run com 100 nós faria 200+ writes; com debounce, agrupa mudanças recentes num único write.
+        <strong>Propósito.</strong> Callback registrado no <code>runLogCollector</code>. Cada <code>flushRoot</code> (disparado por startNode, endNode, finalize) agenda um UPSERT debounced em <code>space_run_logs</code>. Sem debounce, uma execução com 100 nós faria 200+ writes. Com debounce, agrupa mudanças recentes num único write.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> é o <em>timer da secretária</em> que evita reimprimir a mesma pilha de papel 200 vezes. O coletor <em>quer</em> gravar rápido no banco pra UI ver a timeline atualizada em quase-tempo-real. Mas cada <code>startNode</code>/<code>endNode</code> disparando UPSERT direto faria uma rajada absurda de writes num run com muitos nós. A solução: cada chamada de <code>flushRoot</code> vira <code>scheduleUpsert(doc)</code>, que faz <code>setTimeout(FLUSH_DEBOUNCE_MS)</code> e guarda o timer num Map por <code>processId</code>. Se outra chamada chegar antes do timer disparar, <em>cancela</em> o anterior e reinicia — só grava quando fica quieto por N ms. Rajadas de mudança viram 1 write. Padrão simples de debounce. No fim do run (passo 4.4), <code>runLogCollector.finalize()</code> chama <code>spaceRunLogsService.flushNow(processId)</code> — força write imediato, garantindo que o registro final tá no banco antes do backend responder. O risco: se o backend crashar entre o último flush e o finalize, o batch em andamento se perde — o log fica congelado no penúltimo estado, com nós ainda em <code>in_progress</code>. É <em>otimização, não correção</em> — se remover, semântica não muda, só custo aumenta. Pode ser adiado no plano de migração.
+        <strong>Em resumo.</strong> É o <em>timer da secretária</em>, que evita reimprimir a mesma pilha de papel 200 vezes. O coletor <em>quer</em> gravar rápido no banco para a UI ver a timeline atualizada em quase-tempo-real. Cada <code>startNode</code> e <code>endNode</code> disparando UPSERT direto faria uma rajada absurda de writes numa execução com muitos nós. A solução. Cada chamada de <code>flushRoot</code> vira <code>scheduleUpsert(doc)</code>. Faz <code>setTimeout(FLUSH_DEBOUNCE_MS)</code> e guarda o timer num Map por <code>processId</code>. Se outra chamada chegar antes do timer disparar, <em>cancela</em> a anterior e reinicia. Só grava quando fica quieto por N ms. Rajadas de mudança viram 1 write. Padrão simples de debounce. No fim da execução (passo 4.4), <code>runLogCollector.finalize()</code> chama <code>spaceRunLogsService.flushNow(processId)</code>. Força write imediato. Garante que o registro final está no banco antes do backend responder. O risco. Se o backend crashar entre o último flush e o finalize, o batch em andamento se perde. O log fica congelado no penúltimo estado, com nós ainda em <code>in_progress</code>. É <em>otimização, não correção</em>. Se remover, semântica não muda, só o custo aumenta. Pode ser adiado no plano de migração.
       </div>
 
       <div class="fn-body-cols">
@@ -597,10 +597,10 @@ genericRunLogNode = isSubRunAnchorNode
             <div class="box-title"><span class="badge step">E1</span> Debounce map keyed by processId</div>
             <div class="box-desc">
               <code>this.pendingFlushes: Map&lt;processId, { timer, spaceId, rootFlowId, doc }&gt;</code>. Cada chamada:
-              <br>1. Clear timer anterior (se existir)
+              <br>1. Faz clear no timer anterior (se existir)
               <br>2. <code>setTimeout(FLUSH_DEBOUNCE_MS, () =&gt; upsert(doc))</code>
               <br>3. Guarda o novo timer no map
-              <br><br>Efeito: só grava se ficar quieto por N ms. Rajadas de atualização (start+end de vários nós) viram 1 write.
+              <br><br>Efeito. Só grava se ficar quieto por N ms. Rajadas de atualização (start e end de vários nós) viram 1 write.
             </div>
             <div class="box-file">space_run_logs.service.ts:92-120</div>
           </div>
@@ -609,7 +609,7 @@ genericRunLogNode = isSubRunAnchorNode
           <div class="box db">
             <div class="box-title"><span class="badge step">E2</span> UPSERT com JSONB completo</div>
             <div class="box-desc">
-              INSERT ... ON CONFLICT (processId) DO UPDATE. O <code>doc</code> inteiro (JSONB) é serializado — inclui todos os <code>RunLogNode</code>, seus <code>innerSteps</code>, seus <code>subRun</code> aninhados. Em runs grandes esse JSONB pode ficar com megas.
+              INSERT ... ON CONFLICT (processId) DO UPDATE. O <code>doc</code> inteiro (JSONB) é serializado. Inclui todos os <code>RunLogNode</code>, seus <code>innerSteps</code> e <code>subRun</code> aninhados. Em execuções grandes esse JSONB pode ficar com megas.
             </div>
           </div>
         </div>
@@ -617,18 +617,18 @@ genericRunLogNode = isSubRunAnchorNode
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 flushNow em 4.4</div>
-            No fim do run (Fase 4 passo 4.4), <code>runLogCollector.finalize()</code> chama <code>spaceRunLogsService.flushNow(processId)</code> — cancela debounce e força write imediato. Garante que o registro final está no banco antes do backend retornar.
+            No fim da execução (Fase 4, passo 4.4), <code>runLogCollector.finalize()</code> chama <code>spaceRunLogsService.flushNow(processId)</code>. Cancela debounce e força write imediato. Garante que o registro final está no banco antes do backend retornar.
           </div>
 
           <div class="aside warn">
-            <div class="aside-title">⚠️ Se o run crashar, debounce perde</div>
-            Se o backend crashar entre startNode e finalize, o último batch de mudanças (que ainda tava no timer) some. Fica registrado em <code>space_run_logs</code> só o estado do último <em>flush efetivo</em>.
-            <br><br>Em prática significa: crash log pode ficar com nó em <code>in_progress</code> mesmo depois de terminar — não é reconstitutível sem replay.
+            <div class="aside-title">⚠️ Se a execução crashar, debounce perde</div>
+            Se o backend crashar entre startNode e finalize, o último batch de mudanças (que ainda estava no timer) some. Fica registrado em <code>space_run_logs</code> só o estado do último <em>flush efetivo</em>.
+            <br><br>Em prática significa. Crash log pode ficar com nó em <code>in_progress</code> mesmo depois de terminar. Não é reconstitutível sem replay.
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 Uma row por processId</div>
-            <code>space_run_logs</code> tem PK <code>processId</code> — o run inteiro vira uma única row com JSONB gigante. UI de timeline lê essa row inteira. Escalar pra runs muito grandes vai virar um problema de tamanho de row / query time.
+            <div class="aside-title">🔧 Uma linha por processId</div>
+            <code>space_run_logs</code> tem PK <code>processId</code>. A execução inteira vira uma única linha com JSONB gigante. UI de timeline lê essa linha inteira. Escalar para execuções muito grandes vai virar problema de tamanho de linha e query time.
           </div>
         </div>
       </div>
@@ -638,21 +638,21 @@ genericRunLogNode = isSubRunAnchorNode
   <!-- SUMMARY -->
   <div class="note info" style="margin-top:32px">
     <strong>Resumo — o que sai de 3.4:</strong>
-    <br>• <code>chargeContext.getStore()</code> agora retorna <code>{ execId, nodeId }</code> pra qualquer service assíncrono chamado abaixo
-    <br>• <code>genericRunLogNode</code> — RunLogNode com <code>status='in_progress'</code> vivo no coletor (null pra fluxBox/libraryNode)
-    <br>• <code>space_run_logs</code> ganhou um flush agendado (debounced) refletindo o novo nó
-    <br>• <code>node_executions</code> ganhou uma row com input resolvido pra nós legacy (não vale pra Temporal)
-    <br>• 1 INSERT (só pra legacy), 1 UPSERT debounced
+    <br>• <code>chargeContext.getStore()</code> agora retorna <code>{ execId, nodeId }</code> para qualquer serviço assíncrono chamado abaixo.
+    <br>• <code>genericRunLogNode</code>: RunLogNode com <code>status='in_progress'</code> vivo no coletor (null para fluxBox e libraryNode).
+    <br>• <code>space_run_logs</code> ganhou um flush agendado (debounced) refletindo o novo nó.
+    <br>• <code>node_executions</code> ganhou uma linha com entrada resolvida para nós legacy (não vale para Temporal).
+    <br>• 1 INSERT (só para legacy), 1 UPSERT debounced.
   </div>
 
   <div class="note">
     <strong>Observações para migração:</strong>
-    <br>• <code>chargeContext</code> depende de <strong>single-process</strong> — no worker, o handler roda em outro processo/máquina e não vê a ALS do backend. O worker cobra via HTTP <code>/worker/charge-tokens</code> (W7) passando execId/nodeId <em>explícitos</em> — pattern superior que o backend pode adotar também.
-    <br>• <code>RunLogCollector</code> hierárquico com <code>innerSteps</code>/<code>subRun</code> é <strong>parte essencial</strong> da UX (timeline aninhada). Migração precisa preservar. Como o coletor vive no processo do backend, a migração pro worker envolve serializar RunLogNode pra o backend agregar — ou expor um serviço centralizado.
-    <br>• O <code>redactSecrets</code> é o único ponto onde credenciais são higienizadas antes de log. Qualquer refactor precisa manter esse hook — vazar em <code>space_run_logs</code> é evento de segurança.
-    <br>• Debounce de <code>scheduleUpsert</code> é otimização, não correção — se remover, a semântica não muda, só o custo. Pode ficar de fora do MVP da migração.
-    <br>• <code>recordLegacyNodeStart</code> só existe pra manter parity com Temporal. Quando <em>tudo</em> for pro worker, essa função vira dead code — bom sinal do progresso da migração.
-    <br>• É <strong>essencial e cross-cutting</strong> — deve ser tratado como <em>subsistema</em> no plano de migração, não como parte do handler de nó individual.
+    <br>• <code>chargeContext</code> depende de <strong>single-process</strong>. No worker, o handler roda em outro processo ou máquina e não vê a ALS do backend. O worker cobra via HTTP <code>/worker/charge-tokens</code> (W7) passando execId e nodeId <em>explícitos</em>. Padrão superior que o backend pode adotar também.
+    <br>• <code>RunLogCollector</code> hierárquico com <code>innerSteps</code> e <code>subRun</code> é <strong>parte essencial</strong> da UX (timeline aninhada). Migração precisa preservar. Como o coletor vive no processo do backend, a migração para o worker envolve serializar RunLogNode para o backend agregar. Ou expor um serviço centralizado.
+    <br>• O <code>redactSecrets</code> é o único ponto onde credenciais são ofuscadas antes de log. Qualquer refactor precisa manter esse hook. Vazar em <code>space_run_logs</code> é evento de segurança.
+    <br>• Debounce de <code>scheduleUpsert</code> é otimização, não correção. Se remover, a semântica não muda, só o custo. Pode ficar de fora do MVP da migração.
+    <br>• <code>recordLegacyNodeStart</code> só existe para manter parity com Temporal. Quando <em>tudo</em> for para o worker, essa função vira dead code. Bom sinal do progresso da migração.
+    <br>• É <strong>essencial e cross-cutting</strong>. Deve ser tratado como <em>subsistema</em> no plano de migração, não como parte do handler de nó individual.
   </div>
 
   <div class="page-footer-nav">

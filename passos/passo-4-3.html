@@ -84,28 +84,28 @@
 <div class="page-nav"><div class="breadcrumb"><a href="../index.html">📋 Execução de Agente</a><span class="sep">›</span><span>Passo 4.3 — Detalhamento</span></div><a href="../index.html#step-4-3" class="back-btn">← Voltar ao diagrama</a></div>
 
 <div class="page-header"><span class="icon">📝</span><h1>Passo 4.3 — flowLogsService.createLog()</h1></div>
-<div class="page-sub">Bloco em <code>flux.service.ts:4802-4822</code> · service em <code>flow_logs/flow_logs.service.ts</code>. INSERT em <code>execution_logs</code> (tabela persistida como <code>flow_log</code> pelo TypeORM). Grava resultado final do run: status, error, tokens, cost, run_type. Try/catch pra não crashar se log falhar.</div>
+<div class="page-sub">Bloco em <code>flux.service.ts:4802-4822</code>. Serviço em <code>flow_logs/flow_logs.service.ts</code>. Faz <code>INSERT</code> em <code>execution_logs</code> (tabela persistida como <code>flow_log</code> pelo TypeORM). Grava o resultado final da execução: status, error, tokens, cost e run_type. Envolvido em try/catch para não derrubar quando o log falhar.</div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
     <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
     <ul>
-      <li><strong>É o livro-caixa do agente:</strong> cada run vira <em>uma linha</em> em <code>execution_logs</code> (table name <code>flow_log</code>) — resumo final do que rolou, sem detalhes por nó.</li>
-      <li><strong>Grava os campos essenciais:</strong> <code>status</code>, <code>error_message</code>, <code>error_status_code</code>, <code>spent_tokens</code>, <code>cost</code>, <code>run_type</code> (api/canvas/chatbot/batch...), <code>flowId</code> e <code>mcpTokenId</code> se veio via MCP.</li>
-      <li><strong>Alimenta dashboards e billing:</strong> analytics filtra por <code>run_type</code>, billing soma <code>cost</code> por company, "meus runs recentes" filtra por <code>flowId</code>. Toda leitura de log relacional passa por aqui.</li>
-      <li><strong>Try/catch defensivo:</strong> se o INSERT falha (DB down, timeout), Winston loga <code>log_creation_failed</code> mas o run <em>não crasha</em> — prefere sucesso sem log a run falhado por causa de log.</li>
-      <li><strong>Saída:</strong> uma row nova em <code>execution_logs</code>, ou (raro) Winston log de falha. Nada mais — o retorno da API não usa o valor devolvido.</li>
+      <li><strong>É o registro contábil do agente.</strong> Cada execução vira uma linha em <code>execution_logs</code> (nome da tabela: <code>flow_log</code>). Resumo final do ocorrido, sem detalhes por nó.</li>
+      <li><strong>Grava os campos essenciais.</strong> <code>status</code>, <code>error_message</code>, <code>error_status_code</code>, <code>spent_tokens</code>, <code>cost</code>, <code>run_type</code> (api, canvas, chatbot, batch, etc.), <code>flowId</code> e <code>mcpTokenId</code> quando a chamada veio via MCP.</li>
+      <li><strong>Alimenta dashboards e billing.</strong> Analytics filtra por <code>run_type</code>. Billing soma <code>cost</code> por company. "Meus runs recentes" filtra por <code>flowId</code>. Toda leitura de log relacional passa por aqui.</li>
+      <li><strong>Try/catch defensivo.</strong> Se o <code>INSERT</code> falhar (banco indisponível, timeout), o Winston registra <code>log_creation_failed</code>. A execução não derruba. Prefere sucesso sem log a execução falhada por causa de log.</li>
+      <li><strong>Saída.</strong> Uma linha nova em <code>execution_logs</code>. Em caso raro, log Winston de falha. Nada mais. O retorno da API não usa o valor devolvido.</li>
     </ul>
   </div>
 
-<div class="note info"><strong>Contexto:</strong> este é o log <em>relacional</em> do run — separado do <code>space_run_logs</code> (que é o JSONB hierárquico do <code>RunLogCollector</code>). Cada run vira 1 row aqui. Query pra dashboards, analytics, billing por account — todas leem daqui.</div>
+<div class="note info"><strong>Contexto.</strong> Este é o log relacional da execução. Separado do <code>space_run_logs</code>, que é o JSONB hierárquico do <code>RunLogCollector</code>. Cada execução vira 1 linha aqui. Queries para dashboards, analytics e billing por account leem desta tabela.</div>
 
 <div class="fn-card collapsed">
 <div class="fn-card-header"><div class="fn-title"><span class="badge step" style="background:#EAB308;color:white">A</span><code>this.flowLogsService.createLog({ ... })</code></div><div class="fn-loc">flux.service.ts:4802-4811</div></div>
 <div class="fn-card-body">
 <div class="fn-signature">async createLog(dto: CreateFlowLogDto): Promise&lt;FlowLogDto&gt;</div>
-<div class="fn-purpose"><strong>Propósito:</strong> INSERT em <code>execution_logs</code> com 8 campos principais: status (string livre), error_message, error_status_code, spent_tokens, cost, run_type (enum), flowId, mcpTokenId. Retorna a entity criada (mas o caller não usa o retorno).</div>
-<div class="fn-friendly"><strong>Em resumo:</strong> é o <em>livro-caixa</em> do agente — cada run vira uma linha em <code>execution_logs</code>. Não tem detalhes de nó (isso vive em <code>node_executions</code> e <code>space_run_logs</code>) — só o resumo final: quanto gastou, quanto tempo (implícito por timestamps), qual status. Analytics team pergunta "quantos runs de canvas rodaram hoje?" — filtra por <code>run_type = 'canvas'</code> aqui. Billing pergunta "quanto essa company gastou?" — SUM em <code>cost</code> WHERE flowId IN (flows_da_company). Se log falhar (rara — DB down), o try/catch em volta engole o erro e loga Winston separado — <em>não afeta retorno do run</em>. Preferível run bem-sucedido mas sem log do que run falhado por causa de log.</div>
+<div class="fn-purpose"><strong>Propósito.</strong> <code>INSERT</code> em <code>execution_logs</code> com 8 campos principais. <code>status</code> (string livre), <code>error_message</code>, <code>error_status_code</code>, <code>spent_tokens</code>, <code>cost</code>, <code>run_type</code> (enum), <code>flowId</code> e <code>mcpTokenId</code>. Retorna a entity criada, mas o caller não usa o retorno.</div>
+<div class="fn-friendly"><strong>Em resumo.</strong> É o registro contábil do agente. Cada execução vira uma linha em <code>execution_logs</code>. Não tem detalhes de nó. Isso fica em <code>node_executions</code> e <code>space_run_logs</code>. Aqui só há o resumo final: quanto gastou, quanto tempo (implícito por timestamps), qual status. Analytics pergunta quantas execuções de canvas rodaram hoje. Filtra por <code>run_type = 'canvas'</code> aqui. Billing pergunta quanto uma company gastou. Faz <code>SUM(cost) WHERE flowId IN (flows_da_company)</code>. Em caso raro de falha (banco indisponível), o try/catch suprime o erro e o Winston grava separado. Não afeta o retorno da execução. Preferível execução bem-sucedida sem log a execução falhada por causa de log.</div>
 
 <div class="fn-body-cols"><div class="fn-main">
 <div class="code-block"><span class="k">try</span> {
@@ -124,32 +124,32 @@
 }</div>
 <div class="arrow">↓</div>
 <div class="nested-flow"><div class="nested-flow-title">↳ FlowLogsService.createLog — flow_logs.service.ts</div>
-<div class="box db"><div class="box-title">INSERT via TypeORM Repository</div><div class="box-desc"><code>this.repository.save(dto)</code> → INSERT em tabela <code>flow_log</code> (nome do plural via TypeORM naming). Retorna a entity persistida com id gerado.</div></div>
+<div class="box db"><div class="box-title">INSERT via TypeORM Repository</div><div class="box-desc"><code>this.repository.save(dto)</code> executa <code>INSERT</code> na tabela <code>flow_log</code> (nome definido pelo naming do TypeORM). Retorna a entity persistida com id gerado.</div></div>
 </div>
 </div>
 <div class="fn-asides">
 <div class="aside info"><div class="aside-title">🎯 Campos essenciais</div>
 <table class="field-table">
 <tr><th>Campo</th><th>Uso</th></tr>
-<tr><td>status</td><td>Filtro em dashboards ("todos os runs com erro")</td></tr>
+<tr><td>status</td><td>Filtro em dashboards ("todas as execuções com erro")</td></tr>
 <tr><td>error_message</td><td>UI de "meus runs recentes" mostra amostra</td></tr>
 <tr><td>spent_tokens</td><td>Billing por conta</td></tr>
-<tr><td>cost</td><td>Billing / analytics de margem</td></tr>
-<tr><td>run_type</td><td>Segmentação (api vs canvas vs chatbot vs batch)</td></tr>
+<tr><td>cost</td><td>Billing e analytics de margem</td></tr>
+<tr><td>run_type</td><td>Segmentação (api, canvas, chatbot, batch)</td></tr>
 <tr><td>flowId</td><td>Relação com o flow</td></tr>
-<tr><td>mcpTokenId</td><td>Se veio via MCP, qual token</td></tr>
+<tr><td>mcpTokenId</td><td>Quando veio via MCP, aponta o token</td></tr>
 </table>
 </div>
-<div class="aside warn"><div class="aside-title">⚠️ Falha silenciosa</div>Se INSERT falhar, run ainda retorna sucesso pro cliente — mas log fica perdido. Rare mas pode causar discrepâncias em relatórios ("cliente diz que rodou 100 runs, dashboard mostra 95").</div>
-<div class="aside helper"><div class="aside-title">🔧 mcpTokenId</div>Preenchido só se request veio do MCP (Model Context Protocol) endpoint. Rastreia qual token MCP disparou a execução — pra rate-limiting e billing por MCP client.</div>
+<div class="aside warn"><div class="aside-title">⚠️ Falha silenciosa</div>Se o <code>INSERT</code> falhar, a execução ainda retorna sucesso para o cliente. O log fica perdido. Ocorre raramente. Pode gerar discrepâncias em relatórios (o cliente contabiliza 100 execuções, o dashboard mostra 95).</div>
+<div class="aside helper"><div class="aside-title">🔧 mcpTokenId</div>Preenchido apenas quando o request veio do endpoint MCP (Model Context Protocol). Rastreia qual token MCP disparou a execução. Serve para rate-limiting e billing por MCP client.</div>
 </div></div></div></div>
 
 <div class="fn-card collapsed">
 <div class="fn-card-header"><div class="fn-title"><span class="badge step" style="background:#3B82F6;color:white">B</span><code>Tabela execution_logs (schema)</code></div><div class="fn-loc">flow_logs/entities/flow_log.entity.ts</div></div>
 <div class="fn-card-body">
 <div class="fn-signature">@Entity('flow_log') class FlowLog { id: uuid, flowId, status, error_message, spent_tokens: number, cost: number, run_type: enum, createdAt, updatedAt, ... }</div>
-<div class="fn-purpose"><strong>Propósito:</strong> Entity TypeORM. Table name é <code>flow_log</code> (singular) apesar do service se chamar <code>flowLogs</code>. Colunas indexadas por <code>flowId</code> pra queries de "meus runs recentes". Uma row por run — pk sequential.</div>
-<div class="fn-friendly"><strong>Em resumo:</strong> tabela clássica de audit trail — cada linha é um run. Chave pra queries: filtrar por <code>flowId</code> (todos os runs desse flow), <code>userId</code> (indireto via flow.userId), <code>run_type</code>, <code>status</code>, faixa de <code>createdAt</code>. Colunas de billing (<code>spent_tokens</code>, <code>cost</code>) são <code>number</code> — não bigint — o que basta pra volumes atuais. <code>error_message</code> é TEXT (pode ter mensagens longas de LLM). <code>error_status_code</code> é string (não int) — decisão infeliz mas funciona porque só mostra em UI. Sem soft-delete — logs são retention até TTL configurado em admin.</div>
+<div class="fn-purpose"><strong>Propósito.</strong> Entity TypeORM. O nome da tabela é <code>flow_log</code> (singular), embora o serviço se chame <code>flowLogs</code>. Colunas indexadas por <code>flowId</code> para queries do tipo "meus runs recentes". Uma linha por execução. PK sequencial.</div>
+<div class="fn-friendly"><strong>Em resumo.</strong> Tabela clássica de audit trail. Cada linha é uma execução. As chaves de query são <code>flowId</code> (todas as execuções do flow), <code>userId</code> (indireto via <code>flow.userId</code>), <code>run_type</code>, <code>status</code> e faixa de <code>createdAt</code>. As colunas de billing (<code>spent_tokens</code>, <code>cost</code>) são <code>number</code>, não bigint. Basta para os volumes atuais. <code>error_message</code> é TEXT (comporta mensagens longas de LLM). <code>error_status_code</code> é string, não int. Decisão infeliz, mas funciona porque só é exibido em UI. Sem soft-delete. Os logs seguem retention até o TTL configurado no admin.</div>
 
 <div class="fn-body-cols"><div class="fn-main">
 <div class="box db"><div class="box-title">Schema principal</div><div class="box-desc">
@@ -169,12 +169,12 @@
 </div></div>
 </div>
 <div class="fn-asides">
-<div class="aside"><div class="aside-title">📎 FlowLogRunType enum</div>Enum TS separado — inclui: <code>api</code>, <code>canvas</code>, <code>chatbot</code>, <code>formapi</code>, <code>batch</code>, <code>webhook</code>, <code>batch-parent</code>. String no banco.</div>
+<div class="aside"><div class="aside-title">📎 Enum FlowLogRunType</div>Enum TS separado. Inclui <code>api</code>, <code>canvas</code>, <code>chatbot</code>, <code>formapi</code>, <code>batch</code>, <code>webhook</code> e <code>batch-parent</code>. Persistido como string no banco.</div>
 </div></div></div></div>
 
-<div class="note info" style="margin-top:32px"><strong>Resumo — o que sai de 4.3:</strong><br>• Row em <code>execution_logs</code> criada com resultado do run<br>• Se falhar: Winston log de log_creation_failed, mas run continua<br>• Não bloqueia retorno — assíncrono do ponto de vista do cliente</div>
+<div class="note info" style="margin-top:32px"><strong>Resumo — o que sai de 4.3.</strong><br>• Linha em <code>execution_logs</code> criada com o resultado da execução.<br>• Em caso de falha, log Winston de <code>log_creation_failed</code>. A execução continua.<br>• Não bloqueia o retorno. Assíncrono do ponto de vista do cliente.</div>
 
-<div class="note"><strong>Observações para migração:</strong><br>• Tabela relacional simples — <strong>fácil de migrar</strong>. Worker pode escrever direto se conectar no mesmo Postgres.<br>• Try/catch defensivo é bom pattern — manter.<br>• Status livre string vira dívida técnica; enum tipado ajudaria.<br>• Row-per-run é modelo escalável — sem necessidade de refactor grande.<br>• Deve migrar cedo — sistema depende pra billing e analytics.</div>
+<div class="note"><strong>Observações para migração.</strong><br>• Tabela relacional simples. Fácil de migrar. O worker pode gravar direto se conectar no mesmo Postgres.<br>• Try/catch defensivo é bom padrão. Manter.<br>• Status como string livre vira dívida técnica. Enum tipado ajudaria.<br>• Uma linha por execução é modelo escalável. Sem necessidade de refactor grande.<br>• Deve migrar cedo. O sistema depende para billing e analytics.</div>
 
 <div class="page-footer-nav"><a href="../index.html#step-4-3" class="back-btn">← Voltar ao diagrama principal</a></div>
 </div>

@@ -123,22 +123,22 @@
     <h1>Passo 1.7b — clearRunOutputForSeed + clearObjects</h1>
   </div>
   <div class="page-sub">
-    Bloco em <code>flux.service.ts:2814-2825</code>. Duas passadas finais de limpeza antes do loop começar: (1) <code>clearRunOutputForSeed</code> — segunda passada de reset por node type + zerar refs resolvidas em <code>promptData/contentData/textData</code>; (2) <code>clearObjects</code> — reset dos objetos personalizados (<code>fluxObject</code> nomes velhos) que participam via <code>nodesBox</code>. Termina com snapshot <code>newFlows = [...updatedFlows]</code>.
+    Bloco em <code>flux.service.ts:2814-2825</code>. Duas passadas finais de limpeza antes do loop começar. Primeira. <code>clearRunOutputForSeed</code> é a segunda passada de reset por node type. Também zera refs resolvidas em <code>promptData</code>, <code>contentData</code> e <code>textData</code>. Segunda. <code>clearObjects</code> reseta os objetos personalizados (nomes antigos de <code>fluxObject</code>) que participam via <code>nodesBox</code>. Termina com o snapshot <code>newFlows = [...updatedFlows]</code>.
   </div>
 
   <div class="step-friendly">
     <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
     <ul>
-      <li><strong>Segunda pasada de reset via clearRunOutputForSeed:</strong> passa em <em>todos</em> os nodes (não só os com <code>clearOnExecution</code>) e roda <code>clearStaleNodeOutput</code> + limpa <code>outputObjectNode.text</code> + zera <code>text</code> em qualquer <code>ref</code> dentro dos arrays <code>promptData</code>, <code>contentData</code>, <code>textData</code>. Isso é <em>redundante</em> com 1.7a pra tipos com <code>clearOnExecution</code>, mas necessário pra tipos que não têm essa flag mas mesmo assim precisam de output limpo.</li>
-      <li><strong>clearObjects processa nodesBox pra objetos personalizados:</strong> percorre os nodes procurando <code>type === 'nodesBox'</code>. Pra cada um, acha o <code>UserObject</code> selecionado (via <code>data.selectedId</code>) na lista <code>objectCallerData</code> (carregada em 1.5), decide quais itens de <code>text</code> resetar (via <code>clearOnExecution</code> por item) e re-cria sessions se necessário.</li>
-      <li><strong>onMutateObjectCallerData no fim:</strong> depois de todo o processing, chama o callback do closure de 1.5 (<code>onMutateObjectCallerData(myObjects)</code>) que reatribui <code>objectCallerData</code> no escopo pai. É como o "flush" da mutação.</li>
-      <li><strong>let newFlows = [...updatedFlows] — snapshot raso:</strong> última linha do bloco. Cria um array novo (spread) mas <em>referências</em> pros mesmos nodes. Quem escreve em <code>updatedFlows</code> ou <code>newFlows</code> depois, cada um tem seu próprio array mas nodes compartilhados.</li>
-      <li><strong>Sem session sync no clearObjects:</strong> diferente do 1.5b que chamava <code>sessionStateService.clear</code>, o <code>clearObjects</code> só <em>appenda entries</em> (não deleta) — usa <code>sessionStateService.appendEntries</code> se o node tem <code>sessionEnabled</code>. Semântica muito diferente do fluxObject clear.</li>
+      <li><strong>Segunda passada de reset via clearRunOutputForSeed.</strong> Passa em todos os nós, não só os com <code>clearOnExecution</code>. Executa <code>clearStaleNodeOutput</code>. Limpa <code>outputObjectNode.text</code>. Zera <code>text</code> em qualquer <code>ref</code> dentro dos arrays <code>promptData</code>, <code>contentData</code>, <code>textData</code>. É redundante com o 1.7a para types com <code>clearOnExecution</code>. É necessário para types que não têm essa flag mas precisam de output limpo.</li>
+      <li><strong>clearObjects processa nodesBox para objetos personalizados.</strong> Percorre os nós procurando <code>type === 'nodesBox'</code>. Para cada um, acha o <code>UserObject</code> selecionado via <code>data.selectedId</code> na lista <code>objectCallerData</code>, carregada em 1.5. Decide quais itens de <code>text</code> resetar via <code>clearOnExecution</code> por item. Recria sessions se necessário.</li>
+      <li><strong>onMutateObjectCallerData no fim.</strong> Após todo o processamento, chama o callback do closure de 1.5 (<code>onMutateObjectCallerData(myObjects)</code>) que reatribui <code>objectCallerData</code> no escopo pai. Funciona como flush da mutação.</li>
+      <li><strong>let newFlows = [...updatedFlows] é snapshot raso.</strong> Última linha do bloco. Cria um array novo via spread, mas com referências para os mesmos nós. Quem escreve em <code>updatedFlows</code> ou <code>newFlows</code> depois tem o próprio array. Os nós ficam compartilhados.</li>
+      <li><strong>Sem session sync no clearObjects.</strong> Diferente do 1.5b, que chamava <code>sessionStateService.clear</code>, o <code>clearObjects</code> só append de entries. Não deleta. Usa <code>sessionStateService.appendEntries</code> quando o nó tem <code>sessionEnabled</code>. Semântica muito diferente do clear do <code>fluxObject</code>.</li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto:</strong> essa é a última etapa antes de sair da Fase 1 (setup). Depois desses dois calls + o spread, o loop principal (Fase 3) começa. É a última chance de deixar tudo "limpo" pra evitar leakage de estado entre runs.
+    <strong>Contexto.</strong> Esta é a última etapa antes de sair da Fase 1 (setup). Após essas duas chamadas e o spread, o loop principal (Fase 3) começa. É a última chance de deixar tudo limpo. Evita leak de estado entre execuções.
   </div>
 
   <div class="overview-mini">
@@ -153,7 +153,7 @@
       <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>newFlows = [...updatedFlows]</a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado: <code>updatedFlows</code> + <code>objectCallerData</code> mutados e limpos; <code>newFlows</code> snapshot pronto pra Fase 3.
+      Resultado. <code>updatedFlows</code> e <code>objectCallerData</code> mutados e limpos. <code>newFlows</code> como snapshot pronto para a Fase 3.
     </div>
   </div>
 
@@ -171,10 +171,10 @@
         export function clearRunOutputForSeed&lt;T&gt;(node: T): T
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Segunda pasada de reset — chama <code>clearStaleNodeOutput</code> (que trata os 7 types listados no 1.7a) e adicionalmente zera <code>text: ''</code> em qualquer ref-object dentro de <code>promptData</code>, <code>contentData</code>, <code>textData</code>. Existe pra pegar casos que o gate <code>clearOnExecution</code> do 1.7a não cobre.
+        <strong>Propósito.</strong> Segunda passada de reset. Chama <code>clearStaleNodeOutput</code>, que trata os 7 types listados no 1.7a. Adicionalmente zera <code>text: ''</code> em qualquer ref-object dentro de <code>promptData</code>, <code>contentData</code> e <code>textData</code>. Existe para cobrir casos que o gate <code>clearOnExecution</code> do 1.7a não cobre.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> depois do .map gigantesco do 1.7a que já resetou tudo com <code>clearOnExecution</code>, essa função passa <em>de novo</em> em todo mundo. A diferença: <em>não</em> depende do gate <code>clearOnExecution</code> — trata sempre. Primeiro chama <code>clearStaleNodeOutput</code>, que é a versão limpa (e correta) da lógica inline do 1.7a — resetando <code>text</code>, <code>canceled</code>, <code>response</code>, <code>errorMessage</code>, <code>errorStatusCode</code> e <code>jsonRequestBody</code> pros mesmos 7 types. Depois faz uma passada extra: se <code>outputObjectNode</code>, força <code>data.text = ''</code> (redundante com 1.7a A mas ok). E o mais interessante: itera os 3 arrays <code>promptData</code>, <code>contentData</code>, <code>textData</code> — que são <em>arrays de referências resolvidas</em> (usado pelo prompt builder pra guardar snapshots de valores de nodes upstream) — e zera <code>text: ''</code> em cada ref. Isso previne prompt builder ler texto velho de refs "cacheadas" no node. Curiosidade: essa segunda pasada é <em>necessária</em> porque o clearOnExecution é opt-in por node — sem essa, um node sem a flag manteria refs velhas.
+        <strong>Em resumo.</strong> Após o <code>.map</code> extenso do 1.7a que já resetou tudo com <code>clearOnExecution</code>, esta função passa de novo em todos os nós. Diferença. Não depende do gate <code>clearOnExecution</code>. Trata sempre. Primeiro chama <code>clearStaleNodeOutput</code>, que é a versão limpa e correta da lógica inline do 1.7a. Reseta <code>text</code>, <code>canceled</code>, <code>response</code>, <code>errorMessage</code>, <code>errorStatusCode</code> e <code>jsonRequestBody</code> para os mesmos 7 types. Depois faz uma passada extra. Se é <code>outputObjectNode</code>, força <code>data.text = ''</code>. Redundante com o 1.7a A, mas aceitável. O ponto mais relevante. Itera os 3 arrays <code>promptData</code>, <code>contentData</code> e <code>textData</code>. São arrays de referências resolvidas, usados pelo prompt builder para guardar snapshots de valores de nós upstream. Zera <code>text: ''</code> em cada ref. Isso previne o prompt builder de ler texto antigo de refs cacheadas no nó. Esta segunda passada é necessária porque o <code>clearOnExecution</code> é opt-in por nó. Sem ela, um nó sem a flag manteria refs antigas.
       </div>
 
       <div class="fn-body-cols">
@@ -218,29 +218,29 @@
           <div class="nested-flow">
             <div class="nested-flow-title">↳ clearStaleNodeOutput — node-output-reset.ts:20-55</div>
             <div class="box-desc" style="padding: 8px">
-              Reset "chapado" pros 7 types: <code>commandTextNode</code>, <code>voiceBoxNode</code>, <code>imageGenerator</code>, <code>commandContentNode</code>, <code>audioReaderNode</code>, <code>apiCaller</code>, <code>mcpNode</code>.
-              <br><br>Trata voiceBoxNode com <code>audioUrl: ''</code>, commandContentNode com <code>text.result: ''</code>, e apiCaller/mcpNode com <code>response: null, errorMessage: null, errorStatusCode: null, jsonRequestBody: ''</code>. Fallback pra <code>text: '', canceled: false</code> nos outros.
-              <br><br>Também trata <code>NODE_OUTPUT_FIELD</code> (commandTextNode.text, scripting.result, apiCaller.text, mathFunction.result, counterNode.text, outputController.text).
+              Reset plano para os 7 types. <code>commandTextNode</code>, <code>voiceBoxNode</code>, <code>imageGenerator</code>, <code>commandContentNode</code>, <code>audioReaderNode</code>, <code>apiCaller</code>, <code>mcpNode</code>.
+              <br><br>Trata <code>voiceBoxNode</code> com <code>audioUrl: ''</code>. <code>commandContentNode</code> com <code>text.result: ''</code>. <code>apiCaller</code> e <code>mcpNode</code> com <code>response: null</code>, <code>errorMessage: null</code>, <code>errorStatusCode: null</code>, <code>jsonRequestBody: ''</code>. Fallback para <code>text: ''</code>, <code>canceled: false</code> nos outros.
+              <br><br>Também trata <code>NODE_OUTPUT_FIELD</code> (<code>commandTextNode.text</code>, <code>scripting.result</code>, <code>apiCaller.text</code>, <code>mathFunction.result</code>, <code>counterNode.text</code>, <code>outputController.text</code>).
             </div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Sem gate clearOnExecution</div>
-            <code>clearStaleNodeOutput</code> não testa <code>clearOnExecution</code> — sempre roda o reset se o type está na lista. Por isso é seguro chamar em todos.
+            O <code>clearStaleNodeOutput</code> não testa <code>clearOnExecution</code>. Sempre executa o reset se o type está na lista. É seguro chamar em todos os nós.
           </div>
           <div class="aside">
             <div class="aside-title">📎 Refs em promptData/contentData/textData</div>
-            Esses arrays guardam snapshots resolvidos de valores upstream. Ex.: um <code>commandTextNode</code> tem <code>promptData: [{id, name, text: 'valor resolvido'}, ...]</code>. O clear zera só <code>text</code> — mantém id/name.
+            Esses arrays guardam snapshots resolvidos de valores upstream. Exemplo. Um <code>commandTextNode</code> tem <code>promptData: [{id, name, text: 'valor resolvido'}, ...]</code>. O clear zera só <code>text</code>. Mantém <code>id</code> e <code>name</code>.
           </div>
           <div class="aside warn">
             <div class="aside-title">⚠️ Duplicação com 1.7a</div>
-            Pra os 7 types com <code>clearOnExecution</code>, 1.7a já resetou e agora <code>clearStaleNodeOutput</code> reseta de novo. Idempotente (não quebra) mas desperdício. Refactor teria consolidar tudo em uma passada.
-            <br><br>Ganho da segunda pasada: apanha nodes <em>sem</em> clearOnExecution mas que ainda precisam de output limpo pro seed do prompt builder.
+            Para os 7 types com <code>clearOnExecution</code>, o 1.7a já resetou. Agora <code>clearStaleNodeOutput</code> reseta de novo. Idempotente. Não quebra, mas é desperdício. Um refactor deveria consolidar tudo em uma única passada.
+            <br><br>Ganho da segunda passada. Pega nós sem <code>clearOnExecution</code> que ainda precisam de output limpo para o seed do prompt builder.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 typeof ref === 'object' guard</div>
-            <code>ref &amp;&amp; typeof ref === 'object'</code> — permite <code>ref</code> ser objeto ou <code>null</code>. Se for null, passa direto. Se for string ou number (bugs), skip também.
+            <code>ref &amp;&amp; typeof ref === 'object'</code>. Permite <code>ref</code> ser objeto ou <code>null</code>. Se null, passa direto. Se for string ou number (bugs), também é ignorado.
           </div>
         </div>
       </div>
@@ -261,10 +261,10 @@
         async clearObjects({ objectCallerData, nodes, onMutateObjectCallerData, spaceId, user, sessionId })
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Reset dos objetos personalizados carregados no 1.5. Percorre nodes procurando <code>type === 'nodesBox'</code>, encontra o objeto associado via <code>data.selectedId</code>, decide quais itens de <code>text</code> resetar (via flags <code>{itemId}clearOnExecution</code>) e re-cria/atualiza sessions do objeto.
+        <strong>Propósito.</strong> Reseta os objetos personalizados carregados no 1.5. Percorre os nós procurando <code>type === 'nodesBox'</code>. Encontra o objeto associado via <code>data.selectedId</code>. Decide quais itens de <code>text</code> resetar via flags <code>{itemId}clearOnExecution</code>. Recria e atualiza sessions do objeto.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> depois de resetar os nodes em si, agora reseta <em>os objetos personalizados</em> — que são estruturas de dados nomeadas (tipo "Small Memory") que <code>nodesBox</code> lê e escreve. A função é bem longa (149 linhas). Passo a passo: (1) começa com <code>myObjects = [...objectCallerData]</code> — cópia rasa do array carregado no 1.5. Se está vazio, retorna cedo. (2) Loop nos nodes procurando <code>nodesBox</code>. Pra cada um, acha o objeto selecionado (via <code>data.selectedId</code>) — se não achar (foi deletado no editor), <code>continue</code>. (3) Se <code>sessionEnabled</code>, cria/atualiza a sessão <code>default</code> se não existir (backfill), e depois popula <code>selectedObject.text</code> com o conteúdo da sessão selecionada — <em>ou</em>, se a sessão não existe, cria uma nova com todos os text zerados. (4) Filtra <code>uniqueTextElements</code> por id, aplica o clear-per-item (chave <code>{itemId}clearOnExecution</code> em <code>nd.data</code>), monta <code>findItem</code>. (5) Atualiza <code>selectedObject.sessions</code> com <code>findItem</code> na sessão ativa. (6) Substitui o objeto em <code>myObjects</code>. (7) Se sessão está ligada, chama <code>sessionStateService.appendEntries</code> (não <code>clear</code>! só append) — grava o snapshot como uma entry nova no session state. (8) Depois do loop, chama <code>onMutateObjectCallerData(myObjects)</code>. Insight interessante: essa função <em>agrega</em> em vez de limpar totalmente — sempre re-escreve as sessions inteiras com o novo <code>findItem</code>, mas nunca deleta rows do session state. Diferente do 1.5b que fez <code>sessionStateService.clear</code>.
+        <strong>Em resumo.</strong> Depois de resetar os nós em si, esta função reseta os objetos personalizados. São estruturas de dados nomeadas (tipo "Small Memory") que o <code>nodesBox</code> lê e escreve. A função é longa (149 linhas). Passo a passo. Primeiro. Começa com <code>myObjects = [...objectCallerData]</code>. Cópia rasa do array carregado no 1.5. Se está vazio, retorna cedo. Segundo. Loop nos nós procurando <code>nodesBox</code>. Para cada um, acha o objeto selecionado via <code>data.selectedId</code>. Se não achar (foi deletado no editor), executa <code>continue</code>. Terceiro. Se <code>sessionEnabled</code>, cria ou atualiza a sessão <code>default</code> quando não existe (backfill). Depois popula <code>selectedObject.text</code> com o conteúdo da sessão selecionada. Alternativa. Se a sessão não existe, cria uma nova com todos os <code>text</code> zerados. Quarto. Filtra <code>uniqueTextElements</code> por id. Aplica o clear por item (chave <code>{itemId}clearOnExecution</code> em <code>nd.data</code>). Monta <code>findItem</code>. Quinto. Atualiza <code>selectedObject.sessions</code> com <code>findItem</code> na sessão ativa. Sexto. Substitui o objeto em <code>myObjects</code>. Sétimo. Se sessão está ligada, chama <code>sessionStateService.appendEntries</code>. Não é <code>clear</code>, só append. Grava o snapshot como uma entry nova no session state. Oitavo. Após o loop, chama <code>onMutateObjectCallerData(myObjects)</code>. Observação. A função agrega em vez de limpar totalmente. Sempre reescreve as sessions inteiras com o novo <code>findItem</code>. Nunca deleta linhas do session state. Diferente do 1.5b, que executava <code>sessionStateService.clear</code>.
       </div>
 
       <div class="fn-body-cols">
@@ -328,20 +328,20 @@
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 nodesBox — não confundir com fluxObject</div>
-            <code>nodesBox</code> é o <em>node</em> que <em>lê/escreve</em> um objeto personalizado. O objeto em si é <code>FluxObject</code> (na variável <code>objectCallerData</code>). <code>nodesBox.data.selectedId</code> aponta pro id do objeto que ele controla.
+            <div class="aside-title">🎯 nodesBox. Não confundir com fluxObject</div>
+            O <code>nodesBox</code> é o nó que lê e escreve um objeto personalizado. O objeto em si é <code>FluxObject</code> (na variável <code>objectCallerData</code>). <code>nodesBox.data.selectedId</code> aponta para o id do objeto que ele controla.
           </div>
           <div class="aside warn">
             <div class="aside-title">⚠️ appendEntries em vez de clear</div>
-            Diferente do 1.5b (que fez DELETE), aqui só faz APPEND. O session state cresce a cada run — nunca limpa. Se rodar 1000 vezes, tem 1000 rows por object+session. Manutenção fica com sistema externo (cleanup jobs).
+            Diferente do 1.5b, que fez DELETE, aqui só faz APPEND. O session state cresce a cada execução. Nunca é limpo. Rodar 1000 vezes gera 1000 linhas por object e session. A manutenção fica com sistema externo (cleanup jobs).
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ Chaves dinâmicas — footgun</div>
-            <code>nd.data[item.id + 'clearOnExecution']</code> — chave montada por concat. Se <code>item.id</code> tiver caracteres inesperados, monta chave inválida. Não valida.
+            <div class="aside-title">⚠️ Chaves dinâmicas. Footgun</div>
+            <code>nd.data[item.id + 'clearOnExecution']</code>. Chave montada por concat. Se <code>item.id</code> tiver caracteres inesperados, monta chave inválida. Não valida.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 Backfill de default session</div>
-            L9442-9461 — se sessão <code>default</code> não existe mas <code>sessionEnabled</code>, cria com o conteúdo atual antes de processar. Migração lazy do formato antigo pra novo.
+            L9442-9461. Se a sessão <code>default</code> não existe mas <code>sessionEnabled</code> está ligado, cria com o conteúdo atual antes de processar. Migração lazy do formato antigo para o novo.
           </div>
         </div>
       </div>
@@ -362,10 +362,10 @@
         onMutateObjectCallerData(myObjects);  // callback do closure de 1.5-E
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Depois de processar todos os nodes no <code>clearObjects</code>, chama uma única vez o callback pra reatribuir <code>objectCallerData</code> no escopo do <code>apiV2</code>. É o "commit" da mutação — sem essa chamada, <code>myObjects</code> ficaria só no escopo do <code>clearObjects</code>.
+        <strong>Propósito.</strong> Após processar todos os nós no <code>clearObjects</code>, chama uma única vez o callback para reatribuir <code>objectCallerData</code> no escopo do <code>apiV2</code>. É o commit da mutação. Sem essa chamada, <code>myObjects</code> ficaria só no escopo do <code>clearObjects</code>.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> lembra do closure criado em 1.5-E (<code>onMutateObjectCallerData = data =&gt; { objectCallerData = data; }</code>)? Aqui é onde ele é chamado pela primeira vez. Como <code>clearObjects</code> trabalha numa cópia local (<code>myObjects</code>), o array original em <code>apiV2</code> ainda estava com o estado pré-limpeza. Essa linha é o "flush" — passa a lista atualizada pro closure, que reatribui a variável no escopo pai. A partir daqui, quem ler <code>objectCallerData</code> no <code>apiV2</code> vê a nova versão (com os objetos com <code>text</code> resetado por item + <code>sessions</code> atualizadas). É crítico porque o closure permite bidirectional flow: qualquer <code>nodesBox</code> chamado dentro do loop principal (Fase 3) pode também chamar <code>onMutateObjectCallerData</code> pra propagar suas mudanças pra frente.
+        <strong>Em resumo.</strong> O closure foi criado em 1.5-E (<code>onMutateObjectCallerData = data =&gt; { objectCallerData = data; }</code>). Aqui é a primeira invocação. Como <code>clearObjects</code> trabalha em uma cópia local (<code>myObjects</code>), o array original no <code>apiV2</code> ainda tem o estado pré-limpeza. Esta linha é o flush. Passa a lista atualizada para o closure, que reatribui a variável no escopo pai. A partir daqui, quem ler <code>objectCallerData</code> no <code>apiV2</code> vê a nova versão. Os objetos ficam com <code>text</code> resetado por item e <code>sessions</code> atualizadas. É crítico porque o closure permite fluxo bidirecional. Qualquer <code>nodesBox</code> chamado dentro do loop principal (Fase 3) também pode chamar <code>onMutateObjectCallerData</code> para propagar suas mudanças adiante.
       </div>
 
       <div class="fn-body-cols">
@@ -374,7 +374,7 @@
             <div class="box-title"><span class="badge step">C1</span> Chamada única no fim</div>
             <div class="box-desc">
               <code>onMutateObjectCallerData(myObjects);</code>
-              <br><br>Depois do <code>for..of</code> completo, uma só chamada. Não é feito por iteração pra evitar re-work.
+              <br><br>Após o <code>for..of</code> completo, uma única chamada. Não é feito por iteração para evitar retrabalho.
             </div>
             <div class="box-file">flux.service.ts:9558</div>
           </div>
@@ -391,26 +391,26 @@
           <div class="box cross">
             <div class="box-title">Efeito no apiV2</div>
             <div class="box-desc">
-              <code>objectCallerData</code> agora aponta pra <code>myObjects</code> processado. Quem ler daqui pra frente vê a versão limpa. O array original de 1.5 é descartado (garbage collected).
+              <code>objectCallerData</code> agora aponta para <code>myObjects</code> processado. Quem ler daqui em diante vê a versão limpa. O array original de 1.5 é descartado (garbage collected).
             </div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Padrão de closure mutation</div>
-            Mesmo pattern de <code>onMutateSchema</code>, <code>onUpdateTokens</code>. Documentado em 1.5-E. Aqui é a primeira invocação em cada run.
+            Mesmo pattern de <code>onMutateSchema</code> e <code>onUpdateTokens</code>. Documentado em 1.5-E. Aqui é a primeira invocação em cada execução.
           </div>
           <div class="aside">
-            <div class="aside-title">📎 Chamado de novo em Fase 3</div>
-            Depois desse ponto, cada handler de <code>nodesBox</code> na Fase 3 também pode chamar <code>onMutateObjectCallerData</code>. Ver flux.service.ts:3575-3599, 4146-4174 (handlers do nodesBox).
+            <div class="aside-title">📎 Chamado de novo na Fase 3</div>
+            Após este ponto, cada handler de <code>nodesBox</code> na Fase 3 também pode chamar <code>onMutateObjectCallerData</code>. Ver <code>flux.service.ts:3575-3599</code> e <code>4146-4174</code> (handlers do <code>nodesBox</code>).
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ Não é chamado se return early</div>
-            Se <code>myObjects.length === 0</code> ativa o guard em L9421-9423, o <code>onMutateObjectCallerData</code> nunca é chamado. Ok — o array original em <code>objectCallerData</code> continua igual (também vazio).
+            <div class="aside-title">⚠️ Não é chamado quando há return early</div>
+            Se <code>myObjects.length === 0</code> ativa o guard em L9421-9423, o <code>onMutateObjectCallerData</code> nunca é chamado. Aceitável. O array original em <code>objectCallerData</code> continua igual, também vazio.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 Ordem no scope</div>
-            Se o closure fosse const-object em vez de reatribuição, dava pra passar reference. Reatribuição é escolha estilística — todo o apiV2 usa esse padrão.
+            Se o closure fosse um const-object em vez de reatribuição, seria possível passar a referência. A reatribuição é escolha estilística. Todo o <code>apiV2</code> usa esse padrão.
           </div>
         </div>
       </div>
@@ -422,7 +422,7 @@
     <div class="fn-card-header">
       <div class="fn-title">
         <span class="badge migrated" style="background:#8B5CF6;color:white">D</span>
-        <code>let newFlows = [...updatedFlows] — snapshot raso</code>
+        <code>let newFlows = [...updatedFlows] · snapshot raso</code>
       </div>
       <div class="fn-loc">flux.service.ts:2825</div>
     </div>
@@ -431,10 +431,10 @@
         let newFlows = [...updatedFlows];
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Cria um segundo array (<code>newFlows</code>) contendo as mesmas referências de nodes que <code>updatedFlows</code>. A partir daqui, os dois arrays podem divergir — quem faz <code>updatedFlows[i] = ...</code> ou <code>newFlows[i] = ...</code> só afeta o próprio array.
+        <strong>Propósito.</strong> Cria um segundo array (<code>newFlows</code>) com as mesmas referências de nós que <code>updatedFlows</code>. A partir daqui, os dois arrays podem divergir. Escritas em <code>updatedFlows[i] = ...</code> ou <code>newFlows[i] = ...</code> só afetam o próprio array.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> spread cria um <em>array novo</em>, mas as referências pros nodes dentro são as mesmas. É um snapshot <em>estrutural</em>, não profundo. Prática: se o loop principal (Fase 3) fizer <code>newFlows[i] = { ...newFlows[i], data: { ...} }</code>, cria um node novo e substitui só em <code>newFlows</code> — <code>updatedFlows[i]</code> continua apontando pro antigo. Se o loop mutar <em>in place</em> (<code>newFlows[i].data.x = 'y'</code>), a mutação aparece em <code>updatedFlows[i]</code> também (mesma referência de objeto). Convenção do apiV2: quase todos os writes usam spread pra criar node novo, então na prática os dois arrays divergem sem afetar um ao outro. Por que dois arrays? Historicamente, <code>updatedFlows</code> é o "snapshot pré-loop" e <code>newFlows</code> é o "current" durante o loop. Alguns caminhos consultam <code>updatedFlows</code> pra saber o estado inicial (ex.: comparar current com initial).
+        <strong>Em resumo.</strong> O spread cria um array novo. As referências para os nós dentro são as mesmas. É snapshot estrutural, não profundo. Prática. Se o loop principal (Fase 3) fizer <code>newFlows[i] = { ...newFlows[i], data: { ...} }</code>, cria um nó novo e substitui só em <code>newFlows</code>. O <code>updatedFlows[i]</code> continua apontando para o antigo. Se o loop mutar in-place (<code>newFlows[i].data.x = 'y'</code>), a mutação aparece em <code>updatedFlows[i]</code> também. Mesma referência de objeto. Convenção do <code>apiV2</code>. Quase todos os writes usam spread para criar nó novo. Na prática, os dois arrays divergem sem afetar um ao outro. Por que dois arrays? Historicamente, <code>updatedFlows</code> é o snapshot pré-loop e <code>newFlows</code> é o current durante o loop. Alguns caminhos consultam <code>updatedFlows</code> para conhecer o estado inicial (exemplo: comparar current com initial).
       </div>
 
       <div class="fn-body-cols">
@@ -473,19 +473,19 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Convenção do apiV2</div>
-            Writes em nodes sempre usam spread (<code>{ ...node, data: ... }</code>), nunca mutação in-place. Assim <code>updatedFlows</code> preserva o estado inicial enquanto <code>newFlows</code> evolui.
+            Writes em nós sempre usam spread (<code>{ ...node, data: ... }</code>). Nunca mutação in-place. Assim <code>updatedFlows</code> preserva o estado inicial enquanto <code>newFlows</code> evolui.
           </div>
           <div class="aside">
             <div class="aside-title">📎 let (não const)</div>
-            <code>let newFlows</code> porque pode ser reatribuído inteiro (não só mutado). Alguns caminhos reatribuem via <code>.map</code> ou substituindo por outro array.
+            <code>let newFlows</code> porque pode ser reatribuído inteiro, não só mutado. Alguns caminhos reatribuem via <code>.map</code> ou substituindo por outro array.
           </div>
           <div class="aside warn">
             <div class="aside-title">⚠️ Spread não é deep clone</div>
-            Quem esperar isolamento profundo entre updatedFlows e newFlows vai se surpreender: <code>node.data</code> é o mesmo objeto. Mutação in-place vaza.
+            Quem espera isolamento profundo entre <code>updatedFlows</code> e <code>newFlows</code> vai se surpreender. <code>node.data</code> é o mesmo objeto. Mutação in-place vaza.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 Onde newFlows é usado depois</div>
-            É o "array vivo" da Fase 3 — passado pro prefetch, pro scheduler, pros handlers. <code>updatedFlows</code> pode até ser deletado depois (garbage), mas continua referenciado em várias funções auxiliares.
+            É o array vivo da Fase 3. Passado para o prefetch, o scheduler e os handlers. O <code>updatedFlows</code> pode ser descartado depois (garbage), mas continua referenciado em várias funções auxiliares.
           </div>
         </div>
       </div>
@@ -493,22 +493,22 @@
   </div>
 
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo — o que sai de 1.7b:</strong>
-    <br>• <code>updatedFlows</code> passou pela segunda pasada de <code>clearRunOutputForSeed</code> (todos os nodes, sem gate)
-    <br>• <code>objectCallerData</code> reatribuído — objetos com <code>nodesBox</code> associados têm <code>text</code> resetado por item + sessions atualizadas
-    <br>• Session state (Postgres): novas entries appendadas via <code>appendEntries</code> (não deleta — cresce)
-    <br>• <code>newFlows</code> criado como snapshot raso — array novo, refs iguais
-    <br>• Depois disso, Fase 1 termina — próximo passo é a Fase 2 (dispatch)
+    <strong>Resumo — o que sai de 1.7b.</strong>
+    <br>• <code>updatedFlows</code> passou pela segunda passada de <code>clearRunOutputForSeed</code> (todos os nós, sem gate).
+    <br>• <code>objectCallerData</code> reatribuído. Objetos com <code>nodesBox</code> associados têm <code>text</code> resetado por item e <code>sessions</code> atualizadas.
+    <br>• Session state (Postgres). Novas entries appendadas via <code>appendEntries</code>. Não deleta. Cresce.
+    <br>• <code>newFlows</code> criado como snapshot raso. Array novo, mesmas refs.
+    <br>• A Fase 1 termina. O próximo passo é a Fase 2 (dispatch).
   </div>
 
   <div class="note">
-    <strong>Observações para migração:</strong>
-    <br>• <code>clearRunOutputForSeed</code> + <code>clearStaleNodeOutput</code> são funções puras em <code>node-output-reset.ts</code> — trivialmente migráveis pro worker.
-    <br>• <code>clearObjects</code> é <em>grande</em> (149 linhas) e depende de: (a) <code>objectCallerData</code> passado do 1.5, (b) <code>sessionStateService</code> (Postgres), (c) <code>onMutateObjectCallerData</code> closure. Migrar exige repensar a linkage do closure — no worker, cada activity está isolada, então cada mutação de <code>objectCallerData</code> teria que ir via round-trip pro backend, ou o worker precisa manter o array na memória local do workflow.
-    <br>• <code>appendEntries</code> (não clear!) significa que session state cresce indefinidamente. Se essa lógica for migrada, herdar o comportamento — <strong>não</strong> transformar em DELETE, senão quebra semântica de "história" das sessions.
-    <br>• A duplicação de resets (1.7a inline + 1.7b via helper) é <em>tech debt viva</em>. Consolidar em um único caminho antes de migrar.
-    <br>• <code>newFlows = [...updatedFlows]</code> é convenção — no worker, pode passar array direto sem clone se guaranteed que activities não mutam in-place. Mas o pattern seguro é replicar.
-    <br>• Prioridade: <code>clearRunOutputForSeed</code> é fácil e essencial (evita leak de refs velhas no prompt builder). <code>clearObjects</code> é mais complexo — pode ir por último, mas se ficar no backend, exige que o worker chame o backend quando <code>nodesBox</code> mutar.
+    <strong>Observações para migração.</strong>
+    <br>• <code>clearRunOutputForSeed</code> e <code>clearStaleNodeOutput</code> são funções puras em <code>node-output-reset.ts</code>. Trivialmente migráveis para o worker.
+    <br>• O <code>clearObjects</code> é grande (149 linhas) e depende de três coisas. Primeira. <code>objectCallerData</code> passado do 1.5. Segunda. <code>sessionStateService</code> (Postgres). Terceira. O closure <code>onMutateObjectCallerData</code>. Migrar exige repensar a linkage do closure. No worker, cada activity está isolada. Cada mutação de <code>objectCallerData</code> precisaria de round-trip para o backend. Alternativa. O worker mantém o array na memória local do workflow.
+    <br>• <code>appendEntries</code> (não clear) significa que o session state cresce indefinidamente. Se a lógica for migrada, herde o comportamento. Não transforme em DELETE. Isso quebra a semântica de história das sessions.
+    <br>• A duplicação de resets (1.7a inline e 1.7b via helper) é tech debt ativa. Consolide em um único caminho antes de migrar.
+    <br>• <code>newFlows = [...updatedFlows]</code> é convenção. No worker, dá para passar o array direto sem clone se garantir que activities não mutam in-place. O pattern seguro é replicar.
+    <br>• Prioridade. O <code>clearRunOutputForSeed</code> é fácil e essencial. Evita leak de refs antigas no prompt builder. O <code>clearObjects</code> é mais complexo. Pode ir por último. Se ficar no backend, exige que o worker chame o backend quando <code>nodesBox</code> muta.
   </div>
 
   <div class="page-footer-nav">

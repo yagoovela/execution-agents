@@ -557,26 +557,26 @@
     <h1>Passo 1.8 — Resolução de inputs (<code>varInputNode</code>) + extração/OCR</h1>
   </div>
   <div class="page-sub">
-    Bloco em <code>flux.service.ts:2772-3134</code>. É a fase onde o request HTTP (<code>body.variableInputs</code>/<code>body.dataInput</code>) vira <code>data</code> nos <code>varInputNode</code>s do canvas. Se o input for arquivo/link e <code>isExtraction=true</code>, chama o <code>ExtractionService</code> com um dos três providers OCR. Termina propagando o resultado via <code>addConnectToNodes()</code> pros nós conectados. <strong>Roda antes do scheduler</strong> — o loop principal já começa com <code>varInputNode.data</code> populado.
+    Bloco em <code>flux.service.ts:2772-3134</code>. É a fase onde o request HTTP (<code>body.variableInputs</code>/<code>body.dataInput</code>) vira <code>data</code> nos <code>varInputNode</code>s do canvas. Se o input for arquivo ou link e <code>isExtraction=true</code>, chama o <code>ExtractionService</code> com um dos três providers OCR. Termina propagando o resultado via <code>addConnectToNodes()</code> para os nós conectados. Roda antes do scheduler. O loop principal já começa com <code>varInputNode.data</code> populado.
   </div>
 
   <div class="step-friendly">
     <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
     <ul>
-      <li><strong>Traduz o request HTTP em nós do canvas:</strong> a API recebe uma lista <code>variableInputs[]</code> (ou um atalho <code>dataInput</code> string) e precisa espalhar cada valor no <code>varInputNode</code> certo, identificado por <code>inputId</code>. Sem isso, o agente começaria a rodar com os <code>varInputNode</code>s vazios.</li>
-      <li><strong>Atalho <code>dataInput</code>:</strong> se o cliente mandou só <code>dataInput</code> como string (sem <code>variableInputs</code>), pega o <em>primeiro</em> <code>varInputNode</code> do flow e injeta o texto ali. É o "modo fácil" pra agentes com um único input — o principal caso de uso em Chatbot/API pública simples.</li>
-      <li><strong>Três caminhos por varInput:</strong> (a) <code>isExtraction=true</code> com links/files → chama OCR e concatena texto; (b) <code>isExtraction=false</code> com links/files → só upload S3 sem OCR (armazena URL); (c) sem arquivos → data mínima só com texto. Também trata <code>inputFileUrl</code> pra tipos não-<code>varInputNode</code> (nós de arquivo custom).</li>
-      <li><strong>OCR com escolha de provider:</strong> <code>extractionService.extractTextFromLink()</code> aceita 3 providers: <code>mistral_ocr</code> (default), <code>mistral_vision</code>, <code>google_ocr</code>. Cada varInput pode escolher via <code>typeOCR</code> — é <em>por nó</em>, não por flow. Se falhar, retorna uma mensagem de erro amigável no lugar do texto e continua (não derruba o run).</li>
-      <li><strong>Upload S3 obrigatório pra base64:</strong> arquivos vêm como base64 no request; <code>awsService.uploadFile()</code> gera uma URL S3 antes do OCR. Isso significa que arquivos grandes viram tráfego S3 mesmo se o OCR falhar depois.</li>
-      <li><strong>Propaga via arestas antes do loop:</strong> <code>addConnectToNodes()</code> pega o <code>data</code> resolvido do <code>varInputNode</code> e escreve nos nós conectados (via <code>edges</code>) — texto vai como <code>text</code>, arquivos como <code>uploadedFiles</code>. O loop principal (Fase 3) já vê os inputs no lugar certo.</li>
-      <li><strong>Persistência:</strong> <code>persistInputNodeData()</code> grava o <code>data</code> resolvido no banco pra ficar visível no editor e no histórico de execução. Uma escrita por varInput — em agentes com muitos inputs é I/O sequencial não-trivial.</li>
-      <li><strong>Custo silencioso:</strong> esse passo pode ser o <em>mais caro</em> da Fase 1 dependendo do input — PDF de 30 páginas com OCR Mistral bloqueia o run por segundos. Não tem telemetria específica pra medir isso.</li>
+      <li><strong>Traduz o request HTTP em nós do canvas.</strong> A API recebe uma lista <code>variableInputs[]</code> (ou o atalho <code>dataInput</code> string). Precisa distribuir cada valor no <code>varInputNode</code> correto, identificado por <code>inputId</code>. Sem isso, o agente começaria a rodar com os <code>varInputNode</code>s vazios.</li>
+      <li><strong>Atalho <code>dataInput</code>.</strong> Se o cliente mandou só <code>dataInput</code> como string (sem <code>variableInputs</code>), pega o primeiro <code>varInputNode</code> do flow e injeta o texto ali. É o modo simples para agentes com um único input. É o caso de uso principal em Chatbot/API pública simples.</li>
+      <li><strong>Três caminhos por varInput.</strong> Primeiro. <code>isExtraction=true</code> com links/files chama OCR e concatena texto. Segundo. <code>isExtraction=false</code> com links/files só faz upload S3 sem OCR e armazena a URL. Terceiro. Sem arquivos, monta data mínima só com texto. Também trata <code>inputFileUrl</code> para tipos que não são <code>varInputNode</code> (nós de arquivo custom).</li>
+      <li><strong>OCR com escolha de provider.</strong> <code>extractionService.extractTextFromLink()</code> aceita 3 providers. <code>mistral_ocr</code> (default), <code>mistral_vision</code>, <code>google_ocr</code>. Cada varInput escolhe via <code>typeOCR</code>. É por nó, não por flow. Se falhar, retorna uma mensagem de erro amigável no lugar do texto e continua. Não derruba a execução.</li>
+      <li><strong>Upload S3 obrigatório para base64.</strong> Arquivos vêm como base64 no request. <code>awsService.uploadFile()</code> gera uma URL S3 antes do OCR. Arquivos grandes viram tráfego S3 mesmo se o OCR falhar depois.</li>
+      <li><strong>Propaga via arestas antes do loop.</strong> <code>addConnectToNodes()</code> pega o <code>data</code> resolvido do <code>varInputNode</code> e escreve nos nós conectados via <code>edges</code>. Texto vai como <code>text</code>. Arquivos como <code>uploadedFiles</code>. O loop principal (Fase 3) já vê os inputs no lugar certo.</li>
+      <li><strong>Persistência.</strong> <code>persistInputNodeData()</code> grava o <code>data</code> resolvido no banco. Fica visível no editor e no histórico de execução. Uma escrita por varInput. Em agentes com muitos inputs, é I/O sequencial não trivial.</li>
+      <li><strong>Custo silencioso.</strong> Este passo pode ser o mais caro da Fase 1 dependendo do input. PDF de 30 páginas com OCR Mistral bloqueia a execução por segundos. Não há telemetria específica para medir.</li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto — por que essa fase existe:</strong>
-    O canvas do agente foi desenhado assumindo que <code>varInputNode.data.text</code> / <code>uploadedFiles</code> já estão prontos quando a execução começa. O request HTTP não sabe nada de nós — só de <code>inputId</code>. Esse passo é o <em>adaptador</em>: pega o payload da API e reescreve o canvas em memória pra que o loop de Fase 3 encontre tudo já resolvido. É também onde qualquer arquivo binário (PDF, imagem, áudio) vira texto pro LLM consumir — logo, é o principal ponto de entrada de dados não-estruturados.
+    <strong>Contexto — por que esta fase existe.</strong>
+    O canvas do agente foi desenhado assumindo que <code>varInputNode.data.text</code> e <code>uploadedFiles</code> já estão prontos quando a execução começa. O request HTTP não conhece nós. Só conhece <code>inputId</code>. Este passo é o adaptador. Pega o payload da API e reescreve o canvas em memória. O loop da Fase 3 encontra tudo já resolvido. É também onde qualquer arquivo binário (PDF, imagem, áudio) vira texto para o LLM consumir. É o principal ponto de entrada de dados não estruturados.
   </div>
 
   <div class="overview-mini">
@@ -595,7 +595,7 @@
       <a href="#fn-f" class="overview-chip"><span class="lbl">F</span>Fallback sem body</a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado final: cada <code>varInputNode</code> no <code>newFlows</code> tem <code>data = { text, uploadedFiles, isExtraction, extractText }</code> populado; nós downstream conectados via arestas também recebem uma cópia. Também escreve no banco em <code>flows_nodes</code>.
+      Resultado final. Cada <code>varInputNode</code> no <code>newFlows</code> tem <code>data = { text, uploadedFiles, isExtraction, extractText }</code> populado. Nós downstream conectados via arestas também recebem uma cópia. Também escreve no banco em <code>flows_nodes</code>.
     </div>
   </div>
 
@@ -615,10 +615,10 @@
         if (!body.variableInputs?.length && bodyWithInput.dataInput != null && varInputNodes.length &gt; 0) { body.variableInputs = [{ inputId: varInputNodes[0].id, inputText }] }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Aceitar um atalho onde o cliente manda só <code>dataInput</code> (string ou <code>{inputText}</code>) em vez de montar o array <code>variableInputs[]</code>. Injeta no primeiro <code>varInputNode</code> do flow.
+        <strong>Propósito.</strong> Aceita um atalho no qual o cliente manda só <code>dataInput</code> (string ou <code>{inputText}</code>) em vez de montar o array <code>variableInputs[]</code>. Injeta no primeiro <code>varInputNode</code> do flow.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> pensa em <em>"digitou uma mensagem no chatbot"</em> — o cliente não sabe qual é o ID do <code>varInputNode</code>, então esse pedaço faz o backend adivinhar: pega o primeiro varInput que achar no canvas e injeta o texto ali. É um <em>syntactic sugar</em>. Se o agente tem mais de um varInput ou o cliente já preencheu <code>variableInputs</code> corretamente, esse bloco é ignorado. Aceita duas formas do <code>dataInput</code>: string pura ou objeto com <code>inputText</code>/<code>text</code>.
+        <strong>Em resumo.</strong> O cenário é "digitou uma mensagem no chatbot". O cliente não conhece o ID do <code>varInputNode</code>. Este bloco faz o backend inferir. Pega o primeiro varInput do canvas e injeta o texto ali. É syntactic sugar. Se o agente tem mais de um varInput ou o cliente já preencheu <code>variableInputs</code> corretamente, o bloco é ignorado. Aceita duas formas do <code>dataInput</code>. String pura ou objeto com <code>inputText</code>/<code>text</code>.
       </div>
 
       <div class="fn-body-cols">
@@ -664,7 +664,7 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">A2</span> Monta <code>variableInputs[0]</code></div>
             <div class="box-desc">
-              <code>body.variableInputs = [{ inputId: firstVar.id, inputText }]</code> — mesmo shape do caso normal, mas com links/files/isExtraction/typeOCR ausentes (undefined). O bloco B (loop) trata isso naturalmente.
+              <code>body.variableInputs = [{ inputId: firstVar.id, inputText }]</code>. Mesmo shape do caso normal, mas com <code>links</code>/<code>files</code>/<code>isExtraction</code>/<code>typeOCR</code> ausentes (undefined). O bloco B (loop) trata isso naturalmente.
             </div>
             <div class="box-file">flux.service.ts:2789-2794</div>
           </div>
@@ -673,15 +673,15 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Uso típico</div>
-            Chatbot público (<code>POST /flux/chatbot-api-socket</code>) e formulários simples: o front manda só <code>dataInput: "texto do usuário"</code> e o backend adivinha onde colar. Reduz atrito pra integrações externas que não conhecem a estrutura do canvas.
+            Chatbot público (<code>POST /flux/chatbot-api-socket</code>) e formulários simples. O front manda só <code>dataInput: "texto do usuário"</code>. O backend infere onde aplicar. Reduz atrito para integrações externas que não conhecem a estrutura do canvas.
           </div>
           <div class="aside">
-            <div class="aside-title">📎 Escolha "primeiro varInput"</div>
-            Se o agente tem <em>múltiplos</em> varInputs, esse fallback só popula o primeiro do array — os outros ficam vazios. Em canvas grandes a ordem depende de como o front serializa os nós; não é determinística por posição visual. Cuidado ao usar esse atalho em agentes multi-input.
+            <div class="aside-title">📎 Escolha do primeiro varInput</div>
+            Se o agente tem múltiplos varInputs, o fallback só popula o primeiro do array. Os outros ficam vazios. Em canvas grandes, a ordem depende de como o front serializa os nós. Não é determinística por posição visual. Cuidado ao usar este atalho em agentes multi-input.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 Compatibilidade forward</div>
-            Aceita <code>dataInput.text</code> como alias de <code>inputText</code>. Adicionado depois pra convergir com uma API alternativa que usava <code>text</code>. Mantém retrocompatibilidade sem quebrar clientes antigos.
+            Aceita <code>dataInput.text</code> como alias de <code>inputText</code>. Adicionado depois para convergir com uma API alternativa que usava <code>text</code>. Mantém retrocompatibilidade sem quebrar clientes antigos.
           </div>
         </div>
       </div>
@@ -704,10 +704,10 @@
         if (body.variableInputs?.length &gt; 0) for (const variableInput of body.variableInputs) { const node = nodes.find(n =&gt; n.id === variableInput.inputId); ... }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Iterar sobre cada input recebido no request, achar o nó correspondente no canvas via <code>inputId</code>, e despachar pra sub-branches por tipo (<code>varInputNode</code> vs outros) e por modo (<code>isExtraction</code>).
+        <strong>Propósito.</strong> Itera sobre cada input recebido no request. Acha o nó correspondente no canvas via <code>inputId</code>. Despacha para sub-branches por tipo (<code>varInputNode</code> vs outros) e por modo (<code>isExtraction</code>).
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> aqui é o <em>despachante</em>. Cada entrada da lista <code>variableInputs[]</code> é um pedido "coloca esse conteúdo nesse nó" (identificado por <code>inputId</code>). O código valida se o nó existe (se não, joga exceção e mata o run), extrai <code>inputText</code>, <code>links</code>, <code>files</code>, <code>isExtraction</code>, <code>typeOCR</code>, e decide o caminho: se for <code>varInputNode</code>, entra na sub-lógica de OCR/upload; se for outro tipo (nós antigos ou custom com <code>inputFileUrl</code>), grava só a URL. Também tem uma normalização silenciosa: se veio link/file mas o cliente não disse se quer extração ou não, força <code>isExtraction=false</code> — evita executar OCR sem consentimento.
+        <strong>Em resumo.</strong> Este bloco é o despachante. Cada entrada da lista <code>variableInputs[]</code> é um pedido "coloca este conteúdo neste nó", identificado por <code>inputId</code>. O código valida se o nó existe. Se não, lança exceção e derruba a execução. Extrai <code>inputText</code>, <code>links</code>, <code>files</code>, <code>isExtraction</code>, <code>typeOCR</code>. Decide o caminho. Se for <code>varInputNode</code>, entra na sub-lógica de OCR/upload. Se for outro tipo (nós antigos ou custom com <code>inputFileUrl</code>), grava só a URL. Há também uma normalização silenciosa. Se veio link ou file mas o cliente não indicou se quer extração, força <code>isExtraction=false</code>. Evita executar OCR sem consentimento.
       </div>
 
       <div class="fn-body-cols">
@@ -719,7 +719,7 @@
 <span class="k">if</span> (!node) <span class="k">throw new</span> <span class="t">Error</span>(<span class="s">`Error reading node, please check this inputId`</span>);
             </div>
             <div class="box-desc">
-              Se o cliente mandou um <code>inputId</code> que não existe no flow, mata a execução na hora — sem contexto de qual foi o input ruim. Mensagem genérica dificulta debug em APIs de terceiros.
+              Se o cliente mandou um <code>inputId</code> que não existe no flow, derruba a execução imediatamente. Sem contexto sobre qual input estava ruim. A mensagem genérica dificulta debug em APIs de terceiros.
             </div>
             <div class="box-file">flux.service.ts:2799-2803</div>
           </div>
@@ -742,9 +742,9 @@
           <div class="box decision">
             <div class="box-title"><span class="badge step">B3</span> Validações de entrada</div>
             <div class="box-desc">
-              • <code>!inputId</code> → <code>throw 'EDI - please enter the inputId'</code><br>
-              • <code>isExtraction === true</code> mas sem <code>links</code> nem <code>files</code> → <code>throw 'EDI - please provide the link or file'</code>
-              <br><br>Prefixo <em>EDI</em> = "Execution Data Input" (convenção interna, aparece em outros pontos de validação de input).
+              • <code>!inputId</code> resulta em <code>throw 'EDI - please enter the inputId'</code>.<br>
+              • <code>isExtraction === true</code> sem <code>links</code> nem <code>files</code> resulta em <code>throw 'EDI - please provide the link or file'</code>.
+              <br><br>Prefixo EDI significa "Execution Data Input". Convenção interna. Aparece em outros pontos de validação de input.
             </div>
             <div class="box-file">flux.service.ts:2824-2832</div>
           </div>
@@ -753,8 +753,8 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">B4</span> Split por tipo do nó</div>
             <div class="box-desc">
-              • <code>node.type === 'varInputNode'</code> → sub-branch com OCR/upload (funções <a href="#fn-c">C</a> e <a href="#fn-d">D</a>)<br>
-              • <code>variableInput.inputFileUrl</code> setado → sub-branch de URL simples (linha 3050+): grava <code>{ fileUrl }</code> no nó e persiste
+              • <code>node.type === 'varInputNode'</code> vai para sub-branch com OCR/upload (funções <a href="#fn-c">C</a> e <a href="#fn-d">D</a>).<br>
+              • <code>variableInput.inputFileUrl</code> setado vai para sub-branch de URL simples (linha 3050+). Grava <code>{ fileUrl }</code> no nó e persiste.
             </div>
             <div class="box-file">flux.service.ts:2806, 3050</div>
           </div>
@@ -762,16 +762,16 @@
 
         <div class="fn-asides">
           <div class="aside warn">
-            <div class="aside-title">⚠️ Throw sem contexto derruba o run</div>
-            Se qualquer varInput for inválido, o run inteiro morre com mensagem genérica. Em batch (CSV) ou webhook público, um único payload malformado quebra a execução — sem retry, sem skip, sem log detalhado.
+            <div class="aside-title">⚠️ Throw sem contexto derruba a execução</div>
+            Se qualquer varInput for inválido, a execução inteira morre com mensagem genérica. Em batch (CSV) ou webhook público, um único payload malformado quebra a execução. Sem retry. Sem skip. Sem log detalhado.
           </div>
           <div class="aside info">
             <div class="aside-title">🎯 <code>isExtraction</code> tri-estado</div>
-            Aceita <code>true</code>, <code>false</code>, ou <code>null/undefined</code>. Quando é <code>null</code>, tem que <em>inferir</em>: se veio arquivo/link mas cliente não disse nada, assume <code>false</code> pra evitar OCR silencioso e caro. Se não veio arquivo, fica <code>null</code> mesmo (linha 3023 usa isso).
+            Aceita <code>true</code>, <code>false</code> ou <code>null/undefined</code>. Quando é <code>null</code>, infere. Se veio arquivo ou link mas o cliente não indicou nada, assume <code>false</code>. Evita OCR silencioso e caro. Se não veio arquivo, fica <code>null</code> mesmo (linha 3023 usa isso).
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 <code>typeOCR</code> é opcional</div>
-            Se não vier, o default é <code>mistral_ocr</code>. Definido em D (call de <code>extractionService</code>). Valores válidos: <code>'mistral_ocr' | 'mistral_vision' | 'google_ocr'</code>.
+            Se não vier, o default é <code>mistral_ocr</code>. Definido em D (chamada de <code>extractionService</code>). Valores válidos. <code>'mistral_ocr' | 'mistral_vision' | 'google_ocr'</code>.
           </div>
         </div>
       </div>
@@ -794,10 +794,10 @@
         for (const link of links) { texts = await extractionService.extractTextFromLink({ fileSrc, fileMimetype, flowId, user, typeOCR }); ... }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Quando <code>isExtraction=true</code>, cada link e cada file base64 vira texto via <code>ExtractionService</code>. Cada file base64 sobe pra S3 primeiro. O texto extraído é concatenado com <code>\n\n</code> entre fontes e salvo em <code>data.extractText</code>.
+        <strong>Propósito.</strong> Quando <code>isExtraction=true</code>, cada link e cada file base64 vira texto via <code>ExtractionService</code>. Cada file base64 sobe para S3 primeiro. O texto extraído é concatenado com <code>\n\n</code> entre fontes e salvo em <code>data.extractText</code>.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> essa é a <em>oficina</em> onde PDF vira texto pro LLM ler. Dois caminhos: (1) links externos entram direto no OCR pela URL; (2) files base64 primeiro sobem pra S3 (o OCR precisa de URL acessível), depois entram no OCR. O texto de todas as fontes é concatenado com quebra dupla entre eles — é o que o LLM vai ler como "arquivo do usuário". Se qualquer extração falhar, coloca uma mensagem de erro amigável no lugar do texto (<em>"Unable to extract text from this file..."</em>) e <strong>continua</strong> — o run não morre, o LLM só recebe menos contexto. Providers OCR são escolhidos por nó via <code>typeOCR</code>: Mistral OCR (default, textos gerais), Mistral Vision (imagens complexas), Google OCR (documentos).
+        <strong>Em resumo.</strong> Esta é a oficina onde PDF vira texto para o LLM ler. Dois caminhos. Primeiro. Links externos entram direto no OCR pela URL. Segundo. Files base64 primeiro sobem para S3 (o OCR precisa de URL acessível) e depois entram no OCR. O texto de todas as fontes é concatenado com quebra dupla entre eles. É o que o LLM lê como "arquivo do usuário". Se qualquer extração falhar, coloca uma mensagem de erro amigável no lugar do texto ("Unable to extract text from this file...") e continua. A execução não morre. O LLM só recebe menos contexto. Providers OCR são escolhidos por nó via <code>typeOCR</code>. Mistral OCR (default, textos gerais). Mistral Vision (imagens complexas). Google OCR (documentos).
       </div>
 
       <div class="fn-body-cols">
@@ -805,8 +805,8 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">C1</span> Loop <code>links[]</code></div>
             <div class="box-desc">
-              Pra cada link externo (URL de arquivo já hospedado): resolve mimetype via <code>getFileMimetype(link.url)</code>, chama <code>extractionService.extractTextFromLink</code> com <code>typeOCR</code>.
-              <br><br>Try/catch por link — falha em um não trava os outros. Erro vira mensagem amigável concatenada.
+              Para cada link externo (URL de arquivo já hospedado), resolve mimetype via <code>getFileMimetype(link.url)</code> e chama <code>extractionService.extractTextFromLink</code> com <code>typeOCR</code>.
+              <br><br>Try/catch por link. Falha em um não trava os outros. O erro vira mensagem amigável concatenada.
             </div>
             <div class="box-file">flux.service.ts:2840-2882</div>
           </div>
@@ -820,7 +820,7 @@
 <span class="k">const</span> uploadedFile = <span class="k">await</span> <span class="t">this.awsService.uploadFile</span>(buffer, key, mimetype);
             </div>
             <div class="box-desc">
-              Todo file base64 vira URL S3 <strong>antes</strong> do OCR. O <code>ExtractionService</code> precisa de URL — não aceita buffer inline. Custo: 1 PUT S3 por file + 1 chamada OCR.
+              Todo file base64 vira URL S3 antes do OCR. O <code>ExtractionService</code> precisa de URL. Não aceita buffer inline. Custo. Um PUT S3 por file e uma chamada OCR.
             </div>
             <div class="box-file">flux.service.ts:2888-2897</div>
           </div>
@@ -840,7 +840,7 @@ texts = <span class="k">await</span> <span class="t">this.extractionService.extr
 });
             </div>
             <div class="box-desc">
-              Um dos três providers. Blocking wait: espera resposta completa do OCR antes de continuar. PDF grande pode levar dezenas de segundos.
+              Um dos três providers. Blocking wait. Espera a resposta completa do OCR antes de continuar. PDF grande pode levar dezenas de segundos.
             </div>
             <div class="box-file">flux.service.ts:2847-2858, 2904-2915</div>
           </div>
@@ -849,8 +849,8 @@ texts = <span class="k">await</span> <span class="t">this.extractionService.extr
           <div class="box backend">
             <div class="box-title"><span class="badge step">C4</span> Concatena resultados</div>
             <div class="box-desc">
-              <code>extractText</code> acumula texto de todos os links + todos os files, com <code>\n\n</code> entre fontes. Nenhum marcador de origem — o LLM não sabe qual pedaço veio de qual arquivo.
-              <br><br>Se um link falhou, o erro amigável fica no lugar: <em>"Unable to process link: ..."</em>.
+              <code>extractText</code> acumula texto de todos os links e todos os files, com <code>\n\n</code> entre fontes. Nenhum marcador de origem. O LLM não sabe qual pedaço veio de qual arquivo.
+              <br><br>Se um link falhou, o erro amigável ocupa o lugar. "Unable to process link: ...".
             </div>
             <div class="box-file">flux.service.ts:2863-2882, 2922-2944</div>
           </div>
@@ -875,22 +875,22 @@ data = {
             <div class="aside-title">📎 Providers OCR</div>
             <table class="field-table">
               <tr><th>Provider</th><th>Uso típico</th></tr>
-              <tr><td>mistral_ocr</td><td>Default. Documentos gerais (PDF, DOCX)</td></tr>
-              <tr><td>mistral_vision</td><td>Imagens complexas, screenshots com layout</td></tr>
-              <tr><td>google_ocr</td><td>Documentos escaneados, handwriting</td></tr>
+              <tr><td>mistral_ocr</td><td>Default. Documentos gerais (PDF, DOCX).</td></tr>
+              <tr><td>mistral_vision</td><td>Imagens elaboradas, screenshots com layout.</td></tr>
+              <tr><td>google_ocr</td><td>Documentos escaneados, handwriting.</td></tr>
             </table>
           </div>
           <div class="aside warn">
             <div class="aside-title">⚠️ Custo escondido</div>
-            OCR é <strong>síncrono</strong> e <strong>caro</strong>. Um agente com 3 PDFs grandes gasta 30-60s <em>antes</em> do primeiro nó rodar. Não aparece nos logs de nó (só no tempo total do run). Zero telemetria de latência por provider.
+            O OCR é síncrono e caro. Um agente com 3 PDFs grandes gasta de 30 a 60s antes do primeiro nó rodar. Não aparece nos logs de nó. Só no tempo total da execução. Zero telemetria de latência por provider.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 Fallback silencioso em erro</div>
-            Try/catch em cada link/file individual — falha vira string de erro no <code>extractText</code>. <strong>O run não é abortado</strong>, o LLM só recebe "Unable to extract text from this file..." no lugar do conteúdo real. Bom pra resiliência, ruim pra debug: cliente acha que passou o arquivo, LLM acha que o arquivo tá vazio/quebrado.
+            Try/catch em cada link ou file individual. A falha vira string de erro no <code>extractText</code>. A execução não é abortada. O LLM recebe "Unable to extract text from this file..." no lugar do conteúdo real. Boa resiliência. Ruim para debug. O cliente acredita que passou o arquivo. O LLM percebe o arquivo como vazio ou quebrado.
           </div>
           <div class="aside info">
             <div class="aside-title">🎯 <code>fileUrls</code> vs <code>links</code></div>
-            <code>fileUrls</code> guarda URLs S3 dos files base64 uploaded. Junto com <code>links</code> originais, forma <code>uploadedFiles</code> = <code>[...links, ...fileUrls]</code>. Perde a diferença original entre "arquivo do usuário" e "link externo" — nó downstream vê tudo como URL.
+            <code>fileUrls</code> guarda URLs S3 dos files base64 uploaded. Junto com <code>links</code> originais, forma <code>uploadedFiles = [...links, ...fileUrls]</code>. Perde a diferença original entre "arquivo do usuário" e "link externo". O nó downstream vê tudo como URL.
           </div>
         </div>
       </div>
@@ -913,10 +913,10 @@ data = {
         if (isExtraction === false) { for (const file of files) uploadedFile = await awsService.uploadFile(...); data = { text, uploadedFiles: uploadedFilesNoExtraction, isExtraction, extractText: '' }; }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Cliente <em>tem</em> arquivo/link mas <strong>não</strong> quer OCR — só quer que a URL fique disponível pra nós downstream (típico de agentes que só passam a URL adiante, ex.: <code>imageGenerator</code> como referência, ou webhook que só armazena).
+        <strong>Propósito.</strong> O cliente tem arquivo ou link mas não quer OCR. Só quer que a URL fique disponível para os nós downstream. Típico de agentes que só passam a URL adiante. Exemplo. <code>imageGenerator</code> como referência ou webhook que apenas armazena.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> é o modo <em>"só guarda a URL"</em>. Sem OCR, sem custo de extração — apenas upload S3 pra files base64 e concatenação de URLs no <code>extractText</code>. Note a peculiaridade: mesmo sem OCR, o campo se chama <code>extractText</code> — mas o conteúdo é só a lista de URLs, não texto extraído. Uso comum: agentes de análise de imagem que passam a URL pro LLM multimodal ler <em>ele mesmo</em>, sem OCR intermediário; ou pipelines que só arquivam o arquivo. Erro de upload S3 (mais raro que OCR) vira mensagem no <code>extractText</code> e o run continua.
+        <strong>Em resumo.</strong> É o modo "só guarda a URL". Sem OCR. Sem custo de extração. Apenas upload S3 para files base64 e concatenação de URLs no <code>extractText</code>. Peculiaridade. Mesmo sem OCR, o campo se chama <code>extractText</code>. O conteúdo é a lista de URLs, não texto extraído. Uso comum. Agentes de análise de imagem que passam a URL para o LLM multimodal ler diretamente, sem OCR intermediário. Também pipelines que apenas arquivam o arquivo. Erro de upload S3 (mais raro que OCR) vira mensagem no <code>extractText</code>. A execução continua.
       </div>
 
       <div class="fn-body-cols">
@@ -924,7 +924,7 @@ data = {
           <div class="box backend">
             <div class="box-title"><span class="badge step">D1</span> Concatena URLs de links</div>
             <div class="box-desc">
-              Cada link vira uma linha em <code>extractTextFromURL</code> (<em>sim, o nome é confuso — não tem OCR aqui</em>). Também vai pra <code>uploadedFilesNoExtraction</code>.
+              Cada link vira uma linha em <code>extractTextFromURL</code>. O nome é confuso: não há OCR aqui. Também vai para <code>uploadedFilesNoExtraction</code>.
             </div>
             <div class="box-file">flux.service.ts:2959-2968</div>
           </div>
@@ -933,8 +933,8 @@ data = {
           <div class="box s3">
             <div class="box-title"><span class="badge step">D2</span> Upload S3 sem OCR</div>
             <div class="box-desc">
-              Mesmo padrão de C2 — base64 vira buffer, sobe pra S3, URL entra em <code>uploadedFilesNoExtraction</code> e a URL S3 é concatenada no <code>extractTextFromURL</code>.
-              <br><br>Try/catch por file: falha de upload não trava; mensagem de erro entra no <code>extractText</code>.
+              Mesmo padrão do C2. Base64 vira buffer. Sobe para S3. A URL entra em <code>uploadedFilesNoExtraction</code>. A URL S3 é concatenada no <code>extractTextFromURL</code>.
+              <br><br>Try/catch por file. Falha de upload não trava. A mensagem de erro entra no <code>extractText</code>.
             </div>
             <div class="box-file">flux.service.ts:2970-3006</div>
           </div>
@@ -957,9 +957,9 @@ data = {
           <div class="box decision">
             <div class="box-title"><span class="badge step">D4</span> Case: sem arquivos nem links</div>
             <div class="box-desc">
-              Se <code>isExtraction</code> for <code>false</code> ou falsy <em>e</em> não veio nem <code>links</code> nem <code>files</code>, sobrescreve <code>data</code> com o mínimo:
+              Se <code>isExtraction</code> for <code>false</code> ou falsy e não veio nem <code>links</code> nem <code>files</code>, sobrescreve <code>data</code> com o mínimo.
               <br><code>{ text: inputText, uploadedFiles: [], isExtraction: null, extractText: '' }</code>
-              <br><br>Isso normaliza o shape do <code>data</code> pros nós downstream nunca receberem <code>undefined</code>.
+              <br><br>Normaliza o shape do <code>data</code> para que os nós downstream nunca recebam <code>undefined</code>.
             </div>
             <div class="box-file">flux.service.ts:3018-3029</div>
           </div>
@@ -967,16 +967,16 @@ data = {
 
         <div class="fn-asides">
           <div class="aside warn">
-            <div class="aside-title">⚠️ Nome enganoso: <code>extractText</code> ≠ texto extraído</div>
-            No caminho D, <code>extractText</code> guarda uma lista de URLs concatenadas com <code>\n\n</code>, não texto OCR. Nó downstream que espera "texto do arquivo" vai receber URLs — bug silencioso se o schema não distinguir.
+            <div class="aside-title">⚠️ Nome enganoso. <code>extractText</code> não é texto extraído</div>
+            No caminho D, <code>extractText</code> guarda uma lista de URLs concatenadas com <code>\n\n</code>. Não é texto OCR. Um nó downstream que espera "texto do arquivo" recebe URLs. Bug silencioso quando o schema não distingue.
           </div>
           <div class="aside info">
             <div class="aside-title">🎯 Uso típico</div>
-            LLMs multimodais (Claude, GPT-4V, Gemini) que recebem a URL da imagem diretamente e leem o binário — o OCR intermediário só atrapalha. Também: pipelines de arquivamento (agente só empurra o arquivo pra outro sistema).
+            LLMs multimodais (Claude, GPT-4V, Gemini) que recebem a URL da imagem diretamente e leem o binário. O OCR intermediário só atrapalha. Também. Pipelines de arquivamento. O agente só encaminha o arquivo para outro sistema.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 Overwrite em cascata</div>
-            D1 monta <code>data</code>, D4 <em>sobrescreve</em> completamente se não veio nada. A cadeia é <code>isExtraction=true → data</code> (C), depois <code>isExtraction=false → data</code> (D), depois <code>sem arquivos → data</code> (D4). Só o último match ganha. Ordem importa.
+            D1 monta <code>data</code>. D4 sobrescreve completamente se não veio nada. A cadeia é. <code>isExtraction=true → data</code> (C). Depois <code>isExtraction=false → data</code> (D). Depois <code>sem arquivos → data</code> (D4). Só o último match vale. Ordem importa.
           </div>
         </div>
       </div>
@@ -999,10 +999,10 @@ data = {
         newFlows = addConnectToNodes({ edges, nds: newFlows, nodeData: { id: inputId, data }, onMutateSchema, changeType: 'default', objectCallerData }); await this.persistInputNodeData(flowId, inputId, data, flowVersionHistoryId);
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Depois de resolver o <code>data</code> em C ou D, dois efeitos: (1) propagar o <code>data</code> via arestas pros nós conectados no canvas em memória (<code>addConnectToNodes</code>); (2) persistir no banco (<code>persistInputNodeData</code>) pra ficar visível no editor.
+        <strong>Propósito.</strong> Após resolver o <code>data</code> em C ou D, dois efeitos. Primeiro. Propaga o <code>data</code> via arestas para os nós conectados no canvas em memória (<code>addConnectToNodes</code>). Segundo. Persiste no banco (<code>persistInputNodeData</code>) para ficar visível no editor.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> aqui a mágica sai da variável e vira <em>estado do canvas</em>. <code>addConnectToNodes</code> pega o <code>data</code> resolvido e escreve não só no próprio <code>varInputNode</code>, mas também nos nós conectados a ele via arestas — se o varInput está ligado a um <code>textGenerator</code>, o campo <code>text</code> do textGenerator já vai começar preenchido antes do loop rodar. É como se o input "vazasse" pela topologia. Junto com isso, <code>persistInputNodeData</code> grava no banco (<code>flows_nodes.data</code> JSONB) pra que abrir o editor mostre o input aplicado. <strong>Um DB write por varInput</strong> — sequential I/O que em agentes com muitos inputs escala mal. Também atualiza o <code>nodeSubstitutionSchema</code> via callback <code>onMutateSchema</code> (relação com passo 2.3).
+        <strong>Em resumo.</strong> Aqui o valor sai da variável e vira estado do canvas. O <code>addConnectToNodes</code> pega o <code>data</code> resolvido e escreve no próprio <code>varInputNode</code>. Também escreve nos nós conectados via arestas. Se o varInput está ligado a um <code>textGenerator</code>, o campo <code>text</code> do <code>textGenerator</code> já começa preenchido antes do loop rodar. É como se o input se propagasse pela topologia. O <code>persistInputNodeData</code> grava no banco (<code>flows_nodes.data</code> JSONB). Abrir o editor mostra o input aplicado. Uma escrita por varInput. I/O sequencial que escala mal em agentes com muitos inputs. Também atualiza o <code>nodeSubstitutionSchema</code> via callback <code>onMutateSchema</code>. Relaciona com o passo 2.3.
       </div>
 
       <div class="fn-body-cols">
@@ -1010,8 +1010,8 @@ data = {
           <div class="box backend">
             <div class="box-title"><span class="badge step">E1</span> <code>addConnectToNodes()</code> — propaga via arestas</div>
             <div class="box-desc">
-              Escreve <code>data</code> no <code>varInputNode</code> identificado por <code>inputId</code>, e replica em nós conectados via <code>edges</code>. Retorna <code>newFlows</code> mutado — a partir daqui, o <code>newFlows</code> é a fonte da verdade que vai pro scheduler.
-              <br><br>Também dispara callback <code>onMutateSchema</code> que atualiza o <code>nodeSubstitutionSchema</code> (relaciona com <a href="passo-2-3.html">passo 2.3</a>).
+              Escreve <code>data</code> no <code>varInputNode</code> identificado por <code>inputId</code>. Replica em nós conectados via <code>edges</code>. Retorna <code>newFlows</code> mutado. Daqui em diante, o <code>newFlows</code> é a fonte da verdade que vai para o scheduler.
+              <br><br>Também dispara o callback <code>onMutateSchema</code>, que atualiza o <code>nodeSubstitutionSchema</code>. Relaciona com o <a href="passo-2-3.html">passo 2.3</a>.
             </div>
             <div class="box-file">flux.service.ts:3031-3041 · addConnectToNodes helper</div>
           </div>
@@ -1020,8 +1020,8 @@ data = {
           <div class="box db">
             <div class="box-title"><span class="badge step">E2</span> <code>persistInputNodeData()</code> — grava no banco</div>
             <div class="box-desc">
-              UPDATE em <code>flows_nodes.data</code> (JSONB). Uma escrita por varInput. Sequential — em agentes com N varInputs, N round-trips DB.
-              <br><br>Também respeita <code>flowVersionHistoryId</code> pra escrever na versão certa (relaciona com <a href="passo-1-3.html">passo 1.3</a>).
+              UPDATE em <code>flows_nodes.data</code> (JSONB). Uma escrita por varInput. Sequencial. Em agentes com N varInputs, N round-trips DB.
+              <br><br>Respeita <code>flowVersionHistoryId</code> para escrever na versão correta. Relaciona com o <a href="passo-1-3.html">passo 1.3</a>.
             </div>
             <div class="box-file">flux.service.ts:3042-3047</div>
           </div>
@@ -1037,7 +1037,7 @@ data = {
 }
             </div>
             <div class="box-desc">
-              Rota alternativa pra tipos custom que aceitam <code>inputFileUrl</code> em vez de <code>varInputNode</code>. Mesmo mecanismo (<code>addConnectToNodes</code> + <code>persistInputNodeData</code>), payload mais simples.
+              Rota alternativa para tipos custom que aceitam <code>inputFileUrl</code> em vez de <code>varInputNode</code>. Mesmo mecanismo (<code>addConnectToNodes</code> e <code>persistInputNodeData</code>). Payload mais simples.
             </div>
             <div class="box-file">flux.service.ts:3050-3069</div>
           </div>
@@ -1045,16 +1045,16 @@ data = {
 
         <div class="fn-asides">
           <div class="aside">
-            <div class="aside-title">📎 Por que propagar via arestas ANTES do loop?</div>
-            Design decision: em vez do <code>varInputNode</code> ser executado como qualquer outro nó (Fase 3) e escrever no schema, ele é <em>pré-resolvido</em> aqui pra economizar uma passada no scheduler. Consequência: <code>varInputNode</code> não aparece no dispatch da Fase 3.5 — [[project_node_field_taxonomy]] chama isso de "static config resolvido em Fase 1".
+            <div class="aside-title">📎 Por que propagar via arestas antes do loop?</div>
+            Decisão de design. Em vez do <code>varInputNode</code> ser executado como qualquer outro nó (Fase 3) e escrever no schema, é pré-resolvido aqui para economizar uma passada no scheduler. Consequência. O <code>varInputNode</code> não aparece no dispatch da Fase 3.5. O [[project_node_field_taxonomy]] chama isso de "static config resolvido na Fase 1".
           </div>
           <div class="aside warn">
             <div class="aside-title">⚠️ N round-trips DB sequenciais</div>
-            Cada varInput = 1 UPDATE em <code>flows_nodes</code>. Agente com 10 varInputs = 10 chamadas sequenciais. Não é <code>Promise.all</code>. Em agentes formulário-based (varInputs por campo), esse setup pode dominar a latência de Fase 1.
+            Cada varInput gera um UPDATE em <code>flows_nodes</code>. Agente com 10 varInputs gera 10 chamadas sequenciais. Não é <code>Promise.all</code>. Em agentes baseados em formulário (varInputs por campo), este setup pode dominar a latência da Fase 1.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 Relação com <code>nodeSubstitutionSchema</code></div>
-            O callback <code>onMutateSchema</code> em <code>addConnectToNodes</code> já popula o schema de substituição — quando <a href="passo-2-3.html">passo 2.3</a> for gerar o schema oficial, os varInputs já estão lá. É um "pre-seed" do schema.
+            O callback <code>onMutateSchema</code> em <code>addConnectToNodes</code> já popula o schema de substituição. Quando o <a href="passo-2-3.html">passo 2.3</a> gerar o schema oficial, os varInputs já estão lá. É um pre-seed do schema.
           </div>
         </div>
       </div>
@@ -1077,10 +1077,10 @@ data = {
         if (!body.variableInputs || body.variableInputs.length === 0) for (const variableInput of varInputNodes) { ... }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Se o request <em>não</em> mandou nenhum <code>variableInput</code>, mesmo assim propaga o <code>data</code> <strong>já existente</strong> em cada <code>varInputNode</code> pros seus vizinhos via arestas. Usado quando o cliente confia nos valores default gravados no canvas.
+        <strong>Propósito.</strong> Se o request não mandou nenhum <code>variableInput</code>, mesmo assim propaga o <code>data</code> já existente em cada <code>varInputNode</code> para seus vizinhos via arestas. Usado quando o cliente confia nos valores default gravados no canvas.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> caso <em>"executa com o que já tá salvo"</em>. Aqui o cliente não sobrescreve nada — só quer que o agente rode usando os valores que já estão nos varInputs (útil pra testes, agentes pré-populados, ou runs disparados por schedule). Pra cada <code>varInputNode</code> do flow, o código pega <code>node.data</code> como veio do banco, monta um <code>varInputData</code> mínimo (<code>text</code>, <code>uploadedFiles</code>, <code>isExtraction</code>, <code>extractText</code>), e chama o mesmo <code>addConnectToNodes</code> + <code>persistInputNodeData</code>. É basicamente uma repetição do E, mas usando dados existentes em vez de resolvidos no request. Cobre também tipos não-<code>varInputNode</code> com <code>inputFileUrl</code>.
+        <strong>Em resumo.</strong> Caso "executa com o que já está salvo". O cliente não sobrescreve nada. Quer que o agente rode usando os valores já existentes nos varInputs. Útil para testes, agentes pré-populados ou execuções disparadas por schedule. Para cada <code>varInputNode</code> do flow, o código pega <code>node.data</code> como veio do banco, monta um <code>varInputData</code> mínimo (<code>text</code>, <code>uploadedFiles</code>, <code>isExtraction</code>, <code>extractText</code>) e chama o mesmo <code>addConnectToNodes</code> e <code>persistInputNodeData</code>. É basicamente uma repetição do E, mas com dados existentes em vez de resolvidos no request. Cobre também tipos que não são <code>varInputNode</code> mas têm <code>inputFileUrl</code>.
       </div>
 
       <div class="fn-body-cols">
@@ -1097,7 +1097,7 @@ data = {
           <div class="box backend">
             <div class="box-title"><span class="badge step">F2</span> Loop sobre <code>varInputNodes</code> (do canvas)</div>
             <div class="box-desc">
-              Diferença: em B (função B), o loop é sobre <code>body.variableInputs</code>; aqui é sobre os <code>varInputNode</code>s <strong>do canvas</strong>. Cada nó vira o próprio input.
+              Diferença. Na função B, o loop é sobre <code>body.variableInputs</code>. Aqui é sobre os <code>varInputNode</code>s do canvas. Cada nó vira o próprio input.
             </div>
             <div class="box-file">flux.service.ts:3074-3079</div>
           </div>
@@ -1111,8 +1111,8 @@ data = {
 <span class="k">const</span> varInputData = { text: inputText, uploadedFiles, isExtraction, extractText };
             </div>
             <div class="box-desc">
-              Lê os campos já persistidos em <code>node.data</code>. Se o canvas nunca teve valores salvos, esses campos ficam <code>undefined</code> — o loop de Fase 3 vai lidar com isso.
-              <br><br><strong>Não roda OCR aqui</strong> — a extração aconteceu quando o dado foi salvo, não agora.
+              Lê os campos já persistidos em <code>node.data</code>. Se o canvas nunca teve valores salvos, esses campos ficam <code>undefined</code>. O loop da Fase 3 lida com isso.
+              <br><br>Não roda OCR aqui. A extração aconteceu quando o dado foi salvo, não agora.
             </div>
             <div class="box-file">flux.service.ts:3080-3093</div>
           </div>
@@ -1121,7 +1121,7 @@ data = {
           <div class="box backend">
             <div class="box-title"><span class="badge step">F4</span> <code>addConnectToNodes</code> + <code>persistInputNodeData</code></div>
             <div class="box-desc">
-              Mesmo par E1+E2, aplicado a cada varInput do canvas.
+              Mesmo par E1 e E2, aplicado a cada varInput do canvas.
             </div>
             <div class="box-file">flux.service.ts:3094-3111</div>
           </div>
@@ -1131,6 +1131,7 @@ data = {
             <div class="box-title"><span class="badge step">F5</span> Alt-branch: tipos não-<code>varInputNode</code></div>
             <div class="box-desc">
               Se <code>variableInput.type !== 'varInputNode'</code>, usa <code>{ fileUrl: variableInput.inputFileUrl }</code> como data. Cobre nós custom que aceitam arquivo como input.
+
             </div>
             <div class="box-file">flux.service.ts:3113-3132</div>
           </div>
@@ -1139,15 +1140,15 @@ data = {
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Uso típico</div>
-            Runs disparados por schedule (cron), preview do editor com valores pré-preenchidos, ou clientes que só querem "rodar o agente com o que tá salvo". Também: chatbot que já tem contexto persistido.
+            Execuções disparadas por schedule (cron), preview do editor com valores pré-preenchidos ou clientes que só querem rodar o agente com o que está salvo. Também. Chatbot que já tem contexto persistido.
           </div>
           <div class="aside warn">
             <div class="aside-title">⚠️ Depende de <code>data</code> pré-existente</div>
-            Se o <code>varInputNode</code> nunca foi preenchido no editor (<code>data</code> vazio), esse fallback propaga <code>undefined</code> pros vizinhos. Isso pode causar substituição <code>{{varInputLabel}}</code> render string vazia em Fase 3 — comportamento silencioso, sem erro.
+            Se o <code>varInputNode</code> nunca foi preenchido no editor (<code>data</code> vazio), o fallback propaga <code>undefined</code> para os vizinhos. A substituição de <code>{{varInputLabel}}</code> pode renderizar string vazia na Fase 3. Comportamento silencioso, sem erro.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 Simetria com B</div>
-            F é essencialmente o mesmo padrão de B, mas com <code>node.data</code> como fonte em vez de <code>variableInput</code>. Poderia ser refatorado pra função única com fonte parametrizada, mas hoje é duplicado.
+            O F é essencialmente o mesmo padrão do B, mas com <code>node.data</code> como fonte em vez de <code>variableInput</code>. Poderia ser refatorado para uma função única com fonte parametrizada. Hoje é duplicado.
           </div>
         </div>
       </div>
@@ -1170,10 +1171,10 @@ data = {
         // Dentro do handler de nodesBox/libraryNode/fluxBox, quando um sub-flow é chamado: mesmo mecanismo de varInputNode+OCR roda de novo.
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Quando o agente chama outro agente (via <code>nodesBox</code>, <code>libraryNode</code> ou <code>fluxBox</code>), o sub-flow tem os próprios <code>varInputNode</code>s — que precisam ser resolvidos <em>de novo</em>, usando o <code>callerData</code> em vez de <code>body.variableInputs</code>.
+        <strong>Propósito.</strong> Quando o agente chama outro agente (via <code>nodesBox</code>, <code>libraryNode</code> ou <code>fluxBox</code>), o sub-flow tem os próprios <code>varInputNode</code>s. Precisam ser resolvidos de novo, usando o <code>callerData</code> em vez de <code>body.variableInputs</code>.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> lembra que 1.8 roda no <em>top-level</em>? Quando um nó chama outro agente (sub-flow), <strong>tudo isso acontece de novo</strong> — mas o dado de input não vem do request HTTP, vem do nó pai. Esse bloco lê <code>callerData.textData[varNodeId]</code>, <code>callerData.fileLinkData[varNodeId]</code>, e também campos legados como <code>${varNodeId}Text</code> / <code>${varNodeId}FileLink</code>. Faz <code>replacePlaceholders</code> pra resolver <code>{{...}}</code> dentro dos textos (é onde inputs de sub-flow são "sub-substituídos" com dados do pai). Depois monta um <code>variableInputs[]</code> equivalente e envia pro <code>apiV2()</code> do sub-flow — que vai executar 1.8 tudo de novo. <strong>Consequência crítica:</strong> cada nível de aninhamento paga o custo de OCR novamente se o arquivo for reextraído. Não tem cache entre execuções — mesmo PDF, mesmo run, dois OCRs se for chamado de dois sub-flows.
+        <strong>Em resumo.</strong> O 1.8 roda no top-level. Quando um nó chama outro agente (sub-flow), tudo isso acontece de novo. Mas o dado de input não vem do request HTTP. Vem do nó pai. O bloco lê <code>callerData.textData[varNodeId]</code>, <code>callerData.fileLinkData[varNodeId]</code> e também campos legados como <code>${varNodeId}Text</code> e <code>${varNodeId}FileLink</code>. Faz <code>replacePlaceholders</code> para resolver <code>{{...}}</code> dentro dos textos. É onde inputs de sub-flow são sub-substituídos com dados do pai. Depois monta um <code>variableInputs[]</code> equivalente e envia para o <code>apiV2()</code> do sub-flow. O sub-flow executa 1.8 novamente. Consequência crítica. Cada nível de aninhamento paga o custo de OCR novamente se o arquivo for reextraído. Não há cache entre execuções. Mesmo PDF, mesma execução: dois OCRs quando chamado de dois sub-flows.
       </div>
 
       <div class="fn-body-cols">
@@ -1181,7 +1182,7 @@ data = {
           <div class="box backend">
             <div class="box-title"><span class="badge step">G1</span> Localização 1: <code>nodesBox</code></div>
             <div class="box-desc">
-              Handler em <code>flux.service.ts:5464-5533</code>. Constrói <code>variableInputs</code> a partir de <code>callerData.textData</code> / <code>fileLinkData</code>. Faz <code>replacePlaceholders</code> pra resolver <code>{{...}}</code> dentro do texto usando <code>mutatedSchema</code>.
+              Handler em <code>flux.service.ts:5464-5533</code>. Constrói <code>variableInputs</code> a partir de <code>callerData.textData</code> e <code>fileLinkData</code>. Faz <code>replacePlaceholders</code> para resolver <code>{{...}}</code> dentro do texto usando <code>mutatedSchema</code>.
             </div>
             <div class="box-file">flux.service.ts:5464-5533</div>
           </div>
@@ -1190,7 +1191,7 @@ data = {
           <div class="box backend">
             <div class="box-title"><span class="badge step">G2</span> Localização 2: <code>libraryNode</code> / <code>fluxBox</code></div>
             <div class="box-desc">
-              Padrão simétrico em <code>flux.service.ts:5819+</code>. Mesmo mapping <code>callerData</code> → <code>variableInputs</code>, mesmo <code>typeOCR</code> por nó.
+              Padrão simétrico em <code>flux.service.ts:5819+</code>. Mesmo mapeamento <code>callerData → variableInputs</code>. Mesmo <code>typeOCR</code> por nó.
             </div>
             <div class="box-file">flux.service.ts:5819-5920</div>
           </div>
@@ -1199,7 +1200,7 @@ data = {
           <div class="box external">
             <div class="box-title"><span class="badge step">G3</span> Chama <code>apiV2()</code> recursivamente</div>
             <div class="box-desc">
-              O sub-flow entra em <code>apiV2()</code> como se fosse uma requisição nova — passa por 1.1 até 1.8, incluindo a resolução OCR se algum varInput do sub-flow tiver <code>isExtraction=true</code>.
+              O sub-flow entra em <code>apiV2()</code> como se fosse uma requisição nova. Passa por 1.1 até 1.8, incluindo a resolução OCR se algum varInput do sub-flow tiver <code>isExtraction=true</code>.
               <br><br>É o mesmo código de 1.8 rodando N vezes, uma vez por nível de aninhamento.
             </div>
           </div>
@@ -1208,16 +1209,16 @@ data = {
         <div class="fn-asides">
           <div class="aside warn">
             <div class="aside-title">⚠️ Custo OCR multiplicativo</div>
-            Sem cache de extração entre chamadas. Se o mesmo PDF passa por 3 sub-flows no mesmo run, 3 OCRs. Latência escala linear com profundidade de sub-flow × número de arquivos.
+            Sem cache de extração entre chamadas. Se o mesmo PDF passa por 3 sub-flows na mesma execução, 3 OCRs. A latência escala linearmente com profundidade de sub-flow multiplicada pelo número de arquivos.
           </div>
           <div class="aside info">
             <div class="aside-title">🎯 <code>replacePlaceholders</code> no <code>inputText</code></div>
-            Diferente do top-level (que só recebe texto puro do request), aqui o <code>inputText</code> do sub-flow pode conter <code>{{outputDoNoAnterior}}</code> — e o <code>replacePlaceholders</code> resolve esses placeholders <em>antes</em> de enviar pro <code>apiV2</code>. É a ponte entre a substitution engine (Fase 2.3+3.3) e a fase de input.
-            <br><br>Relaciona com <a href="passo-2-3.html">passo 2.3</a> (schema) e <a href="passo-3-3.html">passo 3.3</a> (substituição).
+            Diferente do top-level, que só recebe texto puro do request, o <code>inputText</code> do sub-flow pode conter <code>{{outputDoNoAnterior}}</code>. O <code>replacePlaceholders</code> resolve esses placeholders antes de enviar para o <code>apiV2</code>. É a ponte entre a substitution engine (Fases 2.3 e 3.3) e a fase de input.
+            <br><br>Relaciona com o <a href="passo-2-3.html">passo 2.3</a> (schema) e o <a href="passo-3-3.html">passo 3.3</a> (substituição).
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 Chaves legadas em <code>callerData</code></div>
-            Aceita duas convenções: nova (<code>callerData.textData[nodeId]</code>) e legada (<code>callerData[${nodeId}Text]</code>). O legado é dead-weight — só existe pra não quebrar flows salvos com o schema antigo.
+            Aceita duas convenções. Nova. <code>callerData.textData[nodeId]</code>. Legada. <code>callerData[${nodeId}Text]</code>. O legado é dead-weight. Só existe para não quebrar flows salvos com o schema antigo.
           </div>
         </div>
       </div>
@@ -1226,22 +1227,22 @@ data = {
 
   <!-- SUMMARY -->
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo — o que sai de 1.8:</strong>
-    <br>• <code>newFlows</code> mutado: cada <code>varInputNode</code> com <code>data = { text, uploadedFiles, isExtraction, extractText }</code>
-    <br>• Nós conectados via arestas também recebem <code>data</code> (pré-substituído)
-    <br>• <code>nodeSubstitutionSchema</code> pré-populado via callback <code>onMutateSchema</code>
-    <br>• <code>flows_nodes.data</code> gravado no banco (1 UPDATE por varInput)
-    <br>• I/O: 0-N chamadas OCR (por <code>links</code>+<code>files</code>) + 0-N uploads S3 (por <code>files</code>) + N UPDATEs banco
-    <br>• <strong>Consumido em</strong>: Fase 2.3 (schema já pré-populado) e Fase 3 (nós downstream recebem <code>data</code> resolvido)
+    <strong>Resumo — o que sai de 1.8.</strong>
+    <br>• <code>newFlows</code> mutado. Cada <code>varInputNode</code> com <code>data = { text, uploadedFiles, isExtraction, extractText }</code>.
+    <br>• Nós conectados via arestas também recebem <code>data</code> (pré-substituído).
+    <br>• <code>nodeSubstitutionSchema</code> pré-populado via callback <code>onMutateSchema</code>.
+    <br>• <code>flows_nodes.data</code> gravado no banco. Um UPDATE por varInput.
+    <br>• I/O. Zero a N chamadas OCR (por <code>links</code> e <code>files</code>). Zero a N uploads S3 (por <code>files</code>). N UPDATEs no banco.
+    <br>• Consumido em. Fase 2.3 (schema já pré-populado) e Fase 3 (nós downstream recebem <code>data</code> resolvido).
   </div>
 
   <div class="note">
-    <strong>Observações para migração:</strong>
-    <br>• <strong>OCR pode virar handler Temporal:</strong> hoje é síncrono e cega o backend. Um workflow dedicado (<code>extractInputActivity</code>) libera o backend enquanto o OCR corre. Ganho grande em agentes com múltiplos arquivos.
-    <br>• <strong>Cache de extração:</strong> mesmo arquivo (mesma URL, mesmo hash) pode reusar <code>extractText</code>. Especialmente relevante pra sub-flows (função G) — hoje é rework puro.
-    <br>• <strong>N UPDATEs sequenciais:</strong> <code>persistInputNodeData</code> por varInput pode virar <code>Promise.all</code> ou um UPDATE batched.
-    <br>• <strong>Nome <code>extractText</code> confuso:</strong> em <code>isExtraction=false</code> guarda URLs, não texto extraído. Renomear pra <code>extractedContent</code> ou split em dois campos ajudaria.
-    <br>• <strong>Telemetria zero:</strong> nada é logado sobre duração de OCR, tamanho de arquivo, provider escolhido. Impossível diagnosticar latência de Fase 1 sem instrumentar.
+    <strong>Observações para migração.</strong>
+    <br>• OCR pode virar activity Temporal. Hoje é síncrono e bloqueia o backend. Um workflow dedicado (<code>extractInputActivity</code>) libera o backend enquanto o OCR roda. Ganho grande em agentes com múltiplos arquivos.
+    <br>• Cache de extração. O mesmo arquivo (mesma URL, mesmo hash) pode reusar <code>extractText</code>. Especialmente relevante para sub-flows (função G). Hoje é retrabalho puro.
+    <br>• N UPDATEs sequenciais. O <code>persistInputNodeData</code> por varInput pode virar <code>Promise.all</code> ou um UPDATE batched.
+    <br>• Nome <code>extractText</code> confuso. Em <code>isExtraction=false</code>, guarda URLs, não texto extraído. Renomear para <code>extractedContent</code> ou dividir em dois campos ajudaria.
+    <br>• Telemetria zero. Nada é logado sobre duração de OCR, tamanho de arquivo ou provider escolhido. Diagnosticar latência da Fase 1 sem instrumentação é inviável.
   </div>
 
   <div class="page-footer-nav">

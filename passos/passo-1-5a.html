@@ -123,22 +123,22 @@
     <h1>Passo 1.5a — stripStaleErrorState + montagem de edges</h1>
   </div>
   <div class="page-sub">
-    Bloco em <code>flux.service.ts:2513-2520</code>. Higieniza os nodes do run anterior removendo error-state gruda (<code>errorMessage</code>, <code>errorStatusCode</code>, <code>hasExecutionError</code>) e reduz cada edge a apenas os 5 campos que o scheduler realmente lê. Impl de <code>stripStaleErrorState</code> em <code>flux.service.ts:444-459</code>.
+    Bloco em <code>flux.service.ts:2513-2520</code>. Higieniza os nodes da execução anterior. Remove o error-state acumulado (<code>errorMessage</code>, <code>errorStatusCode</code>, <code>hasExecutionError</code>). Reduz cada edge a apenas os 5 campos que o scheduler realmente lê. A implementação de <code>stripStaleErrorState</code> está em <code>flux.service.ts:444-459</code>.
   </div>
 
   <div class="step-friendly">
     <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
     <ul>
-      <li><strong>Limpa restos de erros anteriores em cada node:</strong> se o run anterior falhou e deixou <code>errorMessage</code>, <code>errorStatusCode</code> ou <code>hasExecutionError</code> gravados no <code>node.data</code> (via <code>persistNodeSuccess</code> na fase 4), essa função remove — evita que o coletor de erros do passo 4.2 confunda erro velho com erro novo do run atual.</li>
-      <li><strong>Cai um nível de profundidade a mais:</strong> se <code>node.data.text</code> for objeto (não string), também limpa <code>errorMessage</code>/<code>errorStatusCode</code> lá dentro. Isso pega o caso do <code>commandContentNode</code> que grava erros dentro de <code>data.text.errorMessage</code>.</li>
-      <li><strong>Retorna um array novo (imutável):</strong> nada é mutado in-place — <code>.map(node =&gt; ...)</code> devolve nodes novos com <code>data</code> spread. Isso é crítico porque as versões originais no banco não devem ser mexidas até que <code>persistNodeSuccess</code> escreva de novo.</li>
-      <li><strong>Enxuga cada edge pro shape mínimo:</strong> pega só <code>{ id, source, sourceHandle, target, targetHandle }</code>. Descarta <code>data</code>, <code>type</code>, coordenadas, style — tudo que o frontend usa mas o scheduler não precisa. Reduz footprint em memória quando o loop principal iterar centenas de vezes lendo edges.</li>
-      <li><strong>Downstream:</strong> o array retornado é atribuído a <code>const nodes = ...</code>, que vira <code>let updatedFlows = [...nodes]</code> na linha 2523 — a partir daqui, esse é o array canônico do run inteiro. Os <code>edges</code> viram source of truth pra scheduler encontrar next nodes.</li>
+      <li><strong>Limpa restos de erros anteriores em cada node.</strong> Se a execução anterior falhou e deixou <code>errorMessage</code>, <code>errorStatusCode</code> ou <code>hasExecutionError</code> gravados no <code>node.data</code> (via <code>persistNodeSuccess</code> na fase 4), esta função remove. Evita que o coletor de erros do passo 4.2 confunda erro antigo com erro da execução atual.</li>
+      <li><strong>Cai um nível de profundidade adicional.</strong> Se <code>node.data.text</code> é objeto (não string), também limpa <code>errorMessage</code> e <code>errorStatusCode</code> lá dentro. Cobre o caso do <code>commandContentNode</code>, que grava erros dentro de <code>data.text.errorMessage</code>.</li>
+      <li><strong>Retorna um array novo (imutável).</strong> Nada é mutado in-place. <code>.map(node =&gt; ...)</code> devolve nodes novos com <code>data</code> spread. É crítico. As versões originais no banco não devem ser modificadas até que <code>persistNodeSuccess</code> escreva de novo.</li>
+      <li><strong>Reduz cada edge ao shape mínimo.</strong> Pega só <code>{ id, source, sourceHandle, target, targetHandle }</code>. Descarta <code>data</code>, <code>type</code>, coordenadas e style. Tudo que o frontend usa, mas o scheduler não precisa. Reduz footprint em memória quando o loop principal iterar centenas de vezes lendo edges.</li>
+      <li><strong>Downstream.</strong> O array retornado é atribuído a <code>const nodes = ...</code>. Vira <code>let updatedFlows = [...nodes]</code> na linha 2523. A partir daqui, esse é o array canônico da execução inteira. Os <code>edges</code> viram source of truth para o scheduler encontrar next nodes.</li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto:</strong> essa higienização evita um bug clássico — sem o strip, o coletor de erros da fase 4 (nodesWithError filter) pegaria <em>também</em> nodes que falharam num run passado mas rodaram OK agora, marcando o run atual como falho erroneamente.
+    <strong>Contexto.</strong> Essa higienização evita um bug clássico. Sem o strip, o coletor de erros da fase 4 (filtro <code>nodesWithError</code>) pegaria também nodes que falharam numa execução passada mas executaram OK agora. Marcaria a execução atual como falha por erro.
   </div>
 
   <div class="overview-mini">
@@ -151,7 +151,7 @@
       <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>Uso downstream (fase 4)</a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado final: <code>const nodes</code> higienizado + <code>const edges</code> enxuto. Base do <code>updatedFlows</code> que atravessa o loop inteiro.
+      Resultado final. <code>const nodes</code> higienizado e <code>const edges</code> enxuto. Base do <code>updatedFlows</code> que atravessa o loop inteiro.
     </div>
   </div>
 
@@ -169,10 +169,10 @@
         private stripStaleErrorState(nodes: any[]): any[]
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Remove <em>error state gruda</em> gravado no <code>data</code> de cada node em runs anteriores. Se o run passado gravou <code>errorMessage</code>, <code>errorStatusCode</code> ou <code>hasExecutionError</code> via <code>persistNodeSuccess</code>, essa função limpa antes do run novo começar.
+        <strong>Propósito.</strong> Remove o error state acumulado gravado no <code>data</code> de cada node em execuções anteriores. Se a execução passada gravou <code>errorMessage</code>, <code>errorStatusCode</code> ou <code>hasExecutionError</code> via <code>persistNodeSuccess</code>, esta função limpa antes da execução nova começar.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> é o <em>zelador</em> que passa antes do run começar. Cada node no banco pode ter herdado sujeira de execuções passadas — se um <code>apiCaller</code> falhou ontem, o error message ficou salvo em <code>data.errorMessage</code>. Essa função corre a lista, tira uma cópia de cada <code>data</code>, apaga as chaves <code>errorMessage</code>, <code>errorStatusCode</code>, <code>hasExecutionError</code> e ainda desce um nível — se <code>data.text</code> for objeto (não string), limpa lá dentro também, porque <code>commandContentNode</code> historicamente aninhava erros em <code>data.text.errorMessage</code>. Retorna sempre um array novo — nunca muta o original — pra preservar o que veio do banco. Sem essa passada, o filtro <code>nodesWithError</code> na fase 4 sinalizaria falso positivo: nodes que rodaram OK mas tinham error de run passado marcado seriam contados como "erros deste run".
+        <strong>Em resumo.</strong> Cada node no banco pode ter herdado sujeira de execuções passadas. Se um <code>apiCaller</code> falhou ontem, o error message ficou salvo em <code>data.errorMessage</code>. A função percorre a lista, tira uma cópia de cada <code>data</code>, apaga as chaves <code>errorMessage</code>, <code>errorStatusCode</code> e <code>hasExecutionError</code>. Ainda desce um nível. Se <code>data.text</code> é objeto (não string), limpa lá dentro também. O <code>commandContentNode</code> historicamente aninhava erros em <code>data.text.errorMessage</code>. Retorna sempre um array novo. Nunca muta o original. Preserva o que veio do banco. Sem essa passada, o filtro <code>nodesWithError</code> na fase 4 sinalizaria falso positivo. Nodes que executaram OK, mas tinham erro de execução passada marcado, seriam contados como erros desta execução.
       </div>
 
       <div class="fn-body-cols">
@@ -180,14 +180,14 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">A1</span> Chamada no apiV2</div>
             <div class="box-desc">
-              <code>const nodes = this.stripStaleErrorState(getFlow.nodes);</code>
-              <br><br><code>getFlow.nodes</code> vem do banco via <code>flowService.getFlowWithNodesAndEdges</code> (passo 1.2). O array retornado é <em>o input canônico</em> pro loop de execução — vira <code>updatedFlows</code> na próxima linha.
+              <code>const nodes = this.stripStaleErrorState(getFlow.nodes);</code>.
+              <br><br><code>getFlow.nodes</code> vem do banco via <code>flowService.getFlowWithNodesAndEdges</code> (passo 1.2). O array retornado é o input canônico do loop de execução. Vira <code>updatedFlows</code> na próxima linha.
             </div>
             <div class="box-file">flux.service.ts:2513</div>
           </div>
           <div class="arrow">↓</div>
           <div class="nested-flow">
-            <div class="nested-flow-title">↳ Implementação: flux.service.ts:444-459</div>
+            <div class="nested-flow-title">↳ Implementação. flux.service.ts:444-459</div>
             <div class="code-block">
 <span class="k">private</span> stripStaleErrorState(nodes: <span class="t">any</span>[]): <span class="t">any</span>[] {
   <span class="k">return</span> nodes.<span class="t">map</span>(node =&gt; {
@@ -240,19 +240,19 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Por que 2 níveis?</div>
-            <code>commandContentNode</code> guarda todo o resultado em <code>data.text</code> como objeto (<code>{ result, errorMessage, ...}</code>). Outros nodes usam <code>data.text</code> como string. O <code>typeof === 'object'</code> distingue os dois e só desce quando é objeto.
+            <code>commandContentNode</code> guarda todo o resultado em <code>data.text</code> como objeto (<code>{ result, errorMessage, ... }</code>). Outros nodes usam <code>data.text</code> como string. O <code>typeof === 'object'</code> distingue os dois. Só desce quando é objeto.
           </div>
           <div class="aside">
             <div class="aside-title">📎 Onde esses campos são gravados</div>
-            <code>persistNodeSuccess</code> (worker + backend) grava esses 3 campos no <code>data</code> do node quando node falha durante execução. Ficam persistidos no Postgres até o próximo run, quando essa função limpa.
+            <code>persistNodeSuccess</code> (worker e backend) grava esses 3 campos no <code>data</code> do node quando o node falha durante execução. Ficam persistidos no Postgres até a próxima execução, quando esta função limpa.
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ Só 3 chaves — não é exhaustive</div>
-            Se algum node type gravar erro em outra chave (ex.: <code>data.errorCode</code>, <code>data.stackTrace</code>), essa função <em>não pega</em>. Precisa manter sincronizado com o que <code>persistNodeSuccess</code> grava.
+            <div class="aside-title">⚠️ Só 3 chaves. Não é exhaustive</div>
+            Se algum node type grava erro em outra chave (por exemplo, <code>data.errorCode</code> ou <code>data.stackTrace</code>), esta função não pega. Precisa ser mantida sincronizada com o que o <code>persistNodeSuccess</code> grava.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 Imutabilidade via spread</div>
-            <code>{ ...node, data: cleanData }</code> — spread cria referências novas em ambos níveis. O original em <code>getFlow.nodes</code> continua intacto (importante se algo mais adiante quiser inspecionar o pré-strip).
+            <code>{ ...node, data: cleanData }</code>. O spread cria referências novas em ambos os níveis. O original em <code>getFlow.nodes</code> continua intacto. É importante se algo mais adiante quiser inspecionar o pré-strip.
           </div>
         </div>
       </div>
@@ -273,10 +273,10 @@
         const edges = getFlow.edges.map(edge =&gt; ({ id, source, sourceHandle, target, targetHandle }))
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Reduz cada edge do banco a só os 5 campos que o scheduler realmente lê ao decidir "de onde pra onde ir". Descarta metadata visual (<code>type</code>, <code>data</code>, animações, style, position) que só o frontend usa.
+        <strong>Propósito.</strong> Reduz cada edge do banco a apenas os 5 campos que o scheduler realmente lê ao decidir a rota entre nós. Descarta metadata visual (<code>type</code>, <code>data</code>, animações, style, position). Só o frontend usa esses campos.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> as edges no banco carregam um monte de coisa que só interessa pra desenhar o grafo — <code>type</code>, <code>data</code>, animações, estilo, cor de handle, tudo bagagem visual. O scheduler precisa apenas de "quem é o source, quem é o target, qual handle de cada lado" pra decidir o próximo node. Essa linha faz um <code>.map()</code> que pega só as 5 chaves relevantes. Efeito: (1) menos memória — se um flow tem 500 edges com <code>data</code> pesado, isso corta pesadamente; (2) menos superfície de atenção — quem lê o loop principal não fica se perguntando "hmm, essa <code>edge.data</code> aqui é usada?"; (3) imutabilidade forte — quem quiser mutar o edge tem que criar um novo com só esses 5 campos. Trade-off: se algum dia o scheduler precisar de outro campo do edge (ex.: <code>edge.type</code> pra diferenciar edges "condicionais" das normais), tem que ser adicionado aqui explicitamente.
+        <strong>Em resumo.</strong> As edges no banco carregam campos que só interessam para desenhar o grafo. <code>type</code>, <code>data</code>, animações, estilo, cor de handle. É toda bagagem visual. O scheduler precisa apenas de <code>source</code>, <code>target</code> e o handle de cada lado para decidir o próximo node. A linha faz um <code>.map()</code> que pega só as 5 chaves relevantes. Efeitos. Menos memória. Se um flow tem 500 edges com <code>data</code> pesado, corta significativamente. Menos superfície de atenção. Quem lê o loop principal não pergunta se <code>edge.data</code> é usada. Imutabilidade forte. Quem quiser mutar o edge cria um novo com apenas esses 5 campos. Trade-off. Se algum dia o scheduler precisar de outro campo do edge (por exemplo, <code>edge.type</code> para diferenciar edges condicionais), precisa ser adicionado aqui explicitamente.
       </div>
 
       <div class="fn-body-cols">
@@ -296,7 +296,7 @@
           </div>
           <div class="arrow">↓</div>
           <div class="box decision">
-            <div class="box-title">Shape final vs shape do banco</div>
+            <div class="box-title">Shape final versus shape do banco</div>
             <table class="field-table">
               <tr><th>Campo</th><th>No banco?</th><th>No enxuto?</th></tr>
               <tr><td>id</td><td>sim</td><td>sim ✓</td></tr>
@@ -313,21 +313,21 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 Onde edges é lido depois</div>
-            • <code>edges.find(e =&gt; e.source.includes('flow-global-starter'))</code> — L2560 (achar starter)
-            <br>• Scheduler / prefetch — decide next node por match de <code>source</code>/<code>target</code> + handles
-            <br>• Nada em runtime lê <code>data</code>, <code>type</code> ou <code>style</code> do edge
+            <code>edges.find(e =&gt; e.source.includes('flow-global-starter'))</code>. L2560 (localiza o starter).
+            <br>Scheduler e prefetch. Decidem next node por match de <code>source</code>, <code>target</code> e handles.
+            <br>Nada em runtime lê <code>data</code>, <code>type</code> ou <code>style</code> do edge.
           </div>
           <div class="aside">
             <div class="aside-title">📎 Ordem no map</div>
-            A ordem no <code>{...}</code> literal é: <code>id</code>, <code>source</code>, <code>sourceHandle</code>, <code>target</code>, <code>targetHandle</code> — reflete o que aparece na visualização (aresta indo de source→target).
+            A ordem no literal <code>{...}</code> é <code>id</code>, <code>source</code>, <code>sourceHandle</code>, <code>target</code>, <code>targetHandle</code>. Reflete o que aparece na visualização (aresta indo de source a target).
           </div>
           <div class="aside warn">
             <div class="aside-title">⚠️ Perda silenciosa de campos</div>
-            Se o schema de edges ganhar um campo novo (ex.: <code>edge.condition</code> pra branch semantics), esse map <strong>não vai propagar</strong>. Bug fácil de esconder.
+            Se o schema de edges ganhar um campo novo (por exemplo, <code>edge.condition</code> para branch semantics), esse map não vai propagar. É um bug fácil de esconder.
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 Não é deep-clone</div>
-            Cada string é copiada por valor (JS primitives). Mas se algum dia um campo virasse objeto, o spread aqui pegaria por referência — nesse caso, mutar edge.X mutaria o banco também.
+            Cada string é copiada por valor (primitivas JavaScript). Se um campo virar objeto, o spread aqui pegaria por referência. Nesse caso, mutar <code>edge.X</code> mutaria o banco também.
           </div>
         </div>
       </div>
@@ -339,7 +339,7 @@
     <div class="fn-card-header">
       <div class="fn-title">
         <span class="badge migrated" style="background:#3B82F6;color:white">C</span>
-        <code>Uso downstream — como isso previne bugs na fase 4</code>
+        <code>Uso downstream. Como isso previne bugs na fase 4</code>
       </div>
       <div class="fn-loc">flux.service.ts:4854 (nodesWithError filter)</div>
     </div>
@@ -348,28 +348,28 @@
         // Coletor de erros da fase 4: nodesWithError = myUpdatedNodes.filter(n =&gt; n.data.errorMessage)
       </div>
       <div class="fn-purpose">
-        <strong>Propósito:</strong> Deixar claro por que o strip é <em>necessário</em>. Na fase 4, o coletor de erros lê <code>node.data.errorMessage</code> pra montar <code>nodesWithError</code> — se error velho estivesse gruda no <code>data</code>, marcaria falso positivo.
+        <strong>Propósito.</strong> Deixar claro por que o strip é necessário. Na fase 4, o coletor de erros lê <code>node.data.errorMessage</code> para montar <code>nodesWithError</code>. Se o erro antigo estivesse acumulado no <code>data</code>, marcaria falso positivo.
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo:</strong> a fase 4 do apiV2 (encerramento) faz um filtro simples: "quais nodes têm <code>errorMessage</code>?" — e usa a resposta pra decidir se o run inteiro foi sucesso ou erro. Se stripStaleErrorState não rodasse, o cenário seria: run 1 falhou num <code>apiCaller</code>, gravou <code>errorMessage</code>. Run 2 começa, esse mesmo <code>apiCaller</code> nem é executado (talvez porque o flow rodou uma branch diferente). Na fase 4, o coletor vê o error message velho <em>ainda ali</em> e conclui "esse run falhou". Resultado: métricas erradas, notificação errada, flow log com status errado. O strip prévio garante que os nodes começam <em>limpos</em>, então o único jeito de aparecer <code>errorMessage</code> lá é o run atual ter falhado nele.
+        <strong>Em resumo.</strong> A fase 4 do apiV2 (encerramento) faz um filtro simples. Quais nodes têm <code>errorMessage</code>? Usa a resposta para decidir se a execução inteira foi sucesso ou erro. Se <code>stripStaleErrorState</code> não executasse, o cenário seria o seguinte. Execução 1 falha num <code>apiCaller</code> e grava <code>errorMessage</code>. Execução 2 começa. Esse mesmo <code>apiCaller</code> nem é executado (talvez porque o flow tomou uma branch diferente). Na fase 4, o coletor vê a mensagem de erro antiga ainda presente e conclui que a execução falhou. Resultado. Métricas erradas, notificação errada, flow log com status errado. O strip prévio garante que os nodes começam limpos. O único jeito de aparecer <code>errorMessage</code> ali é a execução atual ter falhado nele.
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box cross">
-            <div class="box-title"><span class="badge step">C1</span> nodesWithError filter (fase 4)</div>
+            <div class="box-title"><span class="badge step">C1</span> Filtro nodesWithError (fase 4)</div>
             <div class="box-desc">
-              <code>const nodesWithError = myUpdatedNodes.filter(n =&gt; n.data?.errorMessage);</code>
-              <br><br>Sem o strip, esse filter pegaria erros de runs passados.
+              <code>const nodesWithError = myUpdatedNodes.filter(n =&gt; n.data?.errorMessage);</code>.
+              <br><br>Sem o strip, esse filtro pegaria erros de execuções passadas.
             </div>
             <div class="box-file">flux.service.ts:4854 (fase 4)</div>
           </div>
           <div class="arrow">↓</div>
           <div class="box cross">
-            <div class="box-title"><span class="badge step">C2</span> logStatus / logErrorMessage</div>
+            <div class="box-title"><span class="badge step">C2</span> logStatus e logErrorMessage</div>
             <div class="box-desc">
-              <code>logStatus = nodesWithError.length &gt; 0 ? 'error' : 'success'</code>
-              <br><code>logErrorMessage = nodesWithError.length &gt; 0 ? nodesWithError[0].data.errorMessage : null</code>
+              <code>logStatus = nodesWithError.length &gt; 0 ? 'error' : 'success'</code>.
+              <br><code>logErrorMessage = nodesWithError.length &gt; 0 ? nodesWithError[0].data.errorMessage : null</code>.
               <br><br>Alimenta <code>flowLogsService.createLog</code> em L4869 e <code>SpaceRunLog.status</code> em L4897.
             </div>
             <div class="box-file">flux.service.ts:4856-4866</div>
@@ -378,26 +378,26 @@
           <div class="box backend">
             <div class="box-title">Efeito cumulativo do strip</div>
             <div class="box-desc">
-              Com <code>stripStaleErrorState</code>: o único errorMessage que sobrevive até a fase 4 é o que <em>este</em> run gravou. Sem ele: falsos positivos e logs corrompidos por runs passados.
+              Com <code>stripStaleErrorState</code>. O único <code>errorMessage</code> que sobrevive até a fase 4 é o que esta execução gravou. Sem ele. Falsos positivos e logs corrompidos por execuções passadas.
             </div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 O contract implícito</div>
-            "Se um node tem <code>errorMessage</code> depois do loop, é porque falhou <em>neste</em> run" — esse contract só vale se algum <code>strip</code> rodou antes. Se em algum refactor esse strip sumir, o contract quebra silenciosamente.
+            <div class="aside-title">🎯 O contrato implícito</div>
+            Se um node tem <code>errorMessage</code> depois do loop, é porque falhou nesta execução. Esse contrato só vale se algum <code>strip</code> executou antes. Se em algum refactor esse strip sumir, o contrato quebra silenciosamente.
           </div>
           <div class="aside">
-            <div class="aside-title">📎 Passo 1.5b vs 1.5a</div>
-            1.5a limpa <em>erros de runs passados</em>. 1.5b (mesmo bloco, linhas 2525-2558) limpa <em>output de runs passados</em> pra nodes com <code>clearOnExecution</code> ligado. São higienizações distintas com propósitos distintos.
+            <div class="aside-title">📎 Passo 1.5b versus 1.5a</div>
+            1.5a limpa erros de execuções passadas. 1.5b (mesmo bloco, linhas 2525-2558) limpa output de execuções passadas para nodes com <code>clearOnExecution</code> ligado. São higienizações distintas com propósitos distintos.
           </div>
           <div class="aside warn">
             <div class="aside-title">⚠️ getFlow.nodes ainda com error state</div>
-            <code>getFlow.nodes</code> (o original do banco) continua com o error state. Se algum código futuro ler direto de <code>getFlow.nodes</code> em vez de <code>nodes</code>, pega o sujo.
+            <code>getFlow.nodes</code> (o original do banco) continua com o error state. Se algum código futuro ler direto de <code>getFlow.nodes</code> em vez de <code>nodes</code>, pega o valor sujo.
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 Alternativa não-usada</div>
-            Poderia ter feito UPDATE no banco antes do run começar (limpar via SQL). Não é feito — em vez disso, mantém o estado no banco (útil pra debug post-mortem) e limpa <em>em memória</em> pra este run.
+            <div class="aside-title">🔧 Alternativa não usada</div>
+            Poderia ser feito UPDATE no banco antes da execução começar (limpar via SQL). Não é feito. Em vez disso, mantém o estado no banco (útil para debug post-mortem) e limpa em memória para esta execução.
           </div>
         </div>
       </div>
@@ -405,21 +405,21 @@
   </div>
 
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo — o que sai de 1.5a:</strong>
-    <br>• <code>const nodes</code> — cópia enxuta e limpa dos nodes (sem error state gruda)
-    <br>• <code>const edges</code> — cópia enxuta com só 5 campos por edge
-    <br>• Alocações: N + M objetos novos (N nodes, M edges) — todos rasos
-    <br>• Zero I/O — puro compute em memória
-    <br>• Contract preservado: <em>quaisquer</em> errorMessage no <code>data</code> depois desse ponto vem <em>deste</em> run
+    <strong>Resumo. O que sai de 1.5a:</strong>
+    <br><code>const nodes</code>. Cópia enxuta e limpa dos nodes, sem error state acumulado.
+    <br><code>const edges</code>. Cópia enxuta com apenas 5 campos por edge.
+    <br>Alocações. N mais M objetos novos (N nodes, M edges). Todos rasos.
+    <br>Zero I/O. Puro compute em memória.
+    <br>Contrato preservado. Qualquer <code>errorMessage</code> no <code>data</code> depois deste ponto vem desta execução.
   </div>
 
   <div class="note">
     <strong>Observações para migração:</strong>
-    <br>• <code>stripStaleErrorState</code> é função pura — replicável 1:1 no worker sem esforço.
-    <br>• Se a migração passar a limpar error state <em>no banco</em> antes do run (via UPDATE), esse método pode até sumir. Mas cuidado: perde a granularidade de "limpo em memória sem alterar o Postgres até o próximo persist".
-    <br>• O shape enxuto de edges é uma otimização de memória <em>e</em> um contract implícito com o scheduler. Se o worker rodar o scheduler, precisa herdar essa restrição — ou o start-args do workflow envia edges já enxutas.
-    <br>• Prioridade média: não é blocker, mas é preciso preservar o "contract implícito" da fase 4 (só errorMessage deste run sobrevive).
-    <br>• Watch out: se a lista de chaves erradas crescer (ex.: adicionar <code>errorCode</code>), atualizar <em>ambos</em> <code>stripStaleErrorState</code> e o coletor da fase 4 pra continuar consistente.
+    <br><code>stripStaleErrorState</code> é função pura. Replicável 1 para 1 no worker sem esforço.
+    <br>Se a migração passar a limpar error state no banco antes da execução (via UPDATE), esse método pode até sumir. Cuidado. Perde a granularidade de "limpo em memória sem alterar o Postgres até o próximo persist".
+    <br>O shape enxuto de edges é uma otimização de memória e um contrato implícito com o scheduler. Se o worker executa o scheduler, precisa herdar essa restrição. Ou os start-args do workflow enviam edges já enxutas.
+    <br>Prioridade média. Não é blocker. É preciso preservar o contrato implícito da fase 4 (só <code>errorMessage</code> desta execução sobrevive).
+    <br>Atenção. Se a lista de chaves acumuladas crescer (por exemplo, adicionar <code>errorCode</code>), atualizar tanto <code>stripStaleErrorState</code> quanto o coletor da fase 4 para manter a consistência.
   </div>
 
   <div class="page-footer-nav">
