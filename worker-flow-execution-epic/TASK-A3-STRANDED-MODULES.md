@@ -8,7 +8,7 @@ that no dispatch gate routes to.
 ## Why
 
 Both node types are in the worker's `NodeType` enum on `origin/main` and have complete modules.
-Neither is in `isTemporalNode`'s six, and neither resolves to a migrated integration provider — so
+Neither is in `isTemporalNode`'s seven, and neither resolves to a migrated integration provider — so
 nothing in the back ever starts a workflow for them (analysis §9.4). `audioReaderNode` still has
 its inline handler in `flux.service.ts` (~7911), and that is what actually runs. This is the
 concrete case the A1 invariant spec flags: `workerModule: true` with `dispatch: 'inline'`.

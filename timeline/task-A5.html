@@ -1,5 +1,6 @@
-<title>A5 — Migrate the image family: `imageGenerator` + `imageReaderNode`</title>
+<title>A5 — Migrate the image family</title>
 <style>
+
   * { box-sizing: border-box; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -561,51 +562,28 @@
   }
 
     .code-block{white-space:pre-wrap;word-break:normal;overflow-wrap:anywhere}
+    .ba{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 4px}
+    @media(max-width:820px){.ba{grid-template-columns:1fr}}
+    .ba>div{border-radius:8px;padding:12px 14px;font-size:12px;line-height:1.62}
+    .ba .now{background:#FEF2F2;border-left:3px solid #EF4444;color:#450A0A}
+    .ba .nxt{background:#ECFDF5;border-left:3px solid #10B981;color:#052E16}
+    .ba h5{margin:0 0 7px;font-size:10px;letter-spacing:.8px;text-transform:uppercase;font-weight:800;opacity:.75}
+    .ba code{background:rgba(0,0,0,.06);padding:1px 4px;border-radius:3px}
+    .topic-nav{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 26px}
+    .topic-nav a{font-size:11px;padding:5px 11px;border-radius:20px;background:#fff;border:1px solid #CBD5E1;
+                 color:#334155;text-decoration:none}
+    .topic-nav a:hover{border-color:#3B82F6;color:#1E40AF}
+
+
+    /* padroniza o topo pelo complemento */
     .top-nav{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
              max-width:1500px;margin:0 auto 20px;padding:0 4px}
     .back-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:#fff;color:#334155;
               text-decoration:none;border-radius:8px;border:1px solid #CBD5E1;font-size:12.5px;font-weight:600;
-              box-shadow:0 1px 3px rgba(0,0,0,.06)}
-    .back-btn:hover{background:#EFF6FF}
-    .page-nav{display:flex;gap:10px;flex-wrap:wrap;background:transparent;box-shadow:none;
-              padding:18px 0 0;margin-top:26px;border-top:1px solid #E2E8F0}
-    /* hero */
-    .hero{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:20px 24px;margin-bottom:18px;
-          box-shadow:0 1px 3px rgba(0,0,0,.06)}
-    .hero .code{display:inline-block;font-family:'SF Mono',Menlo,monospace;font-size:12px;font-weight:800;
-                background:#0F172A;color:#fff;padding:4px 10px;border-radius:6px;letter-spacing:.5px}
-    .hero h1{margin:10px 0 8px;font-size:24px;line-height:1.2;letter-spacing:-.4px;color:#0F172A}
-    .hero .goal{font-size:14px;line-height:1.65;color:#334155;background:#EFF6FF;border-left:3px solid #3B82F6;
-                border-radius:6px;padding:11px 15px;margin-bottom:14px}
-    .meta{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
-    .meta a,.meta span.pill{font-size:11px;text-decoration:none;color:#334155;border:1px solid #CBD5E1;
-              background:#F8FAFC;padding:5px 11px;border-radius:20px;font-weight:600}
-    .meta a:hover{border-color:#3B82F6;color:#1E40AF;background:#EFF6FF}
-    .wv{font-size:10px;font-weight:800;padding:5px 11px;border-radius:20px;letter-spacing:.5px;text-transform:uppercase}
-    .w0{background:#FEE2E2;color:#991B1B}.w1{background:#FEF3C7;color:#92400E}.w2{background:#DBEAFE;color:#1E40AF}
-    .w3{background:#DBEAFE;color:#1E40AF}.w4{background:#DCFCE7;color:#14532D}.w5{background:#DCFCE7;color:#14532D}
-    .w6{background:#F3E8FF;color:#6B21A8}
-    /* seções em cards */
-    .sec-card{background:#fff;border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;margin-bottom:14px;
-              box-shadow:0 1px 3px rgba(0,0,0,.06)}
-    .sec-head{background:linear-gradient(to right,#0F172A,#1E293B);color:#fff;padding:12px 20px;
-              display:flex;align-items:center;gap:10px;font-size:14.5px;font-weight:600}
-    .sec-card.warn .sec-head{background:linear-gradient(to right,#7F1D1D,#B91C1C)}
-    .sec-card.ok   .sec-head{background:linear-gradient(to right,#065F46,#047857)}
-    .sec-card.files .sec-head{background:linear-gradient(to right,#334155,#475569)}
-    .sec-body{padding:18px 22px;font-size:13px;line-height:1.72;color:#334155}
-    .sec-body p{margin:0 0 12px}
-    .sec-body h4{font-size:13px;font-weight:700;color:#0F172A;margin:18px 0 7px}
-    .sec-body ul.tl{margin:8px 0 12px;padding-left:20px}
-    .sec-body ul.tl li{margin-bottom:5px}
-    .sec-body code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1px 5px;border-radius:4px;
-                   font-family:'SF Mono',Menlo,monospace;font-size:11.5px}
-    .sec-card.files .sec-body{font-family:'SF Mono',Menlo,monospace;font-size:11.5px;color:#475569;line-height:1.9}
-    .field-table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12.5px}
-    .field-table th{background:#F1F5F9;text-align:left;padding:8px 12px;font-weight:700;color:#334155;
-                    border-bottom:2px solid #E2E8F0;font-size:11px;text-transform:uppercase;letter-spacing:.4px}
-    .field-table td{padding:8px 12px;border-bottom:1px solid #F1F5F9;vertical-align:top}
-
+              box-shadow:0 1px 3px rgba(0,0,0,.06);transition:transform .15s,background .15s}
+    .back-btn:hover{background:#EFF6FF;transform:translateY(-1px)}
+    .page-nav{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-start;background:transparent;
+              box-shadow:none;padding:18px 0 0;margin-top:26px;border-top:1px solid #E2E8F0}
     .lang-sw{display:inline-flex;border:1px solid #CBD5E1;border-radius:8px;overflow:hidden;background:#fff;
              box-shadow:0 1px 3px rgba(0,0,0,.06)}
     .lang-sw button{font-family:'SF Mono',Menlo,monospace;font-size:11px;font-weight:700;letter-spacing:.5px;
@@ -613,66 +591,292 @@
     .lang-sw button+button{border-left:1px solid #E2E8F0}
     .lang-sw button[aria-pressed="true"]{background:#0F172A;color:#fff}
     .lang-sw button:focus-visible{outline:2px solid #3B82F6;outline-offset:2px}
+
+
+/* ---------- task page ---------- */
+body{background:#F1F5F9;color:#0F172A;margin:0;padding:28px 24px 72px;line-height:1.45;
+     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+.container{max-width:1500px;margin:0 auto}
+
+.hero{background:linear-gradient(135deg,#0F172A 0%,#1E293B 60%,#312E81 100%);color:#fff;
+      border-radius:16px;padding:26px 30px 24px;margin-bottom:18px;position:relative;overflow:hidden}
+.hero::after{content:'';position:absolute;right:-60px;top:-60px;width:260px;height:260px;
+      background:radial-gradient(circle,rgba(99,102,241,.35),transparent 70%);pointer-events:none}
+.hero .kicker{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.hero .code{font-family:'SF Mono',Menlo,monospace;font-size:13px;font-weight:700;letter-spacing:1px;
+      background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);color:#fff;
+      padding:5px 12px;border-radius:7px}
+.hero .st{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+      padding:5px 11px;border-radius:7px;border:1px solid;display:inline-flex;align-items:center;gap:6px}
+.hero .st::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor}
+.hero .st.st-planned{background:rgba(148,163,184,.18);border-color:rgba(203,213,225,.45);color:#CBD5E1}
+.hero .st.st-blocked{background:rgba(220,38,38,.2);border-color:rgba(248,113,113,.5);color:#FCA5A5}
+.hero .st.st-doing{background:rgba(59,130,246,.22);border-color:rgba(147,197,253,.5);color:#BFDBFE}
+.hero .st.st-review{background:rgba(245,158,11,.22);border-color:rgba(252,211,77,.5);color:#FDE68A}
+.hero .st.st-shipped{background:rgba(16,185,129,.24);border-color:rgba(110,231,183,.5);color:#A7F3D0}
+.hero .st.st-dropped{background:rgba(100,116,139,.18);border-color:rgba(148,163,184,.4);color:#94A3B8;
+      text-decoration:line-through}
+.hero .stnote{margin-top:12px;font-size:12.5px;line-height:1.6;color:#CBD5E1;
+      background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
+      border-left:3px solid #6366F1;border-radius:8px;padding:9px 13px;max-width:88ch}
+.hero .stnote b{color:#fff}
+.hero .wv{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+      padding:5px 11px;border-radius:7px;background:rgba(239,68,68,.22);border:1px solid rgba(248,113,113,.5);color:#FCA5A5}
+.hero h1{margin:0 0 12px;font-size:29px;line-height:1.22;letter-spacing:-.6px;font-weight:700;max-width:30ch}
+.hero .goal{font-size:15px;line-height:1.6;color:#CBD5E1;max-width:78ch;border-left:3px solid #6366F1;padding-left:14px}
+.hero .goal b{color:#fff;font-weight:600}
+.hero-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px;position:relative;z-index:2}
+.hero-links a{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
+      text-decoration:none;color:#E2E8F0;background:rgba(255,255,255,.09);
+      border:1px solid rgba(255,255,255,.16);padding:7px 13px;border-radius:8px}
+.hero-links a:hover{background:rgba(255,255,255,.17);color:#fff}
+
+.glance{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:20px}
+.gl{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px 16px;
+    border-top:3px solid #94A3B8;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.gl.crit{border-top-color:#DC2626}.gl.dep{border-top-color:#3B82F6}
+.gl.wave{border-top-color:#8B5CF6}.gl.ship{border-top-color:#059669}
+.gl .k{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#94A3B8;margin-bottom:7px}
+.gl .v{font-size:16px;font-weight:700;color:#0F172A;line-height:1.25;margin-bottom:5px}
+.gl .n{font-size:11.5px;color:#64748B;line-height:1.5}
+
+.lede{background:#fff;border:1px solid #E2E8F0;border-left:4px solid #DC2626;border-radius:12px;
+      padding:18px 22px;margin-bottom:22px;font-size:14.5px;line-height:1.7;color:#334155;
+      box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.lede strong{color:#0F172A}
+.lede p{margin:0 0 10px}.lede p:last-child{margin:0}
+
+.sec-label{display:flex;align-items:center;gap:11px;margin:30px 0 14px}
+.sec-label .n{width:25px;height:25px;border-radius:7px;background:#0F172A;color:#fff;flex:none;
+      display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+.sec-label h2{margin:0;font-size:17px;font-weight:700;color:#0F172A;letter-spacing:-.25px}
+.sec-label .rule{flex:1;height:1px;background:#E2E8F0}
+
+.entry-table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;
+      border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;font-size:12.5px;
+      box-shadow:0 1px 3px rgba(15,23,42,.05);margin-bottom:8px}
+.entry-table th{background:#0F172A;color:#fff;text-align:left;padding:11px 14px;font-size:10.5px;
+      font-weight:700;text-transform:uppercase;letter-spacing:.6px}
+.entry-table td{padding:12px 14px;border-bottom:1px solid #F1F5F9;vertical-align:top;color:#334155;line-height:1.55}
+.entry-table tr:last-child td{border-bottom:0}
+.entry-table tr:hover td{background:#F8FAFC}
+.entry-table td.rt{font-family:'SF Mono',Menlo,monospace;font-size:11.5px;font-weight:600;color:#0F172A;white-space:nowrap}
+.entry-table td.rt.lbl{font-family:inherit;font-size:12.5px;white-space:normal}
+.pill{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;
+      letter-spacing:.2px;white-space:nowrap}
+.pill.no{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA}
+.pill.weak{background:#FEF3C7;color:#92400E;border:1px solid #FDE68A}
+.pill.ok{background:#D1FAE5;color:#065F46;border:1px solid #A7F3D0}
+
+.part{background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;margin-bottom:16px;
+      box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.part-head{background:linear-gradient(to right,#0F172A,#1E293B);color:#fff;padding:14px 20px;
+      display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.part-head .num{width:26px;height:26px;border-radius:7px;background:rgba(255,255,255,.15);
+      border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;
+      font-size:12px;font-weight:700;flex:none}
+.part-head .t{font-size:15px;font-weight:600;letter-spacing:-.15px}
+.part-head .loc{margin-left:auto;font-family:'SF Mono',Menlo,monospace;font-size:10.5px;
+      color:#94A3B8;background:rgba(0,0,0,.28);padding:4px 9px;border-radius:6px}
+.part-body{padding:20px 22px}
+.purpose{font-size:14px;line-height:1.65;color:#0F172A;font-weight:500;
+      border-left:3px solid #6366F1;padding-left:13px;margin-bottom:16px}
+.part-body p{margin:0 0 12px;font-size:13.5px;line-height:1.72;color:#334155}
+.part-body p:last-child{margin-bottom:0}
+.part-body strong{color:#0F172A;font-weight:650}
+.part-body code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1.5px 5px;border-radius:4px;
+      font-family:'SF Mono',Menlo,monospace;font-size:11.5px;color:#0F172A}
+.part-body ul{margin:10px 0 14px;padding-left:0;list-style:none}
+.part-body ul li{position:relative;padding-left:20px;margin-bottom:9px;font-size:13.5px;
+      line-height:1.7;color:#334155}
+.part-body ul li::before{content:'';position:absolute;left:5px;top:9px;width:6px;height:6px;
+      border-radius:50%;background:#94A3B8}
+.code-block{white-space:pre-wrap;word-break:break-word}
+
+.ba{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0 4px}
+@media(max-width:900px){.ba{grid-template-columns:1fr}}
+.ba>div{border-radius:10px;padding:14px 16px;font-size:13px;line-height:1.65}
+.ba .now{background:#FEF2F2;border:1px solid #FECACA;color:#7F1D1D}
+.ba .nxt{background:#ECFDF5;border:1px solid #A7F3D0;color:#065F46}
+.ba h5{margin:0 0 8px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+      display:flex;align-items:center;gap:6px}
+.ba .now h5{color:#B91C1C}.ba .nxt h5{color:#047857}
+.ba code{background:rgba(255,255,255,.75);border:1px solid rgba(0,0,0,.07);padding:1px 5px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:11px}
+.ba p{margin:0 0 9px;font-size:13px;line-height:1.65}
+.ba p:last-child{margin:0}
+
+.callout{border-radius:10px;padding:14px 17px;margin:15px 0 4px;font-size:13px;line-height:1.7}
+.callout .ct{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px}
+.callout.decide{background:#EFF6FF;border:1px solid #BFDBFE;color:#1E3A8A}
+.callout.decide .ct{color:#1D4ED8}
+.callout.mig{background:#FFFBEB;border:1px solid #FDE68A;color:#78350F}
+.callout.mig .ct{color:#B45309}
+.callout p{margin:0 0 9px}.callout p:last-child{margin:0}
+.callout code{background:rgba(255,255,255,.7);border:1px solid rgba(0,0,0,.07);padding:1px 5px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:11px}
+
+.vcard{background:#fff;border:1px solid #FECACA;border-radius:14px;overflow:hidden;margin-bottom:16px;
+      box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.vcard-head{background:linear-gradient(to right,#7F1D1D,#B91C1C);color:#fff;padding:13px 20px;
+      font-size:15px;font-weight:600;display:flex;align-items:center;gap:10px}
+.vcard-body{padding:18px 22px}
+.vitem{display:grid;grid-template-columns:auto 1fr;gap:13px;padding:13px 0;border-bottom:1px solid #F1F5F9}
+.vitem:first-child{padding-top:0}
+.vitem:last-child{border-bottom:0;padding-bottom:0}
+.vitem .vn{width:24px;height:24px;border-radius:7px;background:#FEE2E2;color:#B91C1C;flex:none;
+      display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:1px}
+.vitem.req .vn{background:#B91C1C;color:#fff}
+.vitem .vt{font-size:13px;font-weight:700;color:#0F172A;margin-bottom:4px;display:flex;
+      align-items:center;gap:8px;flex-wrap:wrap}
+.vitem .vt .req-tag{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+      background:#B91C1C;color:#fff;padding:2px 7px;border-radius:20px}
+.vitem .vd{font-size:13px;line-height:1.68;color:#475569}
+.vitem .vd code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1px 5px;border-radius:4px;
+      font-family:'SF Mono',Menlo,monospace;font-size:11px}
+.vitem .vd strong{color:#0F172A}
+
+.done{background:linear-gradient(135deg,#064E3B,#047857);color:#fff;border-radius:14px;
+      padding:20px 24px;margin-bottom:16px}
+.done .dt{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+      color:#6EE7B7;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.done .dd{font-size:14.5px;line-height:1.72;color:#ECFDF5}
+.done .dd strong{color:#fff;font-weight:650}
+.done .dd code{background:rgba(255,255,255,.17);border:1px solid rgba(255,255,255,.28);padding:1.5px 6px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:12px;color:#fff}
+.hero .goal code{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);padding:1px 5px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:12.5px;color:#fff}
+.lede code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1.5px 5px;border-radius:4px;
+      font-family:'SF Mono',Menlo,monospace;font-size:12px;color:#0F172A}
+.lede em{font-style:italic;color:#0F172A}
+
+.filesbox{background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;
+      box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.filesbox-head{background:linear-gradient(to right,#334155,#475569);color:#fff;padding:12px 20px;
+      font-size:14px;font-weight:600;display:flex;align-items:center;gap:9px}
+.filesbox-body{padding:16px 20px;display:flex;flex-wrap:wrap;gap:8px}
+.fchip{font-family:'SF Mono',Menlo,monospace;font-size:11.5px;background:#F8FAFC;color:#334155;
+      border:1px solid #E2E8F0;border-left:3px solid #64748B;padding:7px 11px;border-radius:7px;line-height:1.4}
+.fchip.new{border-left-color:#059669;background:#F0FDF4;color:#065F46}
+
+.page-footer-nav{display:flex;justify-content:space-between;gap:12px;margin-top:26px;flex-wrap:wrap}
+.page-footer-nav a{display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid #E2E8F0;
+      color:#334155;padding:11px 17px;border-radius:9px;text-decoration:none;font-size:12.5px;font-weight:600;
+      box-shadow:0 1px 2px rgba(15,23,42,.05)}
+.page-footer-nav a:hover{border-color:#94A3B8;color:#0F172A}
+
+
+/* ---------- decisions ---------- */
+.dec{background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;margin-bottom:14px;
+     box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.dec>summary{list-style:none;cursor:pointer;padding:15px 20px;display:flex;align-items:flex-start;
+     gap:13px;background:linear-gradient(to right,#1E1B4B,#312E81);color:#fff}
+.dec>summary::-webkit-details-marker{display:none}
+.dec>summary:hover{background:linear-gradient(to right,#312E81,#3730A3)}
+.dec>summary:focus-visible{outline:2px solid #A5B4FC;outline-offset:-2px}
+.dec .chev{flex:none;width:22px;height:22px;border-radius:6px;background:rgba(255,255,255,.15);
+     border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;
+     font-size:11px;transition:transform .18s ease;margin-top:1px}
+.dec[open] .chev{transform:rotate(90deg)}
+.dec .dq{flex:1;min-width:0}
+.dec .dq .lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+     color:#A5B4FC;margin-bottom:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dec .dq .q{font-size:15px;font-weight:600;line-height:1.45;letter-spacing:-.15px}
+.dec .dq .q code{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.26);
+     padding:1px 6px;border-radius:5px;font-family:'SF Mono',Menlo,monospace;font-size:13px;
+     font-weight:600;color:#E0E7FF}
+.dstat{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+     padding:2.5px 8px;border-radius:20px;white-space:nowrap}
+.dstat.open{background:#F59E0B;color:#451A03}
+.dstat.rec{background:#38BDF8;color:#082F49}
+.dstat.set{background:#34D399;color:#022C22}
+.dec .dq .lbl .planid{font-family:'SF Mono',Menlo,monospace;font-size:9.5px;font-weight:700;
+     letter-spacing:.3px;color:#C7D2FE;background:rgba(255,255,255,.1);
+     border:1px solid rgba(255,255,255,.2);padding:2px 7px;border-radius:20px}
+.dec-body{padding:18px 20px 20px;background:#FAFAFF}
+.dec-intro{font-size:13px;line-height:1.7;color:#334155;margin-bottom:16px}
+.dec-intro strong{color:#0F172A}
+.dec-intro code{background:#EEF2FF;border:1px solid #C7D2FE;padding:1.5px 5px;border-radius:4px;
+     font-family:'SF Mono',Menlo,monospace;font-size:11.5px;color:#3730A3}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px}
+.opt{background:#fff;border:1px solid #E2E8F0;border-radius:11px;padding:0;overflow:hidden;
+     display:flex;flex-direction:column;position:relative}
+.opt.pick{border-color:#6366F1;box-shadow:0 0 0 2px rgba(99,102,241,.16)}
+.opt.no{opacity:.82}
+.opt-h{padding:12px 15px;display:flex;align-items:flex-start;gap:10px;background:#F8FAFC;
+     border-bottom:1px solid #E2E8F0}
+.opt.pick .opt-h{background:#EEF2FF;border-bottom-color:#C7D2FE}
+.opt.no .opt-h{background:#FEF2F2;border-bottom-color:#FECACA}
+.opt-h .ltr{width:23px;height:23px;border-radius:6px;background:#334155;color:#fff;flex:none;
+     display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;margin-top:1px}
+.opt.pick .opt-h .ltr{background:#4F46E5}
+.opt.no .opt-h .ltr{background:#B91C1C}
+.opt-h .on{font-size:13.5px;font-weight:700;color:#0F172A;line-height:1.35}
+.opt-h .tag{margin-left:auto;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+     padding:3px 8px;border-radius:20px;white-space:nowrap;margin-top:2px}
+.opt.pick .opt-h .tag{background:#4F46E5;color:#fff}
+.opt.no .opt-h .tag{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA}
+.opt-b{padding:13px 15px 14px;flex:1;display:flex;flex-direction:column;gap:11px}
+.opt-how{font-size:12.5px;line-height:1.6;color:#475569}
+.opt-how code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1px 4px;border-radius:3px;
+     font-family:'SF Mono',Menlo,monospace;font-size:11px;color:#0F172A;word-break:break-all}
+.opt-l{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px}
+.opt-l li{position:relative;padding-left:20px;font-size:12.5px;line-height:1.55;color:#334155}
+.opt-l li::before{position:absolute;left:0;top:0;font-size:12px;font-weight:700}
+.opt-l li.p::before{content:'✓';color:#059669}
+.opt-l li.c::before{content:'✕';color:#DC2626}
+.opt-cost{margin-top:auto;display:flex;gap:7px;flex-wrap:wrap;padding-top:4px}
+.cst{font-size:10px;font-weight:600;padding:4px 8px;border-radius:6px;background:#F1F5F9;
+     color:#475569;border:1px solid #E2E8F0;line-height:1.3}
+.cst b{font-weight:700;color:#0F172A}
+.cst.hi{background:#FEF3C7;border-color:#FDE68A;color:#78350F}
+.cst.hi b{color:#78350F}
+.cst.lo{background:#ECFDF5;border-color:#A7F3D0;color:#065F46}
+.cst.lo b{color:#065F46}
+.dec-rec{margin-top:15px;background:#EEF2FF;border:1px solid #C7D2FE;border-left:4px solid #4F46E5;
+     border-radius:10px;padding:14px 17px;font-size:13px;line-height:1.7;color:#312E81}
+.dec-rec .rt{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+     color:#4F46E5;margin-bottom:7px}
+.dec-rec strong{color:#1E1B4B}
+.dec-rec code{background:rgba(255,255,255,.75);border:1px solid #C7D2FE;padding:1.5px 5px;
+     border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:11.5px}
+.dec-rec p{margin:0 0 9px}.dec-rec p:last-child{margin:0}
+.dec-who{margin-top:11px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+     font-size:11.5px;color:#64748B}
+.dec-who .wk{font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:.5px;font-size:9.5px}
+.dec-who .wv2{background:#fff;border:1px solid #E2E8F0;padding:4px 10px;border-radius:20px;font-weight:600;color:#334155}
+
 </style>
 <div class="container">
-  <div class="top-nav">
-    <a href="index.html" class="back-btn"><span data-en="← Timeline" data-pt="← Timeline">← Timeline</span></a>
-    <div class="lang-sw" role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">EN-US</button><button type="button" data-lang="pt" aria-pressed="false">PT-BR</button></div>
-  </div>
-  <div class="hero">
-    <span class="code">A5</span>
-    <h1 data-en="Migrate the image family: `imageGenerator` + `imageReaderNode`" data-pt="Migrar a família de imagem: `imageGenerator` + `imageReaderNode`">Migrate the image family: `imageGenerator` + `imageReaderNode`</h1>
-    <div class="goal" data-en="migrate both image nodes over one shared provider layer in the worker." data-pt="migrar os dois nodes de imagem sobre uma única camada compartilhada de provider no worker.">migrate both image nodes over one shared provider layer in the worker.</div>
-    <div class="meta"><span class="wv w3" data-en="wave 3" data-pt="onda 3">wave 3</span><a href="../complemento/fase-3.html" data-en="where this lands in the flow →" data-pt="onde isto entra no fluxo →">where this lands in the flow →</a><a href="index.html#w3" data-en="other tasks in wave 3 →" data-pt="outras tasks da onda 3 →">other tasks in wave 3 →</a><a href="task-A4.html">← A4</a><a href="task-A6.html">A6 →</a></div>
-  </div>
-  <div class="aside" style="max-width:none;margin:0 0 16px"><div class="aside-title"><span data-en="Note" data-pt="Nota">Note</span></div>
-    <span data-en="The body below is the task&#x27;s canonical spec, kept in English by repository convention — it is the same text the team implements." data-pt="O corpo abaixo é a spec canônica da task, mantida em inglês por convenção do repositório — é o mesmo texto que o time implementa.">The body below is the task&#x27;s canonical spec, kept in English by repository convention — it is the same text the team implements.</span></div>
-  <div class="sec-card"><div class="sec-head">📌 <span data-en="Context" data-pt="Contexto">Context</span></div><div class="sec-body"><p><strong>Depends on:</strong> A1, and A4 having validated the template. <strong>Blocked on:</strong> D3 for the</p>
-<p><code>imageReaderNode</code> half (see A6 — it is one of the nine front-driven types).</p></div></div><div class="sec-card "><div class="sec-head">❓ <span data-en="Why" data-pt="Por quê">Why</span></div><div class="sec-body"><p><code>imageGenerator</code> is architecturally identical to <code>commandTextNode</code>, which has been in the worker</p>
-<p>in production the longest (analysis §3.2). Every contract it needs already exists:</p>
-<p><code>/worker/charge-tokens</code>, <code>/worker/validate-model-access</code>, <code>/worker/generate-file</code>. Its cost is</p>
-<p><strong>breadth</strong> — six provider paths: <code>openAiService.createImageWithBilling</code>,</p>
-<p><code>geminiService.generateImage</code>, <code>replicateService.kandinsky</code>, and <code>imageService.{imageCore,sd,textToImage}</code>.</p>
-<p><code>imageReaderNode</code> overlaps heavily: OpenAI, Anthropic, Replicate, Ideogram, plus file and upload.</p>
-<p>Migrating them separately means writing the provider layer twice and letting the two copies drift.</p>
-<p>They are one task for that reason, not because they are similar in purpose.</p></div></div><div class="sec-card "><div class="sec-head">🎯 <span data-en="Scope" data-pt="Escopo">Scope</span></div><div class="sec-body"><p><strong>In.</strong> A <code>worker/src/modules/ai-provider/image/</code> layer both nodes consume, then the two node</p>
-<p>modules on top of it.</p>
-<p><strong>In.</strong> Prompt resolution across <code>imageGenerator</code>'s seven prompt fields (<code>prompt</code>, <code>subject</code>,</p>
-<p><code>environment</code>, <code>tone</code>, <code>view</code>, <code>style</code>, <code>negativePrompt</code>) with placeholder interpolation against</p>
-<p>the resolved run schema — the same pattern every migrated node with variable inputs already uses.</p>
-<p><strong>Out.</strong> New providers, new models, changes to the prompt fields, or the billing formula.</p></div></div><div class="sec-card "><div class="sec-head">▸ <span data-en="Steps" data-pt="Steps">Steps</span></div><div class="sec-body"><ul class="tl">
-<li>Provider layer with one entry per path, ported from the back's services. Behaviour port only —</li>
-</ul>
-<p>   no redesign of provider selection.</p>
-<ul class="tl">
-<li><code>imageGenerator</code> module; registry entry behind the flag; prove; flip; delete the twin (<code>:6972</code>,</li>
-</ul>
-<p>   dispatch <code>:1145</code>).</p>
-<ul class="tl">
-<li><code>imageReaderNode</code> module on the same layer. This one <strong>adds</strong> execution rather than moving it</li>
-</ul>
-<p>   (§4.3) — it needs an engine dispatch that does not exist today, and D3 must be answered first.</p>
-<ul class="tl">
-<li>Timeouts set deliberately per provider in <code>workflows/configs.ts</code>; image generation is slow</li>
-</ul>
-<p>   enough that the default <code>startToCloseTimeout</code> is a guess, not a decision.</p></div></div><div class="sec-card warn"><div class="sec-head">🔬 <span data-en="Verification" data-pt="Verificação">Verification</span></div><div class="sec-body"><ul class="tl">
-<li><strong>Negative control (required).</strong> For each provider path, break the selection so it falls through</li>
-</ul>
-<p>  to the wrong provider, and confirm a test catches it. Six paths means six ways to silently call</p>
-<p>  the wrong API; a suite that only exercises the default path is not protection.</p>
-<ul class="tl">
-<li>Billing parity: for the same prompt and model, <code>token_transactions</code> rows written by the worker</li>
-</ul>
-<p>  must match what the inline path wrote. Compare against real stored runs.</p>
-<ul class="tl">
-<li>Model-access refusal: a model the user is not entitled to must produce the same refusal through</li>
-</ul>
-<p>  <code>/worker/validate-model-access</code> as it does inline. <strong>Measure before refusing</strong> (PLAN §3.3.2) —</p>
-<p>  run the check against real entitlements and drive false refusals to zero.</p></div></div><div class="sec-card ok"><div class="sec-head">✅ <span data-en="Done when" data-pt="Pronto quando">Done when</span></div><div class="sec-body"><p>Both types satisfy PLAN §3.4, share one provider layer, billing matches, and both inline handlers</p>
-<p>are deleted.</p></div></div><div class="sec-card files"><div class="sec-head">📁 <span data-en="Files" data-pt="Arquivos">Files</span></div><div class="sec-body"><p>new <code>worker/src/modules/ai-provider/image/**</code> · new <code>worker/src/modules/nodes/{image-generator,image-reader}/</code> ·</p>
-<p><code>back/src/app-api/flux/flux.service.ts:1145, 6972</code> · <code>front/src/components/nodes/ImageReader.tsx</code> (Run path) ·</p>
-<p>the A1 registry</p></div></div>
-  <div class="page-nav"><a href="index.html" class="back-btn"><span data-en="← Timeline" data-pt="← Timeline">← Timeline</span></a></div>
+<div class="top-nav"><a href="index.html" class="back-btn"><span>←</span> <span data-en="Timeline" data-pt="Timeline">Timeline</span></a><div class="lang-sw" role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">EN-US</button><button type="button" data-lang="pt" aria-pressed="false">PT-BR</button></div></div>
+<div class="hero"><div class="kicker"><span class="code">A5</span><span class="wv" data-en="wave 3" data-pt="onda 3">wave 3</span><span class="st st-planned" data-en="Planned" data-pt="Planejada">Planned</span></div><h1 data-en="Migrate the image family" data-pt="Migrar a família de imagem">Migrate the image family</h1><div class="goal" data-en="Migrate &lt;b&gt;&lt;code&gt;imageGenerator&lt;/code&gt;&lt;/b&gt; and &lt;b&gt;&lt;code&gt;imageReaderNode&lt;/code&gt;&lt;/b&gt; over &lt;b&gt;one shared provider layer&lt;/b&gt;, so their overlapping provider paths are written once instead of twice." data-pt="Migrar o &lt;b&gt;&lt;code&gt;imageGenerator&lt;/code&gt;&lt;/b&gt; e o &lt;b&gt;&lt;code&gt;imageReaderNode&lt;/code&gt;&lt;/b&gt; sobre &lt;b&gt;uma camada de provedor compartilhada&lt;/b&gt;, para que os caminhos de provedor sobrepostos sejam escritos uma vez, e não duas.">Migrate <b><code>imageGenerator</code></b> and <b><code>imageReaderNode</code></b> over <b>one shared provider layer</b>, so their overlapping provider paths are written once instead of twice.</div><div class="hero-links"><a href="../complemento/fase-3.html"><span data-en="Where this lands in the flow →" data-pt="Onde isto entra no fluxo →">Where this lands in the flow →</span></a><a href="index.html#w3"><span data-en="Other tasks in wave 3 →" data-pt="Outras tasks da onda 3 →">Other tasks in wave 3 →</span></a><a href="task-A6.html"><span data-en="Next: A6 — Give the nine front-driven types server-side execution →" data-pt="Próxima: A6 — Dar execução no servidor aos nove tipos só-front →">Next: A6 — Give the nine front-driven types server-side execution →</span></a></div></div>
+<div class="glance"><div class="gl crit"><div class="k" data-en="Cost" data-pt="Custo">Cost</div><div class="v" data-en="Breadth, not architecture" data-pt="Amplitude, não arquitetura">Breadth, not architecture</div><div class="n" data-en="&lt;code&gt;imageGenerator&lt;/code&gt; is architecturally identical to &lt;code&gt;commandTextNode&lt;/code&gt;, in the worker in production the longest. Six provider paths is the real bill." data-pt="O &lt;code&gt;imageGenerator&lt;/code&gt; é arquiteturalmente idêntico ao &lt;code&gt;commandTextNode&lt;/code&gt;, o mais antigo em produção no worker. Seis caminhos de provedor são a conta de verdade."><code>imageGenerator</code> is architecturally identical to <code>commandTextNode</code>, in the worker in production the longest. Six provider paths is the real bill.</div></div><div class="gl dep"><div class="k" data-en="Depends on" data-pt="Depende de">Depends on</div><div class="v" data-en="A1 · A4 · D3" data-pt="A1 · A4 · D3">A1 · A4 · D3</div><div class="n" data-en="A4 must have validated the template first. The &lt;code&gt;imageReaderNode&lt;/code&gt; half is &lt;strong&gt;blocked on D3&lt;/strong&gt;, decided in A6." data-pt="A A4 precisa ter validado o template antes. A metade do &lt;code&gt;imageReaderNode&lt;/code&gt; está &lt;strong&gt;bloqueada pela D3&lt;/strong&gt;, decidida na A6.">A4 must have validated the template first. The <code>imageReaderNode</code> half is <strong>blocked on D3</strong>, decided in A6.</div></div><div class="gl wave"><div class="k" data-en="Wave" data-pt="Onda">Wave</div><div class="v" data-en="Wave 3" data-pt="Onda 3">Wave 3</div><div class="n" data-en="Second migration of the wave — the first one with a provider surface and real billing to keep identical." data-pt="Segunda migração da onda — a primeira com superfície de provedor e cobrança real a manter idêntica.">Second migration of the wave — the first one with a provider surface and real billing to keep identical.</div></div><div class="gl ship"><div class="k" data-en="Shape" data-pt="Formato">Shape</div><div class="v" data-en="One layer, two nodes" data-pt="Uma camada, dois nodes">One layer, two nodes</div><div class="n" data-en="They are one task because migrating them apart means writing the provider layer twice and letting the copies drift." data-pt="São uma task só porque migrá-los separados significa escrever a camada de provedor duas vezes e deixar as cópias divergirem.">They are one task because migrating them apart means writing the provider layer twice and letting the copies drift.</div></div></div>
+<div class="lede" data-en="&lt;p&gt;&lt;code&gt;imageGenerator&lt;/code&gt; resolves a prompt from up to seven fields, interpolates placeholders against the resolved run schema, then dispatches to &lt;strong&gt;one of six provider paths&lt;/strong&gt; — &lt;code&gt;openAiService.createImageWithBilling&lt;/code&gt;, &lt;code&gt;geminiService.generateImage&lt;/code&gt;, &lt;code&gt;replicateService.kandinsky&lt;/code&gt; and &lt;code&gt;imageService.{imageCore,sd,textToImage}&lt;/code&gt;. Every contract it needs already exists.&lt;/p&gt;&lt;p&gt;&lt;code&gt;imageReaderNode&lt;/code&gt; overlaps heavily — OpenAI, Anthropic, Replicate, Ideogram, plus file and upload — but it is a different kind of work: it is &lt;strong&gt;one of the nine front-driven types&lt;/strong&gt;, so this task &lt;em&gt;adds&lt;/em&gt; its execution rather than moving it, and it waits on &lt;strong&gt;D3&lt;/strong&gt;.&lt;/p&gt;" data-pt="&lt;p&gt;O &lt;code&gt;imageGenerator&lt;/code&gt; resolve um prompt a partir de até sete campos, interpola placeholders contra o schema resolvido do run e então despacha para &lt;strong&gt;um de seis caminhos de provedor&lt;/strong&gt; — &lt;code&gt;openAiService.createImageWithBilling&lt;/code&gt;, &lt;code&gt;geminiService.generateImage&lt;/code&gt;, &lt;code&gt;replicateService.kandinsky&lt;/code&gt; e &lt;code&gt;imageService.{imageCore,sd,textToImage}&lt;/code&gt;. Todo contrato de que precisa já existe.&lt;/p&gt;&lt;p&gt;O &lt;code&gt;imageReaderNode&lt;/code&gt; se sobrepõe bastante — OpenAI, Anthropic, Replicate, Ideogram, mais arquivo e upload — mas é um trabalho de outra natureza: é &lt;strong&gt;um dos nove tipos só-front&lt;/strong&gt;, então esta task &lt;em&gt;acrescenta&lt;/em&gt; a execução dele em vez de movê-la, e ele espera pela &lt;strong&gt;D3&lt;/strong&gt;.&lt;/p&gt;"><p><code>imageGenerator</code> resolves a prompt from up to seven fields, interpolates placeholders against the resolved run schema, then dispatches to <strong>one of six provider paths</strong> — <code>openAiService.createImageWithBilling</code>, <code>geminiService.generateImage</code>, <code>replicateService.kandinsky</code> and <code>imageService.{imageCore,sd,textToImage}</code>. Every contract it needs already exists.</p><p><code>imageReaderNode</code> overlaps heavily — OpenAI, Anthropic, Replicate, Ideogram, plus file and upload — but it is a different kind of work: it is <strong>one of the nine front-driven types</strong>, so this task <em>adds</em> its execution rather than moving it, and it waits on <strong>D3</strong>.</p></div>
+<div class="sec-label"><span class="n">1</span><h2 data-en="Two halves that are not the same kind of work" data-pt="Duas metades que não são o mesmo tipo de trabalho">Two halves that are not the same kind of work</h2><span class="rule"></span></div>
+<table class="entry-table"><thead><tr><th><span data-en="The two halves" data-pt="As duas metades">The two halves</span></th><th><span data-en="&lt;code&gt;imageGenerator&lt;/code&gt;" data-pt="&lt;code&gt;imageGenerator&lt;/code&gt;"><code>imageGenerator</code></span></th><th><span data-en="&lt;code&gt;imageReaderNode&lt;/code&gt;" data-pt="&lt;code&gt;imageReaderNode&lt;/code&gt;"><code>imageReaderNode</code></span></th></tr></thead><tbody>
+<tr><td class="rt lbl"><span data-en="Where it runs today" data-pt="Onde roda hoje">Where it runs today</span></td><td class="rt lbl"><span data-en="Inline in the engine" data-pt="Inline no engine">Inline in the engine</span></td><td><span class="pill no"><span data-en="Only in the browser" data-pt="Só no navegador">Only in the browser</span></span></td></tr>
+<tr><td class="rt lbl"><span data-en="Entry points in the code" data-pt="Pontos de entrada no código">Entry points in the code</span></td><td class="rt lbl"><span data-en="Handler &lt;code&gt;:6972&lt;/code&gt;, dispatch &lt;code&gt;:1145&lt;/code&gt;" data-pt="Handler &lt;code&gt;:6972&lt;/code&gt;, dispatch &lt;code&gt;:1145&lt;/code&gt;">Handler <code>:6972</code>, dispatch <code>:1145</code></span></td><td class="rt lbl"><span data-en="&lt;code&gt;ImageReader.tsx&lt;/code&gt; calls the providers directly" data-pt="O &lt;code&gt;ImageReader.tsx&lt;/code&gt; chama os provedores direto"><code>ImageReader.tsx</code> calls the providers directly</span></td></tr>
+<tr><td class="rt lbl"><span data-en="What this task does to it" data-pt="O que esta task faz com ele">What this task does to it</span></td><td><span class="pill ok"><span data-en="Moves execution" data-pt="Move a execução">Moves execution</span></span></td><td><span class="pill weak"><span data-en="&lt;b&gt;Adds&lt;/b&gt; execution (§4.3)" data-pt="&lt;b&gt;Acrescenta&lt;/b&gt; execução (§4.3)"><b>Adds</b> execution (§4.3)</span></span></td></tr>
+<tr><td class="rt lbl"><span data-en="Provider surface" data-pt="Superfície de provedor">Provider surface</span></td><td><span data-en="Six paths: &lt;code&gt;openAiService.createImageWithBilling&lt;/code&gt;, &lt;code&gt;geminiService.generateImage&lt;/code&gt;, &lt;code&gt;replicateService.kandinsky&lt;/code&gt;, &lt;code&gt;imageService.{imageCore,sd,textToImage}&lt;/code&gt;" data-pt="Seis caminhos: &lt;code&gt;openAiService.createImageWithBilling&lt;/code&gt;, &lt;code&gt;geminiService.generateImage&lt;/code&gt;, &lt;code&gt;replicateService.kandinsky&lt;/code&gt;, &lt;code&gt;imageService.{imageCore,sd,textToImage}&lt;/code&gt;">Six paths: <code>openAiService.createImageWithBilling</code>, <code>geminiService.generateImage</code>, <code>replicateService.kandinsky</code>, <code>imageService.{imageCore,sd,textToImage}</code></span></td><td><span data-en="OpenAI, Anthropic, Replicate, Ideogram, plus file and upload" data-pt="OpenAI, Anthropic, Replicate, Ideogram, mais arquivo e upload">OpenAI, Anthropic, Replicate, Ideogram, plus file and upload</span></td></tr>
+<tr><td class="rt lbl"><span data-en="Contracts it needs" data-pt="Contratos de que precisa">Contracts it needs</span></td><td><span data-en="All three already exist: &lt;code&gt;/worker/charge-tokens&lt;/code&gt;, &lt;code&gt;/worker/validate-model-access&lt;/code&gt;, &lt;code&gt;/worker/generate-file&lt;/code&gt;" data-pt="Os três já existem: &lt;code&gt;/worker/charge-tokens&lt;/code&gt;, &lt;code&gt;/worker/validate-model-access&lt;/code&gt;, &lt;code&gt;/worker/generate-file&lt;/code&gt;">All three already exist: <code>/worker/charge-tokens</code>, <code>/worker/validate-model-access</code>, <code>/worker/generate-file</code></span></td><td><span data-en="The same three, &lt;strong&gt;plus an engine dispatch that does not exist today&lt;/strong&gt;" data-pt="Os mesmos três, &lt;strong&gt;mais um dispatch do engine que hoje não existe&lt;/strong&gt;">The same three, <strong>plus an engine dispatch that does not exist today</strong></span></td></tr>
+<tr><td class="rt lbl"><span data-en="Blocked on" data-pt="Bloqueado por">Blocked on</span></td><td><span class="pill ok"><span data-en="Nothing beyond A1 and A4" data-pt="Nada além da A1 e da A4">Nothing beyond A1 and A4</span></span></td><td><span class="pill weak"><span data-en="D3, answered in A6" data-pt="D3, respondida na A6">D3, answered in A6</span></span></td></tr>
+</tbody></table>
+<div class="lede" style="border-left-color:#6366F1"><div data-en="The spec leaves &lt;strong&gt;no open call of its own&lt;/strong&gt; here: providers, models, prompt fields and the billing formula are explicitly out of scope, and provider selection is a behaviour port with no redesign. The one decision that touches this task is &lt;strong&gt;D3&lt;/strong&gt;, and it belongs to &lt;code&gt;A6&lt;/code&gt; — the &lt;code&gt;imageReaderNode&lt;/code&gt; half simply waits for it." data-pt="A spec &lt;strong&gt;não deixa nenhuma decisão própria em aberto&lt;/strong&gt; aqui: provedores, modelos, campos de prompt e a fórmula de cobrança estão explicitamente fora de escopo, e a seleção de provedor é porte de comportamento sem redesenho. A única decisão que toca esta task é a &lt;strong&gt;D3&lt;/strong&gt;, e ela pertence à &lt;code&gt;A6&lt;/code&gt; — a metade do &lt;code&gt;imageReaderNode&lt;/code&gt; apenas espera por ela.">The spec leaves <strong>no open call of its own</strong> here: providers, models, prompt fields and the billing formula are explicitly out of scope, and provider selection is a behaviour port with no redesign. The one decision that touches this task is <strong>D3</strong>, and it belongs to <code>A6</code> — the <code>imageReaderNode</code> half simply waits for it.</div></div>
+<div class="sec-label"><span class="n">2</span><h2 data-en="What the task does, in four parts" data-pt="O que a task faz, em quatro partes">What the task does, in four parts</h2><span class="rule"></span></div>
+<div class="part"><div class="part-head"><span class="num">1</span><span class="t"><span data-en="The shared provider layer" data-pt="A camada de provedor compartilhada">The shared provider layer</span></span><span class="loc">worker/src/modules/ai-provider/image/</span></div><div class="part-body"><div class="purpose" data-en="Write each provider path once, so the two nodes cannot drift apart later." data-pt="Escrever cada caminho de provedor uma vez, para que os dois nodes não possam divergir depois.">Write each provider path once, so the two nodes cannot drift apart later.</div><div data-en="&lt;p&gt;One entry per path, ported from the back&amp;#x27;s services. &lt;strong&gt;Behaviour port only — no redesign of provider selection.&lt;/strong&gt; The layer is the reason the two nodes are one task: migrating them separately means writing this twice and letting the two copies diverge, which is the failure mode this epic keeps finding in the dispatch lists.&lt;/p&gt;" data-pt="&lt;p&gt;Uma entrada por caminho, portada dos serviços do back. &lt;strong&gt;Só porte de comportamento — sem redesenhar a seleção de provedor.&lt;/strong&gt; A camada é a razão de os dois nodes serem uma task só: migrá-los separados significa escrever isto duas vezes e deixar as duas cópias divergirem, que é o modo de falha que este épico não para de encontrar nas listas de dispatch.&lt;/p&gt;"><p>One entry per path, ported from the back&#x27;s services. <strong>Behaviour port only — no redesign of provider selection.</strong> The layer is the reason the two nodes are one task: migrating them separately means writing this twice and letting the two copies diverge, which is the failure mode this epic keeps finding in the dispatch lists.</p></div><div class="ba"><div class="now"><h5>⚠ <span data-en="How it is today" data-pt="Como está hoje">How it is today</span></h5><p data-en="Six provider paths live inside the engine handler, and a second node reaching the same providers would copy them." data-pt="Seis caminhos de provedor vivem dentro do handler do engine, e um segundo node que alcance os mesmos provedores os copiaria.">Six provider paths live inside the engine handler, and a second node reaching the same providers would copy them.</p></div><div class="nxt"><h5>✓ <span data-en="How it will be" data-pt="Como fica">How it will be</span></h5><p data-en="One layer in the worker, consumed by both nodes, with one place to fix when a provider changes." data-pt="Uma camada no worker, consumida pelos dois nodes, com um único lugar para corrigir quando um provedor mudar.">One layer in the worker, consumed by both nodes, with one place to fix when a provider changes.</p></div></div></div></div>
+<div class="part"><div class="part-head"><span class="num">2</span><span class="t"><span data-en="&lt;code&gt;imageGenerator&lt;/code&gt;: prove, flip, delete the twin" data-pt="&lt;code&gt;imageGenerator&lt;/code&gt;: provar, virar, apagar o gêmeo"><code>imageGenerator</code>: prove, flip, delete the twin</span></span><span class="loc">flux.service.ts:1145, 6972</span></div><div class="part-body"><div class="purpose" data-en="Move an execution that already works, without changing a single thing a customer can observe." data-pt="Mover uma execução que já funciona, sem mudar nada que um cliente possa observar.">Move an execution that already works, without changing a single thing a customer can observe.</div><div data-en="&lt;p&gt;The module, the registry entry behind the flag, the proof, the flip, then the deletion of the handler at &lt;code&gt;:6972&lt;/code&gt; and the dispatch at &lt;code&gt;:1145&lt;/code&gt;.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;Prompt resolution is the detail that carries the behaviour.&lt;/strong&gt; Seven prompt fields — &lt;code&gt;prompt&lt;/code&gt;, &lt;code&gt;subject&lt;/code&gt;, &lt;code&gt;environment&lt;/code&gt;, &lt;code&gt;tone&lt;/code&gt;, &lt;code&gt;view&lt;/code&gt;, &lt;code&gt;style&lt;/code&gt;, &lt;code&gt;negativePrompt&lt;/code&gt; — with placeholder interpolation against the resolved run schema. That is the same pattern every migrated node with variable inputs already uses; it is established, not new.&lt;/p&gt;" data-pt="&lt;p&gt;O módulo, a entrada no registro atrás da flag, a prova, a virada, e então a deleção do handler em &lt;code&gt;:6972&lt;/code&gt; e do dispatch em &lt;code&gt;:1145&lt;/code&gt;.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;A resolução de prompt é o detalhe que carrega o comportamento.&lt;/strong&gt; Sete campos de prompt — &lt;code&gt;prompt&lt;/code&gt;, &lt;code&gt;subject&lt;/code&gt;, &lt;code&gt;environment&lt;/code&gt;, &lt;code&gt;tone&lt;/code&gt;, &lt;code&gt;view&lt;/code&gt;, &lt;code&gt;style&lt;/code&gt;, &lt;code&gt;negativePrompt&lt;/code&gt; — com interpolação de placeholders contra o schema resolvido do run. É o mesmo padrão que todo node migrado com entradas variáveis já usa; é estabelecido, não novo.&lt;/p&gt;"><p>The module, the registry entry behind the flag, the proof, the flip, then the deletion of the handler at <code>:6972</code> and the dispatch at <code>:1145</code>.</p><p><strong>Prompt resolution is the detail that carries the behaviour.</strong> Seven prompt fields — <code>prompt</code>, <code>subject</code>, <code>environment</code>, <code>tone</code>, <code>view</code>, <code>style</code>, <code>negativePrompt</code> — with placeholder interpolation against the resolved run schema. That is the same pattern every migrated node with variable inputs already uses; it is established, not new.</p></div><div class="ba"><div class="now"><h5>⚠ <span data-en="How it is today" data-pt="Como está hoje">How it is today</span></h5><p data-en="One handler chooses among six providers inside the engine process, and its billing is written from there." data-pt="Um handler escolhe entre seis provedores dentro do processo do engine, e a cobrança dele é escrita de lá.">One handler chooses among six providers inside the engine process, and its billing is written from there.</p></div><div class="nxt"><h5>✓ <span data-en="How it will be" data-pt="Como fica">How it will be</span></h5><p data-en="An activity chooses among the same six through the shared layer, and bills through &lt;code&gt;/worker/charge-tokens&lt;/code&gt; — &lt;strong&gt;with the rows proven to match&lt;/strong&gt;." data-pt="Uma activity escolhe entre os mesmos seis pela camada compartilhada, e cobra via &lt;code&gt;/worker/charge-tokens&lt;/code&gt; — &lt;strong&gt;com as linhas provadas iguais&lt;/strong&gt;.">An activity chooses among the same six through the shared layer, and bills through <code>/worker/charge-tokens</code> — <strong>with the rows proven to match</strong>.</p></div></div></div></div>
+<div class="part"><div class="part-head"><span class="num">3</span><span class="t"><span data-en="&lt;code&gt;imageReaderNode&lt;/code&gt;: the half that adds execution" data-pt="&lt;code&gt;imageReaderNode&lt;/code&gt;: a metade que acrescenta execução"><code>imageReaderNode</code>: the half that adds execution</span></span><span class="loc" data-en="front/src/components/nodes/ImageReader.tsx (Run path)" data-pt="front/src/components/nodes/ImageReader.tsx (caminho do Run)">front/src/components/nodes/ImageReader.tsx (Run path)</span></div><div class="part-body"><div class="purpose" data-en="Give the ninth front-driven type the dispatch the other eight get in A6 — over the layer built in Part 1." data-pt="Dar ao nono tipo só-front o dispatch que os outros oito recebem na A6 — sobre a camada da Parte 1.">Give the ninth front-driven type the dispatch the other eight get in A6 — over the layer built in Part 1.</div><div data-en="&lt;p&gt;This module sits on the same provider layer, but the work around it is different in kind: &lt;code&gt;imageReaderNode&lt;/code&gt; is one of the nine front-driven types, so &lt;strong&gt;nothing executes it server-side today&lt;/strong&gt;. It needs an engine dispatch that does not exist, and the front&amp;#x27;s Run button has to stop calling the providers directly once it does.&lt;/p&gt;&lt;p&gt;That is a behaviour change for existing flows, not a refactor — which is why this half waits for &lt;strong&gt;D3&lt;/strong&gt;.&lt;/p&gt;" data-pt="&lt;p&gt;Este módulo fica sobre a mesma camada de provedor, mas o trabalho ao redor é de outra natureza: o &lt;code&gt;imageReaderNode&lt;/code&gt; é um dos nove tipos só-front, então &lt;strong&gt;nada o executa no servidor hoje&lt;/strong&gt;. Ele precisa de um dispatch do engine que não existe, e o botão Run do front tem de parar de chamar os provedores direto assim que ele existir.&lt;/p&gt;&lt;p&gt;Isso é mudança de comportamento para fluxos existentes, não refatoração — e por isso esta metade espera pela &lt;strong&gt;D3&lt;/strong&gt;.&lt;/p&gt;"><p>This module sits on the same provider layer, but the work around it is different in kind: <code>imageReaderNode</code> is one of the nine front-driven types, so <strong>nothing executes it server-side today</strong>. It needs an engine dispatch that does not exist, and the front&#x27;s Run button has to stop calling the providers directly once it does.</p><p>That is a behaviour change for existing flows, not a refactor — which is why this half waits for <strong>D3</strong>.</p></div><div class="ba"><div class="now"><h5>⚠ <span data-en="How it is today" data-pt="Como está hoje">How it is today</span></h5><p data-en="In a headless run the node contributes whatever the last manual click left behind, or nothing at all." data-pt="Num run sem interface o node contribui com o que o último clique manual deixou, ou com nada.">In a headless run the node contributes whatever the last manual click left behind, or nothing at all.</p></div><div class="nxt"><h5>✓ <span data-en="How it will be" data-pt="Como fica">How it will be</span></h5><p data-en="The engine dispatches it like any other node, and the browser stops being the only place it can run." data-pt="O engine o despacha como qualquer outro node, e o navegador deixa de ser o único lugar onde ele roda.">The engine dispatches it like any other node, and the browser stops being the only place it can run.</p></div></div><div class="callout decide"><span class="ct" data-en="This half is gated by D3, and D3 lives in A6" data-pt="Esta metade é travada pela D3, e a D3 mora na A6">This half is gated by D3, and D3 lives in A6</span><div data-en="&lt;p&gt;Do not answer it here. &lt;strong&gt;D3&lt;/strong&gt; asks whether the nine front-driven types running headless is a fix or a customer-visible behaviour change, and the plan treats it as a &lt;strong&gt;product change requiring sign-off&lt;/strong&gt; that gates the whole wave.&lt;/p&gt;&lt;p&gt;Ship Part 1 and Part 2 without waiting. Part 3 starts when D3 has an answer.&lt;/p&gt;" data-pt="&lt;p&gt;Não responda aqui. A &lt;strong&gt;D3&lt;/strong&gt; pergunta se os nove tipos só-front rodando sem interface é correção ou mudança de comportamento visível ao cliente, e o plano a trata como &lt;strong&gt;mudança de produto que exige aprovação&lt;/strong&gt; e trava a onda inteira.&lt;/p&gt;&lt;p&gt;Entregue as Partes 1 e 2 sem esperar. A Parte 3 começa quando a D3 tiver resposta.&lt;/p&gt;"><p>Do not answer it here. <strong>D3</strong> asks whether the nine front-driven types running headless is a fix or a customer-visible behaviour change, and the plan treats it as a <strong>product change requiring sign-off</strong> that gates the whole wave.</p><p>Ship Part 1 and Part 2 without waiting. Part 3 starts when D3 has an answer.</p></div></div></div></div>
+<div class="part"><div class="part-head"><span class="num">4</span><span class="t"><span data-en="Timeouts chosen, not inherited" data-pt="Timeouts escolhidos, não herdados">Timeouts chosen, not inherited</span></span><span class="loc">worker/src/modules/temporal/workflows/configs.ts</span></div><div class="part-body"><div class="purpose" data-en="Set each provider&amp;#x27;s timeout deliberately, because image generation is slow enough that the default is a guess." data-pt="Definir o timeout de cada provedor deliberadamente, porque geração de imagem é lenta o bastante para o padrão ser um chute.">Set each provider&#x27;s timeout deliberately, because image generation is slow enough that the default is a guess.</div><div data-en="&lt;p&gt;The spec is direct about it: image generation is slow enough that the default &lt;code&gt;startToCloseTimeout&lt;/code&gt; is &lt;strong&gt;a guess, not a decision&lt;/strong&gt;. Set it per provider path, in &lt;code&gt;configs.ts&lt;/code&gt;, with the slowest real generation as the input rather than a round number.&lt;/p&gt;" data-pt="&lt;p&gt;A spec é direta: geração de imagem é lenta o bastante para o &lt;code&gt;startToCloseTimeout&lt;/code&gt; padrão ser &lt;strong&gt;um chute, não uma decisão&lt;/strong&gt;. Defina-o por caminho de provedor, no &lt;code&gt;configs.ts&lt;/code&gt;, tendo a geração real mais lenta como entrada, e não um número redondo.&lt;/p&gt;"><p>The spec is direct about it: image generation is slow enough that the default <code>startToCloseTimeout</code> is <strong>a guess, not a decision</strong>. Set it per provider path, in <code>configs.ts</code>, with the slowest real generation as the input rather than a round number.</p></div><div class="ba"><div class="now"><h5>⚠ <span data-en="How it is today" data-pt="Como está hoje">How it is today</span></h5><p data-en="The inline handler waits as long as the provider takes, inside the request, with no stated bound." data-pt="O handler inline espera o quanto o provedor levar, dentro da requisição, sem limite declarado.">The inline handler waits as long as the provider takes, inside the request, with no stated bound.</p></div><div class="nxt"><h5>✓ <span data-en="How it will be" data-pt="Como fica">How it will be</span></h5><p data-en="Each provider path has a timeout someone chose, so a slow provider fails as a timeout instead of hanging the run." data-pt="Cada caminho de provedor tem um timeout que alguém escolheu, então um provedor lento falha como timeout em vez de travar o run.">Each provider path has a timeout someone chose, so a slow provider fails as a timeout instead of hanging the run.</p></div></div><div class="callout mig"><span class="ct" data-en="And the wave&amp;#x27;s latency regression applies here too" data-pt="E a regressão de latência da onda também vale aqui">And the wave&#x27;s latency regression applies here too</span><div data-en="&lt;p&gt;Both nodes become &lt;strong&gt;blocking round trips&lt;/strong&gt; until Wave 5 turns on parallelism (review §4.5, risk &lt;strong&gt;R4&lt;/strong&gt;). On an image node the provider call dominates the wall clock, so the added hop is a smaller share of the total than it is for &lt;code&gt;A4&lt;/code&gt;&amp;#x27;s &lt;code&gt;reportBuilder&lt;/code&gt; — &lt;strong&gt;but measure it and state the number in the PR anyway&lt;/strong&gt;, per DELIVERY-PLAN.&lt;/p&gt;" data-pt="&lt;p&gt;Os dois nodes viram &lt;strong&gt;round trips bloqueantes&lt;/strong&gt; até a Onda 5 ligar o paralelismo (review §4.5, risco &lt;strong&gt;R4&lt;/strong&gt;). Num node de imagem a chamada ao provedor domina o relógio, então o salto adicional é uma fatia menor do total do que no &lt;code&gt;reportBuilder&lt;/code&gt; da &lt;code&gt;A4&lt;/code&gt; — &lt;strong&gt;mas meça e informe o número no PR mesmo assim&lt;/strong&gt;, conforme o DELIVERY-PLAN.&lt;/p&gt;"><p>Both nodes become <strong>blocking round trips</strong> until Wave 5 turns on parallelism (review §4.5, risk <strong>R4</strong>). On an image node the provider call dominates the wall clock, so the added hop is a smaller share of the total than it is for <code>A4</code>&#x27;s <code>reportBuilder</code> — <strong>but measure it and state the number in the PR anyway</strong>, per DELIVERY-PLAN.</p></div></div></div></div>
+<div class="sec-label"><span class="n">3</span><h2 data-en="How it is proved" data-pt="Como se prova">How it is proved</h2><span class="rule"></span></div>
+<div class="vcard"><div class="vcard-head">🔬 <span data-en="Verification" data-pt="Verificação">Verification</span></div><div class="vcard-body"><div class="vitem req"><div class="vn">1</div><div><div class="vt"><span data-en="Negative control — one per provider path" data-pt="Controle negativo — um por caminho de provedor">Negative control — one per provider path</span><span class="req-tag"><span data-en="required" data-pt="obrigatório">required</span></span></div><div class="vd" data-en="For &lt;strong&gt;each&lt;/strong&gt; provider path, break the selection so it falls through to the wrong provider, and confirm a test catches it. &lt;strong&gt;Six paths means six ways to silently call the wrong API&lt;/strong&gt;; a suite that only exercises the default path is not protection." data-pt="Para &lt;strong&gt;cada&lt;/strong&gt; caminho de provedor, quebre a seleção para cair no provedor errado, e confirme que um teste pega. &lt;strong&gt;Seis caminhos significam seis formas de chamar a API errada em silêncio&lt;/strong&gt;; uma suíte que só exercita o caminho padrão não é proteção.">For <strong>each</strong> provider path, break the selection so it falls through to the wrong provider, and confirm a test catches it. <strong>Six paths means six ways to silently call the wrong API</strong>; a suite that only exercises the default path is not protection.</div></div></div>
+<div class="vitem req"><div class="vn">2</div><div><div class="vt"><span data-en="Billing parity against real runs" data-pt="Paridade de cobrança contra runs reais">Billing parity against real runs</span><span class="req-tag"><span data-en="required" data-pt="obrigatório">required</span></span></div><div class="vd" data-en="For the same prompt and model, the &lt;code&gt;token_transactions&lt;/code&gt; rows written by the worker must match what the inline path wrote. &lt;strong&gt;Compare against real stored runs&lt;/strong&gt;, not synthetic ones." data-pt="Para o mesmo prompt e modelo, as linhas de &lt;code&gt;token_transactions&lt;/code&gt; escritas pelo worker precisam bater com o que o caminho inline escreveu. &lt;strong&gt;Compare contra runs reais guardados&lt;/strong&gt;, não sintéticos.">For the same prompt and model, the <code>token_transactions</code> rows written by the worker must match what the inline path wrote. <strong>Compare against real stored runs</strong>, not synthetic ones.</div></div></div>
+<div class="vitem req"><div class="vn">3</div><div><div class="vt"><span data-en="Model-access refusal, measured first" data-pt="Recusa por acesso a modelo, medida antes">Model-access refusal, measured first</span><span class="req-tag"><span data-en="required" data-pt="obrigatório">required</span></span></div><div class="vd" data-en="A model the user is not entitled to must produce the same refusal through &lt;code&gt;/worker/validate-model-access&lt;/code&gt; as it does inline. &lt;strong&gt;PLAN §3.3.2&lt;/strong&gt; applies: run the check against real entitlements and &lt;strong&gt;drive false refusals to zero&lt;/strong&gt; — a user refused a model they own is worse than the defect." data-pt="Um modelo a que o usuário não tem direito precisa produzir a mesma recusa via &lt;code&gt;/worker/validate-model-access&lt;/code&gt; que produz inline. Vale o &lt;strong&gt;PLAN §3.3.2&lt;/strong&gt;: rode a checagem contra direitos reais e &lt;strong&gt;leve as recusas falsas a zero&lt;/strong&gt; — um usuário recusado num modelo que ele tem é pior que o defeito.">A model the user is not entitled to must produce the same refusal through <code>/worker/validate-model-access</code> as it does inline. <strong>PLAN §3.3.2</strong> applies: run the check against real entitlements and <strong>drive false refusals to zero</strong> — a user refused a model they own is worse than the defect.</div></div></div>
+<div class="vitem"><div class="vn">4</div><div><div class="vt"><span data-en="One layer, not two" data-pt="Uma camada, não duas">One layer, not two</span></div><div class="vd" data-en="Confirm both node modules consume &lt;code&gt;ai-provider/image/&lt;/code&gt; and neither carries its own copy of a provider call. The shared layer is the reason these two are one task — if it ends up bypassed, the task did not happen." data-pt="Confirme que os dois módulos consomem &lt;code&gt;ai-provider/image/&lt;/code&gt; e que nenhum carrega cópia própria de chamada a provedor. A camada compartilhada é a razão de os dois serem uma task — se ela acabar contornada, a task não aconteceu.">Confirm both node modules consume <code>ai-provider/image/</code> and neither carries its own copy of a provider call. The shared layer is the reason these two are one task — if it ends up bypassed, the task did not happen.</div></div></div>
+<div class="vitem"><div class="vn">5</div><div><div class="vt"><span data-en="State the latency number" data-pt="Diga o número da latência">State the latency number</span></div><div class="vd" data-en="&lt;strong&gt;DELIVERY-PLAN, wave 3.&lt;/strong&gt; Both nodes become blocking round trips until Wave 5. Measure per provider path and state the numbers in the PR." data-pt="&lt;strong&gt;DELIVERY-PLAN, onda 3.&lt;/strong&gt; Os dois nodes viram round trips bloqueantes até a Onda 5. Meça por caminho de provedor e informe os números no PR."><strong>DELIVERY-PLAN, wave 3.</strong> Both nodes become blocking round trips until Wave 5. Measure per provider path and state the numbers in the PR.</div></div></div>
+</div></div>
+<div class="done"><span class="dt" data-en="✓  Done when" data-pt="✓  Pronto quando">✓  Done when</span><div class="dd" data-en="Both types satisfy &lt;strong&gt;PLAN §3.4&lt;/strong&gt;, they &lt;strong&gt;share one provider layer&lt;/strong&gt;, billing matches the inline path on real runs, timeouts were chosen per provider, and &lt;strong&gt;both inline handlers are deleted&lt;/strong&gt;." data-pt="Os dois tipos satisfazem o &lt;strong&gt;PLAN §3.4&lt;/strong&gt;, &lt;strong&gt;compartilham uma camada de provedor&lt;/strong&gt;, a cobrança bate com o caminho inline em runs reais, os timeouts foram escolhidos por provedor, e &lt;strong&gt;os dois handlers inline foram apagados&lt;/strong&gt;.">Both types satisfy <strong>PLAN §3.4</strong>, they <strong>share one provider layer</strong>, billing matches the inline path on real runs, timeouts were chosen per provider, and <strong>both inline handlers are deleted</strong>.</div></div>
+<div class="filesbox"><div class="filesbox-head">📂 <span data-en="Files this task touches" data-pt="Arquivos que esta task toca">Files this task touches</span></div><div class="filesbox-body"><span class="fchip new">worker/src/modules/ai-provider/image/**</span><span class="fchip new">worker/src/modules/nodes/{image-generator,image-reader}/</span><span class="fchip">worker/src/modules/temporal/workflows/configs.ts</span><span class="fchip">back/src/app-api/flux/flux.service.ts:1145, 6972</span><span class="fchip">front/src/components/nodes/ImageReader.tsx (Run path)</span><span class="fchip">the A1 dispatch registry</span></div></div>
+<div class="page-footer-nav"><a href="task-A4.html"><span data-en="← A4 — Migrate &lt;code&gt;reportBuilder&lt;/code&gt;" data-pt="← A4 — Migrar o &lt;code&gt;reportBuilder&lt;/code&gt;">← A4 — Migrate <code>reportBuilder</code></span></a><a href="task-A6.html"><span data-en="Next: A6 — Give the nine front-driven types server-side execution →" data-pt="Próxima: A6 — Dar execução no servidor aos nove tipos só-front →">Next: A6 — Give the nine front-driven types server-side execution →</span></a></div>
 </div>
 <script>
 (function(){

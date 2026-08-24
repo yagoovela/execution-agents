@@ -1,0 +1,233 @@
+# -*- coding: utf-8 -*-
+S4=dict(
+ TITLE=('Execution budget: per node, per run, per chain','Orçamento de execução: por node, por run, por cadeia'),
+ GOAL=('Make it <b>impossible for a run to execute without bound</b>, whatever shape the loop takes.',
+       'Tornar <b>impossível um run executar sem limite</b>, qualquer que seja a forma do laço.'),
+ GLANCE=[
+  ('crit',('Severity','Severidade'),('High','Alta'),
+   ('An always-true condition on a node whose behaviour is not <code>continue</code> loops with no ceiling. Review §1.2.',
+    'Uma condição sempre verdadeira num node cujo comportamento não é <code>continue</code> roda sem teto. Review §1.2.')),
+  ('dep',('Depends on','Depende de'),('Nothing','Nada'),
+   ('Best done with S1 — same class of guard, same test harness, and the chain total is shared.',
+    'Melhor feita com a S1 — mesma classe de guarda, mesmo aparato de teste, e o total da cadeia é compartilhado.')),
+  ('wave',('Wave','Onda'),('Wave 0','Onda 0'),
+   ('Also bounds Temporal history growth — the other half of what B4&#x27;s <code>continueAsNew</code> is for.',
+    'Também limita o crescimento do histórico do Temporal — a outra metade do que o <code>continueAsNew</code> da B4 faz.')),
+  ('ship',('Shape','Formato'),('Three limits','Três limites'),
+   ('X per node, Y per run, and a chain total. None of them subsumes the others.',
+    'X por node, Y por run, e um total de cadeia. Nenhum deles engloba os outros.')),
+ ],
+ LEDE=('<p><code>evaluateLoopCondition</code> (<code>folw/helpers/helpers.ts:2075–2110</code>) applies the limit <strong>on one branch only</strong>. On the other branch the limit is computed, reported to the UI through <code>loopStatus</code> and the <code>condition-loop-status</code> socket event — and then <strong>not applied</strong>.</p>'
+       '<p>Worse, on the capped branch the limit itself is <code>node.data.loopCount</code> — <strong>user data</strong>. A system-level maximum should not be reachable from node configuration.</p>',
+       '<p>O <code>evaluateLoopCondition</code> (<code>folw/helpers/helpers.ts:2075–2110</code>) aplica o limite <strong>em apenas um ramo</strong>. No outro ramo o limite é calculado, reportado à UI via <code>loopStatus</code> e pelo evento de socket <code>condition-loop-status</code> — e então <strong>não é aplicado</strong>.</p>'
+       '<p>Pior: no ramo limitado, o limite em si é <code>node.data.loopCount</code> — <strong>dado do usuário</strong>. Um máximo de sistema não deveria ser alcançável pela configuração de um node.</p>'),
+ TABLE=dict(head=[('Limit','Limite'),('Catches','Pega'),('Misses','Não pega'),('Why it cannot be dropped','Por que não pode sair')],
+  rows=[
+   [{'t':('X — iterations per node','X — iterações por node')},('The runaway loop on one node','O laço desgovernado num node'),
+    ('A loop that walks across many nodes','Um laço que caminha por vários nodes'),
+    ('The common case, and the cheapest to catch','O caso comum, e o mais barato de pegar')],
+   [{'t':('Y — node executions per run','Y — execuções de node por run')},('Every shape, including ones nobody predicted','Toda forma, inclusive as que ninguém previu'),
+    ('Nothing — but only within one run','Nada — mas só dentro de um run'),
+    ('<strong>The only real guarantee.</strong> Termination is not decidable by looking at the graph','<strong>A única garantia real.</strong> Término não é decidível olhando o grafo')],
+   [{'t':('Chain total','Total da cadeia')},('Recursion that resets Y by starting a new run','Recursão que zera Y iniciando um run novo'),
+    ('—','—'),
+    ('A sub-flow is a new run (<code>S1</code>), so nesting would buy a fresh Y','Um sub-fluxo é um run novo (<code>S1</code>), então aninhar compraria um Y novo')],
+  ]),
+ PARTS=[
+  {'n':'1','title':('Why the static check is not enough','Por que a checagem estática não basta'),
+   'loc':'flux.service.ts:6742–6812 · :3738',
+   'purpose':('Three defences, in this order — and the third is the only one that answers the question that matters at 3 a.m.',
+              'Três defesas, nesta ordem — e a terceira é a única que responde a pergunta que importa às 3 da manhã.'),
+   'body':('<p><strong>1. Before the run — graph validation.</strong> Refuse what can be proven wrong without spending anything: cycles inside the graph, and a flow already on the call chain (<code>S1</code>).</p>'
+           '<p><strong>2. During the run — X, per node.</strong> Stops the common case: one node looping on a condition that never turns false.</p>'
+           '<p><strong>3. During the run — Y, per run, and the chain total.</strong> The backstop.</p>'
+           '<p><strong>The third is not redundant, it is the only guarantee.</strong> Whether a flow terminates is not decidable by looking at it — the loop condition reads data that does not exist until the run happens. A static check can prove <em>some</em> flows wrong; it can never prove the rest right.</p>',
+           '<p><strong>1. Antes do run — validação de grafo.</strong> Recusar o que se prova errado sem gastar nada: ciclos dentro do grafo, e um fluxo já na cadeia de chamadas (<code>S1</code>).</p>'
+           '<p><strong>2. Durante o run — X, por node.</strong> Detém o caso comum: um node em laço sobre uma condição que nunca fica falsa.</p>'
+           '<p><strong>3. Durante o run — Y, por run, e o total da cadeia.</strong> A última barreira.</p>'
+           '<p><strong>A terceira não é redundante, é a única garantia.</strong> Se um fluxo termina não é decidível olhando para ele — a condição do laço lê dados que não existem até o run acontecer. Uma checagem estática prova <em>alguns</em> fluxos errados; nunca prova os demais certos.</p>'),
+   'ba':(('A node whose <code>loopBehavior</code> is not <code>continue</code> loops forever with an always-true condition, and the limit that was computed is discarded.',
+          'Um node cujo <code>loopBehavior</code> não é <code>continue</code> roda para sempre com uma condição sempre verdadeira, e o limite que foi calculado é descartado.'),
+         ('X applies on <strong>both</strong> branches, independent of <code>loopBehavior</code> and of <code>loopCount</code>. The node&#x27;s own limit still applies where it is lower — this is a ceiling, not a replacement.',
+          'X se aplica nos <strong>dois</strong> ramos, independente de <code>loopBehavior</code> e de <code>loopCount</code>. O limite do próprio node continua valendo onde for menor — isto é um teto, não um substituto.')),
+   'callouts':[('mig',('Say which ceiling stopped it','Diga qual teto parou'),
+     ('<p><code>loopStatus.reason</code> already carries a human-readable reason — <code>Loop limit exceeded (n/m)</code>. The new case <strong>needs its own wording</strong>, or a user will read “limit exceeded” and go looking for a limit they never set.</p>'
+      '<p>X also applies to <code>arrayNode</code>, which iterates a list rather than a condition. A <code>processorArray</code> of a hundred thousand items is the same runaway with a different shape.</p>',
+      '<p>O <code>loopStatus.reason</code> já carrega uma razão legível — <code>Loop limit exceeded (n/m)</code>. O caso novo <strong>precisa de texto próprio</strong>, senão o usuário lê “limite excedido” e vai procurar um limite que ele nunca definiu.</p>'
+      '<p>X vale também para o <code>arrayNode</code>, que itera uma lista em vez de uma condição. Um <code>processorArray</code> de cem mil itens é o mesmo descontrole com outra forma.</p>'))]},
+  {'n':'2','title':('Y terminates the run, it does not merely stop scheduling','Y termina o run, não apenas para de agendar'),
+   'loc':'flux/scheduler.ts',
+   'purpose':('A run that ends ambiguously is worse than one that ends refused, because nobody can tell it from a hang.',
+              'Um run que termina de forma ambígua é pior que um recusado, porque ninguém consegue distingui-lo de um travamento.'),
+   'body':('<p>Y counts <strong>executions, not distinct nodes</strong>: a node that runs forty times spends forty. When the budget is exhausted the run <strong>terminates deterministically</strong>, with a terminal state naming the budget.</p>'
+           '<p>The chain total resolves the chain root and accounts against it — <strong>the same mechanism <code>S3</code> needs for cost</strong>. One counter carrying two limits, resolved at the same place, rather than two independent accountants that can disagree.</p>',
+           '<p>Y conta <strong>execuções, não nodes distintos</strong>: um node que roda quarenta vezes gasta quarenta. Quando o orçamento acaba, o run <strong>termina de forma determinística</strong>, com um estado terminal que nomeia o orçamento.</p>'
+           '<p>O total da cadeia resolve a raiz da cadeia e contabiliza contra ela — <strong>o mesmo mecanismo que a <code>S3</code> precisa para custo</strong>. Um contador carregando dois limites, resolvido no mesmo lugar, em vez de dois contadores independentes que podem discordar.</p>'),
+   'ba':(('Nothing counts how much a run has executed. A loop across several nodes is invisible to any per-node limit.',
+          'Nada conta quanto um run já executou. Um laço que caminha por vários nodes é invisível a qualquer limite por node.'),
+         ('One counter bounds the run and the chain. As a side effect it bounds <strong>Temporal history growth</strong>, which is the other half of what <code>B4</code>&#x27;s <code>continueAsNew</code> is for.',
+          'Um contador limita o run e a cadeia. Como efeito colateral, limita o <strong>crescimento do histórico do Temporal</strong>, que é a outra metade do que o <code>continueAsNew</code> da <code>B4</code> faz.'))},
+ ],
+ VERIF=[
+  (True,('Negative control — X','Controle negativo — X'),
+   ('A condition node with an always-true condition and <code>loopBehavior</code> set to <strong>anything but <code>&#x27;continue&#x27;</code></strong>: watch it loop without bound on <code>main</code>, then confirm the ceiling stops it and the reason names <strong>the system limit rather than the node&#x27;s</strong>.',
+    'Um node de condição com condição sempre verdadeira e <code>loopBehavior</code> <strong>diferente de <code>&#x27;continue&#x27;</code></strong>: veja rodar sem limite na <code>main</code>, depois confirme que o teto o para e que a razão nomeia <strong>o limite do sistema, não o do node</strong>.')),
+  (True,('Negative control — Y and the chain','Controle negativo — Y e a cadeia'),
+   ('Build a flow that loops <strong>across several nodes</strong> rather than on one — the shape X cannot see — and confirm it runs unbounded on <code>main</code>, then confirm Y stops it with a terminal state naming the budget. <strong>Then nest that flow two levels deep</strong> and confirm the chain total stops it, rather than each level getting a fresh Y.',
+    'Monte um fluxo que faz laço <strong>por vários nodes</strong> em vez de um só — a forma que X não enxerga — e confirme que roda sem limite na <code>main</code>, depois confirme que Y o para com um estado terminal que nomeia o orçamento. <strong>Depois aninhe esse fluxo dois níveis</strong> e confirme que o total da cadeia o para, em vez de cada nível ganhar um Y novo.')),
+  (True,('Measure before refusing','Medir antes de recusar'),
+   ('<strong>PLAN §3.3.2.</strong> Find the largest <code>loopCount</code> and the largest <code>processorArray</code> in the stored flows, and the largest number of node executions any real run has produced. Set X and Y above all of them with margin — and <strong>report the distribution, not just the maximum</strong>. A ceiling chosen from one outlier is a ceiling nobody trusts.',
+    '<strong>PLAN §3.3.2.</strong> Encontre o maior <code>loopCount</code> e o maior <code>processorArray</code> nos fluxos guardados, e o maior número de execuções de node que algum run real já produziu. Defina X e Y acima de todos com margem — e <strong>reporte a distribuição, não só o máximo</strong>. Um teto escolhido a partir de um outlier é um teto em que ninguém confia.')),
+  (False,('The two reasons stay distinguishable','As duas razões continuam distinguíveis'),
+   ('Confirm the UI still shows the <strong>node&#x27;s own limit</strong> when that is what stopped the loop. The two reasons must not be confused, or the author debugs the wrong number.',
+    'Confirme que a UI ainda mostra o <strong>limite do próprio node</strong> quando foi ele que parou o laço. As duas razões não podem se confundir, ou o autor depura o número errado.')),
+ ],
+ DONE=('No node configuration and no graph shape can produce an unbounded run: <strong>X bounds one node, Y bounds the run, and the chain total bounds nesting</strong>. Every ceiling sits <strong>above the largest real value in the stored data</strong>. A run that hits any of them ends in a terminal state that names which one, and the three reasons are distinguishable from each other and from the node&#x27;s own limit.',
+       'Nenhuma configuração de node e nenhuma forma de grafo pode produzir um run ilimitado: <strong>X limita um node, Y limita o run, e o total da cadeia limita o aninhamento</strong>. Todo teto fica <strong>acima do maior valor real no dado guardado</strong>. Um run que bate em qualquer um termina num estado terminal que nomeia qual, e as três razões são distinguíveis entre si e do limite do próprio node.'),
+ FILES=[('back/src/app-api/folw/helpers/helpers.ts:2075–2110',False),
+        ('back/src/app-api/flux/flux.service.ts:6742–6812 (condition), :3738 (array)',False),
+        ('back/src/app-api/flux/scheduler.ts',False),
+        ('chain-root accounting shared with TASK-S3',True),
+        ('new env vars + env-vars-sync',True)],
+)
+
+S4_DEC={
+ 'k':'decision','id':'S4-a','plan':'D15','status':'open','open':True,
+ 'q':('What are X, Y and the chain total?','Quanto valem X, Y e o total da cadeia?'),
+ 'intro':('<strong>The one genuinely open number in this epic.</strong> The spec is deliberate about this: the three ceilings must come from <strong>measurement against stored runs</strong>, not from taste. '
+          'The options below are about <em>how</em> to choose them, not about which numbers to type.',
+          '<strong>O único número genuinamente em aberto deste épico.</strong> A spec é deliberada quanto a isso: os três tetos precisam vir de <strong>medição contra runs guardados</strong>, não de gosto. '
+          'As opções abaixo são sobre <em>como</em> escolhê-los, não sobre quais números digitar.'),
+ 'opts':[
+  {'ltr':'A','pick':True,'name':('Measure, then set above the observed maximum','Medir, e definir acima do máximo observado'),
+   'tag':('recommended','recomendada'),
+   'how':('Query the stored flows and runs for the largest <code>loopCount</code>, the largest <code>processorArray</code>, and the largest node-execution count any real run produced. Set each ceiling above that, with margin, and report the <strong>distribution</strong>.',
+          'Consultar fluxos e runs guardados pelo maior <code>loopCount</code>, maior <code>processorArray</code>, e maior contagem de execuções de node que algum run real produziu. Definir cada teto acima disso, com margem, e reportar a <strong>distribuição</strong>.'),
+   'pros':[('Zero false refusals by construction — the ceiling is above everything that ever really ran','Zero falsas recusas por construção — o teto fica acima de tudo que realmente rodou'),
+           ('The distribution shows whether the maximum is a real workload or one outlier','A distribuição mostra se o máximo é uma carga real ou um único outlier'),
+           ('Defensible in a review: the number has a provenance','Defensável numa revisão: o número tem procedência')],
+   'cons':[('Needs the query to run against real stored data before the code can ship','Exige rodar a consulta contra dado real guardado antes de o código poder subir'),
+           ('A future workload larger than anything seen so far will be refused — env vars mitigate','Uma carga futura maior que tudo já visto será recusada — env vars mitigam')],
+   'cost':[('lo',('Client effort: <b>none</b>','Esforço do cliente: <b>nenhum</b>')),
+           ('',('Ours: <b>one measurement pass</b>','Nosso: <b>uma rodada de medição</b>'))]},
+  {'ltr':'B','name':('Pick round numbers now, tune later','Escolher números redondos agora, ajustar depois'),
+   'how':('Ship generous defaults — say 1000 iterations per node, 10000 executions per run — and adjust when something is refused.',
+          'Entregar padrões generosos — digamos 1000 iterações por node, 10000 execuções por run — e ajustar quando algo for recusado.'),
+   'pros':[('Ships immediately, no measurement gate','Sobe imediatamente, sem gate de medição'),
+           ('Generous enough that most workloads never notice','Generoso o bastante para a maioria das cargas nunca notar')],
+   'cons':[('<strong>Violates PLAN §3.3.2</strong> — a rule that refuses must be checked against real data first','<strong>Viola o PLAN §3.3.2</strong> — uma regra que recusa precisa ser checada contra dado real antes'),
+           ('“Adjust when something is refused” means the first signal is a customer incident','“Ajustar quando algo for recusado” significa que o primeiro sinal é um incidente de cliente'),
+           ('A number with no provenance gets raised by whoever is on call, and never lowered','Um número sem procedência é elevado por quem estiver de plantão, e nunca baixado')],
+   'cost':[('lo',('Client effort: <b>none</b>','Esforço do cliente: <b>nenhum</b>')),
+           ('hi',('Ours: <b>incident-driven tuning</b>','Nosso: <b>ajuste guiado por incidente</b>'))]},
+  {'ltr':'C','name':('Report-only first, enforce after a cycle','Somente-relatório primeiro, impor depois de um ciclo'),
+   'tag':('pairs with A','combina com A'),
+   'how':('Ship the counters recording what <em>would</em> have been refused, without refusing. Read the report after a full cycle, then turn enforcement on.',
+          'Entregar os contadores registrando o que <em>teria</em> sido recusado, sem recusar. Ler o relatório depois de um ciclo completo, e então ligar a imposição.'),
+   'pros':[('Catches workloads the historical query cannot see — anything that failed, retried or was never stored','Pega cargas que a consulta histórica não enxerga — o que falhou, tentou de novo ou nunca foi guardado'),
+           ('The team sees the real distribution in production, not in a query result','O time vê a distribuição real em produção, não num resultado de consulta')],
+   'cons':[('Delays the guard by a full cycle, while the unbounded case stays live','Atrasa a guarda por um ciclo inteiro, com o caso ilimitado ainda vivo'),
+           ('Requires the counters to be built before they are useful','Exige que os contadores existam antes de serem úteis')],
+   'cost':[('lo',('Client effort: <b>none</b>','Esforço do cliente: <b>nenhum</b>')),
+           ('',('Ours: <b>a reporting mode</b>','Nosso: <b>um modo de relatório</b>'))]},
+ ],
+ 'rec':('<p><strong>A to pick the numbers, C to confirm them.</strong> The historical query gives a defensible starting value; report-only mode catches the workloads that query cannot see. Then enforce.</p>'
+        '<p>Whichever numbers come out, make all three <strong>env vars</strong>. A ceiling that needs a deploy to raise will be raised by disabling the check.</p>',
+        '<p><strong>A para escolher os números, C para confirmá-los.</strong> A consulta histórica dá um valor inicial defensável; o modo somente-relatório pega as cargas que a consulta não enxerga. Depois imponha.</p>'
+        '<p>Quaisquer que sejam os números, faça os três serem <strong>env vars</strong>. Um teto que precisa de deploy para ser elevado vai ser elevado desligando a checagem.</p>'),
+ 'who':[('Engineering, from the measurement','Engenharia, a partir da medição')],
+}
+
+S5=dict(
+ TITLE=('Authorise the claim check, do not just guard it','Autorizar o claim check, não apenas protegê-lo'),
+ GOAL=('A claim-check key can only be redeemed <b>by the run it belongs to</b>.',
+       'Uma chave de claim check só pode ser resgatada <b>pelo run a que ela pertence</b>.'),
+ GLANCE=[
+  ('crit',('Severity','Severidade'),('High','Alta'),
+   ('Any holder of the internal API key can read <strong>any</strong> node output of <strong>any</strong> customer, by key. Review §3.1.',
+    'Qualquer portador da chave interna de API pode ler <strong>qualquer</strong> saída de node de <strong>qualquer</strong> cliente, por chave. Review §3.1.')),
+  ('dep',('Depends on','Depende de'),('Nothing','Nada'),
+   ('Standalone — ship whenever. The fix is cheap because the key already encodes what is needed.',
+    'Independente — entregue quando quiser. A correção é barata porque a chave já codifica o necessário.')),
+  ('wave',('Wave','Onda'),('Wave 0','Onda 0'),
+   ('The blast radius grows with the fleet: this epic puts the shared secret on every worker replica.',
+    'O raio de impacto cresce com a frota: este épico coloca o segredo compartilhado em toda réplica de worker.')),
+  ('ship',('Watch out','Atenção'),('May be superseded','Pode ser substituída'),
+   ('Review §2.4 argues the worker should hold its own S3 credentials — that would delete these endpoints entirely.',
+    'A review §2.4 defende que o worker tenha credenciais S3 próprias — isso apagaria estes endpoints por completo.')),
+ ],
+ LEDE=('<p><code>/worker/get-payload</code> validates <strong>a prefix and nothing else</strong> (<code>worker.controller.ts:87–95</code>). There is no check that the key belongs to the caller&#x27;s run, tenant, or anything else.</p>'
+       '<p>The route sits behind <code>InternalApiGuard</code>, which is the right boundary and should stay. But it is a <strong>single shared secret</strong>, and this epic puts that secret on every worker replica — “we trust everything inside the perimeter” gets weaker with every host added to the perimeter.</p>',
+       '<p>O <code>/worker/get-payload</code> valida <strong>um prefixo e nada mais</strong> (<code>worker.controller.ts:87–95</code>). Não há checagem de que a chave pertence ao run do chamador, ao tenant, ou a coisa alguma.</p>'
+       '<p>A rota fica atrás do <code>InternalApiGuard</code>, que é a fronteira certa e deve permanecer. Mas é um <strong>segredo único compartilhado</strong>, e este épico coloca esse segredo em toda réplica de worker — “confiamos em tudo dentro do perímetro” enfraquece a cada host somado ao perímetro.</p>'),
+ PARTS=[
+  {'n':'1','title':('The key already carries the answer','A chave já carrega a resposta'),
+   'loc':'node-execution-store.ts:45',
+   'purpose':('The endpoint refuses when the stated run and the key disagree — and the worker already has both values.',
+              'O endpoint recusa quando o run declarado e a chave discordam — e o worker já tem os dois valores.'),
+   'body':('<p><code>claimCheckKey(execId, nodeId, …)</code> builds the key, so parsing it back out is trivial. The caller states which <code>execId</code> and <code>nodeId</code> it is acting for; the endpoint parses the key and refuses on a mismatch. Both values are already in <code>ExecuteNodeActivityProps</code>.</p>'
+           '<p>The same treatment applies to <code>/worker/store-payload</code>: a caller should not be able to <strong>write</strong> a payload into another run&#x27;s key.</p>',
+           '<p>O <code>claimCheckKey(execId, nodeId, …)</code> monta a chave, então extrair de volta é trivial. O chamador declara para qual <code>execId</code> e <code>nodeId</code> está agindo; o endpoint faz o parse da chave e recusa se divergirem. Os dois valores já estão em <code>ExecuteNodeActivityProps</code>.</p>'
+           '<p>O mesmo tratamento vale para <code>/worker/store-payload</code>: um chamador não deveria conseguir <strong>escrever</strong> um payload na chave de outro run.</p>'),
+   'ba':(('A prefix check. Any valid internal key redeems any customer&#x27;s node output, and can overwrite any customer&#x27;s payload.',
+          'Uma checagem de prefixo. Qualquer chave interna válida resgata a saída de node de qualquer cliente, e pode sobrescrever o payload de qualquer cliente.'),
+         ('The key must match the run the caller declared. Refusals are logged with enough context to tell a bug from an attempt — a refusal that is invisible teaches nobody.',
+          'A chave precisa casar com o run que o chamador declarou. Recusas são logadas com contexto suficiente para distinguir um bug de uma tentativa — uma recusa invisível não ensina nada.')),
+   'callouts':[('mig',('Out of scope','Fora de escopo'),
+     ('<p>Replacing <code>InternalApiGuard</code> or introducing per-worker credentials. That is a larger identity change; <strong>this task closes the authorisation gap inside the existing boundary</strong>.</p>',
+      '<p>Substituir o <code>InternalApiGuard</code> ou introduzir credenciais por worker. Isso é uma mudança de identidade maior; <strong>esta task fecha a lacuna de autorização dentro da fronteira existente</strong>.</p>'))]},
+ ],
+ VERIF=[
+  (True,('Negative control','Controle negativo'),
+   ('With a <strong>valid</strong> internal key, request another run&#x27;s payload and confirm it currently <strong>succeeds</strong>. That demonstration is the whole justification for the task. Then confirm it is refused, and that the legitimate path is unaffected.',
+    'Com uma chave interna <strong>válida</strong>, peça o payload de outro run e confirme que hoje <strong>funciona</strong>. Essa demonstração é a justificativa inteira da task. Depois confirme que é recusado, e que o caminho legítimo segue intacto.')),
+  (False,('The large-payload path still works','O caminho de payload grande segue funcionando'),
+   ('Confirm the worker still resolves its own claim refs — <strong>including the large-payload case</strong>, which is the only path that exercises this at all.',
+    'Confirme que o worker ainda resolve suas próprias claim refs — <strong>inclusive o caso de payload grande</strong>, que é o único caminho que exercita isto de verdade.')),
+  (False,('Malformed keys fail closed','Chaves malformadas falham fechado'),
+   ('Confirm a malformed or truncated key <strong>fails closed, not open</strong> — a parse error must refuse, never fall through to the prefix check.',
+    'Confirme que uma chave malformada ou truncada <strong>falha fechado, não aberto</strong> — um erro de parse precisa recusar, nunca cair de volta na checagem de prefixo.')),
+ ],
+ DONE=('A key can only be redeemed <strong>for its own run</strong>, writes are equally bound, refusals are logged, and the existing large-payload path still works.',
+       'Uma chave só pode ser resgatada <strong>para o próprio run</strong>, escritas ficam igualmente vinculadas, recusas são logadas, e o caminho de payload grande existente continua funcionando.'),
+ FILES=[('back/src/temporal/worker.controller.ts:70–95',False),
+        ('back/src/temporal/single-node-legacy/node-execution-store.ts:43–45 (claimCheckKey)',False),
+        ('worker/src/modules/nodes/shared/{resolve-claim-ref,persist-node-success}.ts',False)],
+)
+
+S5_DEC={
+ 'k':'decision','id':'S5-a','status':'open','open':True,
+ 'q':('Do we authorise these two endpoints, or delete them by giving the worker its own S3 credentials?',
+      'Autorizamos estes dois endpoints, ou os apagamos dando ao worker credenciais S3 próprias?'),
+ 'intro':('The spec says this task may be <strong>superseded</strong>, so check before starting. Review §2.4 argues the worker should hold its own storage credentials, '
+          'which would remove <code>/worker/get-payload</code> and <code>/worker/store-payload</code> entirely — and with them, the gap this task exists to close.',
+          'A spec diz que esta task pode ser <strong>substituída</strong>, então cheque antes de começar. A review §2.4 defende que o worker tenha credenciais de storage próprias, '
+          'o que removeria <code>/worker/get-payload</code> e <code>/worker/store-payload</code> por completo — e com eles, a lacuna que esta task existe para fechar.'),
+ 'opts':[
+  {'ltr':'A','pick':True,'name':('Authorise now, decide the bigger change later','Autorizar agora, decidir a mudança maior depois'),
+   'tag':('recommended','recomendada'),
+   'how':('Add the run check to both endpoints this week. It is a few lines, because the key already encodes <code>execId</code> and <code>nodeId</code>.',
+          'Adicionar a checagem de run nos dois endpoints esta semana. São poucas linhas, porque a chave já codifica <code>execId</code> e <code>nodeId</code>.'),
+   'pros':[('Closes a live cross-tenant read <strong>now</strong>, without waiting on an architecture decision','Fecha uma leitura entre tenants <strong>agora</strong>, sem esperar uma decisão de arquitetura'),
+           ('Cheap enough that throwing it away later costs nothing','Barata o bastante para jogar fora depois não custar nada'),
+           ('If the endpoints do get deleted, the deletion is simpler with the semantics already stated','Se os endpoints forem apagados, apagar fica mais simples com a semântica já declarada')],
+   'cons':[('Work that may be discarded','Trabalho que pode ser descartado')],
+   'cost':[('lo',('Effort: <b>a few lines</b>','Esforço: <b>poucas linhas</b>')),
+           ('lo',('Risk: <b>none</b>','Risco: <b>nenhum</b>'))]},
+  {'ltr':'B','name':('Give the worker its own S3 credentials','Dar ao worker credenciais S3 próprias'),
+   'tag':('bigger, better','maior, melhor'),
+   'how':('The worker reads and writes large payloads directly, so they stop travelling through the API. Both endpoints are deleted.',
+          'O worker lê e escreve payloads grandes diretamente, então eles param de trafegar pela API. Os dois endpoints são apagados.'),
+   'pros':[('Removes the endpoints, so the authorisation gap cannot exist','Remove os endpoints, então a lacuna de autorização não pode existir'),
+           ('Large payloads stop making a round trip through the backend — less latency, less API load','Payloads grandes param de fazer round trip pelo backend — menos latência, menos carga na API')],
+   'cons':[('Every worker replica needs scoped storage credentials, which is a real identity change','Toda réplica de worker precisa de credenciais de storage com escopo, o que é uma mudança de identidade real'),
+           ('Scoping them per tenant is the hard part — an over-broad role recreates the same gap at a different layer','Dar escopo por tenant é a parte difícil — um role largo demais recria a mesma lacuna em outra camada')],
+   'cost':[('hi',('Effort: <b>IAM + deploy per env</b>','Esforço: <b>IAM + deploy por ambiente</b>')),
+           ('lo',('Removes: <b>two endpoints</b>','Remove: <b>dois endpoints</b>'))]},
+ ],
+ 'rec':('<p><strong>A now, B on its own merits later.</strong> They are not really alternatives: A costs a few lines and closes a live gap, and B is a latency and architecture improvement that happens to make A redundant.</p>'
+        '<p>Doing A first is not wasted work — if B lands, deleting an endpoint whose authorisation rule is written down is easier than deleting one whose rule was never stated.</p>',
+        '<p><strong>A agora, B pelos próprios méritos depois.</strong> Não são de fato alternativas: A custa poucas linhas e fecha uma lacuna viva, e B é uma melhoria de latência e arquitetura que por acaso torna A redundante.</p>'
+        '<p>Fazer A primeiro não é trabalho perdido — se B acontecer, apagar um endpoint cuja regra de autorização está escrita é mais fácil que apagar um cuja regra nunca foi declarada.</p>'),
+ 'who':[('Engineering','Engenharia'),('Infra owns B','Infra decide a B')],
+}

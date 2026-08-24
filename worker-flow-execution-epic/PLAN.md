@@ -1,10 +1,9 @@
 # EPIC — Run the whole flow in the worker
 
 **Status:** proposed 2026-08-21. Analysis this plan is built on:
-`.specs/features/worker-node-migration-analysis/README.md` in the `enhancedai-com/Workflow`
-repository (§1–§12, read against `worker@origin/main` and `back@origin/production`), plus the
-published walkthroughs of the execution pipeline and the migration briefing. That analysis is
-**not** copied here — see `README.md` in this folder.
+[`../worker-node-migration-analysis/README.md`](../worker-node-migration-analysis/README.md)
+(§1–§9, read against `worker@origin/main` and `back@origin/production`), plus the published
+walkthroughs of the execution pipeline and the migration briefing.
 
 **Do not restate the analysis here.** Where a task needs a fact — which gate routes a node type,
 why `arrayNode` cannot be an activity, what the prefetch executor already does — it cites the

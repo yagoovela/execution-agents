@@ -1,5 +1,6 @@
-<title>B2 — Decide code sharing, then extract the scheduler and the substitution service</title>
+<title>B2 — Decide code sharing, then extract the scheduler</title>
 <style>
+
   * { box-sizing: border-box; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -561,51 +562,28 @@
   }
 
     .code-block{white-space:pre-wrap;word-break:normal;overflow-wrap:anywhere}
+    .ba{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 4px}
+    @media(max-width:820px){.ba{grid-template-columns:1fr}}
+    .ba>div{border-radius:8px;padding:12px 14px;font-size:12px;line-height:1.62}
+    .ba .now{background:#FEF2F2;border-left:3px solid #EF4444;color:#450A0A}
+    .ba .nxt{background:#ECFDF5;border-left:3px solid #10B981;color:#052E16}
+    .ba h5{margin:0 0 7px;font-size:10px;letter-spacing:.8px;text-transform:uppercase;font-weight:800;opacity:.75}
+    .ba code{background:rgba(0,0,0,.06);padding:1px 4px;border-radius:3px}
+    .topic-nav{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 26px}
+    .topic-nav a{font-size:11px;padding:5px 11px;border-radius:20px;background:#fff;border:1px solid #CBD5E1;
+                 color:#334155;text-decoration:none}
+    .topic-nav a:hover{border-color:#3B82F6;color:#1E40AF}
+
+
+    /* padroniza o topo pelo complemento */
     .top-nav{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
              max-width:1500px;margin:0 auto 20px;padding:0 4px}
     .back-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:#fff;color:#334155;
               text-decoration:none;border-radius:8px;border:1px solid #CBD5E1;font-size:12.5px;font-weight:600;
-              box-shadow:0 1px 3px rgba(0,0,0,.06)}
-    .back-btn:hover{background:#EFF6FF}
-    .page-nav{display:flex;gap:10px;flex-wrap:wrap;background:transparent;box-shadow:none;
-              padding:18px 0 0;margin-top:26px;border-top:1px solid #E2E8F0}
-    /* hero */
-    .hero{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:20px 24px;margin-bottom:18px;
-          box-shadow:0 1px 3px rgba(0,0,0,.06)}
-    .hero .code{display:inline-block;font-family:'SF Mono',Menlo,monospace;font-size:12px;font-weight:800;
-                background:#0F172A;color:#fff;padding:4px 10px;border-radius:6px;letter-spacing:.5px}
-    .hero h1{margin:10px 0 8px;font-size:24px;line-height:1.2;letter-spacing:-.4px;color:#0F172A}
-    .hero .goal{font-size:14px;line-height:1.65;color:#334155;background:#EFF6FF;border-left:3px solid #3B82F6;
-                border-radius:6px;padding:11px 15px;margin-bottom:14px}
-    .meta{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
-    .meta a,.meta span.pill{font-size:11px;text-decoration:none;color:#334155;border:1px solid #CBD5E1;
-              background:#F8FAFC;padding:5px 11px;border-radius:20px;font-weight:600}
-    .meta a:hover{border-color:#3B82F6;color:#1E40AF;background:#EFF6FF}
-    .wv{font-size:10px;font-weight:800;padding:5px 11px;border-radius:20px;letter-spacing:.5px;text-transform:uppercase}
-    .w0{background:#FEE2E2;color:#991B1B}.w1{background:#FEF3C7;color:#92400E}.w2{background:#DBEAFE;color:#1E40AF}
-    .w3{background:#DBEAFE;color:#1E40AF}.w4{background:#DCFCE7;color:#14532D}.w5{background:#DCFCE7;color:#14532D}
-    .w6{background:#F3E8FF;color:#6B21A8}
-    /* seções em cards */
-    .sec-card{background:#fff;border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;margin-bottom:14px;
-              box-shadow:0 1px 3px rgba(0,0,0,.06)}
-    .sec-head{background:linear-gradient(to right,#0F172A,#1E293B);color:#fff;padding:12px 20px;
-              display:flex;align-items:center;gap:10px;font-size:14.5px;font-weight:600}
-    .sec-card.warn .sec-head{background:linear-gradient(to right,#7F1D1D,#B91C1C)}
-    .sec-card.ok   .sec-head{background:linear-gradient(to right,#065F46,#047857)}
-    .sec-card.files .sec-head{background:linear-gradient(to right,#334155,#475569)}
-    .sec-body{padding:18px 22px;font-size:13px;line-height:1.72;color:#334155}
-    .sec-body p{margin:0 0 12px}
-    .sec-body h4{font-size:13px;font-weight:700;color:#0F172A;margin:18px 0 7px}
-    .sec-body ul.tl{margin:8px 0 12px;padding-left:20px}
-    .sec-body ul.tl li{margin-bottom:5px}
-    .sec-body code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1px 5px;border-radius:4px;
-                   font-family:'SF Mono',Menlo,monospace;font-size:11.5px}
-    .sec-card.files .sec-body{font-family:'SF Mono',Menlo,monospace;font-size:11.5px;color:#475569;line-height:1.9}
-    .field-table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12.5px}
-    .field-table th{background:#F1F5F9;text-align:left;padding:8px 12px;font-weight:700;color:#334155;
-                    border-bottom:2px solid #E2E8F0;font-size:11px;text-transform:uppercase;letter-spacing:.4px}
-    .field-table td{padding:8px 12px;border-bottom:1px solid #F1F5F9;vertical-align:top}
-
+              box-shadow:0 1px 3px rgba(0,0,0,.06);transition:transform .15s,background .15s}
+    .back-btn:hover{background:#EFF6FF;transform:translateY(-1px)}
+    .page-nav{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-start;background:transparent;
+              box-shadow:none;padding:18px 0 0;margin-top:26px;border-top:1px solid #E2E8F0}
     .lang-sw{display:inline-flex;border:1px solid #CBD5E1;border-radius:8px;overflow:hidden;background:#fff;
              box-shadow:0 1px 3px rgba(0,0,0,.06)}
     .lang-sw button{font-family:'SF Mono',Menlo,monospace;font-size:11px;font-weight:700;letter-spacing:.5px;
@@ -613,61 +591,288 @@
     .lang-sw button+button{border-left:1px solid #E2E8F0}
     .lang-sw button[aria-pressed="true"]{background:#0F172A;color:#fff}
     .lang-sw button:focus-visible{outline:2px solid #3B82F6;outline-offset:2px}
+
+
+/* ---------- task page ---------- */
+body{background:#F1F5F9;color:#0F172A;margin:0;padding:28px 24px 72px;line-height:1.45;
+     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+.container{max-width:1500px;margin:0 auto}
+
+.hero{background:linear-gradient(135deg,#0F172A 0%,#1E293B 60%,#312E81 100%);color:#fff;
+      border-radius:16px;padding:26px 30px 24px;margin-bottom:18px;position:relative;overflow:hidden}
+.hero::after{content:'';position:absolute;right:-60px;top:-60px;width:260px;height:260px;
+      background:radial-gradient(circle,rgba(99,102,241,.35),transparent 70%);pointer-events:none}
+.hero .kicker{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.hero .code{font-family:'SF Mono',Menlo,monospace;font-size:13px;font-weight:700;letter-spacing:1px;
+      background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);color:#fff;
+      padding:5px 12px;border-radius:7px}
+.hero .st{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+      padding:5px 11px;border-radius:7px;border:1px solid;display:inline-flex;align-items:center;gap:6px}
+.hero .st::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor}
+.hero .st.st-planned{background:rgba(148,163,184,.18);border-color:rgba(203,213,225,.45);color:#CBD5E1}
+.hero .st.st-blocked{background:rgba(220,38,38,.2);border-color:rgba(248,113,113,.5);color:#FCA5A5}
+.hero .st.st-doing{background:rgba(59,130,246,.22);border-color:rgba(147,197,253,.5);color:#BFDBFE}
+.hero .st.st-review{background:rgba(245,158,11,.22);border-color:rgba(252,211,77,.5);color:#FDE68A}
+.hero .st.st-shipped{background:rgba(16,185,129,.24);border-color:rgba(110,231,183,.5);color:#A7F3D0}
+.hero .st.st-dropped{background:rgba(100,116,139,.18);border-color:rgba(148,163,184,.4);color:#94A3B8;
+      text-decoration:line-through}
+.hero .stnote{margin-top:12px;font-size:12.5px;line-height:1.6;color:#CBD5E1;
+      background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
+      border-left:3px solid #6366F1;border-radius:8px;padding:9px 13px;max-width:88ch}
+.hero .stnote b{color:#fff}
+.hero .wv{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+      padding:5px 11px;border-radius:7px;background:rgba(239,68,68,.22);border:1px solid rgba(248,113,113,.5);color:#FCA5A5}
+.hero h1{margin:0 0 12px;font-size:29px;line-height:1.22;letter-spacing:-.6px;font-weight:700;max-width:30ch}
+.hero .goal{font-size:15px;line-height:1.6;color:#CBD5E1;max-width:78ch;border-left:3px solid #6366F1;padding-left:14px}
+.hero .goal b{color:#fff;font-weight:600}
+.hero-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px;position:relative;z-index:2}
+.hero-links a{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
+      text-decoration:none;color:#E2E8F0;background:rgba(255,255,255,.09);
+      border:1px solid rgba(255,255,255,.16);padding:7px 13px;border-radius:8px}
+.hero-links a:hover{background:rgba(255,255,255,.17);color:#fff}
+
+.glance{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:20px}
+.gl{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px 16px;
+    border-top:3px solid #94A3B8;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.gl.crit{border-top-color:#DC2626}.gl.dep{border-top-color:#3B82F6}
+.gl.wave{border-top-color:#8B5CF6}.gl.ship{border-top-color:#059669}
+.gl .k{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#94A3B8;margin-bottom:7px}
+.gl .v{font-size:16px;font-weight:700;color:#0F172A;line-height:1.25;margin-bottom:5px}
+.gl .n{font-size:11.5px;color:#64748B;line-height:1.5}
+
+.lede{background:#fff;border:1px solid #E2E8F0;border-left:4px solid #DC2626;border-radius:12px;
+      padding:18px 22px;margin-bottom:22px;font-size:14.5px;line-height:1.7;color:#334155;
+      box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.lede strong{color:#0F172A}
+.lede p{margin:0 0 10px}.lede p:last-child{margin:0}
+
+.sec-label{display:flex;align-items:center;gap:11px;margin:30px 0 14px}
+.sec-label .n{width:25px;height:25px;border-radius:7px;background:#0F172A;color:#fff;flex:none;
+      display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+.sec-label h2{margin:0;font-size:17px;font-weight:700;color:#0F172A;letter-spacing:-.25px}
+.sec-label .rule{flex:1;height:1px;background:#E2E8F0}
+
+.entry-table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;
+      border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;font-size:12.5px;
+      box-shadow:0 1px 3px rgba(15,23,42,.05);margin-bottom:8px}
+.entry-table th{background:#0F172A;color:#fff;text-align:left;padding:11px 14px;font-size:10.5px;
+      font-weight:700;text-transform:uppercase;letter-spacing:.6px}
+.entry-table td{padding:12px 14px;border-bottom:1px solid #F1F5F9;vertical-align:top;color:#334155;line-height:1.55}
+.entry-table tr:last-child td{border-bottom:0}
+.entry-table tr:hover td{background:#F8FAFC}
+.entry-table td.rt{font-family:'SF Mono',Menlo,monospace;font-size:11.5px;font-weight:600;color:#0F172A;white-space:nowrap}
+.entry-table td.rt.lbl{font-family:inherit;font-size:12.5px;white-space:normal}
+.pill{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;
+      letter-spacing:.2px;white-space:nowrap}
+.pill.no{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA}
+.pill.weak{background:#FEF3C7;color:#92400E;border:1px solid #FDE68A}
+.pill.ok{background:#D1FAE5;color:#065F46;border:1px solid #A7F3D0}
+
+.part{background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;margin-bottom:16px;
+      box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.part-head{background:linear-gradient(to right,#0F172A,#1E293B);color:#fff;padding:14px 20px;
+      display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.part-head .num{width:26px;height:26px;border-radius:7px;background:rgba(255,255,255,.15);
+      border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;
+      font-size:12px;font-weight:700;flex:none}
+.part-head .t{font-size:15px;font-weight:600;letter-spacing:-.15px}
+.part-head .loc{margin-left:auto;font-family:'SF Mono',Menlo,monospace;font-size:10.5px;
+      color:#94A3B8;background:rgba(0,0,0,.28);padding:4px 9px;border-radius:6px}
+.part-body{padding:20px 22px}
+.purpose{font-size:14px;line-height:1.65;color:#0F172A;font-weight:500;
+      border-left:3px solid #6366F1;padding-left:13px;margin-bottom:16px}
+.part-body p{margin:0 0 12px;font-size:13.5px;line-height:1.72;color:#334155}
+.part-body p:last-child{margin-bottom:0}
+.part-body strong{color:#0F172A;font-weight:650}
+.part-body code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1.5px 5px;border-radius:4px;
+      font-family:'SF Mono',Menlo,monospace;font-size:11.5px;color:#0F172A}
+.part-body ul{margin:10px 0 14px;padding-left:0;list-style:none}
+.part-body ul li{position:relative;padding-left:20px;margin-bottom:9px;font-size:13.5px;
+      line-height:1.7;color:#334155}
+.part-body ul li::before{content:'';position:absolute;left:5px;top:9px;width:6px;height:6px;
+      border-radius:50%;background:#94A3B8}
+.code-block{white-space:pre-wrap;word-break:break-word}
+
+.ba{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0 4px}
+@media(max-width:900px){.ba{grid-template-columns:1fr}}
+.ba>div{border-radius:10px;padding:14px 16px;font-size:13px;line-height:1.65}
+.ba .now{background:#FEF2F2;border:1px solid #FECACA;color:#7F1D1D}
+.ba .nxt{background:#ECFDF5;border:1px solid #A7F3D0;color:#065F46}
+.ba h5{margin:0 0 8px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+      display:flex;align-items:center;gap:6px}
+.ba .now h5{color:#B91C1C}.ba .nxt h5{color:#047857}
+.ba code{background:rgba(255,255,255,.75);border:1px solid rgba(0,0,0,.07);padding:1px 5px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:11px}
+.ba p{margin:0 0 9px;font-size:13px;line-height:1.65}
+.ba p:last-child{margin:0}
+
+.callout{border-radius:10px;padding:14px 17px;margin:15px 0 4px;font-size:13px;line-height:1.7}
+.callout .ct{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px}
+.callout.decide{background:#EFF6FF;border:1px solid #BFDBFE;color:#1E3A8A}
+.callout.decide .ct{color:#1D4ED8}
+.callout.mig{background:#FFFBEB;border:1px solid #FDE68A;color:#78350F}
+.callout.mig .ct{color:#B45309}
+.callout p{margin:0 0 9px}.callout p:last-child{margin:0}
+.callout code{background:rgba(255,255,255,.7);border:1px solid rgba(0,0,0,.07);padding:1px 5px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:11px}
+
+.vcard{background:#fff;border:1px solid #FECACA;border-radius:14px;overflow:hidden;margin-bottom:16px;
+      box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.vcard-head{background:linear-gradient(to right,#7F1D1D,#B91C1C);color:#fff;padding:13px 20px;
+      font-size:15px;font-weight:600;display:flex;align-items:center;gap:10px}
+.vcard-body{padding:18px 22px}
+.vitem{display:grid;grid-template-columns:auto 1fr;gap:13px;padding:13px 0;border-bottom:1px solid #F1F5F9}
+.vitem:first-child{padding-top:0}
+.vitem:last-child{border-bottom:0;padding-bottom:0}
+.vitem .vn{width:24px;height:24px;border-radius:7px;background:#FEE2E2;color:#B91C1C;flex:none;
+      display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:1px}
+.vitem.req .vn{background:#B91C1C;color:#fff}
+.vitem .vt{font-size:13px;font-weight:700;color:#0F172A;margin-bottom:4px;display:flex;
+      align-items:center;gap:8px;flex-wrap:wrap}
+.vitem .vt .req-tag{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+      background:#B91C1C;color:#fff;padding:2px 7px;border-radius:20px}
+.vitem .vd{font-size:13px;line-height:1.68;color:#475569}
+.vitem .vd code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1px 5px;border-radius:4px;
+      font-family:'SF Mono',Menlo,monospace;font-size:11px}
+.vitem .vd strong{color:#0F172A}
+
+.done{background:linear-gradient(135deg,#064E3B,#047857);color:#fff;border-radius:14px;
+      padding:20px 24px;margin-bottom:16px}
+.done .dt{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+      color:#6EE7B7;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.done .dd{font-size:14.5px;line-height:1.72;color:#ECFDF5}
+.done .dd strong{color:#fff;font-weight:650}
+.done .dd code{background:rgba(255,255,255,.17);border:1px solid rgba(255,255,255,.28);padding:1.5px 6px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:12px;color:#fff}
+.hero .goal code{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);padding:1px 5px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:12.5px;color:#fff}
+.lede code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1.5px 5px;border-radius:4px;
+      font-family:'SF Mono',Menlo,monospace;font-size:12px;color:#0F172A}
+.lede em{font-style:italic;color:#0F172A}
+
+.filesbox{background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;
+      box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.filesbox-head{background:linear-gradient(to right,#334155,#475569);color:#fff;padding:12px 20px;
+      font-size:14px;font-weight:600;display:flex;align-items:center;gap:9px}
+.filesbox-body{padding:16px 20px;display:flex;flex-wrap:wrap;gap:8px}
+.fchip{font-family:'SF Mono',Menlo,monospace;font-size:11.5px;background:#F8FAFC;color:#334155;
+      border:1px solid #E2E8F0;border-left:3px solid #64748B;padding:7px 11px;border-radius:7px;line-height:1.4}
+.fchip.new{border-left-color:#059669;background:#F0FDF4;color:#065F46}
+
+.page-footer-nav{display:flex;justify-content:space-between;gap:12px;margin-top:26px;flex-wrap:wrap}
+.page-footer-nav a{display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid #E2E8F0;
+      color:#334155;padding:11px 17px;border-radius:9px;text-decoration:none;font-size:12.5px;font-weight:600;
+      box-shadow:0 1px 2px rgba(15,23,42,.05)}
+.page-footer-nav a:hover{border-color:#94A3B8;color:#0F172A}
+
+
+/* ---------- decisions ---------- */
+.dec{background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;margin-bottom:14px;
+     box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.dec>summary{list-style:none;cursor:pointer;padding:15px 20px;display:flex;align-items:flex-start;
+     gap:13px;background:linear-gradient(to right,#1E1B4B,#312E81);color:#fff}
+.dec>summary::-webkit-details-marker{display:none}
+.dec>summary:hover{background:linear-gradient(to right,#312E81,#3730A3)}
+.dec>summary:focus-visible{outline:2px solid #A5B4FC;outline-offset:-2px}
+.dec .chev{flex:none;width:22px;height:22px;border-radius:6px;background:rgba(255,255,255,.15);
+     border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;
+     font-size:11px;transition:transform .18s ease;margin-top:1px}
+.dec[open] .chev{transform:rotate(90deg)}
+.dec .dq{flex:1;min-width:0}
+.dec .dq .lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+     color:#A5B4FC;margin-bottom:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dec .dq .q{font-size:15px;font-weight:600;line-height:1.45;letter-spacing:-.15px}
+.dec .dq .q code{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.26);
+     padding:1px 6px;border-radius:5px;font-family:'SF Mono',Menlo,monospace;font-size:13px;
+     font-weight:600;color:#E0E7FF}
+.dstat{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+     padding:2.5px 8px;border-radius:20px;white-space:nowrap}
+.dstat.open{background:#F59E0B;color:#451A03}
+.dstat.rec{background:#38BDF8;color:#082F49}
+.dstat.set{background:#34D399;color:#022C22}
+.dec .dq .lbl .planid{font-family:'SF Mono',Menlo,monospace;font-size:9.5px;font-weight:700;
+     letter-spacing:.3px;color:#C7D2FE;background:rgba(255,255,255,.1);
+     border:1px solid rgba(255,255,255,.2);padding:2px 7px;border-radius:20px}
+.dec-body{padding:18px 20px 20px;background:#FAFAFF}
+.dec-intro{font-size:13px;line-height:1.7;color:#334155;margin-bottom:16px}
+.dec-intro strong{color:#0F172A}
+.dec-intro code{background:#EEF2FF;border:1px solid #C7D2FE;padding:1.5px 5px;border-radius:4px;
+     font-family:'SF Mono',Menlo,monospace;font-size:11.5px;color:#3730A3}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px}
+.opt{background:#fff;border:1px solid #E2E8F0;border-radius:11px;padding:0;overflow:hidden;
+     display:flex;flex-direction:column;position:relative}
+.opt.pick{border-color:#6366F1;box-shadow:0 0 0 2px rgba(99,102,241,.16)}
+.opt.no{opacity:.82}
+.opt-h{padding:12px 15px;display:flex;align-items:flex-start;gap:10px;background:#F8FAFC;
+     border-bottom:1px solid #E2E8F0}
+.opt.pick .opt-h{background:#EEF2FF;border-bottom-color:#C7D2FE}
+.opt.no .opt-h{background:#FEF2F2;border-bottom-color:#FECACA}
+.opt-h .ltr{width:23px;height:23px;border-radius:6px;background:#334155;color:#fff;flex:none;
+     display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;margin-top:1px}
+.opt.pick .opt-h .ltr{background:#4F46E5}
+.opt.no .opt-h .ltr{background:#B91C1C}
+.opt-h .on{font-size:13.5px;font-weight:700;color:#0F172A;line-height:1.35}
+.opt-h .tag{margin-left:auto;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+     padding:3px 8px;border-radius:20px;white-space:nowrap;margin-top:2px}
+.opt.pick .opt-h .tag{background:#4F46E5;color:#fff}
+.opt.no .opt-h .tag{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA}
+.opt-b{padding:13px 15px 14px;flex:1;display:flex;flex-direction:column;gap:11px}
+.opt-how{font-size:12.5px;line-height:1.6;color:#475569}
+.opt-how code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1px 4px;border-radius:3px;
+     font-family:'SF Mono',Menlo,monospace;font-size:11px;color:#0F172A;word-break:break-all}
+.opt-l{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px}
+.opt-l li{position:relative;padding-left:20px;font-size:12.5px;line-height:1.55;color:#334155}
+.opt-l li::before{position:absolute;left:0;top:0;font-size:12px;font-weight:700}
+.opt-l li.p::before{content:'✓';color:#059669}
+.opt-l li.c::before{content:'✕';color:#DC2626}
+.opt-cost{margin-top:auto;display:flex;gap:7px;flex-wrap:wrap;padding-top:4px}
+.cst{font-size:10px;font-weight:600;padding:4px 8px;border-radius:6px;background:#F1F5F9;
+     color:#475569;border:1px solid #E2E8F0;line-height:1.3}
+.cst b{font-weight:700;color:#0F172A}
+.cst.hi{background:#FEF3C7;border-color:#FDE68A;color:#78350F}
+.cst.hi b{color:#78350F}
+.cst.lo{background:#ECFDF5;border-color:#A7F3D0;color:#065F46}
+.cst.lo b{color:#065F46}
+.dec-rec{margin-top:15px;background:#EEF2FF;border:1px solid #C7D2FE;border-left:4px solid #4F46E5;
+     border-radius:10px;padding:14px 17px;font-size:13px;line-height:1.7;color:#312E81}
+.dec-rec .rt{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+     color:#4F46E5;margin-bottom:7px}
+.dec-rec strong{color:#1E1B4B}
+.dec-rec code{background:rgba(255,255,255,.75);border:1px solid #C7D2FE;padding:1.5px 5px;
+     border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:11.5px}
+.dec-rec p{margin:0 0 9px}.dec-rec p:last-child{margin:0}
+.dec-who{margin-top:11px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+     font-size:11.5px;color:#64748B}
+.dec-who .wk{font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:.5px;font-size:9.5px}
+.dec-who .wv2{background:#fff;border:1px solid #E2E8F0;padding:4px 10px;border-radius:20px;font-weight:600;color:#334155}
+
 </style>
 <div class="container">
-  <div class="top-nav">
-    <a href="index.html" class="back-btn"><span data-en="← Timeline" data-pt="← Timeline">← Timeline</span></a>
-    <div class="lang-sw" role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">EN-US</button><button type="button" data-lang="pt" aria-pressed="false">PT-BR</button></div>
-  </div>
-  <div class="hero">
-    <span class="code">B2</span>
-    <h1 data-en="Decide code sharing, then extract the scheduler and the substitution service" data-pt="Decidir o compartilhamento de código, depois extrair o scheduler e a substituição">Decide code sharing, then extract the scheduler and the substitution service</h1>
-    <div class="goal" data-en="get the two pure modules the worker needs out of `back` — under a decision that is made once, deliberately, rather than by whoever writes B3 first." data-pt="tirar do `back` os dois módulos puros de que o worker precisa — sob uma decisão tomada uma vez, de propósito, e não por quem escrever o B3 primeiro.">get the two pure modules the worker needs out of `back` — under a decision that is made once, deliberately, rather than by whoever writes B3 first.</div>
-    <div class="meta"><span class="wv w4" data-en="wave 4" data-pt="onda 4">wave 4</span><a href="../complemento/fase-2.html" data-en="where this lands in the flow →" data-pt="onde isto entra no fluxo →">where this lands in the flow →</a><a href="index.html#w4" data-en="other tasks in wave 4 →" data-pt="outras tasks da onda 4 →">other tasks in wave 4 →</a><a href="task-B1.html">← B1</a><a href="task-B3.html">B3 →</a></div>
-  </div>
-  <div class="aside" style="max-width:none;margin:0 0 16px"><div class="aside-title"><span data-en="Note" data-pt="Nota">Note</span></div>
-    <span data-en="The body below is the task&#x27;s canonical spec, kept in English by repository convention — it is the same text the team implements." data-pt="O corpo abaixo é a spec canônica da task, mantida em inglês por convenção do repositório — é o mesmo texto que o time implementa.">The body below is the task&#x27;s canonical spec, kept in English by repository convention — it is the same text the team implements.</span></div>
-  <div class="sec-card"><div class="sec-head">📌 <span data-en="Context" data-pt="Contexto">Context</span></div><div class="sec-body"><p><strong>Depends on:</strong> nothing. <strong>Blocks:</strong> B3, B4. <strong>Blocked on:</strong> decision <strong>D1</strong>.</p></div></div><div class="sec-card "><div class="sec-head">▸ <span data-en="Why these two, and why it is a decision" data-pt="Why these two, and why it is a decision">Why these two, and why it is a decision</span></div><div class="sec-body"><p>Both modules are <strong>pure</strong> — no NestJS injection, no database, no I/O:</p>
-<ul class="tl">
-<li><code>back/src/app-api/flux/scheduler.ts</code> — <code>buildSchedulerState</code> (<code>:152</code>), <code>classifyEdge</code> (<code>:46</code>),</li>
-</ul>
-<p>  <code>isDependencyEdge</code> (<code>:59</code>), <code>nextReady</code> (<code>:295</code>), <code>markCompleted</code> (<code>:352</code>), <code>markDead</code> (<code>:359</code>),</p>
-<p>  <code>completeCondition</code> (<code>:366</code>), <code>computeLoopBody</code> (<code>:393</code>), <code>planOrder</code> (<code>:412</code>). Already the</p>
-<p>  single source of ordering truth, consumed by <code>flux.service.ts:1463, 3136, 3227</code> and by</p>
-<p>  <code>app-mcp/mcp-write.service.ts:1327</code>.</p>
-<ul class="tl">
-<li><code>back/src/app-api/node-reference-substitution/node-reference-substitution.service.ts</code> — 268</li>
-</ul>
-<p>  lines, no injected dependencies: <code>replacePlaceholders</code>, <code>generateSchemaFromNodes</code>,</p>
-<p>  <code>applySubstitutionToObject</code>, <code>updateSchemaWithNodeOutput</code>, <code>resolveTextDataFromSchema</code>,</p>
-<p>  <code>processFlowWithSubstitution</code>.</p>
-<p>Purity is what makes sharing cheap here and what makes copying tempting. The project rule is</p>
-<p>explicit — <em>import the product's rule; never restate it</em> — and a second copy of the scheduler is</p>
-<p>the most expensive possible place for silent drift: it would mean the back and the worker disagree</p>
-<p>about <strong>what runs next</strong>.</p>
-<p>Against that: <code>back</code> and <code>worker</code> are separate git repos wired as submodules, with no shared build</p>
-<p>graph and no root workspace. The <code>thirdPartyIntegration</code> migration weighed the same question and</p>
-<p>chose copy-port, for reasons recorded in <code>worker-thirdparty-integration-migration/PLAN.md</code> — but</p>
-<p>that was for adapter code that dragged heavy dependencies. These two drag nothing.</p></div></div><div class="sec-card "><div class="sec-head">🎯 <span data-en="Scope" data-pt="Escopo">Scope</span></div><div class="sec-body"><p><strong>In.</strong> Answer D1, record the decision and its rationale in this file, then execute it.</p>
-<p><strong>If shared package:</strong> the package, its release process, and the submodule-bump ordering</p>
-<p>(submodule pushed before the superproject, always).</p>
-<p><strong>If copy-port:</strong> a <code>PORTED_FROM.md</code> per module carrying the source SHA, plus a <strong>drift test</strong> —</p>
-<p>not a comment asking people to be careful. The test must fail when the two copies diverge. Given</p>
-<p>the back has no CI test run (PLAN §3.5), state plainly how the drift test will actually be run.</p>
-<p><strong>Out.</strong> Changing either module's behaviour. Extraction is behaviour-neutral; <code>nextReady</code>'s batch</p>
-<p>sibling belongs to B4.</p></div></div><div class="sec-card warn"><div class="sec-head">🔬 <span data-en="Verification" data-pt="Verificação">Verification</span></div><div class="sec-body"><ul class="tl">
-<li><strong>Negative control (required).</strong> Change one branch of <code>classifyEdge</code> in the extracted copy and</li>
-</ul>
-<p>  confirm the drift test (or the package's own suite) goes red. If copy-port was chosen and this</p>
-<p>  test cannot be made to fail automatically, copy-port is not viable — say so and revisit D1.</p>
-<ul class="tl">
-<li>Behaviour equivalence: run both implementations over every stored flow's node/edge set and</li>
-</ul>
-<p>  assert identical <code>SchedulerState</code> and identical <code>planOrder</code>. This is a pure function over data</p>
-<p>  that already exists, so full coverage is achievable — take it.</p></div></div><div class="sec-card ok"><div class="sec-head">✅ <span data-en="Done when" data-pt="Pronto quando">Done when</span></div><div class="sec-body"><p>D1 is answered in writing; both modules are consumable from the worker; equivalence is proven over</p>
-<p>real flows; drift is detected by a test, not by convention.</p></div></div><div class="sec-card files"><div class="sec-head">📁 <span data-en="Files" data-pt="Arquivos">Files</span></div><div class="sec-body"><p><code>back/src/app-api/flux/scheduler.ts</code> · <code>back/src/app-api/node-reference-substitution/node-reference-substitution.service.ts</code> ·</p>
-<p><code>worker/src/**</code> (new consumption point) · <code>worker-thirdparty-integration-migration/PLAN.md</code> (prior art)</p></div></div>
-  <div class="page-nav"><a href="index.html" class="back-btn"><span data-en="← Timeline" data-pt="← Timeline">← Timeline</span></a></div>
+<div class="top-nav"><a href="index.html" class="back-btn"><span>←</span> <span data-en="Timeline" data-pt="Timeline">Timeline</span></a><div class="lang-sw" role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">EN-US</button><button type="button" data-lang="pt" aria-pressed="false">PT-BR</button></div></div>
+<div class="hero"><div class="kicker"><span class="code">B2</span><span class="wv" data-en="wave 4" data-pt="onda 4">wave 4</span><span class="st st-planned" data-en="Planned" data-pt="Planejada">Planned</span></div><h1 data-en="Decide code sharing, then extract the scheduler" data-pt="Decidir compartilhamento de código, e extrair o scheduler">Decide code sharing, then extract the scheduler</h1><div class="goal" data-en="Get the two pure modules the worker needs out of &lt;code&gt;back&lt;/code&gt; — under a decision made &lt;b&gt;once, deliberately&lt;/b&gt;, rather than by whoever writes B3 first." data-pt="Tirar do &lt;code&gt;back&lt;/code&gt; os dois módulos puros de que o worker precisa — sob uma decisão tomada &lt;b&gt;uma vez, deliberadamente&lt;/b&gt;, e não por quem escrever a B3 primeiro.">Get the two pure modules the worker needs out of <code>back</code> — under a decision made <b>once, deliberately</b>, rather than by whoever writes B3 first.</div><div class="stnote" data-en="Blocked on decision D1." data-pt="Blocked on decision D1.">Blocked on decision D1.</div><div class="hero-links"><a href="../complemento/fase-2.html"><span data-en="Where this lands in the flow →" data-pt="Onde isto entra no fluxo →">Where this lands in the flow →</span></a><a href="index.html#w4"><span data-en="Other tasks in wave 4 →" data-pt="Outras tasks da onda 4 →">Other tasks in wave 4 →</span></a><a href="task-B3.html"><span data-en="Next: B3 — The consumer resolves its own input →" data-pt="Próxima: B3 — O consumidor resolve a própria entrada →">Next: B3 — The consumer resolves its own input →</span></a></div></div>
+<div class="glance"><div class="gl crit"><div class="k" data-en="Severity" data-pt="Severidade">Severity</div><div class="v" data-en="Medium" data-pt="Média">Medium</div><div class="n" data-en="Risk R6 — a second copy of the scheduler is the most expensive possible place for silent drift." data-pt="Risco R6 — uma segunda cópia do scheduler é o lugar mais caro possível para uma divergência silenciosa.">Risk R6 — a second copy of the scheduler is the most expensive possible place for silent drift.</div></div><div class="gl dep"><div class="k" data-en="Depends on" data-pt="Depende de">Depends on</div><div class="v" data-en="Nothing" data-pt="Nada">Nothing</div><div class="n" data-en="Blocks B3 and B4. Blocked on decision &lt;strong&gt;D1&lt;/strong&gt;." data-pt="Bloqueia a B3 e a B4. Bloqueada pela decisão &lt;strong&gt;D1&lt;/strong&gt;.">Blocks B3 and B4. Blocked on decision <strong>D1</strong>.</div></div><div class="gl wave"><div class="k" data-en="Wave" data-pt="Onda">Wave</div><div class="v" data-en="Wave 4" data-pt="Onda 4">Wave 4</div><div class="n" data-en="Ahead of B3 and B4, which both consume what it extracts." data-pt="À frente da B3 e da B4, que consomem o que ela extrai.">Ahead of B3 and B4, which both consume what it extracts.</div></div><div class="gl ship"><div class="k" data-en="Shape" data-pt="Formato">Shape</div><div class="v" data-en="Two pure modules" data-pt="Dois módulos puros">Two pure modules</div><div class="n" data-en="No injection, no database, no I/O — the case where sharing is cheapest and copying is most tempting." data-pt="Sem injeção, sem banco, sem I/O — o caso em que compartilhar é mais barato e copiar é mais tentador.">No injection, no database, no I/O — the case where sharing is cheapest and copying is most tempting.</div></div></div>
+<div class="lede" data-en="&lt;p&gt;Two modules have to be reachable from the worker: &lt;code&gt;flux/scheduler.ts&lt;/code&gt; — already the single source of ordering truth — and the node-reference substitution service. Both are &lt;strong&gt;pure&lt;/strong&gt;: no NestJS injection, no database, no I/O.&lt;/p&gt;&lt;p&gt;That purity is what makes sharing cheap and copying tempting. It is also what makes copying dangerous: a second scheduler means the back and the worker can disagree about &lt;strong&gt;what runs next&lt;/strong&gt;, and nothing would say so. The project rule is explicit — &lt;em&gt;import the product&amp;#x27;s rule; never restate it&lt;/em&gt;.&lt;/p&gt;" data-pt="&lt;p&gt;Dois módulos precisam ser alcançáveis a partir do worker: o &lt;code&gt;flux/scheduler.ts&lt;/code&gt; — já a única fonte de verdade sobre ordenação — e o serviço de substituição de referências de node. Os dois são &lt;strong&gt;puros&lt;/strong&gt;: sem injeção do NestJS, sem banco, sem I/O.&lt;/p&gt;&lt;p&gt;Essa pureza é o que torna compartilhar barato e copiar tentador. É também o que torna copiar perigoso: um segundo scheduler significa que o back e o worker podem discordar sobre &lt;strong&gt;o que roda em seguida&lt;/strong&gt;, e nada avisaria. A regra do projeto é explícita — &lt;em&gt;importe a regra do produto; nunca a repita&lt;/em&gt;.&lt;/p&gt;"><p>Two modules have to be reachable from the worker: <code>flux/scheduler.ts</code> — already the single source of ordering truth — and the node-reference substitution service. Both are <strong>pure</strong>: no NestJS injection, no database, no I/O.</p><p>That purity is what makes sharing cheap and copying tempting. It is also what makes copying dangerous: a second scheduler means the back and the worker can disagree about <strong>what runs next</strong>, and nothing would say so. The project rule is explicit — <em>import the product&#x27;s rule; never restate it</em>.</p></div>
+<div class="sec-label"><span class="n">1</span><h2 data-en="The two modules, and what makes them portable" data-pt="Os dois módulos, e o que os torna portáveis">The two modules, and what makes them portable</h2><span class="rule"></span></div>
+<table class="entry-table"><thead><tr><th><span data-en="Module" data-pt="Módulo">Module</span></th><th><span data-en="What it is" data-pt="O que é">What it is</span></th><th><span data-en="Injected dependencies" data-pt="Dependências injetadas">Injected dependencies</span></th><th><span data-en="Who consumes it today" data-pt="Quem consome hoje">Who consumes it today</span></th></tr></thead><tbody>
+<tr><td class="rt">flux/scheduler.ts</td><td><span data-en="&lt;code&gt;buildSchedulerState&lt;/code&gt; (&lt;code&gt;:152&lt;/code&gt;), &lt;code&gt;classifyEdge&lt;/code&gt; (&lt;code&gt;:46&lt;/code&gt;), &lt;code&gt;isDependencyEdge&lt;/code&gt; (&lt;code&gt;:59&lt;/code&gt;), &lt;code&gt;nextReady&lt;/code&gt; (&lt;code&gt;:295&lt;/code&gt;), &lt;code&gt;markCompleted&lt;/code&gt; (&lt;code&gt;:352&lt;/code&gt;), &lt;code&gt;markDead&lt;/code&gt; (&lt;code&gt;:359&lt;/code&gt;), &lt;code&gt;completeCondition&lt;/code&gt; (&lt;code&gt;:366&lt;/code&gt;), &lt;code&gt;computeLoopBody&lt;/code&gt; (&lt;code&gt;:393&lt;/code&gt;), &lt;code&gt;planOrder&lt;/code&gt; (&lt;code&gt;:412&lt;/code&gt;)" data-pt="&lt;code&gt;buildSchedulerState&lt;/code&gt; (&lt;code&gt;:152&lt;/code&gt;), &lt;code&gt;classifyEdge&lt;/code&gt; (&lt;code&gt;:46&lt;/code&gt;), &lt;code&gt;isDependencyEdge&lt;/code&gt; (&lt;code&gt;:59&lt;/code&gt;), &lt;code&gt;nextReady&lt;/code&gt; (&lt;code&gt;:295&lt;/code&gt;), &lt;code&gt;markCompleted&lt;/code&gt; (&lt;code&gt;:352&lt;/code&gt;), &lt;code&gt;markDead&lt;/code&gt; (&lt;code&gt;:359&lt;/code&gt;), &lt;code&gt;completeCondition&lt;/code&gt; (&lt;code&gt;:366&lt;/code&gt;), &lt;code&gt;computeLoopBody&lt;/code&gt; (&lt;code&gt;:393&lt;/code&gt;), &lt;code&gt;planOrder&lt;/code&gt; (&lt;code&gt;:412&lt;/code&gt;)"><code>buildSchedulerState</code> (<code>:152</code>), <code>classifyEdge</code> (<code>:46</code>), <code>isDependencyEdge</code> (<code>:59</code>), <code>nextReady</code> (<code>:295</code>), <code>markCompleted</code> (<code>:352</code>), <code>markDead</code> (<code>:359</code>), <code>completeCondition</code> (<code>:366</code>), <code>computeLoopBody</code> (<code>:393</code>), <code>planOrder</code> (<code>:412</code>)</span></td><td><span class="pill ok"><span data-en="None" data-pt="Nenhuma">None</span></span></td><td><span data-en="&lt;code&gt;flux.service.ts:1463, 3136, 3227&lt;/code&gt; and &lt;code&gt;app-mcp/mcp-write.service.ts:1327&lt;/code&gt;" data-pt="&lt;code&gt;flux.service.ts:1463, 3136, 3227&lt;/code&gt; e &lt;code&gt;app-mcp/mcp-write.service.ts:1327&lt;/code&gt;"><code>flux.service.ts:1463, 3136, 3227</code> and <code>app-mcp/mcp-write.service.ts:1327</code></span></td></tr>
+<tr><td class="rt">node-reference-substitution.service.ts</td><td><span data-en="268 lines: &lt;code&gt;replacePlaceholders&lt;/code&gt;, &lt;code&gt;generateSchemaFromNodes&lt;/code&gt;, &lt;code&gt;applySubstitutionToObject&lt;/code&gt;, &lt;code&gt;updateSchemaWithNodeOutput&lt;/code&gt;, &lt;code&gt;resolveTextDataFromSchema&lt;/code&gt;, &lt;code&gt;processFlowWithSubstitution&lt;/code&gt;" data-pt="268 linhas: &lt;code&gt;replacePlaceholders&lt;/code&gt;, &lt;code&gt;generateSchemaFromNodes&lt;/code&gt;, &lt;code&gt;applySubstitutionToObject&lt;/code&gt;, &lt;code&gt;updateSchemaWithNodeOutput&lt;/code&gt;, &lt;code&gt;resolveTextDataFromSchema&lt;/code&gt;, &lt;code&gt;processFlowWithSubstitution&lt;/code&gt;">268 lines: <code>replacePlaceholders</code>, <code>generateSchemaFromNodes</code>, <code>applySubstitutionToObject</code>, <code>updateSchemaWithNodeOutput</code>, <code>resolveTextDataFromSchema</code>, <code>processFlowWithSubstitution</code></span></td><td><span class="pill ok"><span data-en="None" data-pt="Nenhuma">None</span></span></td><td><span data-en="The API&amp;#x27;s input resolution — the step &lt;strong&gt;B3&lt;/strong&gt; moves to the consumer" data-pt="A resolução de entrada da API — o passo que a &lt;strong&gt;B3&lt;/strong&gt; move para o consumidor">The API&#x27;s input resolution — the step <strong>B3</strong> moves to the consumer</span></td></tr>
+</tbody></table>
+<div class="lede" style="border-left-color:#6366F1"><div data-en="Against sharing: &lt;code&gt;back&lt;/code&gt; and &lt;code&gt;worker&lt;/code&gt; are separate git repos wired as submodules, with &lt;strong&gt;no shared build graph and no root workspace&lt;/strong&gt;. The &lt;code&gt;thirdPartyIntegration&lt;/code&gt; migration weighed the same question and chose copy-port, for reasons recorded in &lt;code&gt;worker-thirdparty-integration-migration/PLAN.md&lt;/code&gt; — but that was for &lt;em&gt;adapter&lt;/em&gt; code that dragged heavy dependencies. These two drag nothing." data-pt="Contra compartilhar: &lt;code&gt;back&lt;/code&gt; e &lt;code&gt;worker&lt;/code&gt; são repositórios git separados ligados como submódulos, &lt;strong&gt;sem grafo de build comum e sem workspace raiz&lt;/strong&gt;. A migração do &lt;code&gt;thirdPartyIntegration&lt;/code&gt; pesou a mesma pergunta e escolheu copy-port, por razões registradas em &lt;code&gt;worker-thirdparty-integration-migration/PLAN.md&lt;/code&gt; — mas aquilo era código &lt;em&gt;adaptador&lt;/em&gt;, que arrastava dependências pesadas. Estes dois não arrastam nada.">Against sharing: <code>back</code> and <code>worker</code> are separate git repos wired as submodules, with <strong>no shared build graph and no root workspace</strong>. The <code>thirdPartyIntegration</code> migration weighed the same question and chose copy-port, for reasons recorded in <code>worker-thirdparty-integration-migration/PLAN.md</code> — but that was for <em>adapter</em> code that dragged heavy dependencies. These two drag nothing.</div></div>
+<div class="sec-label"><span class="n">2</span><h2 data-en="The decisions this task needs" data-pt="As decisões que esta task precisa">The decisions this task needs</h2><span class="rule"></span></div>
+<div class="lede" style="border-left-color:#6366F1"><div data-en="One decision, and it is the reason this task exists as a task rather than as a line inside B3. It is genuinely open: both answers are defensible, and the epic explicitly refuses to let it be decided by whoever writes the consuming code first." data-pt="Uma decisão, e ela é a razão desta task existir como task em vez de ser uma linha dentro da B3. Está genuinamente em aberto: os dois lados se defendem, e o épico explicitamente recusa que ela seja decidida por quem escrever o código consumidor primeiro.">One decision, and it is the reason this task exists as a task rather than as a line inside B3. It is genuinely open: both answers are defensible, and the epic explicitly refuses to let it be decided by whoever writes the consuming code first.</div></div>
+<details class="dec" open><summary><span class="chev">▸</span><span class="dq"><span class="lbl"><span data-en="Decision B2-a" data-pt="Decisão B2-a">Decision B2-a</span><span class="planid"><span data-en="PLAN D1" data-pt="PLAN D1">PLAN D1</span></span><span class="dstat open"><span data-en="Open — needs a call" data-pt="Em aberto — precisa de decisão">Open — needs a call</span></span></span><span class="q" data-en="Shared package between &lt;code&gt;back&lt;/code&gt; and &lt;code&gt;worker&lt;/code&gt;, or copy-port with a drift test?" data-pt="Pacote compartilhado entre &lt;code&gt;back&lt;/code&gt; e &lt;code&gt;worker&lt;/code&gt;, ou copy-port com teste de divergência?">Shared package between <code>back</code> and <code>worker</code>, or copy-port with a drift test?</span></span></summary><div class="dec-body"><div class="dec-intro" data-en="&lt;strong&gt;D1 in &lt;code&gt;DELIVERY-PLAN.md&lt;/code&gt;, and the only one of the fifteen recorded as &amp;#x27;genuinely open&amp;#x27;.&lt;/strong&gt; The repos are separate submodules with no shared build graph and no root workspace, and the &lt;code&gt;thirdPartyIntegration&lt;/code&gt; migration already chose copy-port once — for adapter code that dragged heavy dependencies. These two modules drag nothing, which is exactly the case where sharing is cheapest. Against that sits a fact worth stating plainly: &lt;strong&gt;no workflow runs jest in &lt;code&gt;back&lt;/code&gt;&lt;/strong&gt; (PLAN §3.5), so a drift test is only a guarantee if someone names where it runs." data-pt="&lt;strong&gt;A D1 do &lt;code&gt;DELIVERY-PLAN.md&lt;/code&gt;, e a única das quinze registrada como &amp;#x27;genuinamente em aberto&amp;#x27;.&lt;/strong&gt; Os repos são submódulos separados, sem grafo de build comum e sem workspace raiz, e a migração do &lt;code&gt;thirdPartyIntegration&lt;/code&gt; já escolheu copy-port uma vez — para código adaptador que arrastava dependências pesadas. Estes dois módulos não arrastam nada, que é justamente o caso em que compartilhar sai mais barato. Contra isso pesa um fato que vale dizer claramente: &lt;strong&gt;nenhum workflow roda jest no &lt;code&gt;back&lt;/code&gt;&lt;/strong&gt; (PLAN §3.5), então um teste de divergência só é garantia se alguém nomear onde ele roda."><strong>D1 in <code>DELIVERY-PLAN.md</code>, and the only one of the fifteen recorded as &#x27;genuinely open&#x27;.</strong> The repos are separate submodules with no shared build graph and no root workspace, and the <code>thirdPartyIntegration</code> migration already chose copy-port once — for adapter code that dragged heavy dependencies. These two modules drag nothing, which is exactly the case where sharing is cheapest. Against that sits a fact worth stating plainly: <strong>no workflow runs jest in <code>back</code></strong> (PLAN §3.5), so a drift test is only a guarantee if someone names where it runs.</div><div class="opts"><div class="opt pick"><div class="opt-h"><span class="ltr">A</span><span class="on"><span data-en="A shared npm package" data-pt="Um pacote npm compartilhado">A shared npm package</span></span><span class="tag"><span data-en="recommended" data-pt="recomendada">recommended</span></span></div><div class="opt-b"><div class="opt-how" data-en="One privately published package holding both modules, consumed by &lt;code&gt;back&lt;/code&gt; and &lt;code&gt;worker&lt;/code&gt; as a normal dependency. Version bumps are explicit; the submodule-bump ordering is unchanged — submodule pushed before the superproject, always." data-pt="Um pacote publicado de forma privada com os dois módulos, consumido por &lt;code&gt;back&lt;/code&gt; e &lt;code&gt;worker&lt;/code&gt; como dependência normal. Bumps de versão são explícitos; a ordem de bump de submódulo não muda — submódulo empurrado antes do superprojeto, sempre.">One privately published package holding both modules, consumed by <code>back</code> and <code>worker</code> as a normal dependency. Version bumps are explicit; the submodule-bump ordering is unchanged — submodule pushed before the superproject, always.</div><ul class="opt-l"><li class="p" data-en="&lt;strong&gt;One implementation&lt;/strong&gt;, so the back and the worker cannot disagree about what runs next" data-pt="&lt;strong&gt;Uma implementação&lt;/strong&gt;, então back e worker não podem discordar sobre o que roda em seguida"><strong>One implementation</strong>, so the back and the worker cannot disagree about what runs next</li><li class="p" data-en="Version pinning makes an upgrade a deliberate act, and a regression is bisectable by version" data-pt="O pin de versão faz do upgrade um ato deliberado, e uma regressão fica bissectável por versão">Version pinning makes an upgrade a deliberate act, and a regression is bisectable by version</li><li class="p" data-en="The modules are pure, so the package has &lt;strong&gt;no runtime dependencies to reconcile&lt;/strong&gt; between the two repos" data-pt="Os módulos são puros, então o pacote &lt;strong&gt;não tem dependências de runtime a reconciliar&lt;/strong&gt; entre os dois repos">The modules are pure, so the package has <strong>no runtime dependencies to reconcile</strong> between the two repos</li><li class="c" data-en="A release process for two files: publish, bump, install — in two repos, on every change" data-pt="Um processo de release para dois arquivos: publicar, subir versão, instalar — em dois repos, a cada mudança">A release process for two files: publish, bump, install — in two repos, on every change</li><li class="c" data-en="A one-line fix becomes two PRs and a publish before it can ship anywhere" data-pt="Uma correção de uma linha vira dois PRs e uma publicação antes de poder ir para qualquer lugar">A one-line fix becomes two PRs and a publish before it can ship anywhere</li><li class="c" data-en="Needs a registry and credentials in both deploy paths — infra work that has no other reason to exist yet" data-pt="Exige um registry e credenciais nos dois caminhos de deploy — trabalho de infra que ainda não tem outra razão para existir">Needs a registry and credentials in both deploy paths — infra work that has no other reason to exist yet</li></ul><div class="opt-cost"><span class="cst lo"><span data-en="Client effort: &lt;b&gt;none&lt;/b&gt;" data-pt="Esforço do cliente: &lt;b&gt;nenhum&lt;/b&gt;">Client effort: <b>none</b></span></span><span class="cst hi"><span data-en="Ours: &lt;b&gt;a release step on every scheduler change&lt;/b&gt;" data-pt="Nosso: &lt;b&gt;um passo de release a cada mudança no scheduler&lt;/b&gt;">Ours: <b>a release step on every scheduler change</b></span></span></div></div></div><div class="opt"><div class="opt-h"><span class="ltr">B</span><span class="on"><span data-en="Copy-port with a drift test" data-pt="Copy-port com teste de divergência">Copy-port with a drift test</span></span><span class="tag"><span data-en="prior art" data-pt="precedente">prior art</span></span></div><div class="opt-b"><div class="opt-how" data-en="Each module is copied into the worker with a &lt;code&gt;PORTED_FROM.md&lt;/code&gt; carrying the source SHA, plus a test that fails when the two copies diverge. This is what the &lt;code&gt;thirdPartyIntegration&lt;/code&gt; migration did." data-pt="Cada módulo é copiado para o worker com um &lt;code&gt;PORTED_FROM.md&lt;/code&gt; carregando o SHA de origem, mais um teste que falha quando as duas cópias divergem. Foi o que a migração do &lt;code&gt;thirdPartyIntegration&lt;/code&gt; fez.">Each module is copied into the worker with a <code>PORTED_FROM.md</code> carrying the source SHA, plus a test that fails when the two copies diverge. This is what the <code>thirdPartyIntegration</code> migration did.</div><ul class="opt-l"><li class="p" data-en="No build-graph change, no registry, no release step — it matches how the workspace already ships" data-pt="Sem mudança de grafo de build, sem registry, sem passo de release — combina com como o workspace já entrega">No build-graph change, no registry, no release step — it matches how the workspace already ships</li><li class="p" data-en="A fix lands in one PR per repo, on the same branch name, in the same deploy" data-pt="Uma correção entra em um PR por repo, no mesmo nome de branch, no mesmo deploy">A fix lands in one PR per repo, on the same branch name, in the same deploy</li><li class="p" data-en="The drift test is genuinely cheap for a pure function: run both, compare the output" data-pt="O teste de divergência é realmente barato para função pura: rode as duas, compare a saída">The drift test is genuinely cheap for a pure function: run both, compare the output</li><li class="c" data-en="&lt;strong&gt;The drift test is the whole guarantee&lt;/strong&gt;, and the back has no CI test run — where it runs must be stated, not assumed" data-pt="&lt;strong&gt;O teste de divergência é a garantia inteira&lt;/strong&gt;, e o back não tem execução de teste no CI — onde ele roda precisa ser declarado, não presumido"><strong>The drift test is the whole guarantee</strong>, and the back has no CI test run — where it runs must be stated, not assumed</li><li class="c" data-en="A copy edited under time pressure drifts first and is discovered last" data-pt="Uma cópia editada sob pressão diverge primeiro e é descoberta por último">A copy edited under time pressure drifts first and is discovered last</li><li class="c" data-en="It is the &lt;strong&gt;most expensive possible place&lt;/strong&gt; for that to happen: the two repos would disagree about execution order" data-pt="É o &lt;strong&gt;lugar mais caro possível&lt;/strong&gt; para isso acontecer: os dois repos discordariam sobre a ordem de execução">It is the <strong>most expensive possible place</strong> for that to happen: the two repos would disagree about execution order</li></ul><div class="opt-cost"><span class="cst lo"><span data-en="Client effort: &lt;b&gt;none&lt;/b&gt;" data-pt="Esforço do cliente: &lt;b&gt;nenhum&lt;/b&gt;">Client effort: <b>none</b></span></span><span class="cst "><span data-en="Ours: &lt;b&gt;a drift test that must actually run&lt;/b&gt;" data-pt="Nosso: &lt;b&gt;um teste de divergência que precisa mesmo rodar&lt;/b&gt;">Ours: <b>a drift test that must actually run</b></span></span></div></div></div><div class="opt"><div class="opt-h"><span class="ltr">C</span><span class="on"><span data-en="A shared submodule or subtree" data-pt="Um submódulo ou subtree compartilhado">A shared submodule or subtree</span></span></div><div class="opt-b"><div class="opt-how" data-en="A third repository holds both modules and is pulled into &lt;code&gt;back&lt;/code&gt; and &lt;code&gt;worker&lt;/code&gt; as a git submodule or subtree." data-pt="Um terceiro repositório guarda os dois módulos e é puxado para &lt;code&gt;back&lt;/code&gt; e &lt;code&gt;worker&lt;/code&gt; como submódulo ou subtree git.">A third repository holds both modules and is pulled into <code>back</code> and <code>worker</code> as a git submodule or subtree.</div><ul class="opt-l"><li class="p" data-en="One source of truth with no registry and no publish step" data-pt="Uma fonte de verdade sem registry e sem passo de publicação">One source of truth with no registry and no publish step</li><li class="p" data-en="The workspace already runs on submodules, so the tooling is familiar" data-pt="O workspace já roda sobre submódulos, então a ferramenta é conhecida">The workspace already runs on submodules, so the tooling is familiar</li><li class="c" data-en="A third pointer to bump on every change, and a fourth repo in a workspace that just collapsed to one root" data-pt="Um terceiro ponteiro para atualizar a cada mudança, e um quarto repo num workspace que acabou de ser colapsado num único root">A third pointer to bump on every change, and a fourth repo in a workspace that just collapsed to one root</li><li class="c" data-en="A stale pointer looks exactly like a fixed bug that never shipped — the workspace&amp;#x27;s most familiar failure" data-pt="Um ponteiro desatualizado parece exatamente um bug corrigido que nunca subiu — a falha mais conhecida do workspace">A stale pointer looks exactly like a fixed bug that never shipped — the workspace&#x27;s most familiar failure</li><li class="c" data-en="It keeps the sharing benefit but pays it in the currency the team already loses to" data-pt="Mantém o benefício do compartilhamento, mas paga na moeda em que o time já perde">It keeps the sharing benefit but pays it in the currency the team already loses to</li></ul><div class="opt-cost"><span class="cst lo"><span data-en="Client effort: &lt;b&gt;none&lt;/b&gt;" data-pt="Esforço do cliente: &lt;b&gt;nenhum&lt;/b&gt;">Client effort: <b>none</b></span></span><span class="cst hi"><span data-en="Ours: &lt;b&gt;a third submodule pointer to keep honest&lt;/b&gt;" data-pt="Nosso: &lt;b&gt;um terceiro ponteiro de submódulo para manter honesto&lt;/b&gt;">Ours: <b>a third submodule pointer to keep honest</b></span></span></div></div></div><div class="opt"><div class="opt-h"><span class="ltr">D</span><span class="on"><span data-en="A monorepo" data-pt="Um monorepo">A monorepo</span></span></div><div class="opt-b"><div class="opt-how" data-en="&lt;code&gt;back&lt;/code&gt;, &lt;code&gt;worker&lt;/code&gt; (and &lt;code&gt;front&lt;/code&gt;) collapse into one repository with one build graph, and the two modules become a workspace package." data-pt="&lt;code&gt;back&lt;/code&gt;, &lt;code&gt;worker&lt;/code&gt; (e &lt;code&gt;front&lt;/code&gt;) colapsam em um repositório com um grafo de build, e os dois módulos viram um pacote de workspace."><code>back</code>, <code>worker</code> (and <code>front</code>) collapse into one repository with one build graph, and the two modules become a workspace package.</div><ul class="opt-l"><li class="p" data-en="The question disappears permanently — one build graph, one test run, atomic cross-repo changes" data-pt="A pergunta desaparece de vez — um grafo de build, uma execução de testes, mudanças atômicas entre repos">The question disappears permanently — one build graph, one test run, atomic cross-repo changes</li><li class="p" data-en="Every later shared module is free, and this epic will want more of them" data-pt="Todo módulo compartilhado futuro sai de graça, e este épico vai querer mais deles">Every later shared module is free, and this epic will want more of them</li><li class="c" data-en="It is not this task: it changes CI, deploys, and the branching model of three repos at once" data-pt="Não é esta task: muda CI, deploys e o modelo de branches de três repos de uma vez">It is not this task: it changes CI, deploys, and the branching model of three repos at once</li><li class="c" data-en="Every agent, skill and runbook that assumes the current layout has to be rewritten" data-pt="Todo agente, skill e runbook que presume o layout atual precisa ser reescrito">Every agent, skill and runbook that assumes the current layout has to be rewritten</li><li class="c" data-en="Nothing in this epic is blocked by the layout, so the cost lands entirely outside the benefit" data-pt="Nada neste épico está bloqueado pelo layout, então o custo cai inteiramente fora do benefício">Nothing in this epic is blocked by the layout, so the cost lands entirely outside the benefit</li></ul><div class="opt-cost"><span class="cst "><span data-en="Client effort: &lt;b&gt;none&lt;/b&gt;" data-pt="Esforço do cliente: &lt;b&gt;nenhum&lt;/b&gt;">Client effort: <b>none</b></span></span><span class="cst hi"><span data-en="Ours: &lt;b&gt;CI, deploys and branching, for three repos&lt;/b&gt;" data-pt="Nosso: &lt;b&gt;CI, deploys e branches, de três repos&lt;/b&gt;">Ours: <b>CI, deploys and branching, for three repos</b></span></span></div></div></div></div><div class="dec-rec"><span class="rt" data-en="Our recommendation" data-pt="Nossa recomendação">Our recommendation</span><div data-en="&lt;p&gt;&lt;strong&gt;A, the shared package — and B only if the release step is judged unaffordable.&lt;/strong&gt; The two modules are pure and dependency-free, which is precisely the case the package tax is smallest for; and the thing being protected is not a helper, it is &lt;em&gt;the answer to what runs next&lt;/em&gt;. A disagreement there is not a bug report, it is two systems executing different graphs.&lt;/p&gt;&lt;p&gt;The &lt;code&gt;thirdPartyIntegration&lt;/code&gt; precedent does not carry: it chose copy-port for adapter code that dragged heavy dependencies, and the spec says so explicitly. Reusing its conclusion without its reason is exactly the drift this decision is about.&lt;/p&gt;&lt;p&gt;If B wins, it wins on one condition — &lt;strong&gt;name where the drift test runs&lt;/strong&gt;. The back has no CI test run (PLAN §3.5), and a test nobody executes is a comment with extra steps. And if the drift test cannot be made to fail automatically at all, the spec already settles it: copy-port is not viable, and the answer is A.&lt;/p&gt;&lt;p&gt;One answer for both modules is simpler to explain. If they must diverge, the &lt;strong&gt;scheduler&lt;/strong&gt; is the one that may not drift.&lt;/p&gt;" data-pt="&lt;p&gt;&lt;strong&gt;A, o pacote compartilhado — e B apenas se o passo de release for considerado caro demais.&lt;/strong&gt; Os dois módulos são puros e sem dependências, que é exatamente o caso em que o imposto do pacote é menor; e o que está sendo protegido não é um helper, é &lt;em&gt;a resposta sobre o que roda em seguida&lt;/em&gt;. Uma discordância ali não é um relatório de bug, são dois sistemas executando grafos diferentes.&lt;/p&gt;&lt;p&gt;O precedente do &lt;code&gt;thirdPartyIntegration&lt;/code&gt; não se transfere: ele escolheu copy-port para código adaptador que arrastava dependências pesadas, e a spec diz isso explicitamente. Reaproveitar a conclusão sem a razão é justamente a divergência de que esta decisão trata.&lt;/p&gt;&lt;p&gt;Se a B vencer, vence sob uma condição — &lt;strong&gt;nomear onde o teste de divergência roda&lt;/strong&gt;. O back não tem execução de teste no CI (PLAN §3.5), e um teste que ninguém executa é um comentário com passos extras. E se o teste de divergência não puder falhar automaticamente, a spec já resolve: copy-port não é viável, e a resposta é A.&lt;/p&gt;&lt;p&gt;Uma resposta para os dois módulos é mais simples de explicar. Se precisarem divergir, o &lt;strong&gt;scheduler&lt;/strong&gt; é o que não pode divergir.&lt;/p&gt;"><p><strong>A, the shared package — and B only if the release step is judged unaffordable.</strong> The two modules are pure and dependency-free, which is precisely the case the package tax is smallest for; and the thing being protected is not a helper, it is <em>the answer to what runs next</em>. A disagreement there is not a bug report, it is two systems executing different graphs.</p><p>The <code>thirdPartyIntegration</code> precedent does not carry: it chose copy-port for adapter code that dragged heavy dependencies, and the spec says so explicitly. Reusing its conclusion without its reason is exactly the drift this decision is about.</p><p>If B wins, it wins on one condition — <strong>name where the drift test runs</strong>. The back has no CI test run (PLAN §3.5), and a test nobody executes is a comment with extra steps. And if the drift test cannot be made to fail automatically at all, the spec already settles it: copy-port is not viable, and the answer is A.</p><p>One answer for both modules is simpler to explain. If they must diverge, the <strong>scheduler</strong> is the one that may not drift.</p></div></div><div class="dec-who"><span class="wk"><span data-en="Who decides" data-pt="Quem decide">Who decides</span></span><span class="wv2"><span data-en="Engineering" data-pt="Engenharia">Engineering</span></span><span class="wv2"><span data-en="Infra owns the registry and the runner" data-pt="Infra decide registry e executor">Infra owns the registry and the runner</span></span></div></div></details>
+<div class="sec-label"><span class="n">3</span><h2 data-en="What the task does, in three parts" data-pt="O que a task faz, em três partes">What the task does, in three parts</h2><span class="rule"></span></div>
+<div class="part"><div class="part-head"><span class="num">1</span><span class="t"><span data-en="Extract, without changing behaviour" data-pt="Extrair, sem mudar comportamento">Extract, without changing behaviour</span></span><span class="loc">flux/scheduler.ts · node-reference-substitution.service.ts</span></div><div class="part-body"><div class="purpose" data-en="Extraction is behaviour-neutral. The only thing that changes is where the file lives and who can import it." data-pt="A extração é neutra em comportamento. A única coisa que muda é onde o arquivo mora e quem pode importá-lo.">Extraction is behaviour-neutral. The only thing that changes is where the file lives and who can import it.</div><div data-en="&lt;p&gt;Both modules move as they are. Nothing about ordering, edge classification or placeholder resolution changes in this task — if a behaviour needs fixing, it is &lt;strong&gt;C3&lt;/strong&gt;&amp;#x27;s, and it is fixed &lt;em&gt;before&lt;/em&gt; the copy exists, because after duplication each fix costs twice.&lt;/p&gt;&lt;p&gt;The batch sibling of &lt;code&gt;nextReady&lt;/code&gt; — &lt;code&gt;allReady&lt;/code&gt; — belongs to &lt;strong&gt;B4&lt;/strong&gt;, not here. And &lt;code&gt;nextReady&lt;/code&gt; itself stays: &lt;code&gt;mcp-write.service.ts:1327&lt;/code&gt; consumes the scheduler and is &lt;strong&gt;not part of this epic&lt;/strong&gt;.&lt;/p&gt;" data-pt="&lt;p&gt;Os dois módulos vão como estão. Nada de ordenação, classificação de arestas ou resolução de placeholders muda nesta task — se algum comportamento precisa de correção, ele é da &lt;strong&gt;C3&lt;/strong&gt;, e é corrigido &lt;em&gt;antes&lt;/em&gt; de a cópia existir, porque depois da duplicação cada correção custa em dobro.&lt;/p&gt;&lt;p&gt;O irmão em lote do &lt;code&gt;nextReady&lt;/code&gt; — o &lt;code&gt;allReady&lt;/code&gt; — é da &lt;strong&gt;B4&lt;/strong&gt;, não daqui. E o próprio &lt;code&gt;nextReady&lt;/code&gt; fica: o &lt;code&gt;mcp-write.service.ts:1327&lt;/code&gt; consome o scheduler e &lt;strong&gt;não faz parte deste épico&lt;/strong&gt;.&lt;/p&gt;"><p>Both modules move as they are. Nothing about ordering, edge classification or placeholder resolution changes in this task — if a behaviour needs fixing, it is <strong>C3</strong>&#x27;s, and it is fixed <em>before</em> the copy exists, because after duplication each fix costs twice.</p><p>The batch sibling of <code>nextReady</code> — <code>allReady</code> — belongs to <strong>B4</strong>, not here. And <code>nextReady</code> itself stays: <code>mcp-write.service.ts:1327</code> consumes the scheduler and is <strong>not part of this epic</strong>.</p></div><div class="ba"><div class="now"><h5>⚠ <span data-en="How it is today" data-pt="Como está hoje">How it is today</span></h5><p data-en="The scheduler and the substitution service are reachable only from inside the NestJS app. The worker cannot ask what runs next without asking the API." data-pt="O scheduler e o serviço de substituição só são alcançáveis de dentro da app NestJS. O worker não consegue perguntar o que roda em seguida sem perguntar à API.">The scheduler and the substitution service are reachable only from inside the NestJS app. The worker cannot ask what runs next without asking the API.</p></div><div class="nxt"><h5>✓ <span data-en="How it will be" data-pt="Como fica">How it will be</span></h5><p data-en="Both modules are consumable from the worker, with identical behaviour and the same consumers on the back side still working." data-pt="Os dois módulos são consumíveis a partir do worker, com comportamento idêntico e os mesmos consumidores do lado do back ainda funcionando.">Both modules are consumable from the worker, with identical behaviour and the same consumers on the back side still working.</p></div></div></div></div>
+<div class="part"><div class="part-head"><span class="num">2</span><span class="t"><span data-en="The drift test, if copy-port wins" data-pt="O teste de divergência, se o copy-port vencer">The drift test, if copy-port wins</span></span><span class="loc" data-en="PLAN §3.5 — the backend has no CI test run" data-pt="PLAN §3.5 — o backend não tem execução de teste em CI">PLAN §3.5 — the backend has no CI test run</span></div><div class="part-body"><div class="purpose" data-en="A comment asking people to be careful is not a mechanism. The test has to fail when the copies diverge." data-pt="Um comentário pedindo cuidado não é um mecanismo. O teste precisa falhar quando as cópias divergem.">A comment asking people to be careful is not a mechanism. The test has to fail when the copies diverge.</div><div data-en="&lt;p&gt;If copy-port is chosen, two artefacts ship with it: a &lt;code&gt;PORTED_FROM.md&lt;/code&gt; per module carrying the &lt;strong&gt;source SHA&lt;/strong&gt;, and a drift test that goes red when the two copies stop agreeing.&lt;/p&gt;&lt;p&gt;The uncomfortable part is where that test runs. &lt;strong&gt;No workflow runs jest in &lt;code&gt;back&lt;/code&gt;&lt;/strong&gt; (PLAN §3.5), so &amp;#x27;it is covered by a test&amp;#x27; is not, by itself, a guarantee anybody will see. The runner has to be named — a repository, a pipeline, a schedule — not assumed.&lt;/p&gt;" data-pt="&lt;p&gt;Se o copy-port for escolhido, dois artefatos vão junto: um &lt;code&gt;PORTED_FROM.md&lt;/code&gt; por módulo carregando o &lt;strong&gt;SHA de origem&lt;/strong&gt;, e um teste de divergência que fica vermelho quando as duas cópias param de concordar.&lt;/p&gt;&lt;p&gt;A parte incômoda é onde esse teste roda. &lt;strong&gt;Nenhum workflow roda jest no &lt;code&gt;back&lt;/code&gt;&lt;/strong&gt; (PLAN §3.5), então &amp;#x27;está coberto por teste&amp;#x27; não é, por si só, uma garantia que alguém vá ver. O executor precisa ser nomeado — um repositório, um pipeline, um agendamento — não presumido.&lt;/p&gt;"><p>If copy-port is chosen, two artefacts ship with it: a <code>PORTED_FROM.md</code> per module carrying the <strong>source SHA</strong>, and a drift test that goes red when the two copies stop agreeing.</p><p>The uncomfortable part is where that test runs. <strong>No workflow runs jest in <code>back</code></strong> (PLAN §3.5), so &#x27;it is covered by a test&#x27; is not, by itself, a guarantee anybody will see. The runner has to be named — a repository, a pipeline, a schedule — not assumed.</p></div><div class="ba"><div class="now"><h5>⚠ <span data-en="How it is today" data-pt="Como está hoje">How it is today</span></h5><p data-en="One implementation, in the back. Anyone editing it edits the only copy, and the worker cannot use it at all." data-pt="Uma implementação, no back. Quem edita, edita a única cópia, e o worker não consegue usá-la de forma nenhuma.">One implementation, in the back. Anyone editing it edits the only copy, and the worker cannot use it at all.</p></div><div class="nxt"><h5>✓ <span data-en="How it will be" data-pt="Como fica">How it will be</span></h5><p data-en="Either one shared implementation, or two copies with a test that &lt;strong&gt;fails&lt;/strong&gt; when they diverge and a named place where that test actually runs." data-pt="Ou uma implementação compartilhada, ou duas cópias com um teste que &lt;strong&gt;falha&lt;/strong&gt; quando elas divergem e um lugar nomeado onde esse teste de fato roda.">Either one shared implementation, or two copies with a test that <strong>fails</strong> when they diverge and a named place where that test actually runs.</p></div></div><div class="callout decide"><span class="ct" data-en="The verification can veto the decision" data-pt="A verificação pode vetar a decisão">The verification can veto the decision</span><div data-en="&lt;p&gt;The spec is blunt about this: if copy-port was chosen and the drift test &lt;strong&gt;cannot be made to fail automatically&lt;/strong&gt;, copy-port is not viable — say so and revisit &lt;strong&gt;D1&lt;/strong&gt;. That makes the negative control a gate on the decision itself, not just on the code.&lt;/p&gt;" data-pt="&lt;p&gt;A spec é direta: se o copy-port foi escolhido e o teste de divergência &lt;strong&gt;não puder ser feito falhar automaticamente&lt;/strong&gt;, o copy-port não é viável — diga isso e reabra a &lt;strong&gt;D1&lt;/strong&gt;. Isso faz do controle negativo um portão sobre a própria decisão, não só sobre o código.&lt;/p&gt;"><p>The spec is blunt about this: if copy-port was chosen and the drift test <strong>cannot be made to fail automatically</strong>, copy-port is not viable — say so and revisit <strong>D1</strong>. That makes the negative control a gate on the decision itself, not just on the code.</p></div></div></div></div>
+<div class="part"><div class="part-head"><span class="num">3</span><span class="t"><span data-en="Equivalence over every stored flow" data-pt="Equivalência sobre todo fluxo guardado">Equivalence over every stored flow</span></span><span class="loc">buildSchedulerState · planOrder</span></div><div class="part-body"><div class="purpose" data-en="This is a pure function over data that already exists, so &lt;strong&gt;full&lt;/strong&gt; coverage is achievable — take it." data-pt="Isto é uma função pura sobre dados que já existem, então a cobertura &lt;strong&gt;total&lt;/strong&gt; é alcançável — pegue-a.">This is a pure function over data that already exists, so <strong>full</strong> coverage is achievable — take it.</div><div data-en="&lt;p&gt;Run both implementations over every stored flow&amp;#x27;s node and edge set and assert identical &lt;code&gt;SchedulerState&lt;/code&gt; and identical &lt;code&gt;planOrder&lt;/code&gt;. Not a sample: every flow. There is no cost to running a pure function over data at rest, and this is the last moment where a divergence is cheap to find.&lt;/p&gt;" data-pt="&lt;p&gt;Rode as duas implementações sobre o conjunto de nodes e arestas de todo fluxo guardado e afirme &lt;code&gt;SchedulerState&lt;/code&gt; idêntico e &lt;code&gt;planOrder&lt;/code&gt; idêntico. Não uma amostra: todos os fluxos. Não há custo em rodar uma função pura sobre dado parado, e este é o último momento em que uma divergência é barata de achar.&lt;/p&gt;"><p>Run both implementations over every stored flow&#x27;s node and edge set and assert identical <code>SchedulerState</code> and identical <code>planOrder</code>. Not a sample: every flow. There is no cost to running a pure function over data at rest, and this is the last moment where a divergence is cheap to find.</p></div><div class="ba"><div class="now"><h5>⚠ <span data-en="How it is today" data-pt="Como está hoje">How it is today</span></h5><p data-en="Equivalence between the two implementations would be assumed. Nothing compares them, because until now there is only one." data-pt="A equivalência entre as duas implementações seria presumida. Nada as compara, porque até agora só existe uma.">Equivalence between the two implementations would be assumed. Nothing compares them, because until now there is only one.</p></div><div class="nxt"><h5>✓ <span data-en="How it will be" data-pt="Como fica">How it will be</span></h5><p data-en="Every stored flow is replayed through both and asserted identical — &lt;code&gt;SchedulerState&lt;/code&gt; and &lt;code&gt;planOrder&lt;/code&gt;, node for node." data-pt="Todo fluxo guardado é reproduzido pelas duas e afirmado idêntico — &lt;code&gt;SchedulerState&lt;/code&gt; e &lt;code&gt;planOrder&lt;/code&gt;, node a node.">Every stored flow is replayed through both and asserted identical — <code>SchedulerState</code> and <code>planOrder</code>, node for node.</p></div></div></div></div>
+<div class="sec-label"><span class="n">4</span><h2 data-en="How it is proved" data-pt="Como se prova">How it is proved</h2><span class="rule"></span></div>
+<div class="vcard"><div class="vcard-head">🔬 <span data-en="Verification" data-pt="Verificação">Verification</span></div><div class="vcard-body"><div class="vitem req"><div class="vn">1</div><div><div class="vt"><span data-en="Negative control" data-pt="Controle negativo">Negative control</span><span class="req-tag"><span data-en="required" data-pt="obrigatório">required</span></span></div><div class="vd" data-en="Change one branch of &lt;code&gt;classifyEdge&lt;/code&gt; in the extracted copy and confirm the drift test — or the package&amp;#x27;s own suite — &lt;strong&gt;goes red&lt;/strong&gt;. If copy-port was chosen and this cannot be made to fail automatically, &lt;strong&gt;copy-port is not viable&lt;/strong&gt;: say so and revisit D1." data-pt="Altere um ramo do &lt;code&gt;classifyEdge&lt;/code&gt; na cópia extraída e confirme que o teste de divergência — ou a suíte do próprio pacote — &lt;strong&gt;fica vermelho&lt;/strong&gt;. Se o copy-port foi escolhido e isso não puder falhar automaticamente, &lt;strong&gt;o copy-port não é viável&lt;/strong&gt;: diga isso e reabra a D1.">Change one branch of <code>classifyEdge</code> in the extracted copy and confirm the drift test — or the package&#x27;s own suite — <strong>goes red</strong>. If copy-port was chosen and this cannot be made to fail automatically, <strong>copy-port is not viable</strong>: say so and revisit D1.</div></div></div>
+<div class="vitem"><div class="vn">2</div><div><div class="vt"><span data-en="Behaviour equivalence over real flows" data-pt="Equivalência de comportamento sobre fluxos reais">Behaviour equivalence over real flows</span></div><div class="vd" data-en="Run both implementations over &lt;strong&gt;every&lt;/strong&gt; stored flow&amp;#x27;s node and edge set and assert identical &lt;code&gt;SchedulerState&lt;/code&gt; and identical &lt;code&gt;planOrder&lt;/code&gt;. Pure function, data at rest — full coverage is achievable, so take it." data-pt="Rode as duas implementações sobre o conjunto de nodes e arestas de &lt;strong&gt;todo&lt;/strong&gt; fluxo guardado e afirme &lt;code&gt;SchedulerState&lt;/code&gt; e &lt;code&gt;planOrder&lt;/code&gt; idênticos. Função pura, dado parado — cobertura total é alcançável, então pegue-a.">Run both implementations over <strong>every</strong> stored flow&#x27;s node and edge set and assert identical <code>SchedulerState</code> and identical <code>planOrder</code>. Pure function, data at rest — full coverage is achievable, so take it.</div></div></div>
+<div class="vitem"><div class="vn">3</div><div><div class="vt"><span data-en="The other consumer still works" data-pt="O outro consumidor continua funcionando">The other consumer still works</span></div><div class="vd" data-en="&lt;code&gt;app-mcp/mcp-write.service.ts:1327&lt;/code&gt; consumes the scheduler and is &lt;strong&gt;not part of this epic&lt;/strong&gt;. Confirm it behaves identically after the extraction — this is the consumer most likely to be forgotten." data-pt="O &lt;code&gt;app-mcp/mcp-write.service.ts:1327&lt;/code&gt; consome o scheduler e &lt;strong&gt;não faz parte deste épico&lt;/strong&gt;. Confirme que ele se comporta de forma idêntica depois da extração — é o consumidor com mais chance de ser esquecido."><code>app-mcp/mcp-write.service.ts:1327</code> consumes the scheduler and is <strong>not part of this epic</strong>. Confirm it behaves identically after the extraction — this is the consumer most likely to be forgotten.</div></div></div>
+</div></div>
+<div class="done"><span class="dt" data-en="✓  Done when" data-pt="✓  Pronto quando">✓  Done when</span><div class="dd" data-en="&lt;strong&gt;D1 is answered in writing&lt;/strong&gt;; both modules are consumable from the worker; equivalence is proven over real flows; and drift is detected &lt;strong&gt;by a test, not by convention&lt;/strong&gt;." data-pt="&lt;strong&gt;A D1 está respondida por escrito&lt;/strong&gt;; os dois módulos são consumíveis a partir do worker; a equivalência está provada sobre fluxos reais; e a divergência é detectada &lt;strong&gt;por um teste, não por convenção&lt;/strong&gt;."><strong>D1 is answered in writing</strong>; both modules are consumable from the worker; equivalence is proven over real flows; and drift is detected <strong>by a test, not by convention</strong>.</div></div>
+<div class="filesbox"><div class="filesbox-head">📂 <span data-en="Files this task touches" data-pt="Arquivos que esta task toca">Files this task touches</span></div><div class="filesbox-body"><span class="fchip">back/src/app-api/flux/scheduler.ts</span><span class="fchip">back/src/app-api/node-reference-substitution/node-reference-substitution.service.ts</span><span class="fchip">back/src/app-mcp/mcp-write.service.ts:1327 (consumer)</span><span class="fchip new">worker/src/** (new consumption point)</span><span class="fchip new">PORTED_FROM.md per module, if copy-port wins</span><span class="fchip">worker-thirdparty-integration-migration/PLAN.md (prior art)</span></div></div>
+<div class="page-footer-nav"><a href="task-B1.html"><span data-en="← B1 — One reference per execution, not per node" data-pt="← B1 — Uma referência por execução, não por node">← B1 — One reference per execution, not per node</span></a><a href="task-B3.html"><span data-en="Next: B3 — The consumer resolves its own input →" data-pt="Próxima: B3 — O consumidor resolve a própria entrada →">Next: B3 — The consumer resolves its own input →</span></a></div>
 </div>
 <script>
 (function(){

@@ -1,5 +1,6 @@
 <title>A8 — Move input extraction and OCR off the request path</title>
 <style>
+
   * { box-sizing: border-box; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -561,51 +562,28 @@
   }
 
     .code-block{white-space:pre-wrap;word-break:normal;overflow-wrap:anywhere}
+    .ba{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 4px}
+    @media(max-width:820px){.ba{grid-template-columns:1fr}}
+    .ba>div{border-radius:8px;padding:12px 14px;font-size:12px;line-height:1.62}
+    .ba .now{background:#FEF2F2;border-left:3px solid #EF4444;color:#450A0A}
+    .ba .nxt{background:#ECFDF5;border-left:3px solid #10B981;color:#052E16}
+    .ba h5{margin:0 0 7px;font-size:10px;letter-spacing:.8px;text-transform:uppercase;font-weight:800;opacity:.75}
+    .ba code{background:rgba(0,0,0,.06);padding:1px 4px;border-radius:3px}
+    .topic-nav{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 26px}
+    .topic-nav a{font-size:11px;padding:5px 11px;border-radius:20px;background:#fff;border:1px solid #CBD5E1;
+                 color:#334155;text-decoration:none}
+    .topic-nav a:hover{border-color:#3B82F6;color:#1E40AF}
+
+
+    /* padroniza o topo pelo complemento */
     .top-nav{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
              max-width:1500px;margin:0 auto 20px;padding:0 4px}
     .back-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:#fff;color:#334155;
               text-decoration:none;border-radius:8px;border:1px solid #CBD5E1;font-size:12.5px;font-weight:600;
-              box-shadow:0 1px 3px rgba(0,0,0,.06)}
-    .back-btn:hover{background:#EFF6FF}
-    .page-nav{display:flex;gap:10px;flex-wrap:wrap;background:transparent;box-shadow:none;
-              padding:18px 0 0;margin-top:26px;border-top:1px solid #E2E8F0}
-    /* hero */
-    .hero{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:20px 24px;margin-bottom:18px;
-          box-shadow:0 1px 3px rgba(0,0,0,.06)}
-    .hero .code{display:inline-block;font-family:'SF Mono',Menlo,monospace;font-size:12px;font-weight:800;
-                background:#0F172A;color:#fff;padding:4px 10px;border-radius:6px;letter-spacing:.5px}
-    .hero h1{margin:10px 0 8px;font-size:24px;line-height:1.2;letter-spacing:-.4px;color:#0F172A}
-    .hero .goal{font-size:14px;line-height:1.65;color:#334155;background:#EFF6FF;border-left:3px solid #3B82F6;
-                border-radius:6px;padding:11px 15px;margin-bottom:14px}
-    .meta{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
-    .meta a,.meta span.pill{font-size:11px;text-decoration:none;color:#334155;border:1px solid #CBD5E1;
-              background:#F8FAFC;padding:5px 11px;border-radius:20px;font-weight:600}
-    .meta a:hover{border-color:#3B82F6;color:#1E40AF;background:#EFF6FF}
-    .wv{font-size:10px;font-weight:800;padding:5px 11px;border-radius:20px;letter-spacing:.5px;text-transform:uppercase}
-    .w0{background:#FEE2E2;color:#991B1B}.w1{background:#FEF3C7;color:#92400E}.w2{background:#DBEAFE;color:#1E40AF}
-    .w3{background:#DBEAFE;color:#1E40AF}.w4{background:#DCFCE7;color:#14532D}.w5{background:#DCFCE7;color:#14532D}
-    .w6{background:#F3E8FF;color:#6B21A8}
-    /* seções em cards */
-    .sec-card{background:#fff;border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;margin-bottom:14px;
-              box-shadow:0 1px 3px rgba(0,0,0,.06)}
-    .sec-head{background:linear-gradient(to right,#0F172A,#1E293B);color:#fff;padding:12px 20px;
-              display:flex;align-items:center;gap:10px;font-size:14.5px;font-weight:600}
-    .sec-card.warn .sec-head{background:linear-gradient(to right,#7F1D1D,#B91C1C)}
-    .sec-card.ok   .sec-head{background:linear-gradient(to right,#065F46,#047857)}
-    .sec-card.files .sec-head{background:linear-gradient(to right,#334155,#475569)}
-    .sec-body{padding:18px 22px;font-size:13px;line-height:1.72;color:#334155}
-    .sec-body p{margin:0 0 12px}
-    .sec-body h4{font-size:13px;font-weight:700;color:#0F172A;margin:18px 0 7px}
-    .sec-body ul.tl{margin:8px 0 12px;padding-left:20px}
-    .sec-body ul.tl li{margin-bottom:5px}
-    .sec-body code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1px 5px;border-radius:4px;
-                   font-family:'SF Mono',Menlo,monospace;font-size:11.5px}
-    .sec-card.files .sec-body{font-family:'SF Mono',Menlo,monospace;font-size:11.5px;color:#475569;line-height:1.9}
-    .field-table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12.5px}
-    .field-table th{background:#F1F5F9;text-align:left;padding:8px 12px;font-weight:700;color:#334155;
-                    border-bottom:2px solid #E2E8F0;font-size:11px;text-transform:uppercase;letter-spacing:.4px}
-    .field-table td{padding:8px 12px;border-bottom:1px solid #F1F5F9;vertical-align:top}
-
+              box-shadow:0 1px 3px rgba(0,0,0,.06);transition:transform .15s,background .15s}
+    .back-btn:hover{background:#EFF6FF;transform:translateY(-1px)}
+    .page-nav{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-start;background:transparent;
+              box-shadow:none;padding:18px 0 0;margin-top:26px;border-top:1px solid #E2E8F0}
     .lang-sw{display:inline-flex;border:1px solid #CBD5E1;border-radius:8px;overflow:hidden;background:#fff;
              box-shadow:0 1px 3px rgba(0,0,0,.06)}
     .lang-sw button{font-family:'SF Mono',Menlo,monospace;font-size:11px;font-weight:700;letter-spacing:.5px;
@@ -613,65 +591,287 @@
     .lang-sw button+button{border-left:1px solid #E2E8F0}
     .lang-sw button[aria-pressed="true"]{background:#0F172A;color:#fff}
     .lang-sw button:focus-visible{outline:2px solid #3B82F6;outline-offset:2px}
+
+
+/* ---------- task page ---------- */
+body{background:#F1F5F9;color:#0F172A;margin:0;padding:28px 24px 72px;line-height:1.45;
+     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+.container{max-width:1500px;margin:0 auto}
+
+.hero{background:linear-gradient(135deg,#0F172A 0%,#1E293B 60%,#312E81 100%);color:#fff;
+      border-radius:16px;padding:26px 30px 24px;margin-bottom:18px;position:relative;overflow:hidden}
+.hero::after{content:'';position:absolute;right:-60px;top:-60px;width:260px;height:260px;
+      background:radial-gradient(circle,rgba(99,102,241,.35),transparent 70%);pointer-events:none}
+.hero .kicker{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.hero .code{font-family:'SF Mono',Menlo,monospace;font-size:13px;font-weight:700;letter-spacing:1px;
+      background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);color:#fff;
+      padding:5px 12px;border-radius:7px}
+.hero .st{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+      padding:5px 11px;border-radius:7px;border:1px solid;display:inline-flex;align-items:center;gap:6px}
+.hero .st::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor}
+.hero .st.st-planned{background:rgba(148,163,184,.18);border-color:rgba(203,213,225,.45);color:#CBD5E1}
+.hero .st.st-blocked{background:rgba(220,38,38,.2);border-color:rgba(248,113,113,.5);color:#FCA5A5}
+.hero .st.st-doing{background:rgba(59,130,246,.22);border-color:rgba(147,197,253,.5);color:#BFDBFE}
+.hero .st.st-review{background:rgba(245,158,11,.22);border-color:rgba(252,211,77,.5);color:#FDE68A}
+.hero .st.st-shipped{background:rgba(16,185,129,.24);border-color:rgba(110,231,183,.5);color:#A7F3D0}
+.hero .st.st-dropped{background:rgba(100,116,139,.18);border-color:rgba(148,163,184,.4);color:#94A3B8;
+      text-decoration:line-through}
+.hero .stnote{margin-top:12px;font-size:12.5px;line-height:1.6;color:#CBD5E1;
+      background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
+      border-left:3px solid #6366F1;border-radius:8px;padding:9px 13px;max-width:88ch}
+.hero .stnote b{color:#fff}
+.hero .wv{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+      padding:5px 11px;border-radius:7px;background:rgba(239,68,68,.22);border:1px solid rgba(248,113,113,.5);color:#FCA5A5}
+.hero h1{margin:0 0 12px;font-size:29px;line-height:1.22;letter-spacing:-.6px;font-weight:700;max-width:30ch}
+.hero .goal{font-size:15px;line-height:1.6;color:#CBD5E1;max-width:78ch;border-left:3px solid #6366F1;padding-left:14px}
+.hero .goal b{color:#fff;font-weight:600}
+.hero-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px;position:relative;z-index:2}
+.hero-links a{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
+      text-decoration:none;color:#E2E8F0;background:rgba(255,255,255,.09);
+      border:1px solid rgba(255,255,255,.16);padding:7px 13px;border-radius:8px}
+.hero-links a:hover{background:rgba(255,255,255,.17);color:#fff}
+
+.glance{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:20px}
+.gl{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px 16px;
+    border-top:3px solid #94A3B8;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.gl.crit{border-top-color:#DC2626}.gl.dep{border-top-color:#3B82F6}
+.gl.wave{border-top-color:#8B5CF6}.gl.ship{border-top-color:#059669}
+.gl .k{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#94A3B8;margin-bottom:7px}
+.gl .v{font-size:16px;font-weight:700;color:#0F172A;line-height:1.25;margin-bottom:5px}
+.gl .n{font-size:11.5px;color:#64748B;line-height:1.5}
+
+.lede{background:#fff;border:1px solid #E2E8F0;border-left:4px solid #DC2626;border-radius:12px;
+      padding:18px 22px;margin-bottom:22px;font-size:14.5px;line-height:1.7;color:#334155;
+      box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.lede strong{color:#0F172A}
+.lede p{margin:0 0 10px}.lede p:last-child{margin:0}
+
+.sec-label{display:flex;align-items:center;gap:11px;margin:30px 0 14px}
+.sec-label .n{width:25px;height:25px;border-radius:7px;background:#0F172A;color:#fff;flex:none;
+      display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+.sec-label h2{margin:0;font-size:17px;font-weight:700;color:#0F172A;letter-spacing:-.25px}
+.sec-label .rule{flex:1;height:1px;background:#E2E8F0}
+
+.entry-table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;
+      border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;font-size:12.5px;
+      box-shadow:0 1px 3px rgba(15,23,42,.05);margin-bottom:8px}
+.entry-table th{background:#0F172A;color:#fff;text-align:left;padding:11px 14px;font-size:10.5px;
+      font-weight:700;text-transform:uppercase;letter-spacing:.6px}
+.entry-table td{padding:12px 14px;border-bottom:1px solid #F1F5F9;vertical-align:top;color:#334155;line-height:1.55}
+.entry-table tr:last-child td{border-bottom:0}
+.entry-table tr:hover td{background:#F8FAFC}
+.entry-table td.rt{font-family:'SF Mono',Menlo,monospace;font-size:11.5px;font-weight:600;color:#0F172A;white-space:nowrap}
+.entry-table td.rt.lbl{font-family:inherit;font-size:12.5px;white-space:normal}
+.pill{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;
+      letter-spacing:.2px;white-space:nowrap}
+.pill.no{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA}
+.pill.weak{background:#FEF3C7;color:#92400E;border:1px solid #FDE68A}
+.pill.ok{background:#D1FAE5;color:#065F46;border:1px solid #A7F3D0}
+
+.part{background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;margin-bottom:16px;
+      box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.part-head{background:linear-gradient(to right,#0F172A,#1E293B);color:#fff;padding:14px 20px;
+      display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.part-head .num{width:26px;height:26px;border-radius:7px;background:rgba(255,255,255,.15);
+      border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;
+      font-size:12px;font-weight:700;flex:none}
+.part-head .t{font-size:15px;font-weight:600;letter-spacing:-.15px}
+.part-head .loc{margin-left:auto;font-family:'SF Mono',Menlo,monospace;font-size:10.5px;
+      color:#94A3B8;background:rgba(0,0,0,.28);padding:4px 9px;border-radius:6px}
+.part-body{padding:20px 22px}
+.purpose{font-size:14px;line-height:1.65;color:#0F172A;font-weight:500;
+      border-left:3px solid #6366F1;padding-left:13px;margin-bottom:16px}
+.part-body p{margin:0 0 12px;font-size:13.5px;line-height:1.72;color:#334155}
+.part-body p:last-child{margin-bottom:0}
+.part-body strong{color:#0F172A;font-weight:650}
+.part-body code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1.5px 5px;border-radius:4px;
+      font-family:'SF Mono',Menlo,monospace;font-size:11.5px;color:#0F172A}
+.part-body ul{margin:10px 0 14px;padding-left:0;list-style:none}
+.part-body ul li{position:relative;padding-left:20px;margin-bottom:9px;font-size:13.5px;
+      line-height:1.7;color:#334155}
+.part-body ul li::before{content:'';position:absolute;left:5px;top:9px;width:6px;height:6px;
+      border-radius:50%;background:#94A3B8}
+.code-block{white-space:pre-wrap;word-break:break-word}
+
+.ba{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0 4px}
+@media(max-width:900px){.ba{grid-template-columns:1fr}}
+.ba>div{border-radius:10px;padding:14px 16px;font-size:13px;line-height:1.65}
+.ba .now{background:#FEF2F2;border:1px solid #FECACA;color:#7F1D1D}
+.ba .nxt{background:#ECFDF5;border:1px solid #A7F3D0;color:#065F46}
+.ba h5{margin:0 0 8px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+      display:flex;align-items:center;gap:6px}
+.ba .now h5{color:#B91C1C}.ba .nxt h5{color:#047857}
+.ba code{background:rgba(255,255,255,.75);border:1px solid rgba(0,0,0,.07);padding:1px 5px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:11px}
+.ba p{margin:0 0 9px;font-size:13px;line-height:1.65}
+.ba p:last-child{margin:0}
+
+.callout{border-radius:10px;padding:14px 17px;margin:15px 0 4px;font-size:13px;line-height:1.7}
+.callout .ct{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px}
+.callout.decide{background:#EFF6FF;border:1px solid #BFDBFE;color:#1E3A8A}
+.callout.decide .ct{color:#1D4ED8}
+.callout.mig{background:#FFFBEB;border:1px solid #FDE68A;color:#78350F}
+.callout.mig .ct{color:#B45309}
+.callout p{margin:0 0 9px}.callout p:last-child{margin:0}
+.callout code{background:rgba(255,255,255,.7);border:1px solid rgba(0,0,0,.07);padding:1px 5px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:11px}
+
+.vcard{background:#fff;border:1px solid #FECACA;border-radius:14px;overflow:hidden;margin-bottom:16px;
+      box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.vcard-head{background:linear-gradient(to right,#7F1D1D,#B91C1C);color:#fff;padding:13px 20px;
+      font-size:15px;font-weight:600;display:flex;align-items:center;gap:10px}
+.vcard-body{padding:18px 22px}
+.vitem{display:grid;grid-template-columns:auto 1fr;gap:13px;padding:13px 0;border-bottom:1px solid #F1F5F9}
+.vitem:first-child{padding-top:0}
+.vitem:last-child{border-bottom:0;padding-bottom:0}
+.vitem .vn{width:24px;height:24px;border-radius:7px;background:#FEE2E2;color:#B91C1C;flex:none;
+      display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:1px}
+.vitem.req .vn{background:#B91C1C;color:#fff}
+.vitem .vt{font-size:13px;font-weight:700;color:#0F172A;margin-bottom:4px;display:flex;
+      align-items:center;gap:8px;flex-wrap:wrap}
+.vitem .vt .req-tag{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+      background:#B91C1C;color:#fff;padding:2px 7px;border-radius:20px}
+.vitem .vd{font-size:13px;line-height:1.68;color:#475569}
+.vitem .vd code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1px 5px;border-radius:4px;
+      font-family:'SF Mono',Menlo,monospace;font-size:11px}
+.vitem .vd strong{color:#0F172A}
+
+.done{background:linear-gradient(135deg,#064E3B,#047857);color:#fff;border-radius:14px;
+      padding:20px 24px;margin-bottom:16px}
+.done .dt{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+      color:#6EE7B7;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.done .dd{font-size:14.5px;line-height:1.72;color:#ECFDF5}
+.done .dd strong{color:#fff;font-weight:650}
+.done .dd code{background:rgba(255,255,255,.17);border:1px solid rgba(255,255,255,.28);padding:1.5px 6px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:12px;color:#fff}
+.hero .goal code{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);padding:1px 5px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:12.5px;color:#fff}
+.lede code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1.5px 5px;border-radius:4px;
+      font-family:'SF Mono',Menlo,monospace;font-size:12px;color:#0F172A}
+.lede em{font-style:italic;color:#0F172A}
+
+.filesbox{background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;
+      box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.filesbox-head{background:linear-gradient(to right,#334155,#475569);color:#fff;padding:12px 20px;
+      font-size:14px;font-weight:600;display:flex;align-items:center;gap:9px}
+.filesbox-body{padding:16px 20px;display:flex;flex-wrap:wrap;gap:8px}
+.fchip{font-family:'SF Mono',Menlo,monospace;font-size:11.5px;background:#F8FAFC;color:#334155;
+      border:1px solid #E2E8F0;border-left:3px solid #64748B;padding:7px 11px;border-radius:7px;line-height:1.4}
+.fchip.new{border-left-color:#059669;background:#F0FDF4;color:#065F46}
+
+.page-footer-nav{display:flex;justify-content:space-between;gap:12px;margin-top:26px;flex-wrap:wrap}
+.page-footer-nav a{display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid #E2E8F0;
+      color:#334155;padding:11px 17px;border-radius:9px;text-decoration:none;font-size:12.5px;font-weight:600;
+      box-shadow:0 1px 2px rgba(15,23,42,.05)}
+.page-footer-nav a:hover{border-color:#94A3B8;color:#0F172A}
+
+
+/* ---------- decisions ---------- */
+.dec{background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;margin-bottom:14px;
+     box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.dec>summary{list-style:none;cursor:pointer;padding:15px 20px;display:flex;align-items:flex-start;
+     gap:13px;background:linear-gradient(to right,#1E1B4B,#312E81);color:#fff}
+.dec>summary::-webkit-details-marker{display:none}
+.dec>summary:hover{background:linear-gradient(to right,#312E81,#3730A3)}
+.dec>summary:focus-visible{outline:2px solid #A5B4FC;outline-offset:-2px}
+.dec .chev{flex:none;width:22px;height:22px;border-radius:6px;background:rgba(255,255,255,.15);
+     border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;
+     font-size:11px;transition:transform .18s ease;margin-top:1px}
+.dec[open] .chev{transform:rotate(90deg)}
+.dec .dq{flex:1;min-width:0}
+.dec .dq .lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+     color:#A5B4FC;margin-bottom:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dec .dq .q{font-size:15px;font-weight:600;line-height:1.45;letter-spacing:-.15px}
+.dec .dq .q code{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.26);
+     padding:1px 6px;border-radius:5px;font-family:'SF Mono',Menlo,monospace;font-size:13px;
+     font-weight:600;color:#E0E7FF}
+.dstat{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+     padding:2.5px 8px;border-radius:20px;white-space:nowrap}
+.dstat.open{background:#F59E0B;color:#451A03}
+.dstat.rec{background:#38BDF8;color:#082F49}
+.dstat.set{background:#34D399;color:#022C22}
+.dec .dq .lbl .planid{font-family:'SF Mono',Menlo,monospace;font-size:9.5px;font-weight:700;
+     letter-spacing:.3px;color:#C7D2FE;background:rgba(255,255,255,.1);
+     border:1px solid rgba(255,255,255,.2);padding:2px 7px;border-radius:20px}
+.dec-body{padding:18px 20px 20px;background:#FAFAFF}
+.dec-intro{font-size:13px;line-height:1.7;color:#334155;margin-bottom:16px}
+.dec-intro strong{color:#0F172A}
+.dec-intro code{background:#EEF2FF;border:1px solid #C7D2FE;padding:1.5px 5px;border-radius:4px;
+     font-family:'SF Mono',Menlo,monospace;font-size:11.5px;color:#3730A3}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px}
+.opt{background:#fff;border:1px solid #E2E8F0;border-radius:11px;padding:0;overflow:hidden;
+     display:flex;flex-direction:column;position:relative}
+.opt.pick{border-color:#6366F1;box-shadow:0 0 0 2px rgba(99,102,241,.16)}
+.opt.no{opacity:.82}
+.opt-h{padding:12px 15px;display:flex;align-items:flex-start;gap:10px;background:#F8FAFC;
+     border-bottom:1px solid #E2E8F0}
+.opt.pick .opt-h{background:#EEF2FF;border-bottom-color:#C7D2FE}
+.opt.no .opt-h{background:#FEF2F2;border-bottom-color:#FECACA}
+.opt-h .ltr{width:23px;height:23px;border-radius:6px;background:#334155;color:#fff;flex:none;
+     display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;margin-top:1px}
+.opt.pick .opt-h .ltr{background:#4F46E5}
+.opt.no .opt-h .ltr{background:#B91C1C}
+.opt-h .on{font-size:13.5px;font-weight:700;color:#0F172A;line-height:1.35}
+.opt-h .tag{margin-left:auto;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+     padding:3px 8px;border-radius:20px;white-space:nowrap;margin-top:2px}
+.opt.pick .opt-h .tag{background:#4F46E5;color:#fff}
+.opt.no .opt-h .tag{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA}
+.opt-b{padding:13px 15px 14px;flex:1;display:flex;flex-direction:column;gap:11px}
+.opt-how{font-size:12.5px;line-height:1.6;color:#475569}
+.opt-how code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1px 4px;border-radius:3px;
+     font-family:'SF Mono',Menlo,monospace;font-size:11px;color:#0F172A;word-break:break-all}
+.opt-l{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px}
+.opt-l li{position:relative;padding-left:20px;font-size:12.5px;line-height:1.55;color:#334155}
+.opt-l li::before{position:absolute;left:0;top:0;font-size:12px;font-weight:700}
+.opt-l li.p::before{content:'✓';color:#059669}
+.opt-l li.c::before{content:'✕';color:#DC2626}
+.opt-cost{margin-top:auto;display:flex;gap:7px;flex-wrap:wrap;padding-top:4px}
+.cst{font-size:10px;font-weight:600;padding:4px 8px;border-radius:6px;background:#F1F5F9;
+     color:#475569;border:1px solid #E2E8F0;line-height:1.3}
+.cst b{font-weight:700;color:#0F172A}
+.cst.hi{background:#FEF3C7;border-color:#FDE68A;color:#78350F}
+.cst.hi b{color:#78350F}
+.cst.lo{background:#ECFDF5;border-color:#A7F3D0;color:#065F46}
+.cst.lo b{color:#065F46}
+.dec-rec{margin-top:15px;background:#EEF2FF;border:1px solid #C7D2FE;border-left:4px solid #4F46E5;
+     border-radius:10px;padding:14px 17px;font-size:13px;line-height:1.7;color:#312E81}
+.dec-rec .rt{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+     color:#4F46E5;margin-bottom:7px}
+.dec-rec strong{color:#1E1B4B}
+.dec-rec code{background:rgba(255,255,255,.75);border:1px solid #C7D2FE;padding:1.5px 5px;
+     border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:11.5px}
+.dec-rec p{margin:0 0 9px}.dec-rec p:last-child{margin:0}
+.dec-who{margin-top:11px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+     font-size:11.5px;color:#64748B}
+.dec-who .wk{font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:.5px;font-size:9.5px}
+.dec-who .wv2{background:#fff;border:1px solid #E2E8F0;padding:4px 10px;border-radius:20px;font-weight:600;color:#334155}
+
 </style>
 <div class="container">
-  <div class="top-nav">
-    <a href="index.html" class="back-btn"><span data-en="← Timeline" data-pt="← Timeline">← Timeline</span></a>
-    <div class="lang-sw" role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">EN-US</button><button type="button" data-lang="pt" aria-pressed="false">PT-BR</button></div>
-  </div>
-  <div class="hero">
-    <span class="code">A8</span>
-    <h1 data-en="Move input extraction and OCR off the request path" data-pt="Tirar extração e OCR do caminho da requisição">Move input extraction and OCR off the request path</h1>
-    <div class="goal" data-en="the link extraction, file upload and OCR that `varInputNode` performs at the start of every run stop blocking the backend." data-pt="a extração de link, o upload de arquivo e o OCR que o `varInputNode` faz no começo de todo run param de bloquear o backend.">the link extraction, file upload and OCR that `varInputNode` performs at the start of every run stop blocking the backend.</div>
-    <div class="meta"><span class="wv w3" data-en="wave 3" data-pt="onda 3">wave 3</span><a href="../complemento/fase-1.html" data-en="where this lands in the flow →" data-pt="onde isto entra no fluxo →">where this lands in the flow →</a><a href="index.html#w3" data-en="other tasks in wave 3 →" data-pt="outras tasks da onda 3 →">other tasks in wave 3 →</a><a href="task-S6.html">← S6</a><a href="task-A9.html">A9 →</a></div>
-  </div>
-  <div class="aside" style="max-width:none;margin:0 0 16px"><div class="aside-title"><span data-en="Note" data-pt="Nota">Note</span></div>
-    <span data-en="The body below is the task&#x27;s canonical spec, kept in English by repository convention — it is the same text the team implements." data-pt="O corpo abaixo é a spec canônica da task, mantida em inglês por convenção do repositório — é o mesmo texto que o time implementa.">The body below is the task&#x27;s canonical spec, kept in English by repository convention — it is the same text the team implements.</span></div>
-  <div class="sec-card"><div class="sec-head">📌 <span data-en="Context" data-pt="Contexto">Context</span></div><div class="sec-body"><p><strong>Depends on:</strong> A1. <strong>Source:</strong> analysis §11.1 — this task exists because the census was wrong.</p></div></div><div class="sec-card "><div class="sec-head">▸ <span data-en="Why this was missed, and why it matters" data-pt="Why this was missed, and why it matters">Why this was missed, and why it matters</span></div><div class="sec-body"><p>The census classified <code>varInputNode</code> as inert: its front component only calls the backend at</p>
-<p>configuration time. That is true of the component and false of the run.</p>
-<p>During a run, <strong>before the loop</strong>, the engine iterates every <code>varInputNode</code></p>
-<p>(<code>back/src/app-api/flux/flux.service.ts:2772, 2806</code>) and does real external I/O:</p>
-<p><code>extractionService.extractTextFromLink</code> per link and <code>awsService.uploadFile</code> per file</p>
-<p>(<code>:2834–2990</code>), with an OCR mode chosen per input (<code>typeOCR</code>).</p>
-<p>It is invisible to every dispatch gate because it is resolved <em>before</em> <code>nextReady</code> ever runs — so</p>
-<p>it is not in <code>isTemporalNode</code>, not in the prefetch whitelist, and not in the census. It is</p>
-<p>nonetheless synchronous, external, and on the critical path of every run that has one.</p></div></div><div class="sec-card "><div class="sec-head">🎯 <span data-en="Scope" data-pt="Escopo">Scope</span></div><div class="sec-body"><p><strong>In.</strong> An extraction activity in the worker, so the backend is free while OCR runs. The step</p>
-<p>documentation's own observation: OCR <em>"é síncrono e cega o backend"</em>, and a dedicated activity is</p>
-<p>a large win for agents with several files.</p>
-<p><strong>In.</strong> Three improvements the same source flags, each cheap while the code is open:</p>
-<ul class="tl">
-<li><strong>Extraction cache</strong> keyed by URL or file hash. Sub-flows re-extract the same file today — pure</li>
-</ul>
-<p>  rework.</p>
-<ul class="tl">
-<li><strong>Batch the writes.</strong> <code>persistInputNodeData</code> runs one <code>UPDATE</code> per input, sequentially.</li>
-<li><strong>Telemetry.</strong> Nothing is logged today about OCR duration, file size or provider, which makes</li>
-</ul>
-<p>  Phase-1 latency undiagnosable. Add it before changing the shape, so the change can be measured.</p>
-<p><strong>Out.</strong> Renaming <code>extractText</code> — the field holds URLs when <code>isExtraction</code> is false, which is</p>
-<p>confusing, but renaming a persisted field is its own migration.</p></div></div><div class="sec-card "><div class="sec-head">▸ <span data-en="Egress policy — decided here, not later" data-pt="Egress policy — decided here, not later">Egress policy — decided here, not later</span></div><div class="sec-body"><p>Several of these nodes fetch user-controlled URLs, and this task moves them into the worker, which</p>
-<p>holds the database password and the integrations key. Whether that improves or worsens the exposure</p>
-<p>depends on the worker's network position, and there is no SSRF protection today (review §3.2).</p>
-<p><code>TASK-S6</code> owns the policy. This task does not ship a relocated fetcher until S6's decision exists</p>
-<p>and applies to it — the point of S6 is that the decision is made <strong>with</strong> the move, because the</p>
-<p>move is what changes the risk.</p></div></div><div class="sec-card warn"><div class="sec-head">🔬 <span data-en="Verification" data-pt="Verificação">Verification</span></div><div class="sec-body"><ul class="tl">
-<li><strong>Negative control (required).</strong> Break the extraction call and confirm a test fails on the</li>
-</ul>
-<p>  resolved input being empty, rather than the run continuing with a blank variable. Today a failed</p>
-<p>  extraction can leave a placeholder resolving to nothing, which reads downstream as a bad prompt</p>
-<p>  rather than a failed upload — that is the failure this test must pin.</p>
-<ul class="tl">
-<li>Parity on real inputs: same link and same file, backend vs worker, byte-identical extracted text.</li>
-<li>Latency measured before and after, per input type. This task's whole justification is that the</li>
-</ul>
-<p>  backend stops blocking; state the number.</p>
-<ul class="tl">
-<li>Cache correctness: the same file in two nodes extracts once; a changed file does not serve a</li>
-</ul>
-<p>  stale extraction.</p></div></div><div class="sec-card ok"><div class="sec-head">✅ <span data-en="Done when" data-pt="Pronto quando">Done when</span></div><div class="sec-body"><p>Extraction and OCR run as an activity, parity is proven, the backend no longer blocks on them, and</p>
-<p>the before/after latency is recorded.</p></div></div><div class="sec-card files"><div class="sec-head">📁 <span data-en="Files" data-pt="Arquivos">Files</span></div><div class="sec-body"><p><code>back/src/app-api/flux/flux.service.ts:2772–2990</code> · <code>back/src/app-api/extraction/</code> ·</p>
-<p><code>back/src/app-api/google_ocr/</code> · <code>back/src/app-api/aws/</code> · new worker module · the A1 registry</p></div></div>
-  <div class="page-nav"><a href="index.html" class="back-btn"><span data-en="← Timeline" data-pt="← Timeline">← Timeline</span></a></div>
+<div class="top-nav"><a href="index.html" class="back-btn"><span>←</span> <span data-en="Timeline" data-pt="Timeline">Timeline</span></a><div class="lang-sw" role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">EN-US</button><button type="button" data-lang="pt" aria-pressed="false">PT-BR</button></div></div>
+<div class="hero"><div class="kicker"><span class="code">A8</span><span class="wv" data-en="wave 3" data-pt="onda 3">wave 3</span><span class="st st-planned" data-en="Planned" data-pt="Planejada">Planned</span></div><h1 data-en="Move input extraction and OCR off the request path" data-pt="Tirar extração de entrada e OCR do caminho da requisição">Move input extraction and OCR off the request path</h1><div class="goal" data-en="The link extraction, file upload and OCR that &lt;code&gt;varInputNode&lt;/code&gt; performs &lt;b&gt;at the start of every run&lt;/b&gt; stop blocking the backend." data-pt="A extração de links, o upload de arquivos e o OCR que o &lt;code&gt;varInputNode&lt;/code&gt; faz &lt;b&gt;no início de todo run&lt;/b&gt; param de bloquear o backend.">The link extraction, file upload and OCR that <code>varInputNode</code> performs <b>at the start of every run</b> stop blocking the backend.</div><div class="hero-links"><a href="../complemento/fase-1.html"><span data-en="Where this lands in the flow →" data-pt="Onde isto entra no fluxo →">Where this lands in the flow →</span></a><a href="index.html#w3"><span data-en="Other tasks in wave 3 →" data-pt="Outras tasks da onda 3 →">Other tasks in wave 3 →</span></a><a href="task-A9.html"><span data-en="Next: A9 — Outbound delivery as activities →" data-pt="Próxima: A9 — Entrega de saída como activities →">Next: A9 — Outbound delivery as activities →</span></a></div></div>
+<div class="glance"><div class="gl crit"><div class="k" data-en="Severity" data-pt="Severidade">Severity</div><div class="v" data-en="On the critical path" data-pt="No caminho crítico">On the critical path</div><div class="n" data-en="Synchronous external I/O before the loop, on every run that has one. The step notes: OCR &lt;em&gt;“é síncrono e cega o backend”&lt;/em&gt;." data-pt="I/O externo síncrono antes do laço, em todo run que tenha um. As notas de passo: o OCR &lt;em&gt;“é síncrono e cega o backend”&lt;/em&gt;.">Synchronous external I/O before the loop, on every run that has one. The step notes: OCR <em>“é síncrono e cega o backend”</em>.</div></div><div class="gl dep"><div class="k" data-en="Depends on" data-pt="Depende de">Depends on</div><div class="v" data-en="A1 · source: §11.1" data-pt="A1 · fonte: §11.1">A1 · source: §11.1</div><div class="n" data-en="This task exists because the census was wrong — &lt;code&gt;varInputNode&lt;/code&gt; was classified inert." data-pt="Esta task existe porque o censo estava errado — o &lt;code&gt;varInputNode&lt;/code&gt; foi classificado como inerte.">This task exists because the census was wrong — <code>varInputNode</code> was classified inert.</div></div><div class="gl wave"><div class="k" data-en="Wave" data-pt="Onda">Wave</div><div class="v" data-en="Wave 3" data-pt="Onda 3">Wave 3</div><div class="n" data-en="The one migration in the wave that &lt;em&gt;removes&lt;/em&gt; blocking work from the backend rather than only relocating it." data-pt="A única migração da onda que &lt;em&gt;remove&lt;/em&gt; trabalho bloqueante do backend em vez de apenas relocá-lo.">The one migration in the wave that <em>removes</em> blocking work from the backend rather than only relocating it.</div></div><div class="gl ship"><div class="k" data-en="Shape" data-pt="Formato">Shape</div><div class="v" data-en="One activity + three cheap wins" data-pt="Uma activity + três ganhos baratos">One activity + three cheap wins</div><div class="n" data-en="An extraction cache, batched writes, and the telemetry that makes the improvement measurable at all." data-pt="Um cache de extração, escritas em lote, e a telemetria que torna a melhoria mensurável.">An extraction cache, batched writes, and the telemetry that makes the improvement measurable at all.</div></div></div>
+<div class="lede" data-en="&lt;p&gt;During a run, &lt;strong&gt;before the loop&lt;/strong&gt;, the engine iterates every &lt;code&gt;varInputNode&lt;/code&gt; (&lt;code&gt;flux.service.ts:2772, 2806&lt;/code&gt;) and does real external I/O: &lt;code&gt;extractionService.extractTextFromLink&lt;/code&gt; per link and &lt;code&gt;awsService.uploadFile&lt;/code&gt; per file (&lt;code&gt;:2834–2990&lt;/code&gt;), with an OCR mode chosen per input (&lt;code&gt;typeOCR&lt;/code&gt;).&lt;/p&gt;&lt;p&gt;It is &lt;strong&gt;invisible to every dispatch gate&lt;/strong&gt;, because it is resolved &lt;em&gt;before&lt;/em&gt; &lt;code&gt;nextReady&lt;/code&gt; ever runs — so it is not in &lt;code&gt;isTemporalNode&lt;/code&gt;, not in the prefetch whitelist, and not in the census. It is nonetheless synchronous, external, and on the critical path of every run that has one.&lt;/p&gt;" data-pt="&lt;p&gt;Durante um run, &lt;strong&gt;antes do laço&lt;/strong&gt;, o engine percorre cada &lt;code&gt;varInputNode&lt;/code&gt; (&lt;code&gt;flux.service.ts:2772, 2806&lt;/code&gt;) e faz I/O externo de verdade: &lt;code&gt;extractionService.extractTextFromLink&lt;/code&gt; por link e &lt;code&gt;awsService.uploadFile&lt;/code&gt; por arquivo (&lt;code&gt;:2834–2990&lt;/code&gt;), com um modo de OCR escolhido por entrada (&lt;code&gt;typeOCR&lt;/code&gt;).&lt;/p&gt;&lt;p&gt;É &lt;strong&gt;invisível a todo gate de dispatch&lt;/strong&gt;, porque é resolvido &lt;em&gt;antes&lt;/em&gt; de o &lt;code&gt;nextReady&lt;/code&gt; rodar — então não está no &lt;code&gt;isTemporalNode&lt;/code&gt;, não está na whitelist de prefetch, e não estava no censo. Ainda assim é síncrono, externo, e está no caminho crítico de todo run que o contém.&lt;/p&gt;"><p>During a run, <strong>before the loop</strong>, the engine iterates every <code>varInputNode</code> (<code>flux.service.ts:2772, 2806</code>) and does real external I/O: <code>extractionService.extractTextFromLink</code> per link and <code>awsService.uploadFile</code> per file (<code>:2834–2990</code>), with an OCR mode chosen per input (<code>typeOCR</code>).</p><p>It is <strong>invisible to every dispatch gate</strong>, because it is resolved <em>before</em> <code>nextReady</code> ever runs — so it is not in <code>isTemporalNode</code>, not in the prefetch whitelist, and not in the census. It is nonetheless synchronous, external, and on the critical path of every run that has one.</p></div>
+<div class="sec-label"><span class="n">1</span><h2 data-en="Why this was missed, in four places" data-pt="Por que isto passou batido, em quatro lugares">Why this was missed, in four places</h2><span class="rule"></span></div>
+<table class="entry-table"><thead><tr><th><span data-en="Where it was checked" data-pt="Onde foi checado">Where it was checked</span></th><th><span data-en="What that said" data-pt="O que aquilo dizia">What that said</span></th><th><span data-en="What the run actually does" data-pt="O que o run de fato faz">What the run actually does</span></th></tr></thead><tbody>
+<tr><td class="rt lbl"><span data-en="The front component" data-pt="O componente do front">The front component</span></td><td class="rt lbl"><span data-en="Calls the backend at configuration time only" data-pt="Chama o backend só na configuração">Calls the backend at configuration time only</span></td><td><span data-en="True of the component, &lt;strong&gt;false of the run&lt;/strong&gt;. The run path never goes through the component." data-pt="Verdade sobre o componente, &lt;strong&gt;mentira sobre o run&lt;/strong&gt;. O caminho do run nunca passa pelo componente.">True of the component, <strong>false of the run</strong>. The run path never goes through the component.</span></td></tr>
+<tr><td class="rt lbl"><span data-en="&lt;code&gt;isTemporalNode&lt;/code&gt;" data-pt="&lt;code&gt;isTemporalNode&lt;/code&gt;"><code>isTemporalNode</code></span></td><td><span class="pill no"><span data-en="Not in it" data-pt="Não está lá">Not in it</span></span></td><td><span data-en="It is resolved &lt;strong&gt;before&lt;/strong&gt; &lt;code&gt;nextReady&lt;/code&gt; ever runs, so no dispatch gate can see it." data-pt="É resolvido &lt;strong&gt;antes&lt;/strong&gt; de o &lt;code&gt;nextReady&lt;/code&gt; rodar, então nenhum gate de dispatch o enxerga.">It is resolved <strong>before</strong> <code>nextReady</code> ever runs, so no dispatch gate can see it.</span></td></tr>
+<tr><td class="rt lbl"><span data-en="The prefetch whitelist" data-pt="A whitelist de prefetch">The prefetch whitelist</span></td><td><span class="pill no"><span data-en="Not in it" data-pt="Não está lá">Not in it</span></span></td><td><span data-en="Same reason. Nothing that gates dispatch can gate work that happens before dispatch exists." data-pt="Mesma razão. Nada que controla dispatch controla trabalho que acontece antes de o dispatch existir.">Same reason. Nothing that gates dispatch can gate work that happens before dispatch exists.</span></td></tr>
+<tr><td class="rt lbl"><span data-en="The node census" data-pt="O censo de nodes">The node census</span></td><td><span class="pill no"><span data-en="Classified inert" data-pt="Classificado como inerte">Classified inert</span></span></td><td><span data-en="Analysis §11.1 corrects it: the inert group drops from 12 to 11 and the migration backlog rises to 13." data-pt="A análise §11.1 corrige: o grupo inerte cai de 12 para 11 e o backlog de migração sobe para 13.">Analysis §11.1 corrects it: the inert group drops from 12 to 11 and the migration backlog rises to 13.</span></td></tr>
+</tbody></table>
+<div class="sec-label"><span class="n">2</span><h2 data-en="What the task does, in three parts" data-pt="O que a task faz, em três partes">What the task does, in three parts</h2><span class="rule"></span></div>
+<div class="part"><div class="part-head"><span class="num">1</span><span class="t"><span data-en="The extraction activity" data-pt="A activity de extração">The extraction activity</span></span><span class="loc">flux.service.ts:2772–2990</span></div><div class="part-body"><div class="purpose" data-en="Free the backend while OCR runs, which is this task&amp;#x27;s entire justification." data-pt="Liberar o backend enquanto o OCR roda, que é a justificativa inteira desta task.">Free the backend while OCR runs, which is this task&#x27;s entire justification.</div><div data-en="&lt;p&gt;The step documentation says it in one line — OCR &lt;em&gt;“é síncrono e cega o backend”&lt;/em&gt;: it is synchronous, and it blinds the backend. A dedicated activity is a large win for agents with several files, because today the files are processed &lt;strong&gt;in the request&lt;/strong&gt;, one after another, before a single node has run.&lt;/p&gt;&lt;p&gt;The activity takes the inputs, does the extraction and the upload, and returns the resolved values. The engine stops waiting on an external service while it holds the run.&lt;/p&gt;" data-pt="&lt;p&gt;A documentação de passo diz numa linha — o OCR &lt;em&gt;“é síncrono e cega o backend”&lt;/em&gt;. Uma activity dedicada é um ganho grande para agentes com vários arquivos, porque hoje os arquivos são processados &lt;strong&gt;dentro da requisição&lt;/strong&gt;, um depois do outro, antes de um único node rodar.&lt;/p&gt;&lt;p&gt;A activity recebe as entradas, faz a extração e o upload, e devolve os valores resolvidos. O engine deixa de esperar por um serviço externo enquanto segura o run.&lt;/p&gt;"><p>The step documentation says it in one line — OCR <em>“é síncrono e cega o backend”</em>: it is synchronous, and it blinds the backend. A dedicated activity is a large win for agents with several files, because today the files are processed <strong>in the request</strong>, one after another, before a single node has run.</p><p>The activity takes the inputs, does the extraction and the upload, and returns the resolved values. The engine stops waiting on an external service while it holds the run.</p></div><div class="ba"><div class="now"><h5>⚠ <span data-en="How it is today" data-pt="Como está hoje">How it is today</span></h5><p data-en="Every link and every file is extracted and uploaded inside the backend request, sequentially, before the loop starts. A slow OCR blinds the process." data-pt="Cada link e cada arquivo é extraído e enviado dentro da requisição do backend, sequencialmente, antes de o laço começar. Um OCR lento cega o processo.">Every link and every file is extracted and uploaded inside the backend request, sequentially, before the loop starts. A slow OCR blinds the process.</p></div><div class="nxt"><h5>✓ <span data-en="How it will be" data-pt="Como fica">How it will be</span></h5><p data-en="The extraction is an activity. The backend is free while it runs, and a slow provider costs the run time — &lt;strong&gt;not the process&lt;/strong&gt;." data-pt="A extração é uma activity. O backend fica livre enquanto ela roda, e um provedor lento custa tempo do run — &lt;strong&gt;não do processo&lt;/strong&gt;.">The extraction is an activity. The backend is free while it runs, and a slow provider costs the run time — <strong>not the process</strong>.</p></div></div><div class="callout mig"><span class="ct" data-en="Measure it, and say the number" data-pt="Meça, e diga o número">Measure it, and say the number</span><div data-en="&lt;p&gt;The wave carries a latency regression by design — every node migrated here is a &lt;strong&gt;blocking round trip&lt;/strong&gt; until Wave 5 (review §4.5, risk &lt;strong&gt;R4&lt;/strong&gt;). This task is the one where the trade may go the other way, because the backend stops blocking on OCR.&lt;/p&gt;&lt;p&gt;That is a claim, and DELIVERY-PLAN asks for the number per task. &lt;strong&gt;Measure latency before and after, per input type&lt;/strong&gt; — link, file, each OCR mode — and state it in the PR. Without the number, the justification is a hope.&lt;/p&gt;" data-pt="&lt;p&gt;A onda carrega uma regressão de latência por desenho — todo node migrado aqui vira um &lt;strong&gt;round trip bloqueante&lt;/strong&gt; até a Onda 5 (review §4.5, risco &lt;strong&gt;R4&lt;/strong&gt;). Esta task é aquela em que a troca pode ir para o outro lado, porque o backend deixa de bloquear no OCR.&lt;/p&gt;&lt;p&gt;Isso é uma afirmação, e o DELIVERY-PLAN pede o número por task. &lt;strong&gt;Meça a latência antes e depois, por tipo de entrada&lt;/strong&gt; — link, arquivo, cada modo de OCR — e informe no PR. Sem o número, a justificativa é uma esperança.&lt;/p&gt;"><p>The wave carries a latency regression by design — every node migrated here is a <strong>blocking round trip</strong> until Wave 5 (review §4.5, risk <strong>R4</strong>). This task is the one where the trade may go the other way, because the backend stops blocking on OCR.</p><p>That is a claim, and DELIVERY-PLAN asks for the number per task. <strong>Measure latency before and after, per input type</strong> — link, file, each OCR mode — and state it in the PR. Without the number, the justification is a hope.</p></div></div></div></div>
+<div class="part"><div class="part-head"><span class="num">2</span><span class="t"><span data-en="Three improvements that are cheap while the code is open" data-pt="Três melhorias baratas enquanto o código está aberto">Three improvements that are cheap while the code is open</span></span><span class="loc" data-en="persistInputNodeData · extraction telemetry" data-pt="persistInputNodeData · telemetria de extração">persistInputNodeData · extraction telemetry</span></div><div class="part-body"><div class="purpose" data-en="Take the three wins the same source flags, because each of them is expensive to come back for." data-pt="Pegar os três ganhos que a mesma fonte aponta, porque voltar para cada um depois é caro.">Take the three wins the same source flags, because each of them is expensive to come back for.</div><div data-en="&lt;p&gt;The source that corrected the census also flags three improvements, each cheap while this code is being rewritten anyway:&lt;/p&gt;" data-pt="&lt;p&gt;A fonte que corrigiu o censo também aponta três melhorias, cada uma barata enquanto este código já está sendo reescrito:&lt;/p&gt;"><p>The source that corrected the census also flags three improvements, each cheap while this code is being rewritten anyway:</p></div><ul><li data-en="&lt;strong&gt;Extraction cache&lt;/strong&gt;, keyed by URL or file hash. Sub-flows re-extract the same file today — &lt;strong&gt;pure rework&lt;/strong&gt;, paid for on every nesting level." data-pt="&lt;strong&gt;Cache de extração&lt;/strong&gt;, com chave por URL ou hash do arquivo. Sub-fluxos reextraem o mesmo arquivo hoje — &lt;strong&gt;retrabalho puro&lt;/strong&gt;, pago em cada nível de aninhamento."><strong>Extraction cache</strong>, keyed by URL or file hash. Sub-flows re-extract the same file today — <strong>pure rework</strong>, paid for on every nesting level.</li><li data-en="&lt;strong&gt;Batch the writes.&lt;/strong&gt; &lt;code&gt;persistInputNodeData&lt;/code&gt; runs one &lt;code&gt;UPDATE&lt;/code&gt; per input, sequentially — a row-at-a-time write pattern in front of work that is already slow." data-pt="&lt;strong&gt;Escritas em lote.&lt;/strong&gt; O &lt;code&gt;persistInputNodeData&lt;/code&gt; roda um &lt;code&gt;UPDATE&lt;/code&gt; por entrada, sequencialmente — um padrão de escrita linha a linha na frente de um trabalho que já é lento."><strong>Batch the writes.</strong> <code>persistInputNodeData</code> runs one <code>UPDATE</code> per input, sequentially — a row-at-a-time write pattern in front of work that is already slow.</li><li data-en="&lt;strong&gt;Telemetry.&lt;/strong&gt; Nothing is logged today about OCR duration, file size or provider, which makes Phase-1 latency &lt;strong&gt;undiagnosable&lt;/strong&gt;. Add it &lt;em&gt;before&lt;/em&gt; changing the shape, so the change can be measured." data-pt="&lt;strong&gt;Telemetria.&lt;/strong&gt; Nada é registrado hoje sobre duração do OCR, tamanho do arquivo ou provedor, o que torna a latência da Fase 1 &lt;strong&gt;indiagnosticável&lt;/strong&gt;. Adicione &lt;em&gt;antes&lt;/em&gt; de mudar o formato, para que a mudança possa ser medida."><strong>Telemetry.</strong> Nothing is logged today about OCR duration, file size or provider, which makes Phase-1 latency <strong>undiagnosable</strong>. Add it <em>before</em> changing the shape, so the change can be measured.</li></ul><div data-en="&lt;p&gt;The order matters: &lt;strong&gt;telemetry first&lt;/strong&gt;. A change whose justification is latency, shipped into a system that does not record latency, cannot be defended or reverted on evidence.&lt;/p&gt;" data-pt="&lt;p&gt;A ordem importa: &lt;strong&gt;telemetria primeiro&lt;/strong&gt;. Uma mudança cuja justificativa é latência, entregue num sistema que não registra latência, não pode ser defendida nem revertida com evidência.&lt;/p&gt;"><p>The order matters: <strong>telemetry first</strong>. A change whose justification is latency, shipped into a system that does not record latency, cannot be defended or reverted on evidence.</p></div><div class="ba"><div class="now"><h5>⚠ <span data-en="How it is today" data-pt="Como está hoje">How it is today</span></h5><p data-en="The same file is extracted again in every sub-flow, each input is written with its own &lt;code&gt;UPDATE&lt;/code&gt;, and no log says how long any of it took." data-pt="O mesmo arquivo é extraído de novo em cada sub-fluxo, cada entrada é gravada com um &lt;code&gt;UPDATE&lt;/code&gt; próprio, e nenhum log diz quanto tempo aquilo levou.">The same file is extracted again in every sub-flow, each input is written with its own <code>UPDATE</code>, and no log says how long any of it took.</p></div><div class="nxt"><h5>✓ <span data-en="How it will be" data-pt="Como fica">How it will be</span></h5><p data-en="Extract once per URL or file hash, write the inputs in one batch, and have the duration, the size and the provider in the log before and after the change." data-pt="Extrai uma vez por URL ou hash de arquivo, grava as entradas num lote, e tem duração, tamanho e provedor no log antes e depois da mudança.">Extract once per URL or file hash, write the inputs in one batch, and have the duration, the size and the provider in the log before and after the change.</p></div></div></div></div>
+<div class="part"><div class="part-head"><span class="num">3</span><span class="t"><span data-en="What stays exactly as it is" data-pt="O que fica exatamente como está">What stays exactly as it is</span></span><span class="loc">extractText · TASK-S6-SSRF-POLICY.md</span></div><div class="part-body"><div class="purpose" data-en="Two things this task deliberately does not touch, and one it must wait for." data-pt="Duas coisas que esta task deliberadamente não toca, e uma pela qual precisa esperar.">Two things this task deliberately does not touch, and one it must wait for.</div><div data-en="&lt;p&gt;&lt;strong&gt;Renaming &lt;code&gt;extractText&lt;/code&gt; is out of scope.&lt;/strong&gt; The field holds URLs when &lt;code&gt;isExtraction&lt;/code&gt; is false, which is confusing — but renaming a persisted field is its own migration, with its own risk, and it does not belong inside a latency change.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;The egress policy comes first.&lt;/strong&gt; Several of these inputs are user-controlled URLs, and this task moves the fetching into the worker, which holds the database password and the integrations key. &lt;code&gt;S6&lt;/code&gt; owns the policy, and this task &lt;strong&gt;does not ship a relocated fetcher until S6&amp;#x27;s decision exists and applies to it&lt;/strong&gt;.&lt;/p&gt;" data-pt="&lt;p&gt;&lt;strong&gt;Renomear o &lt;code&gt;extractText&lt;/code&gt; está fora de escopo.&lt;/strong&gt; O campo guarda URLs quando &lt;code&gt;isExtraction&lt;/code&gt; é falso, o que confunde — mas renomear um campo persistido é uma migração própria, com risco próprio, e não cabe dentro de uma mudança de latência.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;A política de egresso vem antes.&lt;/strong&gt; Várias dessas entradas são URLs controladas pelo usuário, e esta task move a busca para o worker, que guarda a senha do banco e a chave das integrações. A &lt;code&gt;S6&lt;/code&gt; é dona da política, e esta task &lt;strong&gt;não entrega um buscador relocado enquanto a decisão da S6 não existir e não se aplicar a ele&lt;/strong&gt;.&lt;/p&gt;"><p><strong>Renaming <code>extractText</code> is out of scope.</strong> The field holds URLs when <code>isExtraction</code> is false, which is confusing — but renaming a persisted field is its own migration, with its own risk, and it does not belong inside a latency change.</p><p><strong>The egress policy comes first.</strong> Several of these inputs are user-controlled URLs, and this task moves the fetching into the worker, which holds the database password and the integrations key. <code>S6</code> owns the policy, and this task <strong>does not ship a relocated fetcher until S6&#x27;s decision exists and applies to it</strong>.</p></div><div class="ba"><div class="now"><h5>⚠ <span data-en="How it is today" data-pt="Como está hoje">How it is today</span></h5><p data-en="A user-controlled link is fetched from the backend with nothing checking the address it resolves to." data-pt="Um link controlado pelo usuário é buscado a partir do backend, sem nada checando o endereço para o qual ele resolve.">A user-controlled link is fetched from the backend with nothing checking the address it resolves to.</p></div><div class="nxt"><h5>✓ <span data-en="How it will be" data-pt="Como fica">How it will be</span></h5><p data-en="The same link is fetched under one egress policy, from a host whose network position was written down first." data-pt="O mesmo link é buscado sob uma política de egresso, a partir de um host cuja posição de rede foi registrada antes.">The same link is fetched under one egress policy, from a host whose network position was written down first.</p></div></div><div class="callout decide"><span class="ct" data-en="The decision lives in S6, and it is made with this move" data-pt="A decisão mora na S6, e é tomada junto com esta mudança">The decision lives in S6, and it is made with this move</span><div data-en="&lt;p&gt;S6 carries two open calls — the &lt;strong&gt;shape of the policy&lt;/strong&gt; and the &lt;strong&gt;worker&amp;#x27;s network position&lt;/strong&gt; — and the point of S6 is that they are answered &lt;em&gt;with&lt;/em&gt; the relocation, because the relocation is what changes the risk. Nothing here is decided on this page.&lt;/p&gt;" data-pt="&lt;p&gt;A S6 carrega duas decisões em aberto — o &lt;strong&gt;formato da política&lt;/strong&gt; e a &lt;strong&gt;posição de rede do worker&lt;/strong&gt; — e o ponto da S6 é que sejam respondidas &lt;em&gt;junto&lt;/em&gt; com a relocação, porque é a relocação que altera o risco. Nada aqui é decidido nesta página.&lt;/p&gt;"><p>S6 carries two open calls — the <strong>shape of the policy</strong> and the <strong>worker&#x27;s network position</strong> — and the point of S6 is that they are answered <em>with</em> the relocation, because the relocation is what changes the risk. Nothing here is decided on this page.</p></div></div></div></div>
+<div class="sec-label"><span class="n">3</span><h2 data-en="How it is proved" data-pt="Como se prova">How it is proved</h2><span class="rule"></span></div>
+<div class="vcard"><div class="vcard-head">🔬 <span data-en="Verification" data-pt="Verificação">Verification</span></div><div class="vcard-body"><div class="vitem req"><div class="vn">1</div><div><div class="vt"><span data-en="Negative control — the empty input" data-pt="Controle negativo — a entrada vazia">Negative control — the empty input</span><span class="req-tag"><span data-en="required" data-pt="obrigatório">required</span></span></div><div class="vd" data-en="Break the extraction call and confirm a test fails on the &lt;strong&gt;resolved input being empty&lt;/strong&gt;, rather than the run continuing with a blank variable. Today a failed extraction can leave a placeholder resolving to nothing, which reads downstream as &lt;em&gt;a bad prompt&lt;/em&gt; rather than &lt;em&gt;a failed upload&lt;/em&gt; — that is the failure this test must pin." data-pt="Quebre a chamada de extração e confirme que um teste falha na &lt;strong&gt;entrada resolvida estar vazia&lt;/strong&gt;, em vez de o run seguir com uma variável em branco. Hoje uma extração que falha pode deixar um placeholder resolvendo para nada, o que a jusante parece &lt;em&gt;prompt ruim&lt;/em&gt; e não &lt;em&gt;upload que falhou&lt;/em&gt; — é essa falha que o teste precisa fixar.">Break the extraction call and confirm a test fails on the <strong>resolved input being empty</strong>, rather than the run continuing with a blank variable. Today a failed extraction can leave a placeholder resolving to nothing, which reads downstream as <em>a bad prompt</em> rather than <em>a failed upload</em> — that is the failure this test must pin.</div></div></div>
+<div class="vitem req"><div class="vn">2</div><div><div class="vt"><span data-en="Parity on real inputs" data-pt="Paridade em entradas reais">Parity on real inputs</span><span class="req-tag"><span data-en="required" data-pt="obrigatório">required</span></span></div><div class="vd" data-en="Same link and same file, backend versus worker, &lt;strong&gt;byte-identical extracted text&lt;/strong&gt;. Not a similar result — the same bytes." data-pt="Mesmo link e mesmo arquivo, backend versus worker, &lt;strong&gt;texto extraído byte a byte idêntico&lt;/strong&gt;. Não um resultado parecido — os mesmos bytes.">Same link and same file, backend versus worker, <strong>byte-identical extracted text</strong>. Not a similar result — the same bytes.</div></div></div>
+<div class="vitem req"><div class="vn">3</div><div><div class="vt"><span data-en="Latency, before and after, per input type" data-pt="Latência, antes e depois, por tipo de entrada">Latency, before and after, per input type</span><span class="req-tag"><span data-en="required" data-pt="obrigatório">required</span></span></div><div class="vd" data-en="This task&amp;#x27;s whole justification is that the backend stops blocking. &lt;strong&gt;State the number&lt;/strong&gt; — per input type, with the telemetry added before the change so both sides of the comparison exist." data-pt="A justificativa inteira desta task é o backend parar de bloquear. &lt;strong&gt;Informe o número&lt;/strong&gt; — por tipo de entrada, com a telemetria adicionada antes da mudança para que os dois lados da comparação existam.">This task&#x27;s whole justification is that the backend stops blocking. <strong>State the number</strong> — per input type, with the telemetry added before the change so both sides of the comparison exist.</div></div></div>
+<div class="vitem"><div class="vn">4</div><div><div class="vt"><span data-en="Cache correctness" data-pt="Correção do cache">Cache correctness</span></div><div class="vd" data-en="The same file in two nodes extracts &lt;strong&gt;once&lt;/strong&gt;; a &lt;strong&gt;changed&lt;/strong&gt; file does not serve a stale extraction. Both halves matter — a cache that never invalidates turns a fresh document into an old one silently." data-pt="O mesmo arquivo em dois nodes extrai &lt;strong&gt;uma vez&lt;/strong&gt;; um arquivo &lt;strong&gt;alterado&lt;/strong&gt; não recebe extração velha. As duas metades importam — um cache que nunca invalida transforma um documento novo em antigo, em silêncio.">The same file in two nodes extracts <strong>once</strong>; a <strong>changed</strong> file does not serve a stale extraction. Both halves matter — a cache that never invalidates turns a fresh document into an old one silently.</div></div></div>
+</div></div>
+<div class="done"><span class="dt" data-en="✓  Done when" data-pt="✓  Pronto quando">✓  Done when</span><div class="dd" data-en="Extraction and OCR run &lt;strong&gt;as an activity&lt;/strong&gt;, parity is proven on real inputs, &lt;strong&gt;the backend no longer blocks on them&lt;/strong&gt;, and the before/after latency is recorded." data-pt="Extração e OCR rodam &lt;strong&gt;como activity&lt;/strong&gt;, a paridade está provada em entradas reais, &lt;strong&gt;o backend não bloqueia mais nelas&lt;/strong&gt;, e a latência antes/depois está registrada.">Extraction and OCR run <strong>as an activity</strong>, parity is proven on real inputs, <strong>the backend no longer blocks on them</strong>, and the before/after latency is recorded.</div></div>
+<div class="filesbox"><div class="filesbox-head">📂 <span data-en="Files this task touches" data-pt="Arquivos que esta task toca">Files this task touches</span></div><div class="filesbox-body"><span class="fchip">back/src/app-api/flux/flux.service.ts:2772–2990</span><span class="fchip">back/src/app-api/extraction/</span><span class="fchip">back/src/app-api/google_ocr/</span><span class="fchip">back/src/app-api/aws/</span><span class="fchip new">new worker extraction module</span><span class="fchip">the A1 dispatch registry</span></div></div>
+<div class="page-footer-nav"><a href="task-S6.html"><span data-en="← S6 — An egress policy for user-controlled URLs" data-pt="← S6 — Uma política de egresso para URLs controladas pelo usuário">← S6 — An egress policy for user-controlled URLs</span></a><a href="task-A9.html"><span data-en="Next: A9 — Outbound delivery as activities →" data-pt="Próxima: A9 — Entrega de saída como activities →">Next: A9 — Outbound delivery as activities →</span></a></div>
 </div>
 <script>
 (function(){

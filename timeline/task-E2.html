@@ -1,5 +1,6 @@
-<title>E2 — Align cancellation with Temporal instead of porting the poller</title>
+<title>E2 — Align cancellation with Temporal</title>
 <style>
+
   * { box-sizing: border-box; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -561,51 +562,28 @@
   }
 
     .code-block{white-space:pre-wrap;word-break:normal;overflow-wrap:anywhere}
+    .ba{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 4px}
+    @media(max-width:820px){.ba{grid-template-columns:1fr}}
+    .ba>div{border-radius:8px;padding:12px 14px;font-size:12px;line-height:1.62}
+    .ba .now{background:#FEF2F2;border-left:3px solid #EF4444;color:#450A0A}
+    .ba .nxt{background:#ECFDF5;border-left:3px solid #10B981;color:#052E16}
+    .ba h5{margin:0 0 7px;font-size:10px;letter-spacing:.8px;text-transform:uppercase;font-weight:800;opacity:.75}
+    .ba code{background:rgba(0,0,0,.06);padding:1px 4px;border-radius:3px}
+    .topic-nav{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 26px}
+    .topic-nav a{font-size:11px;padding:5px 11px;border-radius:20px;background:#fff;border:1px solid #CBD5E1;
+                 color:#334155;text-decoration:none}
+    .topic-nav a:hover{border-color:#3B82F6;color:#1E40AF}
+
+
+    /* padroniza o topo pelo complemento */
     .top-nav{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
              max-width:1500px;margin:0 auto 20px;padding:0 4px}
     .back-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:#fff;color:#334155;
               text-decoration:none;border-radius:8px;border:1px solid #CBD5E1;font-size:12.5px;font-weight:600;
-              box-shadow:0 1px 3px rgba(0,0,0,.06)}
-    .back-btn:hover{background:#EFF6FF}
-    .page-nav{display:flex;gap:10px;flex-wrap:wrap;background:transparent;box-shadow:none;
-              padding:18px 0 0;margin-top:26px;border-top:1px solid #E2E8F0}
-    /* hero */
-    .hero{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:20px 24px;margin-bottom:18px;
-          box-shadow:0 1px 3px rgba(0,0,0,.06)}
-    .hero .code{display:inline-block;font-family:'SF Mono',Menlo,monospace;font-size:12px;font-weight:800;
-                background:#0F172A;color:#fff;padding:4px 10px;border-radius:6px;letter-spacing:.5px}
-    .hero h1{margin:10px 0 8px;font-size:24px;line-height:1.2;letter-spacing:-.4px;color:#0F172A}
-    .hero .goal{font-size:14px;line-height:1.65;color:#334155;background:#EFF6FF;border-left:3px solid #3B82F6;
-                border-radius:6px;padding:11px 15px;margin-bottom:14px}
-    .meta{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
-    .meta a,.meta span.pill{font-size:11px;text-decoration:none;color:#334155;border:1px solid #CBD5E1;
-              background:#F8FAFC;padding:5px 11px;border-radius:20px;font-weight:600}
-    .meta a:hover{border-color:#3B82F6;color:#1E40AF;background:#EFF6FF}
-    .wv{font-size:10px;font-weight:800;padding:5px 11px;border-radius:20px;letter-spacing:.5px;text-transform:uppercase}
-    .w0{background:#FEE2E2;color:#991B1B}.w1{background:#FEF3C7;color:#92400E}.w2{background:#DBEAFE;color:#1E40AF}
-    .w3{background:#DBEAFE;color:#1E40AF}.w4{background:#DCFCE7;color:#14532D}.w5{background:#DCFCE7;color:#14532D}
-    .w6{background:#F3E8FF;color:#6B21A8}
-    /* seções em cards */
-    .sec-card{background:#fff;border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;margin-bottom:14px;
-              box-shadow:0 1px 3px rgba(0,0,0,.06)}
-    .sec-head{background:linear-gradient(to right,#0F172A,#1E293B);color:#fff;padding:12px 20px;
-              display:flex;align-items:center;gap:10px;font-size:14.5px;font-weight:600}
-    .sec-card.warn .sec-head{background:linear-gradient(to right,#7F1D1D,#B91C1C)}
-    .sec-card.ok   .sec-head{background:linear-gradient(to right,#065F46,#047857)}
-    .sec-card.files .sec-head{background:linear-gradient(to right,#334155,#475569)}
-    .sec-body{padding:18px 22px;font-size:13px;line-height:1.72;color:#334155}
-    .sec-body p{margin:0 0 12px}
-    .sec-body h4{font-size:13px;font-weight:700;color:#0F172A;margin:18px 0 7px}
-    .sec-body ul.tl{margin:8px 0 12px;padding-left:20px}
-    .sec-body ul.tl li{margin-bottom:5px}
-    .sec-body code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1px 5px;border-radius:4px;
-                   font-family:'SF Mono',Menlo,monospace;font-size:11.5px}
-    .sec-card.files .sec-body{font-family:'SF Mono',Menlo,monospace;font-size:11.5px;color:#475569;line-height:1.9}
-    .field-table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12.5px}
-    .field-table th{background:#F1F5F9;text-align:left;padding:8px 12px;font-weight:700;color:#334155;
-                    border-bottom:2px solid #E2E8F0;font-size:11px;text-transform:uppercase;letter-spacing:.4px}
-    .field-table td{padding:8px 12px;border-bottom:1px solid #F1F5F9;vertical-align:top}
-
+              box-shadow:0 1px 3px rgba(0,0,0,.06);transition:transform .15s,background .15s}
+    .back-btn:hover{background:#EFF6FF;transform:translateY(-1px)}
+    .page-nav{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-start;background:transparent;
+              box-shadow:none;padding:18px 0 0;margin-top:26px;border-top:1px solid #E2E8F0}
     .lang-sw{display:inline-flex;border:1px solid #CBD5E1;border-radius:8px;overflow:hidden;background:#fff;
              box-shadow:0 1px 3px rgba(0,0,0,.06)}
     .lang-sw button{font-family:'SF Mono',Menlo,monospace;font-size:11px;font-weight:700;letter-spacing:.5px;
@@ -613,57 +591,292 @@
     .lang-sw button+button{border-left:1px solid #E2E8F0}
     .lang-sw button[aria-pressed="true"]{background:#0F172A;color:#fff}
     .lang-sw button:focus-visible{outline:2px solid #3B82F6;outline-offset:2px}
+
+
+/* ---------- task page ---------- */
+body{background:#F1F5F9;color:#0F172A;margin:0;padding:28px 24px 72px;line-height:1.45;
+     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+.container{max-width:1500px;margin:0 auto}
+
+.hero{background:linear-gradient(135deg,#0F172A 0%,#1E293B 60%,#312E81 100%);color:#fff;
+      border-radius:16px;padding:26px 30px 24px;margin-bottom:18px;position:relative;overflow:hidden}
+.hero::after{content:'';position:absolute;right:-60px;top:-60px;width:260px;height:260px;
+      background:radial-gradient(circle,rgba(99,102,241,.35),transparent 70%);pointer-events:none}
+.hero .kicker{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.hero .code{font-family:'SF Mono',Menlo,monospace;font-size:13px;font-weight:700;letter-spacing:1px;
+      background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);color:#fff;
+      padding:5px 12px;border-radius:7px}
+.hero .st{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+      padding:5px 11px;border-radius:7px;border:1px solid;display:inline-flex;align-items:center;gap:6px}
+.hero .st::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor}
+.hero .st.st-planned{background:rgba(148,163,184,.18);border-color:rgba(203,213,225,.45);color:#CBD5E1}
+.hero .st.st-blocked{background:rgba(220,38,38,.2);border-color:rgba(248,113,113,.5);color:#FCA5A5}
+.hero .st.st-doing{background:rgba(59,130,246,.22);border-color:rgba(147,197,253,.5);color:#BFDBFE}
+.hero .st.st-review{background:rgba(245,158,11,.22);border-color:rgba(252,211,77,.5);color:#FDE68A}
+.hero .st.st-shipped{background:rgba(16,185,129,.24);border-color:rgba(110,231,183,.5);color:#A7F3D0}
+.hero .st.st-dropped{background:rgba(100,116,139,.18);border-color:rgba(148,163,184,.4);color:#94A3B8;
+      text-decoration:line-through}
+.hero .stnote{margin-top:12px;font-size:12.5px;line-height:1.6;color:#CBD5E1;
+      background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
+      border-left:3px solid #6366F1;border-radius:8px;padding:9px 13px;max-width:88ch}
+.hero .stnote b{color:#fff}
+.hero .wv{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+      padding:5px 11px;border-radius:7px;background:rgba(239,68,68,.22);border:1px solid rgba(248,113,113,.5);color:#FCA5A5}
+.hero h1{margin:0 0 12px;font-size:29px;line-height:1.22;letter-spacing:-.6px;font-weight:700;max-width:30ch}
+.hero .goal{font-size:15px;line-height:1.6;color:#CBD5E1;max-width:78ch;border-left:3px solid #6366F1;padding-left:14px}
+.hero .goal b{color:#fff;font-weight:600}
+.hero-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px;position:relative;z-index:2}
+.hero-links a{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
+      text-decoration:none;color:#E2E8F0;background:rgba(255,255,255,.09);
+      border:1px solid rgba(255,255,255,.16);padding:7px 13px;border-radius:8px}
+.hero-links a:hover{background:rgba(255,255,255,.17);color:#fff}
+
+.glance{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:20px}
+.gl{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px 16px;
+    border-top:3px solid #94A3B8;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.gl.crit{border-top-color:#DC2626}.gl.dep{border-top-color:#3B82F6}
+.gl.wave{border-top-color:#8B5CF6}.gl.ship{border-top-color:#059669}
+.gl .k{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#94A3B8;margin-bottom:7px}
+.gl .v{font-size:16px;font-weight:700;color:#0F172A;line-height:1.25;margin-bottom:5px}
+.gl .n{font-size:11.5px;color:#64748B;line-height:1.5}
+
+.lede{background:#fff;border:1px solid #E2E8F0;border-left:4px solid #DC2626;border-radius:12px;
+      padding:18px 22px;margin-bottom:22px;font-size:14.5px;line-height:1.7;color:#334155;
+      box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.lede strong{color:#0F172A}
+.lede p{margin:0 0 10px}.lede p:last-child{margin:0}
+
+.sec-label{display:flex;align-items:center;gap:11px;margin:30px 0 14px}
+.sec-label .n{width:25px;height:25px;border-radius:7px;background:#0F172A;color:#fff;flex:none;
+      display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+.sec-label h2{margin:0;font-size:17px;font-weight:700;color:#0F172A;letter-spacing:-.25px}
+.sec-label .rule{flex:1;height:1px;background:#E2E8F0}
+
+.entry-table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;
+      border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;font-size:12.5px;
+      box-shadow:0 1px 3px rgba(15,23,42,.05);margin-bottom:8px}
+.entry-table th{background:#0F172A;color:#fff;text-align:left;padding:11px 14px;font-size:10.5px;
+      font-weight:700;text-transform:uppercase;letter-spacing:.6px}
+.entry-table td{padding:12px 14px;border-bottom:1px solid #F1F5F9;vertical-align:top;color:#334155;line-height:1.55}
+.entry-table tr:last-child td{border-bottom:0}
+.entry-table tr:hover td{background:#F8FAFC}
+.entry-table td.rt{font-family:'SF Mono',Menlo,monospace;font-size:11.5px;font-weight:600;color:#0F172A;white-space:nowrap}
+.entry-table td.rt.lbl{font-family:inherit;font-size:12.5px;white-space:normal}
+.pill{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;
+      letter-spacing:.2px;white-space:nowrap}
+.pill.no{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA}
+.pill.weak{background:#FEF3C7;color:#92400E;border:1px solid #FDE68A}
+.pill.ok{background:#D1FAE5;color:#065F46;border:1px solid #A7F3D0}
+
+.part{background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;margin-bottom:16px;
+      box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.part-head{background:linear-gradient(to right,#0F172A,#1E293B);color:#fff;padding:14px 20px;
+      display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.part-head .num{width:26px;height:26px;border-radius:7px;background:rgba(255,255,255,.15);
+      border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;
+      font-size:12px;font-weight:700;flex:none}
+.part-head .t{font-size:15px;font-weight:600;letter-spacing:-.15px}
+.part-head .loc{margin-left:auto;font-family:'SF Mono',Menlo,monospace;font-size:10.5px;
+      color:#94A3B8;background:rgba(0,0,0,.28);padding:4px 9px;border-radius:6px}
+.part-body{padding:20px 22px}
+.purpose{font-size:14px;line-height:1.65;color:#0F172A;font-weight:500;
+      border-left:3px solid #6366F1;padding-left:13px;margin-bottom:16px}
+.part-body p{margin:0 0 12px;font-size:13.5px;line-height:1.72;color:#334155}
+.part-body p:last-child{margin-bottom:0}
+.part-body strong{color:#0F172A;font-weight:650}
+.part-body code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1.5px 5px;border-radius:4px;
+      font-family:'SF Mono',Menlo,monospace;font-size:11.5px;color:#0F172A}
+.part-body ul{margin:10px 0 14px;padding-left:0;list-style:none}
+.part-body ul li{position:relative;padding-left:20px;margin-bottom:9px;font-size:13.5px;
+      line-height:1.7;color:#334155}
+.part-body ul li::before{content:'';position:absolute;left:5px;top:9px;width:6px;height:6px;
+      border-radius:50%;background:#94A3B8}
+.code-block{white-space:pre-wrap;word-break:break-word}
+
+.ba{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0 4px}
+@media(max-width:900px){.ba{grid-template-columns:1fr}}
+.ba>div{border-radius:10px;padding:14px 16px;font-size:13px;line-height:1.65}
+.ba .now{background:#FEF2F2;border:1px solid #FECACA;color:#7F1D1D}
+.ba .nxt{background:#ECFDF5;border:1px solid #A7F3D0;color:#065F46}
+.ba h5{margin:0 0 8px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+      display:flex;align-items:center;gap:6px}
+.ba .now h5{color:#B91C1C}.ba .nxt h5{color:#047857}
+.ba code{background:rgba(255,255,255,.75);border:1px solid rgba(0,0,0,.07);padding:1px 5px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:11px}
+.ba p{margin:0 0 9px;font-size:13px;line-height:1.65}
+.ba p:last-child{margin:0}
+
+.callout{border-radius:10px;padding:14px 17px;margin:15px 0 4px;font-size:13px;line-height:1.7}
+.callout .ct{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px}
+.callout.decide{background:#EFF6FF;border:1px solid #BFDBFE;color:#1E3A8A}
+.callout.decide .ct{color:#1D4ED8}
+.callout.mig{background:#FFFBEB;border:1px solid #FDE68A;color:#78350F}
+.callout.mig .ct{color:#B45309}
+.callout p{margin:0 0 9px}.callout p:last-child{margin:0}
+.callout code{background:rgba(255,255,255,.7);border:1px solid rgba(0,0,0,.07);padding:1px 5px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:11px}
+
+.vcard{background:#fff;border:1px solid #FECACA;border-radius:14px;overflow:hidden;margin-bottom:16px;
+      box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.vcard-head{background:linear-gradient(to right,#7F1D1D,#B91C1C);color:#fff;padding:13px 20px;
+      font-size:15px;font-weight:600;display:flex;align-items:center;gap:10px}
+.vcard-body{padding:18px 22px}
+.vitem{display:grid;grid-template-columns:auto 1fr;gap:13px;padding:13px 0;border-bottom:1px solid #F1F5F9}
+.vitem:first-child{padding-top:0}
+.vitem:last-child{border-bottom:0;padding-bottom:0}
+.vitem .vn{width:24px;height:24px;border-radius:7px;background:#FEE2E2;color:#B91C1C;flex:none;
+      display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:1px}
+.vitem.req .vn{background:#B91C1C;color:#fff}
+.vitem .vt{font-size:13px;font-weight:700;color:#0F172A;margin-bottom:4px;display:flex;
+      align-items:center;gap:8px;flex-wrap:wrap}
+.vitem .vt .req-tag{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+      background:#B91C1C;color:#fff;padding:2px 7px;border-radius:20px}
+.vitem .vd{font-size:13px;line-height:1.68;color:#475569}
+.vitem .vd code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1px 5px;border-radius:4px;
+      font-family:'SF Mono',Menlo,monospace;font-size:11px}
+.vitem .vd strong{color:#0F172A}
+
+.done{background:linear-gradient(135deg,#064E3B,#047857);color:#fff;border-radius:14px;
+      padding:20px 24px;margin-bottom:16px}
+.done .dt{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+      color:#6EE7B7;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.done .dd{font-size:14.5px;line-height:1.72;color:#ECFDF5}
+.done .dd strong{color:#fff;font-weight:650}
+.done .dd code{background:rgba(255,255,255,.17);border:1px solid rgba(255,255,255,.28);padding:1.5px 6px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:12px;color:#fff}
+.hero .goal code{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);padding:1px 5px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:12.5px;color:#fff}
+.lede code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1.5px 5px;border-radius:4px;
+      font-family:'SF Mono',Menlo,monospace;font-size:12px;color:#0F172A}
+.lede em{font-style:italic;color:#0F172A}
+
+.filesbox{background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;
+      box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.filesbox-head{background:linear-gradient(to right,#334155,#475569);color:#fff;padding:12px 20px;
+      font-size:14px;font-weight:600;display:flex;align-items:center;gap:9px}
+.filesbox-body{padding:16px 20px;display:flex;flex-wrap:wrap;gap:8px}
+.fchip{font-family:'SF Mono',Menlo,monospace;font-size:11.5px;background:#F8FAFC;color:#334155;
+      border:1px solid #E2E8F0;border-left:3px solid #64748B;padding:7px 11px;border-radius:7px;line-height:1.4}
+.fchip.new{border-left-color:#059669;background:#F0FDF4;color:#065F46}
+
+.page-footer-nav{display:flex;justify-content:space-between;gap:12px;margin-top:26px;flex-wrap:wrap}
+.page-footer-nav a{display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid #E2E8F0;
+      color:#334155;padding:11px 17px;border-radius:9px;text-decoration:none;font-size:12.5px;font-weight:600;
+      box-shadow:0 1px 2px rgba(15,23,42,.05)}
+.page-footer-nav a:hover{border-color:#94A3B8;color:#0F172A}
+
+
+/* ---------- decisions ---------- */
+.dec{background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;margin-bottom:14px;
+     box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.dec>summary{list-style:none;cursor:pointer;padding:15px 20px;display:flex;align-items:flex-start;
+     gap:13px;background:linear-gradient(to right,#1E1B4B,#312E81);color:#fff}
+.dec>summary::-webkit-details-marker{display:none}
+.dec>summary:hover{background:linear-gradient(to right,#312E81,#3730A3)}
+.dec>summary:focus-visible{outline:2px solid #A5B4FC;outline-offset:-2px}
+.dec .chev{flex:none;width:22px;height:22px;border-radius:6px;background:rgba(255,255,255,.15);
+     border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;
+     font-size:11px;transition:transform .18s ease;margin-top:1px}
+.dec[open] .chev{transform:rotate(90deg)}
+.dec .dq{flex:1;min-width:0}
+.dec .dq .lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+     color:#A5B4FC;margin-bottom:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dec .dq .q{font-size:15px;font-weight:600;line-height:1.45;letter-spacing:-.15px}
+.dec .dq .q code{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.26);
+     padding:1px 6px;border-radius:5px;font-family:'SF Mono',Menlo,monospace;font-size:13px;
+     font-weight:600;color:#E0E7FF}
+.dstat{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+     padding:2.5px 8px;border-radius:20px;white-space:nowrap}
+.dstat.open{background:#F59E0B;color:#451A03}
+.dstat.rec{background:#38BDF8;color:#082F49}
+.dstat.set{background:#34D399;color:#022C22}
+.dec .dq .lbl .planid{font-family:'SF Mono',Menlo,monospace;font-size:9.5px;font-weight:700;
+     letter-spacing:.3px;color:#C7D2FE;background:rgba(255,255,255,.1);
+     border:1px solid rgba(255,255,255,.2);padding:2px 7px;border-radius:20px}
+.dec-body{padding:18px 20px 20px;background:#FAFAFF}
+.dec-intro{font-size:13px;line-height:1.7;color:#334155;margin-bottom:16px}
+.dec-intro strong{color:#0F172A}
+.dec-intro code{background:#EEF2FF;border:1px solid #C7D2FE;padding:1.5px 5px;border-radius:4px;
+     font-family:'SF Mono',Menlo,monospace;font-size:11.5px;color:#3730A3}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px}
+.opt{background:#fff;border:1px solid #E2E8F0;border-radius:11px;padding:0;overflow:hidden;
+     display:flex;flex-direction:column;position:relative}
+.opt.pick{border-color:#6366F1;box-shadow:0 0 0 2px rgba(99,102,241,.16)}
+.opt.no{opacity:.82}
+.opt-h{padding:12px 15px;display:flex;align-items:flex-start;gap:10px;background:#F8FAFC;
+     border-bottom:1px solid #E2E8F0}
+.opt.pick .opt-h{background:#EEF2FF;border-bottom-color:#C7D2FE}
+.opt.no .opt-h{background:#FEF2F2;border-bottom-color:#FECACA}
+.opt-h .ltr{width:23px;height:23px;border-radius:6px;background:#334155;color:#fff;flex:none;
+     display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;margin-top:1px}
+.opt.pick .opt-h .ltr{background:#4F46E5}
+.opt.no .opt-h .ltr{background:#B91C1C}
+.opt-h .on{font-size:13.5px;font-weight:700;color:#0F172A;line-height:1.35}
+.opt-h .tag{margin-left:auto;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+     padding:3px 8px;border-radius:20px;white-space:nowrap;margin-top:2px}
+.opt.pick .opt-h .tag{background:#4F46E5;color:#fff}
+.opt.no .opt-h .tag{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA}
+.opt-b{padding:13px 15px 14px;flex:1;display:flex;flex-direction:column;gap:11px}
+.opt-how{font-size:12.5px;line-height:1.6;color:#475569}
+.opt-how code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1px 4px;border-radius:3px;
+     font-family:'SF Mono',Menlo,monospace;font-size:11px;color:#0F172A;word-break:break-all}
+.opt-l{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px}
+.opt-l li{position:relative;padding-left:20px;font-size:12.5px;line-height:1.55;color:#334155}
+.opt-l li::before{position:absolute;left:0;top:0;font-size:12px;font-weight:700}
+.opt-l li.p::before{content:'✓';color:#059669}
+.opt-l li.c::before{content:'✕';color:#DC2626}
+.opt-cost{margin-top:auto;display:flex;gap:7px;flex-wrap:wrap;padding-top:4px}
+.cst{font-size:10px;font-weight:600;padding:4px 8px;border-radius:6px;background:#F1F5F9;
+     color:#475569;border:1px solid #E2E8F0;line-height:1.3}
+.cst b{font-weight:700;color:#0F172A}
+.cst.hi{background:#FEF3C7;border-color:#FDE68A;color:#78350F}
+.cst.hi b{color:#78350F}
+.cst.lo{background:#ECFDF5;border-color:#A7F3D0;color:#065F46}
+.cst.lo b{color:#065F46}
+.dec-rec{margin-top:15px;background:#EEF2FF;border:1px solid #C7D2FE;border-left:4px solid #4F46E5;
+     border-radius:10px;padding:14px 17px;font-size:13px;line-height:1.7;color:#312E81}
+.dec-rec .rt{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+     color:#4F46E5;margin-bottom:7px}
+.dec-rec strong{color:#1E1B4B}
+.dec-rec code{background:rgba(255,255,255,.75);border:1px solid #C7D2FE;padding:1.5px 5px;
+     border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:11.5px}
+.dec-rec p{margin:0 0 9px}.dec-rec p:last-child{margin:0}
+.dec-who{margin-top:11px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+     font-size:11.5px;color:#64748B}
+.dec-who .wk{font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:.5px;font-size:9.5px}
+.dec-who .wv2{background:#fff;border:1px solid #E2E8F0;padding:4px 10px;border-radius:20px;font-weight:600;color:#334155}
+
 </style>
 <div class="container">
-  <div class="top-nav">
-    <a href="index.html" class="back-btn"><span data-en="← Timeline" data-pt="← Timeline">← Timeline</span></a>
-    <div class="lang-sw" role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">EN-US</button><button type="button" data-lang="pt" aria-pressed="false">PT-BR</button></div>
-  </div>
-  <div class="hero">
-    <span class="code">E2</span>
-    <h1 data-en="Align cancellation with Temporal instead of porting the poller" data-pt="Alinhar o cancelamento ao Temporal em vez de portar o poller">Align cancellation with Temporal instead of porting the poller</h1>
-    <div class="goal" data-en="cancelling a run works when the loop is in the worker — by using what Temporal already provides, not by reimplementing the current design somewhere else." data-pt="cancelar um run funciona com o loop no worker — usando o que o Temporal já oferece, e não reimplementando o desenho atual em outro lugar.">cancelling a run works when the loop is in the worker — by using what Temporal already provides, not by reimplementing the current design somewhere else.</div>
-    <div class="meta"><span class="wv w4" data-en="wave 4" data-pt="onda 4">wave 4</span><a href="../complemento/fase-5.html" data-en="where this lands in the flow →" data-pt="onde isto entra no fluxo →">where this lands in the flow →</a><a href="index.html#w4" data-en="other tasks in wave 4 →" data-pt="outras tasks da onda 4 →">other tasks in wave 4 →</a><a href="task-E1.html">← E1</a></div>
-  </div>
-  <div class="aside" style="max-width:none;margin:0 0 16px"><div class="aside-title"><span data-en="Note" data-pt="Nota">Note</span></div>
-    <span data-en="The body below is the task&#x27;s canonical spec, kept in English by repository convention — it is the same text the team implements." data-pt="O corpo abaixo é a spec canônica da task, mantida em inglês por convenção do repositório — é o mesmo texto que o time implementa.">The body below is the task&#x27;s canonical spec, kept in English by repository convention — it is the same text the team implements.</span></div>
-  <div class="sec-card"><div class="sec-head">📌 <span data-en="Context" data-pt="Contexto">Context</span></div><div class="sec-body"><p><strong>Depends on:</strong> B4. <strong>Source:</strong> analysis §11.4.</p></div></div><div class="sec-card "><div class="sec-head">▸ <span data-en="Why aligning beats porting" data-pt="Why aligning beats porting">Why aligning beats porting</span></div><div class="sec-body"><p>The current mechanism cannot move as-is: <code>nodeCancelContext</code> is AsyncLocalStorage, so it is blind</p>
-<p>the moment the handler runs in another process. The rest of it — a Postgres status column, a</p>
-<p>WebSocket signal, a poll — is portable but is not what you would build on Temporal.</p>
-<p>Temporal already has this. <code>WorkflowHandle.cancel()</code> on the backend side and</p>
-<p><code>Context.current().cancelled</code> on the worker side give cooperative cancellation with none of the</p>
-<p>polling. So the migration gets cancellation <strong>almost for free</strong>, and the work is to converge on it.</p>
-<p>There is also a cost to carrying the current design forward: it runs **one <code>setInterval</code> per</p>
-<p>node**, so a sixty-node agent holds sixty timers hitting the database. Behind a flag that is</p>
-<p>tolerable; on by default and unoptimised it becomes a performance offender in its own right.</p></div></div><div class="sec-card "><div class="sec-head">🎯 <span data-en="Scope" data-pt="Escopo">Scope</span></div><div class="sec-body"><p><strong>In.</strong> Backend calls <code>handle.cancel()</code> when a cancel is requested; the worker respects</p>
-<p><code>Context.current().cancelled</code>; the per-node poller is retired along with <code>nodeCancelContext</code>.</p>
-<p><strong>In.</strong> Keep what the product needs: the cancel footprint — which node the run was on when it was</p>
-<p>cancelled — is shown to the user, and <code>finishCancelledNode</code> must still mark state correctly so a</p>
-<p>cancelled run does not look stalled.</p>
-<p><strong>In.</strong> Decide the latency contract. Today a 1500 ms cache over a 2000 ms poll can leave up to</p>
-<p>3.5 s between the click and the effective cancel. Native cancellation should improve that —</p>
-<p>measure it and state the number rather than assuming.</p>
-<p><strong>In.</strong> Validate the feature flag's current state before relying on it. <code>NODE_CANCEL_IN_FLIGHT_FLAG</code></p>
-<p>was added after the original design and is not proven at production scale.</p>
-<p><strong>Out.</strong> Changing what cancellation means to the user, or cancelling already-committed side</p>
-<p>effects. A cancelled push that already reached Stripe stays sent.</p></div></div><div class="sec-card warn"><div class="sec-head">🔬 <span data-en="Verification" data-pt="Verificação">Verification</span></div><div class="sec-body"><ul class="tl">
-<li><strong>Negative control (required).</strong> Cancel a run mid-node and assert the next node never starts.</li>
-</ul>
-<p>  Then break the propagation and watch it start anyway — that is the regression this task exists to</p>
-<p>  prevent, and it is invisible without the test.</p>
-<ul class="tl">
-<li>Cancel during a <strong>child workflow</strong> (<code>fluxBox</code> / <code>libraryNode</code>): the child must stop too.</li>
-</ul>
-<p>  Cancellation propagation is native for child workflows, so this test is cheap and proves the</p>
-<p>  design choice.</p>
-<ul class="tl">
-<li>Measure click-to-effective-cancel before and after.</li>
-<li>Confirm the per-node timers are gone: run a sixty-node agent and count active timers and the</li>
-</ul>
-<p>  database query rate against the pre-change baseline.</p></div></div><div class="sec-card ok"><div class="sec-head">✅ <span data-en="Done when" data-pt="Pronto quando">Done when</span></div><div class="sec-body"><p>Cancellation is Temporal-native end to end including child workflows, the poller and the ALS</p>
-<p>context are removed, the footprint UX is unchanged, and the latency is measured.</p></div></div><div class="sec-card files"><div class="sec-head">📁 <span data-en="Files" data-pt="Arquivos">Files</span></div><div class="sec-body"><p><code>back/src/app-api/flux/node-cancel-watch.ts</code> · <code>back/src/app-api/flux/flux.service.ts:3192–3194, 4516–4530</code> ·</p>
-<p><code>back/src/temporal/temporal.service.ts</code> · the worker flow workflow and its activities</p></div></div>
-  <div class="page-nav"><a href="index.html" class="back-btn"><span data-en="← Timeline" data-pt="← Timeline">← Timeline</span></a></div>
+<div class="top-nav"><a href="index.html" class="back-btn"><span>←</span> <span data-en="Timeline" data-pt="Timeline">Timeline</span></a><div class="lang-sw" role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">EN-US</button><button type="button" data-lang="pt" aria-pressed="false">PT-BR</button></div></div>
+<div class="hero"><div class="kicker"><span class="code">E2</span><span class="wv" data-en="wave 4" data-pt="onda 4">wave 4</span><span class="st st-planned" data-en="Planned" data-pt="Planejada">Planned</span></div><h1 data-en="Align cancellation with Temporal" data-pt="Alinhar cancelamento com o Temporal">Align cancellation with Temporal</h1><div class="goal" data-en="Cancelling a run works when the loop is in the worker — by &lt;b&gt;using what Temporal already provides&lt;/b&gt;, not by reimplementing the current design somewhere else." data-pt="Cancelar um run funciona com o laço no worker — &lt;b&gt;usando o que o Temporal já oferece&lt;/b&gt;, não reimplementando o desenho atual em outro lugar.">Cancelling a run works when the loop is in the worker — by <b>using what Temporal already provides</b>, not by reimplementing the current design somewhere else.</div><div class="hero-links"><a href="../complemento/fase-5.html"><span data-en="Where this lands in the flow →" data-pt="Onde isto entra no fluxo →">Where this lands in the flow →</span></a><a href="index.html#w4"><span data-en="Other tasks in wave 4 →" data-pt="Outras tasks da onda 4 →">Other tasks in wave 4 →</span></a><a href="task-B5.html"><span data-en="Next: B5 — Turn on parallel dispatch →" data-pt="Próxima: B5 — Ligar o dispatch paralelo →">Next: B5 — Turn on parallel dispatch →</span></a></div></div>
+<div class="glance"><div class="gl crit"><div class="k" data-en="Risk" data-pt="Risco">Risk</div><div class="v" data-en="Cancellation stops propagating" data-pt="O cancelamento para de propagar">Cancellation stops propagating</div><div class="n" data-en="The regression this task exists to prevent: a cancel that does not stop the next node from starting — and it is invisible without a test." data-pt="A regressão que esta task existe para evitar: um cancelamento que não impede o próximo node de começar — e ela é invisível sem teste.">The regression this task exists to prevent: a cancel that does not stop the next node from starting — and it is invisible without a test.</div></div><div class="gl dep"><div class="k" data-en="Depends on" data-pt="Depende de">Depends on</div><div class="v" data-en="B4" data-pt="B4">B4</div><div class="n" data-en="The loop has to be in the worker before its cancellation can be Temporal-native. Analysis §11.4." data-pt="O laço precisa estar no worker antes de o cancelamento poder ser nativo do Temporal. Análise §11.4.">The loop has to be in the worker before its cancellation can be Temporal-native. Analysis §11.4.</div></div><div class="gl wave"><div class="k" data-en="Wave" data-pt="Onda">Wave</div><div class="v" data-en="Wave 4" data-pt="Onda 4">Wave 4</div><div class="n" data-en="Same wave as the move, because the move is what breaks the current mechanism." data-pt="Mesma onda que a mudança, porque é a mudança que quebra o mecanismo atual.">Same wave as the move, because the move is what breaks the current mechanism.</div></div><div class="gl ship"><div class="k" data-en="Shape" data-pt="Formato">Shape</div><div class="v" data-en="Delete, not port" data-pt="Apagar, não portar">Delete, not port</div><div class="n" data-en="The per-node poller and &lt;code&gt;nodeCancelContext&lt;/code&gt; are removed — sixty nodes stop meaning sixty timers." data-pt="O poller por node e o &lt;code&gt;nodeCancelContext&lt;/code&gt; são removidos — sessenta nodes deixam de significar sessenta timers.">The per-node poller and <code>nodeCancelContext</code> are removed — sixty nodes stop meaning sixty timers.</div></div></div>
+<div class="lede" data-en="&lt;p&gt;The current mechanism &lt;strong&gt;cannot move as-is&lt;/strong&gt;: &lt;code&gt;nodeCancelContext&lt;/code&gt; is AsyncLocalStorage, so it is blind the moment the handler runs in another process. The rest of it — a Postgres status column, a WebSocket signal, a poll — is portable, but it is not what you would build on Temporal.&lt;/p&gt;&lt;p&gt;Temporal already has this. &lt;code&gt;WorkflowHandle.cancel()&lt;/code&gt; on the backend side and &lt;code&gt;Context.current().cancelled&lt;/code&gt; on the worker side give cooperative cancellation with &lt;strong&gt;none of the polling&lt;/strong&gt;. There is also a cost to carrying the current design forward: it runs &lt;strong&gt;one &lt;code&gt;setInterval&lt;/code&gt; per node&lt;/strong&gt;, so a sixty-node agent holds sixty timers hitting the database.&lt;/p&gt;" data-pt="&lt;p&gt;O mecanismo atual &lt;strong&gt;não pode se mudar como está&lt;/strong&gt;: o &lt;code&gt;nodeCancelContext&lt;/code&gt; é AsyncLocalStorage, então fica cego no instante em que o handler roda em outro processo. O resto dele — uma coluna de status no Postgres, um sinal por WebSocket, um poll — é portável, mas não é o que se construiria sobre o Temporal.&lt;/p&gt;&lt;p&gt;O Temporal já tem isso. &lt;code&gt;WorkflowHandle.cancel()&lt;/code&gt; do lado do backend e &lt;code&gt;Context.current().cancelled&lt;/code&gt; do lado do worker dão cancelamento cooperativo &lt;strong&gt;sem nenhum polling&lt;/strong&gt;. E há um custo em levar o desenho atual adiante: ele roda &lt;strong&gt;um &lt;code&gt;setInterval&lt;/code&gt; por node&lt;/strong&gt;, então um agente de sessenta nodes segura sessenta timers batendo no banco.&lt;/p&gt;"><p>The current mechanism <strong>cannot move as-is</strong>: <code>nodeCancelContext</code> is AsyncLocalStorage, so it is blind the moment the handler runs in another process. The rest of it — a Postgres status column, a WebSocket signal, a poll — is portable, but it is not what you would build on Temporal.</p><p>Temporal already has this. <code>WorkflowHandle.cancel()</code> on the backend side and <code>Context.current().cancelled</code> on the worker side give cooperative cancellation with <strong>none of the polling</strong>. There is also a cost to carrying the current design forward: it runs <strong>one <code>setInterval</code> per node</strong>, so a sixty-node agent holds sixty timers hitting the database.</p></div>
+<div class="sec-label"><span class="n">1</span><h2 data-en="The current mechanism, piece by piece" data-pt="O mecanismo atual, peça por peça">The current mechanism, piece by piece</h2><span class="rule"></span></div>
+<table class="entry-table"><thead><tr><th><span data-en="Piece" data-pt="Peça">Piece</span></th><th><span data-en="What it does today" data-pt="O que faz hoje">What it does today</span></th><th><span data-en="Moves to the worker?" data-pt="Vai para o worker?">Moves to the worker?</span></th><th><span data-en="Temporal&amp;#x27;s answer" data-pt="A resposta do Temporal">Temporal&#x27;s answer</span></th></tr></thead><tbody>
+<tr><td class="rt">nodeCancelContext</td><td><span data-en="AsyncLocalStorage carrying the cancel state for the current node" data-pt="AsyncLocalStorage carregando o estado de cancelamento do node atual">AsyncLocalStorage carrying the cancel state for the current node</span></td><td><span class="pill no"><span data-en="No — blind across processes" data-pt="Não — cego entre processos">No — blind across processes</span></span></td><td><span data-en="Deleted. Cancellation is a workflow property, not a per-process context." data-pt="Apagado. Cancelamento é propriedade do workflow, não contexto por processo.">Deleted. Cancellation is a workflow property, not a per-process context.</span></td></tr>
+<tr><td class="rt lbl"><span data-en="Status column in Postgres" data-pt="Coluna de status no Postgres">Status column in Postgres</span></td><td><span data-en="Records that the run was cancelled" data-pt="Registra que o run foi cancelado">Records that the run was cancelled</span></td><td><span class="pill ok"><span data-en="Portable" data-pt="Portável">Portable</span></span></td><td><span data-en="Kept — the cancel footprint is a product surface, and &lt;code&gt;finishCancelledNode&lt;/code&gt; must still mark state correctly" data-pt="Mantida — a pegada do cancelamento é superfície de produto, e o &lt;code&gt;finishCancelledNode&lt;/code&gt; precisa continuar marcando o estado corretamente">Kept — the cancel footprint is a product surface, and <code>finishCancelledNode</code> must still mark state correctly</span></td></tr>
+<tr><td class="rt lbl"><span data-en="WebSocket signal" data-pt="Sinal por WebSocket">WebSocket signal</span></td><td><span data-en="Tells the running process that a cancel was requested" data-pt="Avisa o processo em execução que um cancelamento foi pedido">Tells the running process that a cancel was requested</span></td><td><span class="pill weak"><span data-en="Portable, but redundant" data-pt="Portável, mas redundante">Portable, but redundant</span></span></td><td><span data-en="&lt;code&gt;WorkflowHandle.cancel()&lt;/code&gt; reaches the workflow directly" data-pt="O &lt;code&gt;WorkflowHandle.cancel()&lt;/code&gt; chega ao workflow diretamente"><code>WorkflowHandle.cancel()</code> reaches the workflow directly</span></td></tr>
+<tr><td class="rt lbl"><span data-en="Per-node poller (setInterval)" data-pt="Poller por node (setInterval)">Per-node poller (setInterval)</span></td><td><span data-en="One timer per node, polling the database for the cancel state" data-pt="Um timer por node, consultando o banco pelo estado de cancelamento">One timer per node, polling the database for the cancel state</span></td><td><span class="pill no"><span data-en="Would multiply" data-pt="Multiplicaria">Would multiply</span></span></td><td><span data-en="&lt;code&gt;Context.current().cancelled&lt;/code&gt; — cooperative, no polling at all" data-pt="&lt;code&gt;Context.current().cancelled&lt;/code&gt; — cooperativo, sem polling nenhum"><code>Context.current().cancelled</code> — cooperative, no polling at all</span></td></tr>
+<tr><td class="rt">NODE_CANCEL_IN_FLIGHT_FLAG</td><td><span data-en="A feature flag added after the original design" data-pt="Uma feature flag adicionada depois do desenho original">A feature flag added after the original design</span></td><td><span class="pill weak"><span data-en="Unproven at scale" data-pt="Não provada em escala">Unproven at scale</span></span></td><td><span data-en="Validate its current state &lt;strong&gt;before&lt;/strong&gt; relying on it" data-pt="Validar o estado atual dela &lt;strong&gt;antes&lt;/strong&gt; de depender dela">Validate its current state <strong>before</strong> relying on it</span></td></tr>
+</tbody></table>
+<div class="lede" style="border-left-color:#6366F1"><div data-en="So the migration gets cancellation &lt;strong&gt;almost for free&lt;/strong&gt;, and the work is to converge on it rather than to rebuild it. What is &lt;em&gt;not&lt;/em&gt; free is the part Temporal does not do: writing the product&amp;#x27;s state. Temporal cancels a workflow; it does not record which node the run was on when the user clicked." data-pt="Ou seja: a migração ganha o cancelamento &lt;strong&gt;quase de graça&lt;/strong&gt;, e o trabalho é convergir para ele em vez de reconstruí-lo. O que &lt;em&gt;não&lt;/em&gt; é de graça é a parte que o Temporal não faz: escrever o estado do produto. O Temporal cancela um workflow; ele não registra em qual node o run estava quando o usuário clicou.">So the migration gets cancellation <strong>almost for free</strong>, and the work is to converge on it rather than to rebuild it. What is <em>not</em> free is the part Temporal does not do: writing the product&#x27;s state. Temporal cancels a workflow; it does not record which node the run was on when the user clicked.</div></div>
+<div class="sec-label"><span class="n">2</span><h2 data-en="The decisions this task needs" data-pt="As decisões que esta task precisa">The decisions this task needs</h2><span class="rule"></span></div>
+<div class="lede" style="border-left-color:#6366F1"><div data-en="One decision. It is the default any team reaches for when a mechanism has to keep working somewhere else — &lt;em&gt;port it&lt;/em&gt; — and the spec answers it in its own title. The page records the two facts that make the answer stick." data-pt="Uma decisão. É o reflexo de qualquer time quando um mecanismo precisa continuar funcionando em outro lugar — &lt;em&gt;portar&lt;/em&gt; — e a spec responde isso no próprio título. A página registra os dois fatos que sustentam a resposta.">One decision. It is the default any team reaches for when a mechanism has to keep working somewhere else — <em>port it</em> — and the spec answers it in its own title. The page records the two facts that make the answer stick.</div></div>
+<details class="dec" open><summary><span class="chev">▸</span><span class="dq"><span class="lbl"><span data-en="Decision E2-a" data-pt="Decisão E2-a">Decision E2-a</span><span class="dstat rec"><span data-en="Recommended — confirm" data-pt="Recomendada — confirmar">Recommended — confirm</span></span></span><span class="q" data-en="Do we port the cancellation mechanism into the worker, or converge on Temporal&amp;#x27;s?" data-pt="Portamos o mecanismo de cancelamento para o worker, ou convergimos para o do Temporal?">Do we port the cancellation mechanism into the worker, or converge on Temporal&#x27;s?</span></span></summary><div class="dec-body"><div class="dec-intro" data-en="The spec answers this in its own title, and it is recorded here because &lt;em&gt;port it&lt;/em&gt; is the default any team reaches for when a mechanism has to keep working somewhere else. Two facts decide it. &lt;strong&gt;&lt;code&gt;nodeCancelContext&lt;/code&gt; is AsyncLocalStorage&lt;/strong&gt; and cannot cross a process boundary at all, so &amp;#x27;identical semantics&amp;#x27; is not actually on offer. And the portable remainder runs &lt;strong&gt;one &lt;code&gt;setInterval&lt;/code&gt; per node&lt;/strong&gt; — a sixty-node agent holds sixty timers hitting the database. Behind a flag that is tolerable; on by default and unoptimised it becomes a performance offender in its own right." data-pt="A spec responde isso no próprio título, e fica registrado aqui porque &lt;em&gt;portar&lt;/em&gt; é o reflexo de qualquer time quando um mecanismo precisa continuar funcionando em outro lugar. Dois fatos decidem. &lt;strong&gt;O &lt;code&gt;nodeCancelContext&lt;/code&gt; é AsyncLocalStorage&lt;/strong&gt; e não atravessa fronteira de processo de forma alguma, então &amp;#x27;semântica idêntica&amp;#x27; não está de fato em oferta. E o restante portável roda &lt;strong&gt;um &lt;code&gt;setInterval&lt;/code&gt; por node&lt;/strong&gt; — um agente de sessenta nodes segura sessenta timers batendo no banco. Atrás de uma flag isso é tolerável; ligado por padrão e sem otimização vira um problema de performance por si só.">The spec answers this in its own title, and it is recorded here because <em>port it</em> is the default any team reaches for when a mechanism has to keep working somewhere else. Two facts decide it. <strong><code>nodeCancelContext</code> is AsyncLocalStorage</strong> and cannot cross a process boundary at all, so &#x27;identical semantics&#x27; is not actually on offer. And the portable remainder runs <strong>one <code>setInterval</code> per node</strong> — a sixty-node agent holds sixty timers hitting the database. Behind a flag that is tolerable; on by default and unoptimised it becomes a performance offender in its own right.</div><div class="opts"><div class="opt pick"><div class="opt-h"><span class="ltr">A</span><span class="on"><span data-en="Temporal-native cancellation" data-pt="Cancelamento nativo do Temporal">Temporal-native cancellation</span></span><span class="tag"><span data-en="recommended" data-pt="recomendada">recommended</span></span></div><div class="opt-b"><div class="opt-how" data-en="The backend calls &lt;code&gt;handle.cancel()&lt;/code&gt;; the worker respects &lt;code&gt;Context.current().cancelled&lt;/code&gt;. The per-node poller and &lt;code&gt;nodeCancelContext&lt;/code&gt; are retired." data-pt="O backend chama &lt;code&gt;handle.cancel()&lt;/code&gt;; o worker respeita o &lt;code&gt;Context.current().cancelled&lt;/code&gt;. O poller por node e o &lt;code&gt;nodeCancelContext&lt;/code&gt; são aposentados.">The backend calls <code>handle.cancel()</code>; the worker respects <code>Context.current().cancelled</code>. The per-node poller and <code>nodeCancelContext</code> are retired.</div><ul class="opt-l"><li class="p" data-en="The mechanism &lt;strong&gt;already exists on both sides&lt;/strong&gt; — the migration gets cancellation almost for free" data-pt="O mecanismo &lt;strong&gt;já existe dos dois lados&lt;/strong&gt; — a migração ganha o cancelamento quase de graça">The mechanism <strong>already exists on both sides</strong> — the migration gets cancellation almost for free</li><li class="p" data-en="Propagation into child workflows (&lt;code&gt;fluxBox&lt;/code&gt; / &lt;code&gt;libraryNode&lt;/code&gt;) is &lt;strong&gt;native&lt;/strong&gt;, so B6&amp;#x27;s sub-flows inherit it" data-pt="A propagação para child workflows (&lt;code&gt;fluxBox&lt;/code&gt; / &lt;code&gt;libraryNode&lt;/code&gt;) é &lt;strong&gt;nativa&lt;/strong&gt;, então os sub-fluxos da B6 a herdam">Propagation into child workflows (<code>fluxBox</code> / <code>libraryNode</code>) is <strong>native</strong>, so B6&#x27;s sub-flows inherit it</li><li class="p" data-en="Sixty timers and their database queries disappear from a sixty-node agent" data-pt="Sessenta timers e suas consultas ao banco desaparecem de um agente de sessenta nodes">Sixty timers and their database queries disappear from a sixty-node agent</li><li class="p" data-en="Latency should improve — today a 1500 ms cache over a 2000 ms poll can leave up to &lt;strong&gt;3.5 s&lt;/strong&gt;" data-pt="A latência deve melhorar — hoje um cache de 1500 ms sobre um poll de 2000 ms pode deixar até &lt;strong&gt;3,5 s&lt;/strong&gt;">Latency should improve — today a 1500 ms cache over a 2000 ms poll can leave up to <strong>3.5 s</strong></li><li class="c" data-en="The cancel footprint and &lt;code&gt;finishCancelledNode&lt;/code&gt; still have to be wired by hand — &lt;strong&gt;Temporal cancels a workflow, it does not write the product&amp;#x27;s state&lt;/strong&gt;" data-pt="A pegada do cancelamento e o &lt;code&gt;finishCancelledNode&lt;/code&gt; ainda precisam ser ligados à mão — &lt;strong&gt;o Temporal cancela um workflow, ele não escreve o estado do produto&lt;/strong&gt;">The cancel footprint and <code>finishCancelledNode</code> still have to be wired by hand — <strong>Temporal cancels a workflow, it does not write the product&#x27;s state</strong></li><li class="c" data-en="Cooperative cancellation only stops what checks it: an activity in the middle of a provider call finishes that call" data-pt="Cancelamento cooperativo só para o que o consulta: uma activity no meio de uma chamada a provedor termina aquela chamada">Cooperative cancellation only stops what checks it: an activity in the middle of a provider call finishes that call</li></ul><div class="opt-cost"><span class="cst lo"><span data-en="Client effort: &lt;b&gt;none — the cancel button is unchanged&lt;/b&gt;" data-pt="Esforço do cliente: &lt;b&gt;nenhum — o botão de cancelar não muda&lt;/b&gt;">Client effort: <b>none — the cancel button is unchanged</b></span></span><span class="cst lo"><span data-en="Ours: &lt;b&gt;we delete more than we add&lt;/b&gt;" data-pt="Nosso: &lt;b&gt;apagamos mais do que escrevemos&lt;/b&gt;">Ours: <b>we delete more than we add</b></span></span></div></div></div><div class="opt"><div class="opt-h"><span class="ltr">B</span><span class="on"><span data-en="Port the portable remainder" data-pt="Portar o restante portável">Port the portable remainder</span></span></div><div class="opt-b"><div class="opt-how" data-en="Keep the status column, the signal and the poll, and re-implement the per-node watch inside the worker — replacing the ALS context with something that crosses processes." data-pt="Manter a coluna de status, o sinal e o poll, e reimplementar a vigília por node dentro do worker — trocando o contexto ALS por algo que atravesse processos.">Keep the status column, the signal and the poll, and re-implement the per-node watch inside the worker — replacing the ALS context with something that crosses processes.</div><ul class="opt-l"><li class="p" data-en="The semantics stay literally identical, so nothing about the footprint UX has to be re-reasoned" data-pt="A semântica fica literalmente idêntica, então nada da UX da pegada precisa ser repensado">The semantics stay literally identical, so nothing about the footprint UX has to be re-reasoned</li><li class="p" data-en="No dependence on Temporal cancellation semantics the team has not exercised yet" data-pt="Sem dependência de semânticas de cancelamento do Temporal que o time ainda não exercitou">No dependence on Temporal cancellation semantics the team has not exercised yet</li><li class="c" data-en="It carries &lt;strong&gt;one &lt;code&gt;setInterval&lt;/code&gt; per node&lt;/strong&gt; into a fleet that is about to have more replicas" data-pt="Leva &lt;strong&gt;um &lt;code&gt;setInterval&lt;/code&gt; por node&lt;/strong&gt; para uma frota que está prestes a ter mais réplicas">It carries <strong>one <code>setInterval</code> per node</strong> into a fleet that is about to have more replicas</li><li class="c" data-en="The ALS context has no cross-process equivalent, so it has to be rebuilt anyway — &lt;strong&gt;&amp;#x27;identical&amp;#x27; is not on offer&lt;/strong&gt;" data-pt="O contexto ALS não tem equivalente entre processos, então precisa ser reconstruído de qualquer jeito — &lt;strong&gt;&amp;#x27;idêntico&amp;#x27; não está em oferta&lt;/strong&gt;">The ALS context has no cross-process equivalent, so it has to be rebuilt anyway — <strong>&#x27;identical&#x27; is not on offer</strong></li><li class="c" data-en="Child-workflow propagation would have to be written and maintained, when Temporal gives it" data-pt="A propagação para child workflows teria de ser escrita e mantida, quando o Temporal já a dá">Child-workflow propagation would have to be written and maintained, when Temporal gives it</li></ul><div class="opt-cost"><span class="cst lo"><span data-en="Client effort: &lt;b&gt;none&lt;/b&gt;" data-pt="Esforço do cliente: &lt;b&gt;nenhum&lt;/b&gt;">Client effort: <b>none</b></span></span><span class="cst hi"><span data-en="Ours: &lt;b&gt;sixty timers per agent, plus hand-written propagation&lt;/b&gt;" data-pt="Nosso: &lt;b&gt;sessenta timers por agente, mais propagação escrita à mão&lt;/b&gt;">Ours: <b>sixty timers per agent, plus hand-written propagation</b></span></span></div></div></div><div class="opt no"><div class="opt-h"><span class="ltr">C</span><span class="on"><span data-en="Carry &lt;code&gt;nodeCancelContext&lt;/code&gt; as it is" data-pt="Levar o &lt;code&gt;nodeCancelContext&lt;/code&gt; como está">Carry <code>nodeCancelContext</code> as it is</span></span><span class="tag"><span data-en="not viable" data-pt="inviável">not viable</span></span></div><div class="opt-b"><div class="opt-how" data-en="Keep the AsyncLocalStorage context and let the worker read it." data-pt="Manter o contexto AsyncLocalStorage e deixar o worker lê-lo.">Keep the AsyncLocalStorage context and let the worker read it.</div><ul class="opt-l"><li class="p" data-en="No work" data-pt="Nenhum trabalho">No work</li><li class="c" data-en="AsyncLocalStorage &lt;strong&gt;does not cross a process boundary&lt;/strong&gt; — the context is simply empty in the worker" data-pt="AsyncLocalStorage &lt;strong&gt;não atravessa fronteira de processo&lt;/strong&gt; — o contexto simplesmente fica vazio no worker">AsyncLocalStorage <strong>does not cross a process boundary</strong> — the context is simply empty in the worker</li><li class="c" data-en="The failure is silent: the cancel appears to succeed and the next node starts anyway" data-pt="A falha é silenciosa: o cancelamento parece ter funcionado e o próximo node começa assim mesmo">The failure is silent: the cancel appears to succeed and the next node starts anyway</li></ul><div class="opt-cost"><span class="cst lo"><span data-en="Client effort: &lt;b&gt;none&lt;/b&gt;" data-pt="Esforço do cliente: &lt;b&gt;nenhum&lt;/b&gt;">Client effort: <b>none</b></span></span><span class="cst hi"><span data-en="Ours: &lt;b&gt;a cancel that silently does nothing&lt;/b&gt;" data-pt="Nosso: &lt;b&gt;um cancelamento que silenciosamente não faz nada&lt;/b&gt;">Ours: <b>a cancel that silently does nothing</b></span></span></div></div></div></div><div class="dec-rec"><span class="rt" data-en="Our recommendation" data-pt="Nossa recomendação">Our recommendation</span><div data-en="&lt;p&gt;&lt;strong&gt;A.&lt;/strong&gt; It is the spec&amp;#x27;s answer and the two supporting facts are not close: the ALS context cannot move at all, and the portable remainder is a per-node timer we would be carrying into a bigger fleet. The child-workflow test is the cheap proof — propagation is native there, and B is the option that would have to build it.&lt;/p&gt;&lt;p&gt;Two things must not be lost in the convergence. The &lt;strong&gt;cancel footprint&lt;/strong&gt; — which node the run was on when it was cancelled — stays a product surface. And &lt;code&gt;finishCancelledNode&lt;/code&gt; must still mark state correctly, &lt;strong&gt;so a cancelled run does not look stalled&lt;/strong&gt;.&lt;/p&gt;&lt;p&gt;Before any of this leans on it, &lt;strong&gt;validate the current state of &lt;code&gt;NODE_CANCEL_IN_FLIGHT_FLAG&lt;/code&gt;&lt;/strong&gt;: it was added after the original design and is not proven at production scale. A flag assumed on is a flag nobody tested.&lt;/p&gt;" data-pt="&lt;p&gt;&lt;strong&gt;A.&lt;/strong&gt; É a resposta da spec, e os dois fatos que a sustentam não são disputáveis: o contexto ALS não se move, e o restante portável é um timer por node que estaríamos levando para uma frota maior. O teste de child workflow é a prova barata — a propagação é nativa ali, e a B é a opção que teria de construí-la.&lt;/p&gt;&lt;p&gt;Duas coisas não podem se perder na convergência. A &lt;strong&gt;pegada do cancelamento&lt;/strong&gt; — em qual node o run estava quando foi cancelado — continua sendo superfície de produto. E o &lt;code&gt;finishCancelledNode&lt;/code&gt; precisa continuar marcando o estado corretamente, &lt;strong&gt;para que um run cancelado não pareça travado&lt;/strong&gt;.&lt;/p&gt;&lt;p&gt;Antes de qualquer coisa se apoiar nela, &lt;strong&gt;valide o estado atual do &lt;code&gt;NODE_CANCEL_IN_FLIGHT_FLAG&lt;/code&gt;&lt;/strong&gt;: ele foi adicionado depois do desenho original e não está provado em escala de produção. Uma flag presumida ligada é uma flag que ninguém testou.&lt;/p&gt;"><p><strong>A.</strong> It is the spec&#x27;s answer and the two supporting facts are not close: the ALS context cannot move at all, and the portable remainder is a per-node timer we would be carrying into a bigger fleet. The child-workflow test is the cheap proof — propagation is native there, and B is the option that would have to build it.</p><p>Two things must not be lost in the convergence. The <strong>cancel footprint</strong> — which node the run was on when it was cancelled — stays a product surface. And <code>finishCancelledNode</code> must still mark state correctly, <strong>so a cancelled run does not look stalled</strong>.</p><p>Before any of this leans on it, <strong>validate the current state of <code>NODE_CANCEL_IN_FLIGHT_FLAG</code></strong>: it was added after the original design and is not proven at production scale. A flag assumed on is a flag nobody tested.</p></div></div><div class="dec-who"><span class="wk"><span data-en="Who decides" data-pt="Quem decide">Who decides</span></span><span class="wv2"><span data-en="Engineering" data-pt="Engenharia">Engineering</span></span><span class="wv2"><span data-en="Product keeps the footprint UX" data-pt="Produto mantém a UX da pegada">Product keeps the footprint UX</span></span></div></div></details>
+<div class="sec-label"><span class="n">3</span><h2 data-en="What the task does, in three parts" data-pt="O que a task faz, em três partes">What the task does, in three parts</h2><span class="rule"></span></div>
+<div class="part"><div class="part-head"><span class="num">1</span><span class="t"><span data-en="Cancel becomes a workflow call" data-pt="Cancelar vira uma chamada de workflow">Cancel becomes a workflow call</span></span><span class="loc">back/src/temporal/temporal.service.ts · flux/node-cancel-watch.ts</span></div><div class="part-body"><div class="purpose" data-en="The backend asks Temporal to cancel; the worker cooperates. Nothing polls." data-pt="O backend pede ao Temporal para cancelar; o worker coopera. Nada faz polling.">The backend asks Temporal to cancel; the worker cooperates. Nothing polls.</div><div data-en="&lt;p&gt;The backend calls &lt;code&gt;handle.cancel()&lt;/code&gt; when a cancel is requested, and the worker respects &lt;code&gt;Context.current().cancelled&lt;/code&gt;. The per-node poller is retired along with &lt;code&gt;nodeCancelContext&lt;/code&gt;.&lt;/p&gt;&lt;p&gt;The child-workflow case is the one that proves the design rather than merely implementing it: cancelling a run that is inside a &lt;code&gt;fluxBox&lt;/code&gt; or a &lt;code&gt;libraryNode&lt;/code&gt; has to stop the child too, and &lt;strong&gt;cancellation propagation is native for child workflows&lt;/strong&gt;. That is a cheap test and a strong signal — the hand-built alternative would need that propagation written and maintained.&lt;/p&gt;" data-pt="&lt;p&gt;O backend chama &lt;code&gt;handle.cancel()&lt;/code&gt; quando um cancelamento é pedido, e o worker respeita o &lt;code&gt;Context.current().cancelled&lt;/code&gt;. O poller por node é aposentado junto com o &lt;code&gt;nodeCancelContext&lt;/code&gt;.&lt;/p&gt;&lt;p&gt;O caso de child workflow é o que prova o desenho, e não apenas o implementa: cancelar um run que está dentro de um &lt;code&gt;fluxBox&lt;/code&gt; ou de um &lt;code&gt;libraryNode&lt;/code&gt; precisa parar o filho também, e &lt;strong&gt;a propagação de cancelamento é nativa para child workflows&lt;/strong&gt;. É um teste barato e um sinal forte — a alternativa feita à mão precisaria escrever e manter essa propagação.&lt;/p&gt;"><p>The backend calls <code>handle.cancel()</code> when a cancel is requested, and the worker respects <code>Context.current().cancelled</code>. The per-node poller is retired along with <code>nodeCancelContext</code>.</p><p>The child-workflow case is the one that proves the design rather than merely implementing it: cancelling a run that is inside a <code>fluxBox</code> or a <code>libraryNode</code> has to stop the child too, and <strong>cancellation propagation is native for child workflows</strong>. That is a cheap test and a strong signal — the hand-built alternative would need that propagation written and maintained.</p></div><div class="ba"><div class="now"><h5>⚠ <span data-en="How it is today" data-pt="Como está hoje">How it is today</span></h5><p data-en="A cancel writes a status column, emits a WebSocket signal, and each node&amp;#x27;s own &lt;code&gt;setInterval&lt;/code&gt; polls the database for it — a sixty-node agent holding sixty timers." data-pt="Um cancelamento escreve uma coluna de status, emite um sinal por WebSocket, e o &lt;code&gt;setInterval&lt;/code&gt; de cada node consulta o banco por ele — um agente de sessenta nodes segurando sessenta timers.">A cancel writes a status column, emits a WebSocket signal, and each node&#x27;s own <code>setInterval</code> polls the database for it — a sixty-node agent holding sixty timers.</p></div><div class="nxt"><h5>✓ <span data-en="How it will be" data-pt="Como fica">How it will be</span></h5><p data-en="The backend calls &lt;code&gt;handle.cancel()&lt;/code&gt; and the worker checks &lt;code&gt;Context.current().cancelled&lt;/code&gt;. &lt;strong&gt;The poller and &lt;code&gt;nodeCancelContext&lt;/code&gt; are deleted&lt;/strong&gt;, and child workflows stop for free." data-pt="O backend chama &lt;code&gt;handle.cancel()&lt;/code&gt; e o worker checa &lt;code&gt;Context.current().cancelled&lt;/code&gt;. &lt;strong&gt;O poller e o &lt;code&gt;nodeCancelContext&lt;/code&gt; são apagados&lt;/strong&gt;, e os child workflows param de graça.">The backend calls <code>handle.cancel()</code> and the worker checks <code>Context.current().cancelled</code>. <strong>The poller and <code>nodeCancelContext</code> are deleted</strong>, and child workflows stop for free.</p></div></div><div class="callout mig"><span class="ct" data-en="Out of scope" data-pt="Fora de escopo">Out of scope</span><div data-en="&lt;p&gt;Changing what cancellation &lt;em&gt;means&lt;/em&gt; to the user, or cancelling side effects that already committed. &lt;strong&gt;A cancelled push that already reached Stripe stays sent.&lt;/strong&gt;&lt;/p&gt;" data-pt="&lt;p&gt;Mudar o que cancelamento &lt;em&gt;significa&lt;/em&gt; para o usuário, ou cancelar efeitos colaterais já efetivados. &lt;strong&gt;Um push cancelado que já chegou ao Stripe continua enviado.&lt;/strong&gt;&lt;/p&gt;"><p>Changing what cancellation <em>means</em> to the user, or cancelling side effects that already committed. <strong>A cancelled push that already reached Stripe stays sent.</strong></p></div></div></div></div>
+<div class="part"><div class="part-head"><span class="num">2</span><span class="t"><span data-en="What the product keeps" data-pt="O que o produto mantém">What the product keeps</span></span><span class="loc">flux.service.ts:3192–3194, 4516–4530</span></div><div class="part-body"><div class="purpose" data-en="Temporal cancels a workflow; it does not write the product&amp;#x27;s state. That part stays ours." data-pt="O Temporal cancela um workflow; ele não escreve o estado do produto. Essa parte continua sendo nossa.">Temporal cancels a workflow; it does not write the product&#x27;s state. That part stays ours.</div><div data-en="&lt;p&gt;Two things survive the convergence unchanged. The &lt;strong&gt;cancel footprint&lt;/strong&gt; — which node the run was on when it was cancelled — is shown to the user and stays. And &lt;code&gt;finishCancelledNode&lt;/code&gt; must still mark state correctly, &lt;strong&gt;so a cancelled run does not look stalled&lt;/strong&gt;: a run that was cancelled and a run that hung look identical from the outside unless someone writes the difference down.&lt;/p&gt;&lt;p&gt;The feature flag needs its own check before any of this leans on it. &lt;code&gt;NODE_CANCEL_IN_FLIGHT_FLAG&lt;/code&gt; was added after the original design and &lt;strong&gt;is not proven at production scale&lt;/strong&gt; — validate its current state rather than assuming it is on and working.&lt;/p&gt;" data-pt="&lt;p&gt;Duas coisas sobrevivem inalteradas à convergência. A &lt;strong&gt;pegada do cancelamento&lt;/strong&gt; — em qual node o run estava quando foi cancelado — é mostrada ao usuário e fica. E o &lt;code&gt;finishCancelledNode&lt;/code&gt; precisa continuar marcando o estado corretamente, &lt;strong&gt;para que um run cancelado não pareça travado&lt;/strong&gt;: um run cancelado e um run que travou parecem idênticos de fora, a menos que alguém escreva a diferença.&lt;/p&gt;&lt;p&gt;A feature flag precisa da própria checagem antes de qualquer coisa se apoiar nela. O &lt;code&gt;NODE_CANCEL_IN_FLIGHT_FLAG&lt;/code&gt; foi adicionado depois do desenho original e &lt;strong&gt;não está provado em escala de produção&lt;/strong&gt; — valide o estado atual dele em vez de supor que está ligado e funcionando.&lt;/p&gt;"><p>Two things survive the convergence unchanged. The <strong>cancel footprint</strong> — which node the run was on when it was cancelled — is shown to the user and stays. And <code>finishCancelledNode</code> must still mark state correctly, <strong>so a cancelled run does not look stalled</strong>: a run that was cancelled and a run that hung look identical from the outside unless someone writes the difference down.</p><p>The feature flag needs its own check before any of this leans on it. <code>NODE_CANCEL_IN_FLIGHT_FLAG</code> was added after the original design and <strong>is not proven at production scale</strong> — validate its current state rather than assuming it is on and working.</p></div><div class="ba"><div class="now"><h5>⚠ <span data-en="How it is today" data-pt="Como está hoje">How it is today</span></h5><p data-en="The footprint and the cancelled state are written by the backend loop that owned the run and observed the cancel." data-pt="A pegada e o estado cancelado são escritos pelo laço do backend que era dono do run e observou o cancelamento.">The footprint and the cancelled state are written by the backend loop that owned the run and observed the cancel.</p></div><div class="nxt"><h5>✓ <span data-en="How it will be" data-pt="Como fica">How it will be</span></h5><p data-en="The same footprint and the same terminal state are written from the worker-owned run — &lt;strong&gt;the UX is unchanged, which is the point&lt;/strong&gt;." data-pt="A mesma pegada e o mesmo estado terminal são escritos a partir do run conduzido pelo worker — &lt;strong&gt;a UX não muda, e esse é o objetivo&lt;/strong&gt;.">The same footprint and the same terminal state are written from the worker-owned run — <strong>the UX is unchanged, which is the point</strong>.</p></div></div></div></div>
+<div class="part"><div class="part-head"><span class="num">3</span><span class="t"><span data-en="State the latency, do not assume it" data-pt="Declarar a latência, não presumir">State the latency, do not assume it</span></span><span class="loc" data-en="a 1500 ms cache over a 2000 ms poll" data-pt="um cache de 1500 ms sobre um poll de 2000 ms">a 1500 ms cache over a 2000 ms poll</span></div><div class="part-body"><div class="purpose" data-en="Today up to &lt;strong&gt;3.5 s&lt;/strong&gt; can pass between the click and the effective cancel. Native cancellation should improve that — &lt;em&gt;should&lt;/em&gt; is not a contract." data-pt="Hoje podem passar até &lt;strong&gt;3,5 s&lt;/strong&gt; entre o clique e o cancelamento efetivo. O cancelamento nativo deveria melhorar isso — &lt;em&gt;deveria&lt;/em&gt; não é contrato.">Today up to <strong>3.5 s</strong> can pass between the click and the effective cancel. Native cancellation should improve that — <em>should</em> is not a contract.</div><div data-en="&lt;p&gt;The 3.5 s is arithmetic, not measurement: a 1500 ms cache sitting over a 2000 ms poll. Replacing the poll with cooperative cancellation removes both terms, but the number that matters is the one measured on a real run, before and after.&lt;/p&gt;&lt;p&gt;The other measurement is the timers. Run a &lt;strong&gt;sixty-node agent&lt;/strong&gt; and count active timers and the database query rate against the pre-change baseline — the claim that the poller is a performance offender in its own right is either demonstrable or it is not worth making.&lt;/p&gt;" data-pt="&lt;p&gt;Os 3,5 s são aritmética, não medição: um cache de 1500 ms sobre um poll de 2000 ms. Trocar o poll por cancelamento cooperativo elimina os dois termos, mas o número que importa é o medido num run real, antes e depois.&lt;/p&gt;&lt;p&gt;A outra medição são os timers. Rode um &lt;strong&gt;agente de sessenta nodes&lt;/strong&gt; e conte timers ativos e a taxa de consultas ao banco contra a linha de base anterior — a afirmação de que o poller é, por si só, um problema de performance ou é demonstrável ou não vale a pena ser feita.&lt;/p&gt;"><p>The 3.5 s is arithmetic, not measurement: a 1500 ms cache sitting over a 2000 ms poll. Replacing the poll with cooperative cancellation removes both terms, but the number that matters is the one measured on a real run, before and after.</p><p>The other measurement is the timers. Run a <strong>sixty-node agent</strong> and count active timers and the database query rate against the pre-change baseline — the claim that the poller is a performance offender in its own right is either demonstrable or it is not worth making.</p></div><div class="ba"><div class="now"><h5>⚠ <span data-en="How it is today" data-pt="Como está hoje">How it is today</span></h5><p data-en="Up to 3.5 s, derived from the cache and poll intervals. Nobody has measured the real click-to-effective-cancel time." data-pt="Até 3,5 s, derivados dos intervalos de cache e de poll. Ninguém mediu o tempo real entre o clique e o cancelamento efetivo.">Up to 3.5 s, derived from the cache and poll intervals. Nobody has measured the real click-to-effective-cancel time.</p></div><div class="nxt"><h5>✓ <span data-en="How it will be" data-pt="Como fica">How it will be</span></h5><p data-en="A measured click-to-effective-cancel number, before and after, stated in the PR — along with the timer count for a sixty-node agent." data-pt="Um número medido de clique até cancelamento efetivo, antes e depois, declarado no PR — junto com a contagem de timers de um agente de sessenta nodes.">A measured click-to-effective-cancel number, before and after, stated in the PR — along with the timer count for a sixty-node agent.</p></div></div><div class="callout decide"><span class="ct" data-en="Decision to write down — the latency contract" data-pt="Decisão a registrar — o contrato de latência">Decision to write down — the latency contract</span><div data-en="&lt;p&gt;&amp;#x27;Should improve&amp;#x27; is not a contract; a number is. Decide what click-to-effective-cancel the product promises, then measure against it — &lt;strong&gt;and if the measured number is worse than 3.5 s anywhere, that is a finding, not a rounding error&lt;/strong&gt;.&lt;/p&gt;" data-pt="&lt;p&gt;&amp;#x27;Deveria melhorar&amp;#x27; não é contrato; um número é. Decida qual tempo de clique até cancelamento efetivo o produto promete, e então meça contra ele — &lt;strong&gt;e se o número medido for pior que 3,5 s em algum lugar, isso é um achado, não erro de arredondamento&lt;/strong&gt;.&lt;/p&gt;"><p>&#x27;Should improve&#x27; is not a contract; a number is. Decide what click-to-effective-cancel the product promises, then measure against it — <strong>and if the measured number is worse than 3.5 s anywhere, that is a finding, not a rounding error</strong>.</p></div></div></div></div>
+<div class="sec-label"><span class="n">4</span><h2 data-en="How it is proved" data-pt="Como se prova">How it is proved</h2><span class="rule"></span></div>
+<div class="vcard"><div class="vcard-head">🔬 <span data-en="Verification" data-pt="Verificação">Verification</span></div><div class="vcard-body"><div class="vitem req"><div class="vn">1</div><div><div class="vt"><span data-en="Negative control" data-pt="Controle negativo">Negative control</span><span class="req-tag"><span data-en="required" data-pt="obrigatório">required</span></span></div><div class="vd" data-en="Cancel a run mid-node and assert &lt;strong&gt;the next node never starts&lt;/strong&gt;. Then break the propagation and watch it start anyway — &lt;strong&gt;that is the regression this task exists to prevent, and it is invisible without the test&lt;/strong&gt;." data-pt="Cancele um run no meio de um node e afirme que &lt;strong&gt;o próximo node nunca começa&lt;/strong&gt;. Depois quebre a propagação e veja-o começar assim mesmo — &lt;strong&gt;essa é a regressão que esta task existe para evitar, e ela é invisível sem o teste&lt;/strong&gt;.">Cancel a run mid-node and assert <strong>the next node never starts</strong>. Then break the propagation and watch it start anyway — <strong>that is the regression this task exists to prevent, and it is invisible without the test</strong>.</div></div></div>
+<div class="vitem"><div class="vn">2</div><div><div class="vt"><span data-en="Cancel during a child workflow" data-pt="Cancelar durante um child workflow">Cancel during a child workflow</span></div><div class="vd" data-en="With a &lt;code&gt;fluxBox&lt;/code&gt; or &lt;code&gt;libraryNode&lt;/code&gt; running, cancel the parent: &lt;strong&gt;the child must stop too&lt;/strong&gt;. Cancellation propagation is native for child workflows, so this test is cheap — and it is what &lt;strong&gt;proves the design choice&lt;/strong&gt; rather than the implementation." data-pt="Com um &lt;code&gt;fluxBox&lt;/code&gt; ou &lt;code&gt;libraryNode&lt;/code&gt; rodando, cancele o pai: &lt;strong&gt;o filho precisa parar também&lt;/strong&gt;. A propagação de cancelamento é nativa para child workflows, então este teste é barato — e é o que &lt;strong&gt;prova a escolha de desenho&lt;/strong&gt;, não a implementação.">With a <code>fluxBox</code> or <code>libraryNode</code> running, cancel the parent: <strong>the child must stop too</strong>. Cancellation propagation is native for child workflows, so this test is cheap — and it is what <strong>proves the design choice</strong> rather than the implementation.</div></div></div>
+<div class="vitem"><div class="vn">3</div><div><div class="vt"><span data-en="Measure click-to-effective-cancel" data-pt="Medir clique até cancelamento efetivo">Measure click-to-effective-cancel</span></div><div class="vd" data-en="Before and after. Today a &lt;strong&gt;1500 ms cache over a 2000 ms poll&lt;/strong&gt; can leave up to &lt;strong&gt;3.5 s&lt;/strong&gt;; native cancellation should improve that — &lt;strong&gt;state the number rather than assuming&lt;/strong&gt;." data-pt="Antes e depois. Hoje um &lt;strong&gt;cache de 1500 ms sobre um poll de 2000 ms&lt;/strong&gt; pode deixar até &lt;strong&gt;3,5 s&lt;/strong&gt;; o cancelamento nativo deveria melhorar isso — &lt;strong&gt;declare o número em vez de supor&lt;/strong&gt;.">Before and after. Today a <strong>1500 ms cache over a 2000 ms poll</strong> can leave up to <strong>3.5 s</strong>; native cancellation should improve that — <strong>state the number rather than assuming</strong>.</div></div></div>
+<div class="vitem"><div class="vn">4</div><div><div class="vt"><span data-en="The per-node timers are gone" data-pt="Os timers por node sumiram">The per-node timers are gone</span></div><div class="vd" data-en="Run a &lt;strong&gt;sixty-node agent&lt;/strong&gt; and count active timers and the database query rate against the pre-change baseline. One &lt;code&gt;setInterval&lt;/code&gt; per node is the cost this task removes; if the count does not drop, it was not removed." data-pt="Rode um &lt;strong&gt;agente de sessenta nodes&lt;/strong&gt; e conte timers ativos e a taxa de consultas ao banco contra a linha de base anterior. Um &lt;code&gt;setInterval&lt;/code&gt; por node é o custo que esta task remove; se a contagem não cair, ele não foi removido.">Run a <strong>sixty-node agent</strong> and count active timers and the database query rate against the pre-change baseline. One <code>setInterval</code> per node is the cost this task removes; if the count does not drop, it was not removed.</div></div></div>
+</div></div>
+<div class="done"><span class="dt" data-en="✓  Done when" data-pt="✓  Pronto quando">✓  Done when</span><div class="dd" data-en="Cancellation is &lt;strong&gt;Temporal-native end to end&lt;/strong&gt;, including child workflows; the poller and the ALS context are &lt;strong&gt;removed&lt;/strong&gt;; the footprint UX is unchanged; and the latency is &lt;strong&gt;measured&lt;/strong&gt;." data-pt="O cancelamento é &lt;strong&gt;nativo do Temporal ponta a ponta&lt;/strong&gt;, inclusive em child workflows; o poller e o contexto ALS estão &lt;strong&gt;removidos&lt;/strong&gt;; a UX da pegada não muda; e a latência está &lt;strong&gt;medida&lt;/strong&gt;.">Cancellation is <strong>Temporal-native end to end</strong>, including child workflows; the poller and the ALS context are <strong>removed</strong>; the footprint UX is unchanged; and the latency is <strong>measured</strong>.</div></div>
+<div class="filesbox"><div class="filesbox-head">📂 <span data-en="Files this task touches" data-pt="Arquivos que esta task toca">Files this task touches</span></div><div class="filesbox-body"><span class="fchip">back/src/app-api/flux/node-cancel-watch.ts</span><span class="fchip">back/src/app-api/flux/flux.service.ts:3192–3194, 4516–4530</span><span class="fchip">back/src/temporal/temporal.service.ts</span><span class="fchip">the worker flow workflow and its activities</span><span class="fchip">NODE_CANCEL_IN_FLIGHT_FLAG (validate, then retire)</span></div></div>
+<div class="page-footer-nav"><a href="task-E1.html"><span data-en="← E1 — Run observability when the worker owns the loop" data-pt="← E1 — Observabilidade de run quando o worker é dono do laço">← E1 — Run observability when the worker owns the loop</span></a><a href="task-B5.html"><span data-en="Next: B5 — Turn on parallel dispatch →" data-pt="Próxima: B5 — Ligar o dispatch paralelo →">Next: B5 — Turn on parallel dispatch →</span></a></div>
 </div>
 <script>
 (function(){
