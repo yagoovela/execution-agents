@@ -1,7 +1,7 @@
 # A4 — Migrate `reportBuilder`
 
 **Goal:** move the cheapest node in the catalogue into the worker, and use it to re-validate the
-activity template end to end after the seven-module promotion.
+activity template end to end after A2 promotes the finished modules and providers.
 
 **Depends on:** A1. Best done immediately after A2, while the template is fresh.
 
