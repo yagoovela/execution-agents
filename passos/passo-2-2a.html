@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Passo 2.2a — Setup de cancellation antes do loop | Detalhamento</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #F1F5F9;
+    color: #0F172A;
+    margin: 0;
+    padding: 32px 24px 80px;
+    line-height: 1.4;
+  }
+  .container { max-width: 1500px; margin: 0 auto; }
+
+  .page-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-bottom: 24px; padding: 12px 16px;
+    background: white; border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06); flex-wrap: wrap;
+  }
+  .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748B; }
+  .breadcrumb a { color: #3B82F6; text-decoration: none; font-weight: 500; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #CBD5E1; }
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #0F172A; color: white; padding: 8px 14px;
+    border-radius: 8px; text-decoration: none; font-size: 12.5px; font-weight: 600;
+  }
+
+  .page-header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+  .page-header .icon { font-size: 32px; }
+  .page-header h1 { margin: 0; font-size: 26px; color: #0F172A; letter-spacing: -0.4px; }
+  .page-sub { color: #64748B; font-size: 13px; margin-bottom: 24px; padding-left: 46px; }
+  .page-sub code {
+    background: #E2E8F0; padding: 1px 6px; border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; color: #334155;
+  }
+
+  .overview-mini {
+    background: white; padding: 16px 18px; border-radius: 10px;
+    margin-bottom: 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .overview-mini-title {
+    font-size: 12px; font-weight: 700; color: #334155;
+    text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px;
+  }
+  .overview-chain { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .overview-chip {
+    background: #F8FAFC; padding: 6px 12px; border-radius: 6px;
+    border-left: 3px solid #3B82F6;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px; font-weight: 600; color: #0F172A;
+    text-decoration: none; display: inline-block; box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+  .overview-chip .lbl {
+    display: block; font-size: 9.5px; color: #64748B; font-weight: 500;
+    margin-bottom: 2px; font-family: inherit; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .overview-sep { color: #94A3B8; font-size: 18px; font-weight: bold; }
+
+  .box {
+    background: white; border-radius: 8px; padding: 9px 13px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 4px solid #94A3B8;
+    width: 100%; max-width: 100%;
+  }
+  .box.backend    { border-left-color: #3B82F6; }
+  .box.worker     { border-left-color: #10B981; }
+  .box.db         { border-left-color: #F59E0B; }
+  .box.redis      { border-left-color: #EF4444; }
+  .box.s3         { border-left-color: #8B5CF6; }
+  .box.external   { border-left-color: #64748B; }
+  .box.decision   { border-left-color: #EAB308; background: #FEFCE8; }
+  .box.cross      { border-left-color: #A855F7; background: #FAF5FF; }
+
+  .box-title { font-weight: 600; font-size: 12.5px; color: #0F172A; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .box-desc { font-size: 11.5px; color: #475569; }
+  .box-file { font-size: 10px; color: #94A3B8; font-family: 'SF Mono', Menlo, Consolas, monospace; margin-top: 3px; word-break: break-all; }
+  .box code {
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px;
+    background: #F1F5F9; padding: 1px 4px; border-radius: 3px; color: #334155; word-break: break-word;
+  }
+  .box-desc code { word-break: break-word; }
+
+  .badge {
+    display: inline-block; font-size: 9px; font-weight: 700;
+    padding: 2px 6px; border-radius: 4px; text-transform: uppercase;
+    letter-spacing: 0.3px; white-space: nowrap;
+  }
+  .badge.migrated { background: #D1FAE5; color: #065F46; }
+  .badge.legacy   { background: #FEE2E2; color: #991B1B; }
+  .badge.mixed    { background: #FEF3C7; color: #92400E; }
+  .badge.step     { background: #E0E7FF; color: #3730A3; font-size: 10px; }
+  .badge.cross    { background: #F3E8FF; color: #6B21A8; }
+
+  .arrow { color: #64748B; font-size: 22px; line-height: 1; margin: 1px 0; text-align: center; }
+
+  .fn-card {
+    margin-top: 28px; border: 1px solid #E2E8F0; border-radius: 12px;
+    overflow: hidden; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .fn-card-header {
+    background: linear-gradient(to right, #0F172A, #1E293B);
+    color: white; padding: 14px 20px 14px 44px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px; cursor: pointer; position: relative;
+    user-select: none; transition: background 0.15s;
+  }
+  .fn-card-header .fn-title { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+  .fn-card-header .fn-title code {
+    background: rgba(255,255,255,0.15); padding: 3px 8px;
+    border-radius: 4px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 13px;
+  }
+  .fn-card-header .fn-loc { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; color: #CBD5E1; }
+  .fn-card-header:hover { background: linear-gradient(to right, #1E293B, #334155); }
+  .fn-card-header::before {
+    content: "▾"; position: absolute; left: 20px; top: 50%;
+    transform: translateY(-50%); color: #94A3B8; font-size: 14px;
+    transition: transform 0.2s ease; line-height: 1;
+  }
+  .fn-card.collapsed .fn-card-header::before { transform: translateY(-50%) rotate(-90deg); }
+  .fn-card.collapsed .fn-card-body { display: none; }
+  .fn-card-body { padding: 20px; }
+
+  .fn-signature {
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px;
+    background: #F1F5F9; padding: 8px 12px; border-radius: 6px;
+    color: #334155; margin-bottom: 16px; overflow-x: auto;
+  }
+  .fn-purpose {
+    font-size: 13px; color: #475569; margin-bottom: 12px;
+    padding: 10px 14px; background: #EFF6FF;
+    border-left: 3px solid #3B82F6; border-radius: 6px;
+  }
+  .fn-friendly {
+    font-size: 13px; color: #334155; margin-bottom: 20px;
+    padding: 12px 14px 12px 44px; background: #F0FDF4;
+    border-left: 3px solid #10B981; border-radius: 6px;
+    position: relative; line-height: 1.55;
+  }
+  .fn-friendly::before { content: "💬"; position: absolute; left: 14px; top: 10px; font-size: 18px; }
+  .fn-friendly strong { color: #065F46; }
+
+  .step-friendly {
+    font-size: 13.5px; color: #334155; margin-bottom: 28px;
+    padding: 16px 18px 16px 52px; background: #F0FDF4;
+    border-left: 4px solid #10B981; border-radius: 10px;
+    position: relative; line-height: 1.6;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.08);
+  }
+  .step-friendly::before { content: "💬"; position: absolute; left: 18px; top: 14px; font-size: 22px; }
+  .step-friendly-title {
+    font-weight: 700; color: #065F46; font-size: 13px;
+    text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px;
+  }
+  .step-friendly ul { margin: 0; padding-left: 18px; }
+  .step-friendly li { margin-bottom: 6px; }
+  .step-friendly li:last-child { margin-bottom: 0; }
+  .step-friendly strong { color: #065F46; }
+  .step-friendly code {
+    background: #DCFCE7; padding: 1px 5px; border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; color: #065F46;
+  }
+  .step-friendly em { color: #047857; font-style: italic; }
+
+  .fn-body-cols { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr); gap: 20px; }
+  @media (max-width: 900px) { .fn-body-cols { grid-template-columns: 1fr; } }
+  .fn-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .fn-asides { display: flex; flex-direction: column; gap: 12px; }
+
+  .aside {
+    background: #FEF3C7; border-left: 4px solid #F59E0B; border-radius: 6px;
+    padding: 10px 12px; font-size: 11.5px; color: #78350F;
+  }
+  .aside.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .aside.warn { background: #FEE2E2; border-left-color: #EF4444; color: #991B1B; }
+  .aside.helper { background: #F3E8FF; border-left-color: #A855F7; color: #6B21A8; }
+  .aside-title {
+    font-weight: 700; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.4px; margin-bottom: 4px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .aside code {
+    background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 10.5px; word-break: break-word;
+  }
+
+  .cascade {
+    background: #FEFCE8; border: 1px dashed #EAB308; border-radius: 8px;
+    padding: 12px; margin: 6px 0;
+  }
+  .cascade-title {
+    font-size: 11px; font-weight: 700; color: #713F12;
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;
+  }
+  .cascade-step {
+    display: grid; grid-template-columns: auto 1fr auto;
+    gap: 8px; align-items: center; padding: 6px 8px;
+    background: white; border-radius: 6px; margin-bottom: 4px; font-size: 11.5px;
+  }
+  .cascade-step .cond { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; color: #334155; }
+  .cascade-step .result {
+    font-weight: 700; font-size: 10.5px;
+    padding: 2px 8px; border-radius: 4px; white-space: nowrap;
+  }
+  .cascade-step .result.pass  { background: #D1FAE5; color: #065F46; }
+  .cascade-step .result.deny  { background: #FEE2E2; color: #991B1B; }
+  .cascade-step .result.next  { background: #E0E7FF; color: #3730A3; }
+  .cascade-step .result.call  { background: #FEF3C7; color: #78350F; }
+  .cascade-num {
+    background: #EAB308; color: white;
+    width: 20px; height: 20px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; flex-shrink: 0;
+  }
+
+  .nested-flow { margin: 6px 0; padding: 12px; background: #F0FDF4; border: 1px dashed #10B981; border-radius: 8px; }
+  .nested-flow-title { font-size: 10.5px; font-weight: 700; color: #065F46; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+
+  .code-block {
+    background: #0F172A; color: #E2E8F0;
+    padding: 12px 16px; border-radius: 6px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px; line-height: 1.6; overflow-x: auto; margin: 6px 0;
+  }
+  .code-block .k { color: #93C5FD; }
+  .code-block .s { color: #86EFAC; }
+  .code-block .c { color: #64748B; font-style: italic; }
+  .code-block .t { color: #FDE68A; }
+
+  .note {
+    background: #FEF3C7; border-left: 4px solid #F59E0B;
+    padding: 12px 16px; border-radius: 6px;
+    font-size: 12.5px; color: #78350F; margin: 20px 0;
+  }
+  .note.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .note code {
+    background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px;
+  }
+
+  .page-footer-nav {
+    margin-top: 48px; padding: 16px; background: white;
+    border-radius: 10px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .field-table { width: 100%; border-collapse: collapse; font-size: 11px; margin: 8px 0; }
+  .field-table th {
+    text-align: left; padding: 6px 8px;
+    background: #F1F5F9; color: #334155;
+    font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.3px; font-size: 10px;
+    border-bottom: 1px solid #CBD5E1;
+  }
+  .field-table td { padding: 5px 8px; border-bottom: 1px solid #F1F5F9; vertical-align: top; }
+  .field-table td:first-child {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    color: #0F172A; font-weight: 600; white-space: nowrap; font-size: 10.5px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- TOP NAV -->
+  <div class="page-nav">
+    <div class="breadcrumb">
+      <a href="../index.html">📋 Execução de Agente</a>
+      <span class="sep">›</span>
+      <span>Passo 2.2a — Detalhamento</span>
+    </div>
+    <a href="../index.html#step-2-2a" class="back-btn">← Voltar ao diagrama</a>
+  </div>
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <span class="icon">🛑</span>
+    <h1>Passo 2.2a — Setup de cancellation antes do loop</h1>
+  </div>
+  <div class="page-sub">
+    Bloco em <code>flux.service.ts:3239-3249</code>. Antes do loop principal iniciar, o backend decide se vai <strong>armar o botão de "Cancelar"</strong> pra esse run — passa por 3 gates independentes (tipo do run, feature flag global e resolução da chave de cancelamento). Se tudo bate, cada nó do loop vai ganhar um <code>AbortSignal</code> próprio quando executar.
+  </div>
+
+  <!-- Step friendly summary -->
+  <div class="step-friendly">
+    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <ul>
+      <li><strong>Decide se vale armar cancelamento:</strong> <code>shouldWatchCancellation</code> só liga o watch se o <code>runType</code> for <code>canvas</code> (execução manual pelo editor) <em>ou</em> se for um sub-run aninhado (chamado por <code>fluxBox</code>/<code>libraryNode</code>). Cronjobs, webhooks, MCP e outros disparos automáticos <em>não</em> podem ser cancelados.</li>
+      <li><strong>Resolve a chave do run pra cancelamento:</strong> <code>resolveCancelRunKey</code> devolve o <code>parentRunId</code> se veio um (sub-run), senão o próprio <code>runLogProcessId</code>. Isso garante que cancelar o run pai <em>propaga</em> pros filhos aninhados sem esses filhos precisarem saber seu próprio ID de cancelamento.</li>
+      <li><strong>Confere feature flag global:</strong> <code>featureFlagsService.isEnabled(NODE_CANCEL_IN_FLIGHT_FLAG)</code> lê a tabela <code>feature_flags</code>. É um <em>kill switch</em> single-row (chave <code>node_cancel_in_flight</code>) — global, sem escopo de user/space. Se der erro na query, retorna <code>false</code> (fail-closed).</li>
+      <li><strong>Nada de AbortController aqui ainda:</strong> nesse ponto só <em>calcula</em> os 3 booleans (<code>cancelWatchEnabled</code>, <code>cancelRunKey</code>, <code>inFlightEnabled</code>). O <code>AbortController</code> real e o timer de polling só nascem <em>dentro</em> do loop, na linha 3304-3314, por nó, via <code>startNodeCancelWatch</code>.</li>
+      <li><strong>Saída:</strong> 3 variáveis prontas no escopo do <code>apiV2()</code>: <code>cancelWatchEnabled</code>, <code>cancelRunKey</code>, <code>inFlightEnabled</code>. O loop consulta <code>shouldStartNodeCancelWatch({ watchEnabled, inFlightEnabled })</code> por iteração pra decidir se cria o watch daquele nó.</li>
+    </ul>
+  </div>
+
+  <div class="note">
+    <strong>⚠️ Cuidado com os 3 gates:</strong> se <em>qualquer um</em> dos três falhar (runType não cancelável, feature flag desligada, ou algum bug em <code>resolveCancelRunKey</code> retornando string vazia — o que hoje não acontece), o watch simplesmente <strong>não arma</strong>. O usuário pode clicar em cancelar 20 vezes, a linha em <code>flow_run_states</code> é criada, mas o loop nunca a lê — o run vai <em>silenciosamente</em> até o fim como se nada tivesse sido pedido.
+  </div>
+
+  <!-- Overview chain -->
+  <div class="overview-mini">
+    <div class="overview-mini-title">Cadeia de chamadas em 2.2a</div>
+    <div class="overview-chain">
+      <a href="#fn-a" class="overview-chip"><span class="lbl">A</span>shouldWatchCancellation</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>resolveCancelRunKey</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>featureFlagsService.isEnabled</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-d" class="overview-chip"><span class="lbl">D · dentro do loop</span>startNodeCancelWatch</a>
+    </div>
+    <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
+      Resultado final: os 3 gates ficam prontos como booleans/string; o <code>AbortSignal</code> em si nasce por nó dentro do loop (linha 3304-3314) quando <code>shouldStartNodeCancelWatch</code> confirma que ambos <code>watchEnabled</code> e <code>inFlightEnabled</code> são <code>true</code>.
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION A: shouldWatchCancellation -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-a">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#EAB308;color:white">A</span>
+        <code>shouldWatchCancellation()</code>
+      </div>
+      <div class="fn-loc">run-cancellation.service.ts:19-24</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        function shouldWatchCancellation(params: { runType: string | null | undefined; isNestedRun: boolean }): boolean
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Primeiro gate. Decide se esse run <em>é do tipo</em> que pode ser cancelado pelo usuário. Retorna <code>true</code> só pra runs cancelláveis do editor ou pra sub-runs aninhados; pra qualquer outro run (webhook, cronjob, MCP, batch, etc.) volta <code>false</code> e nenhum watch é armado depois.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> pense nele como o <em>porteiro do botão de Cancelar</em>. Antes de qualquer coisa, ele pergunta duas coisas: (1) o run foi disparado pelo editor (<code>canvas</code>)? Se sim, tem botão, o usuário pode clicar. (2) É um sub-run aninhado dentro de outro run? Se sim, o pai já é canvas, então o cancelamento tem que descer pra ele também. Se ambas respostas forem "não" — ou seja, é um cronjob, webhook, MCP, chamada de API pública, email, etc. — o porteiro fecha a porta e o botão de cancelar <strong>não existe</strong> pra esse tipo de execução. Fica óbvio: você não cancela um cronjob no meio do run porque nem tem UI pra isso.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">A1</span> Fórmula de decisão</div>
+            <div class="box-desc">
+              <code>isCancellableRunType(runType) || isNestedRun</code>
+              <br><br>OR simples — basta uma condição bater.
+            </div>
+            <div class="box-file">run-cancellation.service.ts:22-23</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="nested-flow">
+            <div class="nested-flow-title">↳ isCancellableRunType(runType) — run-cancellation.service.ts:15-17</div>
+            <div class="box decision" style="margin-top:6px">
+              <div class="box-title">Lista fechada</div>
+              <div class="code-block">
+<span class="k">const</span> <span class="t">CANCELLABLE_RUN_TYPES</span> = [<span class="s">'canvas'</span>];
+
+<span class="k">function</span> <span class="t">isCancellableRunType</span>(runType) {
+  <span class="k">return</span> CANCELLABLE_RUN_TYPES.includes(runType ?? <span class="s">''</span>);
+}
+              </div>
+              <div class="box-desc">
+                Hoje só <code>canvas</code> — execução manual pelo editor. Todos os outros tipos (<code>api</code>, <code>batch</code>, <code>chatbot</code>, <code>cronjob</code>, <code>email</code>, <code>formapi</code>, <code>public-api</code>, <code>mcp</code>, <code>webhook</code>, <code>flow-caller-node</code>, <code>library-node</code>) ficam de fora.
+              </div>
+              <div class="box-file">run-cancellation.service.ts:9-17</div>
+            </div>
+          </div>
+
+          <div class="arrow">↓</div>
+
+          <div class="box decision">
+            <div class="box-title">isNestedRun — como chega até aqui</div>
+            <div class="box-desc">
+              No call site: <code>isNestedRunLog || Boolean(parentProcessId)</code>. Ou seja, é <em>nested</em> se veio <code>injectedRunLogCollector</code> (<code>fluxBox</code>/<code>libraryNode</code> passa o dele pro filho) ou se veio um <code>parentProcessId</code> explícito.
+            </div>
+            <div class="box-file">flux.service.ts:2337, 3241</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Por que só canvas?</div>
+            É o único tipo de run que tem UI visível pro usuário enquanto executa — só ali existe botão de "Cancelar" clicável. Cronjobs, webhooks e MCP rodam server-side sem UI ativa.
+            <br><br>Ainda assim, um cronjob que <em>chame outro flow</em> via <code>flow-caller-node</code> propaga o run pai pro filho — mas o pai não é canvas, então <em>nada</em> é cancelável nessa cadeia.
+          </div>
+
+          <div class="aside">
+            <div class="aside-title">📎 Nested run herda cancellability</div>
+            Um <code>fluxBox</code> executado dentro de um canvas run vira sub-run. Nele, <code>isNestedRunLog</code> = <code>true</code>, então o watch arma no filho também.
+            <br><br>Isso é essencial pro cancel propagar — o pai lê a mesma <code>flow_run_states</code> row (via <code>cancelRunKey</code> resolvido em B).
+          </div>
+
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Lista fechada, não configurável</div>
+            <code>CANCELLABLE_RUN_TYPES</code> é uma constante hardcoded no arquivo. Pra adicionar <code>chatbot</code> ou <code>batch</code> como canceláveis, tem que mudar código e deploy — não tem feature flag por tipo.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION B: resolveCancelRunKey -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-b">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#F59E0B;color:white">B</span>
+        <code>resolveCancelRunKey()</code>
+      </div>
+      <div class="fn-loc">cancel-run-key.ts:1-7</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        function resolveCancelRunKey(params: { runLogProcessId: string; parentRunId: string | null }): string
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Define <em>qual ID</em> vai ser usado pra ler a intenção de cancelamento no banco. Em um run raiz, é o próprio <code>runLogProcessId</code>. Em um sub-run, é o <code>parentRunId</code> — assim quando o usuário cancela o run pai, o filho aninhado também é interrompido, sem precisar de comunicação explícita entre eles.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> pense nele como um <em>sistema de "chamar todo mundo pelo apelido do chefe"</em>. Cada nó, mesmo dentro de sub-runs aninhados 3 níveis de profundidade, olha pra <strong>mesma linha</strong> na tabela <code>flow_run_states</code> — a linha do run raiz. Assim, quando o usuário clica em "Cancelar" no editor, <em>uma única</em> row é criada com o ID do run pai. Os filhos aninhados <em>não têm rows próprias</em> — eles olham a do pai. Se você mandasse cada sub-run criar sua própria row, aí sim precisaria propagar cancel manualmente. Aqui não: o parentesco é resolvido logo no início e todos leem do mesmo lugar.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B1</span> Fórmula</div>
+            <div class="code-block">
+<span class="k">return</span> params.parentRunId || params.runLogProcessId;
+            </div>
+            <div class="box-desc">
+              Uma linha só. Se <code>parentRunId</code> existir (não-nulo, não-vazio), usa ele; senão, cai pro <code>runLogProcessId</code>. Sem transformação, sem namespace, sem prefixo.
+            </div>
+            <div class="box-file">cancel-run-key.ts:1-7</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box db">
+            <div class="box-title"><span class="badge step">B2</span> Como o valor é usado</div>
+            <div class="box-desc">
+              Depois em <code>startNodeCancelWatch({ runId: cancelRunKey, ... })</code>, o timer chama <code>runCancellationService.isCancelRequested(cancelRunKey)</code> — que faz <code>SELECT ... FROM flow_run_states WHERE runId = $1 AND deletedAt IS NULL</code>. O run raiz e todos os aninhados usam o <em>mesmo</em> valor de <code>runId</code>.
+            </div>
+            <div class="box-file">flux.service.ts:3308-3313</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">📎 Não é Redis, é Postgres</div>
+            Apesar do nome sugerir chave de pub/sub, <strong>não tem Redis envolvido</strong>. O cancel é armazenado como row em <code>flow_run_states</code> (Postgres) e lido por polling a cada 2s (<code>CANCEL_POLL_MS</code> em <code>node-cancel-watch.ts:3</code>).
+            <br><br>O nome "key" vem de "chave lógica do run", não de "chave Redis".
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 parentCancelRunKey também existe</div>
+            O parâmetro <code>parentCancelRunKey</code> chega no <code>apiV2()</code> quando um <code>fluxBox</code>/<code>libraryNode</code> chama outro flow. Assim, mesmo em cadeias profundas (canvas → fluxBox → fluxBox aninhado), a chave <em>continua</em> sendo a do canvas raiz.
+            <br><br>Ver call: <code>parentRunId: parentCancelRunKey ?? null</code> em <code>flux.service.ts:3245</code>.
+          </div>
+
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Sem namespace = risco de colisão</div>
+            Como a chave é UUID cru (do <code>runLogProcessId</code>), duas features do sistema poderiam teoricamente colidir se usassem UUIDs iguais em outros contextos. Na prática, UUIDs são únicos, mas <em>não há prefixo</em> (<code>run:</code>, <code>cancel:</code>, etc.) — a tabela é dedicada a runs, então tudo bem, mas em Redis isso seria má prática.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION C: featureFlagsService.isEnabled -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-c">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#3B82F6;color:white">C</span>
+        <code>featureFlagsService.isEnabled(NODE_CANCEL_IN_FLIGHT_FLAG)</code>
+      </div>
+      <div class="fn-loc">feature-flags.service.ts:15-26</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        async isEnabled(key: string): Promise&lt;boolean&gt;
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Kill switch global. Lê a tabela <code>feature_flags</code> procurando a chave <code>'node_cancel_in_flight'</code>. Se a row existir e <code>enabled === true</code>, o cancel em pleno voo (interromper LLM streaming, HTTP calls, etc.) fica ligado. Qualquer outra situação — incluindo erro na query — devolve <code>false</code> (fail-closed).
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> pense nela como um <em>disjuntor global</em> na parede. Se um bug começar a matar runs por engano em produção, um admin desliga esse disjuntor no banco e <strong>ninguém</strong> mais consegue cancelar em pleno voo — o worst case é o cancel só funcionar <em>entre nós</em> (após um nó terminar naturalmente), não <em>durante</em>. Isso é útil pra debugar sem precisar de deploy. A chave é <em>global</em>, não por user, space ou tenant — vale pra plataforma inteira. Se falhar a leitura do banco por qualquer motivo, o comportamento é <strong>desligar</strong> por segurança em vez de assumir ligado — política de fail-closed clássica.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">C1</span> Constante da chave</div>
+            <div class="code-block">
+<span class="k">export const</span> <span class="t">NODE_CANCEL_IN_FLIGHT_FLAG</span> = <span class="s">'node_cancel_in_flight'</span>;
+            </div>
+            <div class="box-file">node-cancel-watch.ts:5</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box db">
+            <div class="box-title"><span class="badge step">C2</span> Query direta na entity</div>
+            <div class="box-desc">
+              <code>this.featureFlagRepository.findOne({ where: { key } })</code>
+              <br><br>Sem cache, sem batching — cada run faz uma query nova. Não é problema em volume moderado, mas é um <code>SELECT</code> extra por run.
+            </div>
+            <div class="box-file">feature-flags.service.ts:17</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box decision">
+            <div class="box-title"><span class="badge step">C3</span> Cascata de decisão</div>
+            <div class="cascade" style="background:white;border-color:#94A3B8">
+              <div class="cascade-step">
+                <span class="cascade-num">1</span>
+                <span class="cond">flag existe e <code>enabled === true</code></span>
+                <span class="result pass">return <code>true</code></span>
+              </div>
+              <div class="cascade-step">
+                <span class="cascade-num">2</span>
+                <span class="cond">flag existe mas <code>enabled === false</code></span>
+                <span class="result deny">return <code>false</code></span>
+              </div>
+              <div class="cascade-step">
+                <span class="cascade-num">3</span>
+                <span class="cond">flag não existe (row ausente)</span>
+                <span class="result deny">return <code>false</code></span>
+              </div>
+              <div class="cascade-step">
+                <span class="cascade-num">4</span>
+                <span class="cond">query lançou erro</span>
+                <span class="result deny">catch → return <code>false</code></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Escopo global — nem user, nem space</div>
+            A tabela <code>feature_flags</code> só tem <code>key</code> + <code>enabled</code> — <strong>não</strong> tem <code>userId</code>, <code>spaceId</code> ou <code>companyId</code>. É uma flag da plataforma inteira. Se ligar/desligar afeta todos os users em todos os spaces simultaneamente.
+          </div>
+
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Fail-closed silencioso</div>
+            Se a query lançar (banco fora, timeout, etc.), o <code>catch</code> loga um <code>console.error</code> e devolve <code>false</code>. O run <strong>não sabe</strong> que a checagem falhou — só vê que o inflight cancel não está armado.
+            <br><br>Efeito: em uma pane de banco, todos os cancels em pleno voo silenciosamente param de funcionar.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 Diferença: watch vs. inflight cancel</div>
+            <code>cancelWatchEnabled</code> (A) → dá pra <em>observar</em> intenção de cancelar em algum ponto?
+            <br><code>inFlightEnabled</code> (C) → dá pra abortar <em>durante</em> o nó via <code>AbortSignal</code>?
+            <br><br>Precisa dos dois <code>true</code> pra <code>shouldStartNodeCancelWatch</code> retornar <code>true</code> e criar o <code>AbortController</code>.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION D: startNodeCancelWatch -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-d">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#A855F7;color:white">D</span>
+        <code>startNodeCancelWatch()</code>
+        <span class="badge mixed" style="font-size:9px">dentro do loop</span>
+      </div>
+      <div class="fn-loc">node-cancel-watch.ts:63-93</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        function startNodeCancelWatch(params: { runId; nodeId; isCancelRequested; pollMs? }): NodeCancelWatch
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Cria — <em>por nó, dentro do loop principal</em> — um <code>AbortController</code> novo e um <code>setInterval</code> que a cada 2s pergunta pra <code>runCancellationService.isCancelRequested(runId)</code> se o usuário clicou cancelar. Se sim, chama <code>controller.abort()</code>, que propaga o <code>AbortSignal</code> pro node handler (Anthropic, OpenAI, HTTP, MCP, etc.). É o <em>único</em> ponto que efetivamente arma o cancel em pleno voo.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> pense nele como um <em>vigia com um walkie-talkie</em> que aparece no início da execução de cada nó, se o passo 2.2a autorizou. Ele monta um <code>AbortController</code> (o botão vermelho) e liga um cronômetro que <em>a cada 2 segundos</em> pergunta "já cancelaram esse run?". Se a resposta vier "sim", ele aperta o botão vermelho — o <code>abort()</code> é propagado via <code>AbortSignal</code> pra qualquer chamada assíncrona que esteja rodando (chamada pro Claude/OpenAI, fetch HTTP, MCP call). O SDK do provider ao receber o abort <em>cancela a stream</em>, evitando gastar tokens em resposta que ninguém vai ver. Quando o nó termina (naturalmente ou abortado), o vigia sai (<code>stop()</code> limpa o timer). É armado <em>por nó</em>, não por run — cada nó ganha um <code>AbortController</code> fresh.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">D1</span> Onde é chamado — no início da iteração de cada nó</div>
+            <div class="code-block">
+<span class="k">const</span> cancelWatch = <span class="t">shouldStartNodeCancelWatch</span>({
+  watchEnabled: cancelWatchEnabled,   <span class="c">// de (A)</span>
+  inFlightEnabled,                    <span class="c">// de (C)</span>
+})
+  ? <span class="t">startNodeCancelWatch</span>({
+      runId: cancelRunKey,             <span class="c">// de (B)</span>
+      nodeId: node.id,
+      isCancelRequested: runId =&gt;
+        <span class="k">this</span>.runCancellationService.<span class="t">isCancelRequested</span>(runId),
+    })
+  : null;
+            </div>
+            <div class="box-file">flux.service.ts:3304-3314</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">D2</span> AbortController + timer</div>
+            <div class="code-block">
+<span class="k">const</span> controller = <span class="k">new</span> <span class="t">AbortController</span>();
+<span class="k">const</span> entry: NodeCancelEntry = {
+  abortSignal: controller.signal,
+  active: <span class="k">true</span>,
+};
+<span class="k">const</span> timer = <span class="t">setInterval</span>(<span class="k">async</span> () =&gt; {
+  <span class="k">try</span> {
+    <span class="k">if</span> (<span class="k">await</span> params.<span class="t">isCancelRequested</span>(params.runId)) {
+      controller.<span class="t">abort</span>();
+    }
+  } <span class="k">catch</span> (error) {
+    <span class="t">console.error</span>(<span class="s">'Cancel watch failed, node continues'</span>, ...);
+  }
+}, params.pollMs ?? <span class="s">CANCEL_POLL_MS</span>); <span class="c">// 2000ms</span>
+            </div>
+            <div class="box-file">node-cancel-watch.ts:69-84</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box cross">
+            <div class="box-title"><span class="badge step">D3</span> Propagação via AsyncLocalStorage</div>
+            <div class="box-desc">
+              Antes de rodar o handler do nó, <code>nodeCancelContext.enterWith(cancelWatch.entry)</code> injeta o entry na async storage — qualquer código <em>abaixo</em> na call stack pode chamar <code>currentNodeAbortSignal()</code> e receber o <code>AbortSignal</code> ativo daquele nó, sem passar como argumento.
+            </div>
+            <div class="box-file">node-cancel-watch.ts:19-32, flux.service.ts:3320-3322</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box db">
+            <div class="box-title"><span class="badge step">D4</span> Quem "publica" o cancelamento</div>
+            <div class="box-desc">
+              <strong>Não é Redis pub/sub</strong>: quando o usuário clica em cancelar, o backend chama <code>runCancellationService.requestCancel({ runId, flowId, userId })</code> — que faz <code>INSERT INTO flow_run_states ... ON CONFLICT DO NOTHING</code>. O timer de <code>startNodeCancelWatch</code> descobre isso via polling do <code>SELECT</code>.
+            </div>
+            <div class="box-file">run-cancellation.service.ts:42-60</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Polling, não pub/sub</div>
+            <code>CANCEL_POLL_MS = 2000</code> (2 segundos). Cada nó ativo faz 1 query por 2s no <code>flow_run_states</code>. Existe cache in-memory por 1.5s (<code>CANCEL_CHECK_TTL_MS</code>) pra reduzir load em runs com muitos nós paralelos.
+            <br><br>Latência do cancel: usuário clica → até 2s pro nó ver → <code>abort()</code> propaga pra libs → SDK trata.
+          </div>
+
+          <div class="aside">
+            <div class="aside-title">📎 Names de erros aceitos como abort</div>
+            <code>ABORT_ERROR_NAMES</code>: <code>'AbortError'</code>, <code>'CanceledError'</code>, <code>'McpError'</code>, <code>'APIUserAbortError'</code>. Se um provider (Anthropic SDK, axios, MCP client) lança erro com um desses nomes, é interpretado como abort — não como falha.
+            <br><br>Ver <code>node-cancel-watch.ts:7-12, 34-46</code>.
+          </div>
+
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Timer não parado = memory leak potencial</div>
+            Se o loop principal <code>break</code>ar por qualquer motivo antes do <code>cancelWatch.stop()</code> no finally, o <code>setInterval</code> continua rodando pra sempre naquele process. O código atual chama <code>stop()</code> corretamente em finally, mas qualquer refactor futuro precisa manter isso — timer órfão é bug clássico com <code>setInterval</code>.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 wasAborted() é sync</div>
+            <code>cancelWatch.wasAborted()</code> retorna <code>controller.signal.aborted</code> — leitura síncrona da flag. Depois do handler do nó rodar, o loop usa isso pra decidir se seta <code>stoppedByCancel = true</code> e break (linha 4583-4598).
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="note info" style="margin-top:32px">
+    <strong>Resumo — o que sai de 2.2a:</strong>
+    <br>• <code>cancelWatchEnabled</code> = boolean (true se runType canvas OU nested run)
+    <br>• <code>cancelRunKey</code> = string (parentCancelRunKey se veio, senão o próprio runLogProcessId)
+    <br>• <code>inFlightEnabled</code> = boolean (feature flag global <code>node_cancel_in_flight</code>)
+    <br>• Nenhum <code>AbortController</code> criado ainda — só as 3 variáveis. O controller nasce depois, por nó, na linha 3308.
+  </div>
+
+  <div class="note">
+    <strong>Observações para migração:</strong>
+    <br>• A resolução dos 3 gates é business logic pura — replicável no worker, precisa apenas de <code>runType</code>, <code>isNestedRun</code>, <code>parentRunId</code> e acesso à feature flag.
+    <br>• Hoje o polling do banco (2s) e o <code>setInterval</code> vivem no processo do backend. No worker (Temporal), o padrão idiomático seria usar <em>signals</em> do Temporal em vez de polling — bem mais eficiente, sem query a cada 2s por nó ativo.
+    <br>• O <code>AsyncLocalStorage</code> (<code>nodeCancelContext</code>) que carrega o <code>AbortSignal</code> pra funções filhas <strong>não funciona igual no worker</strong>: activities do Temporal rodam em contexto próprio. A alternativa é passar o signal explicitamente ou usar o <code>Context.current().cancellationSignal</code> do Temporal.
+    <br>• Feature flag <code>node_cancel_in_flight</code> pode ser reaproveitada no worker — mesma chave, mesma leitura via Postgres. Não precisa migrar a tabela.
+    <br>• Runs no worker herdam cancelamento gratuitamente via mecanismo do Temporal — não precisa duplicar a lógica de <code>flow_run_states</code>. Mas migração incremental precisa dos dois sistemas coexistindo (backend inline usa polling, worker usa signal).
+  </div>
+
+  <!-- FOOTER NAV -->
+  <div class="page-footer-nav">
+    <a href="../index.html#step-2-2a" class="back-btn">← Voltar ao diagrama principal</a>
+  </div>
+
+</div>
+<script>
+(function() {
+  function toggle(card) { if (card) card.classList.toggle('collapsed'); }
+  function expand(card) { if (card && card.classList.contains('collapsed')) card.classList.remove('collapsed'); }
+  document.querySelectorAll('.fn-card-header').forEach(function(header) {
+    header.addEventListener('click', function(e) {
+      if (e.target.closest('a')) return;
+      toggle(header.parentElement);
+    });
+  });
+  document.querySelectorAll('a[href^="#fn-"]').forEach(function(link) {
+    link.addEventListener('click', function() {
+      var id = link.getAttribute('href').slice(1);
+      expand(document.getElementById(id));
+    });
+  });
+  if (window.location.hash && window.location.hash.startsWith('#fn-')) {
+    expand(document.querySelector(window.location.hash));
+  }
+  window.addEventListener('hashchange', function() {
+    if (window.location.hash.startsWith('#fn-')) {
+      expand(document.querySelector(window.location.hash));
+    }
+  });
+})();
+</script>
+</body>
+</html>

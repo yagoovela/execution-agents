@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Passo 1.7b — clearRunOutputForSeed + clearObjects | Detalhamento</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F1F5F9; color: #0F172A; margin: 0; padding: 32px 24px 80px; line-height: 1.4; }
+  .container { max-width: 1500px; margin: 0 auto; }
+  .page-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; padding: 12px 16px; background: white; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); flex-wrap: wrap; }
+  .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748B; }
+  .breadcrumb a { color: #3B82F6; text-decoration: none; font-weight: 500; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #CBD5E1; }
+  .back-btn { display: inline-flex; align-items: center; gap: 6px; background: #0F172A; color: white; padding: 8px 14px; border-radius: 8px; text-decoration: none; font-size: 12.5px; font-weight: 600; }
+  .page-header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+  .page-header .icon { font-size: 32px; }
+  .page-header h1 { margin: 0; font-size: 26px; color: #0F172A; letter-spacing: -0.4px; }
+  .page-sub { color: #64748B; font-size: 13px; margin-bottom: 24px; padding-left: 46px; }
+  .page-sub code { background: #E2E8F0; padding: 1px 6px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; color: #334155; }
+  .overview-mini { background: white; padding: 16px 18px; border-radius: 10px; margin-bottom: 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .overview-mini-title { font-size: 12px; font-weight: 700; color: #334155; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px; }
+  .overview-chain { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .overview-chip { background: #F8FAFC; padding: 6px 12px; border-radius: 6px; border-left: 3px solid #3B82F6; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; font-weight: 600; color: #0F172A; text-decoration: none; display: inline-block; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+  .overview-chip .lbl { display: block; font-size: 9.5px; color: #64748B; font-weight: 500; margin-bottom: 2px; font-family: inherit; text-transform: uppercase; letter-spacing: 0.5px; }
+  .overview-sep { color: #94A3B8; font-size: 18px; font-weight: bold; }
+  .box { background: white; border-radius: 8px; padding: 9px 13px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 4px solid #94A3B8; width: 100%; max-width: 100%; }
+  .box.backend { border-left-color: #3B82F6; }
+  .box.worker { border-left-color: #10B981; }
+  .box.db { border-left-color: #F59E0B; }
+  .box.redis { border-left-color: #EF4444; }
+  .box.s3 { border-left-color: #8B5CF6; }
+  .box.external { border-left-color: #64748B; }
+  .box.decision { border-left-color: #EAB308; background: #FEFCE8; }
+  .box.cross { border-left-color: #A855F7; background: #FAF5FF; }
+  .box-title { font-weight: 600; font-size: 12.5px; color: #0F172A; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .box-desc { font-size: 11.5px; color: #475569; }
+  .box-file { font-size: 10px; color: #94A3B8; font-family: 'SF Mono', Menlo, Consolas, monospace; margin-top: 3px; word-break: break-all; }
+  .box code { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; background: #F1F5F9; padding: 1px 4px; border-radius: 3px; color: #334155; word-break: break-word; }
+  .box-desc code { word-break: break-word; }
+  .badge { display: inline-block; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; }
+  .badge.migrated { background: #D1FAE5; color: #065F46; }
+  .badge.legacy { background: #FEE2E2; color: #991B1B; }
+  .badge.mixed { background: #FEF3C7; color: #92400E; }
+  .badge.step { background: #E0E7FF; color: #3730A3; font-size: 10px; }
+  .badge.cross { background: #F3E8FF; color: #6B21A8; }
+  .arrow { color: #64748B; font-size: 22px; line-height: 1; margin: 1px 0; text-align: center; }
+  .fn-card { margin-top: 28px; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .fn-card-header { background: linear-gradient(to right, #0F172A, #1E293B); color: white; padding: 14px 20px 14px 44px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; cursor: pointer; position: relative; user-select: none; transition: background 0.15s; }
+  .fn-card-header .fn-title { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+  .fn-card-header .fn-title code { background: rgba(255,255,255,0.15); padding: 3px 8px; border-radius: 4px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 13px; }
+  .fn-card-header .fn-loc { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; color: #CBD5E1; }
+  .fn-card-header:hover { background: linear-gradient(to right, #1E293B, #334155); }
+  .fn-card-header::before { content: "▾"; position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: #94A3B8; font-size: 14px; transition: transform 0.2s ease; line-height: 1; }
+  .fn-card.collapsed .fn-card-header::before { transform: translateY(-50%) rotate(-90deg); }
+  .fn-card.collapsed .fn-card-body { display: none; }
+  .fn-card-body { padding: 20px; }
+  .fn-signature { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; background: #F1F5F9; padding: 8px 12px; border-radius: 6px; color: #334155; margin-bottom: 16px; overflow-x: auto; }
+  .fn-purpose { font-size: 13px; color: #475569; margin-bottom: 12px; padding: 10px 14px; background: #EFF6FF; border-left: 3px solid #3B82F6; border-radius: 6px; }
+  .fn-friendly { font-size: 13px; color: #334155; margin-bottom: 20px; padding: 12px 14px 12px 44px; background: #F0FDF4; border-left: 3px solid #10B981; border-radius: 6px; position: relative; line-height: 1.55; }
+  .fn-friendly::before { content: "💬"; position: absolute; left: 14px; top: 10px; font-size: 18px; }
+  .fn-friendly strong { color: #065F46; }
+  .step-friendly { font-size: 13.5px; color: #334155; margin-bottom: 28px; padding: 16px 18px 16px 52px; background: #F0FDF4; border-left: 4px solid #10B981; border-radius: 10px; position: relative; line-height: 1.6; box-shadow: 0 1px 3px rgba(16, 185, 129, 0.08); }
+  .step-friendly::before { content: "💬"; position: absolute; left: 18px; top: 14px; font-size: 22px; }
+  .step-friendly-title { font-weight: 700; color: #065F46; font-size: 13px; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; }
+  .step-friendly ul { margin: 0; padding-left: 18px; }
+  .step-friendly li { margin-bottom: 6px; }
+  .step-friendly li:last-child { margin-bottom: 0; }
+  .step-friendly strong { color: #065F46; }
+  .step-friendly code { background: #DCFCE7; padding: 1px 5px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; color: #065F46; }
+  .step-friendly em { color: #047857; font-style: italic; }
+  .fn-body-cols { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr); gap: 20px; }
+  @media (max-width: 900px) { .fn-body-cols { grid-template-columns: 1fr; } }
+  .fn-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .fn-asides { display: flex; flex-direction: column; gap: 12px; }
+  .aside { background: #FEF3C7; border-left: 4px solid #F59E0B; border-radius: 6px; padding: 10px 12px; font-size: 11.5px; color: #78350F; }
+  .aside.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .aside.warn { background: #FEE2E2; border-left-color: #EF4444; color: #991B1B; }
+  .aside.helper { background: #F3E8FF; border-left-color: #A855F7; color: #6B21A8; }
+  .aside-title { font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+  .aside code { background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 10.5px; word-break: break-word; }
+  .cascade { background: #FEFCE8; border: 1px dashed #EAB308; border-radius: 8px; padding: 12px; margin: 6px 0; }
+  .cascade-title { font-size: 11px; font-weight: 700; color: #713F12; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .cascade-step { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; padding: 6px 8px; background: white; border-radius: 6px; margin-bottom: 4px; font-size: 11.5px; }
+  .cascade-step .cond { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; color: #334155; }
+  .cascade-step .result { font-weight: 700; font-size: 10.5px; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+  .cascade-step .result.pass { background: #D1FAE5; color: #065F46; }
+  .cascade-step .result.deny { background: #FEE2E2; color: #991B1B; }
+  .cascade-step .result.next { background: #E0E7FF; color: #3730A3; }
+  .cascade-step .result.call { background: #FEF3C7; color: #78350F; }
+  .cascade-num { background: #EAB308; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+  .nested-flow { margin: 6px 0; padding: 12px; background: #F0FDF4; border: 1px dashed #10B981; border-radius: 8px; }
+  .nested-flow-title { font-size: 10.5px; font-weight: 700; color: #065F46; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .code-block { background: #0F172A; color: #E2E8F0; padding: 12px 16px; border-radius: 6px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; line-height: 1.6; overflow-x: auto; margin: 6px 0; }
+  .code-block .k { color: #93C5FD; }
+  .code-block .s { color: #86EFAC; }
+  .code-block .c { color: #64748B; font-style: italic; }
+  .code-block .t { color: #FDE68A; }
+  .note { background: #FEF3C7; border-left: 4px solid #F59E0B; padding: 12px 16px; border-radius: 6px; font-size: 12.5px; color: #78350F; margin: 20px 0; }
+  .note.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .note code { background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; }
+  .page-footer-nav { margin-top: 48px; padding: 16px; background: white; border-radius: 10px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .field-table { width: 100%; border-collapse: collapse; font-size: 11px; margin: 8px 0; }
+  .field-table th { text-align: left; padding: 6px 8px; background: #F1F5F9; color: #334155; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; font-size: 10px; border-bottom: 1px solid #CBD5E1; }
+  .field-table td { padding: 5px 8px; border-bottom: 1px solid #F1F5F9; vertical-align: top; }
+  .field-table td:first-child { font-family: 'SF Mono', Menlo, Consolas, monospace; color: #0F172A; font-weight: 600; white-space: nowrap; font-size: 10.5px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-nav">
+    <div class="breadcrumb">
+      <a href="../index.html">📋 Execução de Agente</a>
+      <span class="sep">›</span>
+      <span>Passo 1.7b — Detalhamento</span>
+    </div>
+    <a href="../index.html#step-1-7b" class="back-btn">← Voltar ao diagrama</a>
+  </div>
+
+  <div class="page-header">
+    <span class="icon">🌱</span>
+    <h1>Passo 1.7b — clearRunOutputForSeed + clearObjects</h1>
+  </div>
+  <div class="page-sub">
+    Bloco em <code>flux.service.ts:2814-2825</code>. Duas passadas finais de limpeza antes do loop começar: (1) <code>clearRunOutputForSeed</code> — segunda passada de reset por node type + zerar refs resolvidas em <code>promptData/contentData/textData</code>; (2) <code>clearObjects</code> — reset dos objetos personalizados (<code>fluxObject</code> nomes velhos) que participam via <code>nodesBox</code>. Termina com snapshot <code>newFlows = [...updatedFlows]</code>.
+  </div>
+
+  <div class="step-friendly">
+    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <ul>
+      <li><strong>Segunda pasada de reset via clearRunOutputForSeed:</strong> passa em <em>todos</em> os nodes (não só os com <code>clearOnExecution</code>) e roda <code>clearStaleNodeOutput</code> + limpa <code>outputObjectNode.text</code> + zera <code>text</code> em qualquer <code>ref</code> dentro dos arrays <code>promptData</code>, <code>contentData</code>, <code>textData</code>. Isso é <em>redundante</em> com 1.7a pra tipos com <code>clearOnExecution</code>, mas necessário pra tipos que não têm essa flag mas mesmo assim precisam de output limpo.</li>
+      <li><strong>clearObjects processa nodesBox pra objetos personalizados:</strong> percorre os nodes procurando <code>type === 'nodesBox'</code>. Pra cada um, acha o <code>UserObject</code> selecionado (via <code>data.selectedId</code>) na lista <code>objectCallerData</code> (carregada em 1.5), decide quais itens de <code>text</code> resetar (via <code>clearOnExecution</code> por item) e re-cria sessions se necessário.</li>
+      <li><strong>onMutateObjectCallerData no fim:</strong> depois de todo o processing, chama o callback do closure de 1.5 (<code>onMutateObjectCallerData(myObjects)</code>) que reatribui <code>objectCallerData</code> no escopo pai. É como o "flush" da mutação.</li>
+      <li><strong>let newFlows = [...updatedFlows] — snapshot raso:</strong> última linha do bloco. Cria um array novo (spread) mas <em>referências</em> pros mesmos nodes. Quem escreve em <code>updatedFlows</code> ou <code>newFlows</code> depois, cada um tem seu próprio array mas nodes compartilhados.</li>
+      <li><strong>Sem session sync no clearObjects:</strong> diferente do 1.5b que chamava <code>sessionStateService.clear</code>, o <code>clearObjects</code> só <em>appenda entries</em> (não deleta) — usa <code>sessionStateService.appendEntries</code> se o node tem <code>sessionEnabled</code>. Semântica muito diferente do fluxObject clear.</li>
+    </ul>
+  </div>
+
+  <div class="note info">
+    <strong>Contexto:</strong> essa é a última etapa antes de sair da Fase 1 (setup). Depois desses dois calls + o spread, o loop principal (Fase 3) começa. É a última chance de deixar tudo "limpo" pra evitar leakage de estado entre runs.
+  </div>
+
+  <div class="overview-mini">
+    <div class="overview-mini-title">Cadeia em 1.7b</div>
+    <div class="overview-chain">
+      <a href="#fn-a" class="overview-chip"><span class="lbl">A</span>clearRunOutputForSeed(node)</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>this.clearObjects({ ... })</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>onMutateObjectCallerData(myObjects)</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>newFlows = [...updatedFlows]</a>
+    </div>
+    <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
+      Resultado: <code>updatedFlows</code> + <code>objectCallerData</code> mutados e limpos; <code>newFlows</code> snapshot pronto pra Fase 3.
+    </div>
+  </div>
+
+  <!-- FN A -->
+  <div class="fn-card collapsed" id="fn-a">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#EAB308;color:white">A</span>
+        <code>clearRunOutputForSeed(node)</code>
+      </div>
+      <div class="fn-loc">node-output-reset.ts:173-192 (impl) + flux.service.ts:2814 (call)</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        export function clearRunOutputForSeed&lt;T&gt;(node: T): T
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Segunda pasada de reset — chama <code>clearStaleNodeOutput</code> (que trata os 7 types listados no 1.7a) e adicionalmente zera <code>text: ''</code> em qualquer ref-object dentro de <code>promptData</code>, <code>contentData</code>, <code>textData</code>. Existe pra pegar casos que o gate <code>clearOnExecution</code> do 1.7a não cobre.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> depois do .map gigantesco do 1.7a que já resetou tudo com <code>clearOnExecution</code>, essa função passa <em>de novo</em> em todo mundo. A diferença: <em>não</em> depende do gate <code>clearOnExecution</code> — trata sempre. Primeiro chama <code>clearStaleNodeOutput</code>, que é a versão limpa (e correta) da lógica inline do 1.7a — resetando <code>text</code>, <code>canceled</code>, <code>response</code>, <code>errorMessage</code>, <code>errorStatusCode</code> e <code>jsonRequestBody</code> pros mesmos 7 types. Depois faz uma passada extra: se <code>outputObjectNode</code>, força <code>data.text = ''</code> (redundante com 1.7a A mas ok). E o mais interessante: itera os 3 arrays <code>promptData</code>, <code>contentData</code>, <code>textData</code> — que são <em>arrays de referências resolvidas</em> (usado pelo prompt builder pra guardar snapshots de valores de nodes upstream) — e zera <code>text: ''</code> em cada ref. Isso previne prompt builder ler texto velho de refs "cacheadas" no node. Curiosidade: essa segunda pasada é <em>necessária</em> porque o clearOnExecution é opt-in por node — sem essa, um node sem a flag manteria refs velhas.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">A1</span> Impl — 3 etapas</div>
+            <div class="code-block">
+<span class="k">export function</span> <span class="t">clearRunOutputForSeed</span>(node) {
+  <span class="k">if</span> (!node?.type || !node.data) <span class="k">return</span> node;
+  <span class="k">const</span> cleared = clearStaleNodeOutput(node);
+  <span class="k">const</span> data = { ...cleared.data };
+  <span class="k">if</span> (node.type === <span class="s">'outputObjectNode'</span>) {
+    data.text = <span class="s">''</span>;
+  }
+  <span class="k">for</span> (<span class="k">const</span> field <span class="k">of</span> RESOLVED_REF_ARRAY_FIELDS) {
+    <span class="k">if</span> (Array.isArray(data[field])) {
+      data[field] = data[field].<span class="t">map</span>(ref =&gt;
+        ref &amp;&amp; <span class="k">typeof</span> ref === <span class="s">'object'</span>
+          ? { ...ref, text: <span class="s">''</span> } : ref,
+      );
+    }
+  }
+  <span class="k">return</span> { ...cleared, data };
+}
+            </div>
+            <div class="box-file">node-output-reset.ts:173-192</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box decision">
+            <div class="box-title">RESOLVED_REF_ARRAY_FIELDS</div>
+            <div class="code-block">
+<span class="k">const</span> RESOLVED_REF_ARRAY_FIELDS = [
+  <span class="s">'promptData'</span>,
+  <span class="s">'contentData'</span>,
+  <span class="s">'textData'</span>,
+];
+            </div>
+            <div class="box-file">node-output-reset.ts:171</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="nested-flow">
+            <div class="nested-flow-title">↳ clearStaleNodeOutput — node-output-reset.ts:20-55</div>
+            <div class="box-desc" style="padding: 8px">
+              Reset "chapado" pros 7 types: <code>commandTextNode</code>, <code>voiceBoxNode</code>, <code>imageGenerator</code>, <code>commandContentNode</code>, <code>audioReaderNode</code>, <code>apiCaller</code>, <code>mcpNode</code>.
+              <br><br>Trata voiceBoxNode com <code>audioUrl: ''</code>, commandContentNode com <code>text.result: ''</code>, e apiCaller/mcpNode com <code>response: null, errorMessage: null, errorStatusCode: null, jsonRequestBody: ''</code>. Fallback pra <code>text: '', canceled: false</code> nos outros.
+              <br><br>Também trata <code>NODE_OUTPUT_FIELD</code> (commandTextNode.text, scripting.result, apiCaller.text, mathFunction.result, counterNode.text, outputController.text).
+            </div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Sem gate clearOnExecution</div>
+            <code>clearStaleNodeOutput</code> não testa <code>clearOnExecution</code> — sempre roda o reset se o type está na lista. Por isso é seguro chamar em todos.
+          </div>
+          <div class="aside">
+            <div class="aside-title">📎 Refs em promptData/contentData/textData</div>
+            Esses arrays guardam snapshots resolvidos de valores upstream. Ex.: um <code>commandTextNode</code> tem <code>promptData: [{id, name, text: 'valor resolvido'}, ...]</code>. O clear zera só <code>text</code> — mantém id/name.
+          </div>
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Duplicação com 1.7a</div>
+            Pra os 7 types com <code>clearOnExecution</code>, 1.7a já resetou e agora <code>clearStaleNodeOutput</code> reseta de novo. Idempotente (não quebra) mas desperdício. Refactor teria consolidar tudo em uma passada.
+            <br><br>Ganho da segunda pasada: apanha nodes <em>sem</em> clearOnExecution mas que ainda precisam de output limpo pro seed do prompt builder.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 typeof ref === 'object' guard</div>
+            <code>ref &amp;&amp; typeof ref === 'object'</code> — permite <code>ref</code> ser objeto ou <code>null</code>. Se for null, passa direto. Se for string ou number (bugs), skip também.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FN B -->
+  <div class="fn-card collapsed" id="fn-b">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#F59E0B;color:white">B</span>
+        <code>this.clearObjects({ ... })</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:2816-2823 (call) + 9411-9559 (impl)</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        async clearObjects({ objectCallerData, nodes, onMutateObjectCallerData, spaceId, user, sessionId })
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Reset dos objetos personalizados carregados no 1.5. Percorre nodes procurando <code>type === 'nodesBox'</code>, encontra o objeto associado via <code>data.selectedId</code>, decide quais itens de <code>text</code> resetar (via flags <code>{itemId}clearOnExecution</code>) e re-cria/atualiza sessions do objeto.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> depois de resetar os nodes em si, agora reseta <em>os objetos personalizados</em> — que são estruturas de dados nomeadas (tipo "Small Memory") que <code>nodesBox</code> lê e escreve. A função é bem longa (149 linhas). Passo a passo: (1) começa com <code>myObjects = [...objectCallerData]</code> — cópia rasa do array carregado no 1.5. Se está vazio, retorna cedo. (2) Loop nos nodes procurando <code>nodesBox</code>. Pra cada um, acha o objeto selecionado (via <code>data.selectedId</code>) — se não achar (foi deletado no editor), <code>continue</code>. (3) Se <code>sessionEnabled</code>, cria/atualiza a sessão <code>default</code> se não existir (backfill), e depois popula <code>selectedObject.text</code> com o conteúdo da sessão selecionada — <em>ou</em>, se a sessão não existe, cria uma nova com todos os text zerados. (4) Filtra <code>uniqueTextElements</code> por id, aplica o clear-per-item (chave <code>{itemId}clearOnExecution</code> em <code>nd.data</code>), monta <code>findItem</code>. (5) Atualiza <code>selectedObject.sessions</code> com <code>findItem</code> na sessão ativa. (6) Substitui o objeto em <code>myObjects</code>. (7) Se sessão está ligada, chama <code>sessionStateService.appendEntries</code> (não <code>clear</code>! só append) — grava o snapshot como uma entry nova no session state. (8) Depois do loop, chama <code>onMutateObjectCallerData(myObjects)</code>. Insight interessante: essa função <em>agrega</em> em vez de limpar totalmente — sempre re-escreve as sessions inteiras com o novo <code>findItem</code>, mas nunca deleta rows do session state. Diferente do 1.5b que fez <code>sessionStateService.clear</code>.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B1</span> Guard cedo — array vazio</div>
+            <div class="code-block">
+<span class="k">let</span> myObjects = objectCallerData ? [...objectCallerData] : [];
+<span class="k">if</span> (myObjects.length === 0) {
+  <span class="k">return</span>;
+}
+            </div>
+            <div class="box-file">flux.service.ts:9419-9423</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B2</span> Loop nos nodesBox</div>
+            <div class="code-block">
+<span class="k">for</span> (<span class="k">const</span> nd <span class="k">of</span> nodes) {
+  <span class="k">if</span> (nd.type === <span class="s">'nodesBox'</span>) {
+    <span class="k">const</span> selectedSession = sessionId || <span class="s">'default'</span>;
+    <span class="k">const</span> selectedId = nd.data.selectedId;
+    <span class="k">const</span> selectedObject = myObjects.<span class="t">find</span>(
+      obj =&gt; obj.id === selectedId,
+    );
+    <span class="k">if</span> (!selectedObject) <span class="k">continue</span>;
+    <span class="c">// ... session logic + per-item clear ...</span>
+  }
+}
+            </div>
+            <div class="box-file">flux.service.ts:9425-9435</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B3</span> Per-item clear (chaves dinâmicas)</div>
+            <div class="code-block">
+<span class="k">const</span> findItem = uniqueTextElements?.<span class="t">map</span>(item =&gt; {
+  <span class="k">const</span> clearOnExecution =
+    nd.data?.[item.id + <span class="s">'clearOnExecution'</span>];
+  <span class="k">const</span> text = clearOnExecution ? <span class="s">''</span> : item?.text;
+  <span class="k">return</span> { ...item, text };
+});
+            </div>
+            <div class="box-file">flux.service.ts:9511-9518</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box db">
+            <div class="box-title"><span class="badge step">B4</span> Session state — appendEntries (não clear!)</div>
+            <div class="code-block">
+<span class="k">if</span> (nd.data.sessionEnabled &amp;&amp; selectedId) {
+  <span class="k">await</span> <span class="k">this</span>.sessionStateService.appendEntries(
+    { scopeType: <span class="s">'object'</span>, scopeId: selectedId,
+      sessionKey: selectedSession,
+      ownerUserId: user?.id, spaceId },
+    [{ content: { items: findItem }, nodeId: nd.id }],
+  );
+}
+            </div>
+            <div class="box-file">flux.service.ts:9543-9554</div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 nodesBox — não confundir com fluxObject</div>
+            <code>nodesBox</code> é o <em>node</em> que <em>lê/escreve</em> um objeto personalizado. O objeto em si é <code>FluxObject</code> (na variável <code>objectCallerData</code>). <code>nodesBox.data.selectedId</code> aponta pro id do objeto que ele controla.
+          </div>
+          <div class="aside warn">
+            <div class="aside-title">⚠️ appendEntries em vez de clear</div>
+            Diferente do 1.5b (que fez DELETE), aqui só faz APPEND. O session state cresce a cada run — nunca limpa. Se rodar 1000 vezes, tem 1000 rows por object+session. Manutenção fica com sistema externo (cleanup jobs).
+          </div>
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Chaves dinâmicas — footgun</div>
+            <code>nd.data[item.id + 'clearOnExecution']</code> — chave montada por concat. Se <code>item.id</code> tiver caracteres inesperados, monta chave inválida. Não valida.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 Backfill de default session</div>
+            L9442-9461 — se sessão <code>default</code> não existe mas <code>sessionEnabled</code>, cria com o conteúdo atual antes de processar. Migração lazy do formato antigo pra novo.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FN C -->
+  <div class="fn-card collapsed" id="fn-c">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#3B82F6;color:white">C</span>
+        <code>onMutateObjectCallerData(myObjects) — flush do closure</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:9558 + 2504-2506 (closure def)</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        onMutateObjectCallerData(myObjects);  // callback do closure de 1.5-E
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Depois de processar todos os nodes no <code>clearObjects</code>, chama uma única vez o callback pra reatribuir <code>objectCallerData</code> no escopo do <code>apiV2</code>. É o "commit" da mutação — sem essa chamada, <code>myObjects</code> ficaria só no escopo do <code>clearObjects</code>.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> lembra do closure criado em 1.5-E (<code>onMutateObjectCallerData = data =&gt; { objectCallerData = data; }</code>)? Aqui é onde ele é chamado pela primeira vez. Como <code>clearObjects</code> trabalha numa cópia local (<code>myObjects</code>), o array original em <code>apiV2</code> ainda estava com o estado pré-limpeza. Essa linha é o "flush" — passa a lista atualizada pro closure, que reatribui a variável no escopo pai. A partir daqui, quem ler <code>objectCallerData</code> no <code>apiV2</code> vê a nova versão (com os objetos com <code>text</code> resetado por item + <code>sessions</code> atualizadas). É crítico porque o closure permite bidirectional flow: qualquer <code>nodesBox</code> chamado dentro do loop principal (Fase 3) pode também chamar <code>onMutateObjectCallerData</code> pra propagar suas mudanças pra frente.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">C1</span> Chamada única no fim</div>
+            <div class="box-desc">
+              <code>onMutateObjectCallerData(myObjects);</code>
+              <br><br>Depois do <code>for..of</code> completo, uma só chamada. Não é feito por iteração pra evitar re-work.
+            </div>
+            <div class="box-file">flux.service.ts:9558</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="nested-flow">
+            <div class="nested-flow-title">↳ Closure em apiV2 — flux.service.ts:2504-2506</div>
+            <div class="code-block">
+<span class="k">const</span> onMutateObjectCallerData = data =&gt; {
+  objectCallerData = data;  <span class="c">// reatribui let do escopo pai</span>
+};
+            </div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box cross">
+            <div class="box-title">Efeito no apiV2</div>
+            <div class="box-desc">
+              <code>objectCallerData</code> agora aponta pra <code>myObjects</code> processado. Quem ler daqui pra frente vê a versão limpa. O array original de 1.5 é descartado (garbage collected).
+            </div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Padrão de closure mutation</div>
+            Mesmo pattern de <code>onMutateSchema</code>, <code>onUpdateTokens</code>. Documentado em 1.5-E. Aqui é a primeira invocação em cada run.
+          </div>
+          <div class="aside">
+            <div class="aside-title">📎 Chamado de novo em Fase 3</div>
+            Depois desse ponto, cada handler de <code>nodesBox</code> na Fase 3 também pode chamar <code>onMutateObjectCallerData</code>. Ver flux.service.ts:3575-3599, 4146-4174 (handlers do nodesBox).
+          </div>
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Não é chamado se return early</div>
+            Se <code>myObjects.length === 0</code> ativa o guard em L9421-9423, o <code>onMutateObjectCallerData</code> nunca é chamado. Ok — o array original em <code>objectCallerData</code> continua igual (também vazio).
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 Ordem no scope</div>
+            Se o closure fosse const-object em vez de reatribuição, dava pra passar reference. Reatribuição é escolha estilística — todo o apiV2 usa esse padrão.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FN D -->
+  <div class="fn-card collapsed" id="fn-d">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#8B5CF6;color:white">D</span>
+        <code>let newFlows = [...updatedFlows] — snapshot raso</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:2825</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        let newFlows = [...updatedFlows];
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Cria um segundo array (<code>newFlows</code>) contendo as mesmas referências de nodes que <code>updatedFlows</code>. A partir daqui, os dois arrays podem divergir — quem faz <code>updatedFlows[i] = ...</code> ou <code>newFlows[i] = ...</code> só afeta o próprio array.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> spread cria um <em>array novo</em>, mas as referências pros nodes dentro são as mesmas. É um snapshot <em>estrutural</em>, não profundo. Prática: se o loop principal (Fase 3) fizer <code>newFlows[i] = { ...newFlows[i], data: { ...} }</code>, cria um node novo e substitui só em <code>newFlows</code> — <code>updatedFlows[i]</code> continua apontando pro antigo. Se o loop mutar <em>in place</em> (<code>newFlows[i].data.x = 'y'</code>), a mutação aparece em <code>updatedFlows[i]</code> também (mesma referência de objeto). Convenção do apiV2: quase todos os writes usam spread pra criar node novo, então na prática os dois arrays divergem sem afetar um ao outro. Por que dois arrays? Historicamente, <code>updatedFlows</code> é o "snapshot pré-loop" e <code>newFlows</code> é o "current" durante o loop. Alguns caminhos consultam <code>updatedFlows</code> pra saber o estado inicial (ex.: comparar current com initial).
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">D1</span> Spread cria array novo</div>
+            <div class="code-block">
+<span class="k">let</span> newFlows = [...updatedFlows];
+<span class="c">// updatedFlows e newFlows são arrays DIFERENTES</span>
+<span class="c">// mas newFlows[i] === updatedFlows[i] (mesma referência)</span>
+            </div>
+            <div class="box-file">flux.service.ts:2825</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box decision">
+            <div class="box-title">O que muda depois</div>
+            <div class="cascade">
+              <div class="cascade-step">
+                <span class="cascade-num">1</span>
+                <span class="cond"><code>newFlows[i] = { ...node, data: ... }</code></span>
+                <span class="result pass">só newFlows muda</span>
+              </div>
+              <div class="cascade-step">
+                <span class="cascade-num">2</span>
+                <span class="cond"><code>newFlows[i].data.x = 'y'</code></span>
+                <span class="result deny">ambos mudam (mesmo obj)</span>
+              </div>
+              <div class="cascade-step">
+                <span class="cascade-num">3</span>
+                <span class="cond"><code>newFlows.push(x)</code></span>
+                <span class="result pass">só newFlows muda</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Convenção do apiV2</div>
+            Writes em nodes sempre usam spread (<code>{ ...node, data: ... }</code>), nunca mutação in-place. Assim <code>updatedFlows</code> preserva o estado inicial enquanto <code>newFlows</code> evolui.
+          </div>
+          <div class="aside">
+            <div class="aside-title">📎 let (não const)</div>
+            <code>let newFlows</code> porque pode ser reatribuído inteiro (não só mutado). Alguns caminhos reatribuem via <code>.map</code> ou substituindo por outro array.
+          </div>
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Spread não é deep clone</div>
+            Quem esperar isolamento profundo entre updatedFlows e newFlows vai se surpreender: <code>node.data</code> é o mesmo objeto. Mutação in-place vaza.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 Onde newFlows é usado depois</div>
+            É o "array vivo" da Fase 3 — passado pro prefetch, pro scheduler, pros handlers. <code>updatedFlows</code> pode até ser deletado depois (garbage), mas continua referenciado em várias funções auxiliares.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note info" style="margin-top:32px">
+    <strong>Resumo — o que sai de 1.7b:</strong>
+    <br>• <code>updatedFlows</code> passou pela segunda pasada de <code>clearRunOutputForSeed</code> (todos os nodes, sem gate)
+    <br>• <code>objectCallerData</code> reatribuído — objetos com <code>nodesBox</code> associados têm <code>text</code> resetado por item + sessions atualizadas
+    <br>• Session state (Postgres): novas entries appendadas via <code>appendEntries</code> (não deleta — cresce)
+    <br>• <code>newFlows</code> criado como snapshot raso — array novo, refs iguais
+    <br>• Depois disso, Fase 1 termina — próximo passo é a Fase 2 (dispatch)
+  </div>
+
+  <div class="note">
+    <strong>Observações para migração:</strong>
+    <br>• <code>clearRunOutputForSeed</code> + <code>clearStaleNodeOutput</code> são funções puras em <code>node-output-reset.ts</code> — trivialmente migráveis pro worker.
+    <br>• <code>clearObjects</code> é <em>grande</em> (149 linhas) e depende de: (a) <code>objectCallerData</code> passado do 1.5, (b) <code>sessionStateService</code> (Postgres), (c) <code>onMutateObjectCallerData</code> closure. Migrar exige repensar a linkage do closure — no worker, cada activity está isolada, então cada mutação de <code>objectCallerData</code> teria que ir via round-trip pro backend, ou o worker precisa manter o array na memória local do workflow.
+    <br>• <code>appendEntries</code> (não clear!) significa que session state cresce indefinidamente. Se essa lógica for migrada, herdar o comportamento — <strong>não</strong> transformar em DELETE, senão quebra semântica de "história" das sessions.
+    <br>• A duplicação de resets (1.7a inline + 1.7b via helper) é <em>tech debt viva</em>. Consolidar em um único caminho antes de migrar.
+    <br>• <code>newFlows = [...updatedFlows]</code> é convenção — no worker, pode passar array direto sem clone se guaranteed que activities não mutam in-place. Mas o pattern seguro é replicar.
+    <br>• Prioridade: <code>clearRunOutputForSeed</code> é fácil e essencial (evita leak de refs velhas no prompt builder). <code>clearObjects</code> é mais complexo — pode ir por último, mas se ficar no backend, exige que o worker chame o backend quando <code>nodesBox</code> mutar.
+  </div>
+
+  <div class="page-footer-nav">
+    <a href="../index.html#step-1-7b" class="back-btn">← Voltar ao diagrama principal</a>
+  </div>
+
+</div>
+<script>
+(function() {
+  function toggle(card) { if (card) card.classList.toggle('collapsed'); }
+  function expand(card) { if (card && card.classList.contains('collapsed')) card.classList.remove('collapsed'); }
+  document.querySelectorAll('.fn-card-header').forEach(function(header) {
+    header.addEventListener('click', function(e) {
+      if (e.target.closest('a')) return;
+      toggle(header.parentElement);
+    });
+  });
+  document.querySelectorAll('a[href^="#fn-"]').forEach(function(link) {
+    link.addEventListener('click', function() {
+      var id = link.getAttribute('href').slice(1);
+      expand(document.getElementById(id));
+    });
+  });
+  if (window.location.hash && window.location.hash.startsWith('#fn-')) {
+    expand(document.querySelector(window.location.hash));
+  }
+  window.addEventListener('hashchange', function() {
+    if (window.location.hash.startsWith('#fn-')) {
+      expand(document.querySelector(window.location.hash));
+    }
+  });
+})();
+</script>
+</body>
+</html>

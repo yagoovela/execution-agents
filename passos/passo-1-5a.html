@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Passo 1.5a — stripStaleErrorState + montagem de edges | Detalhamento</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F1F5F9; color: #0F172A; margin: 0; padding: 32px 24px 80px; line-height: 1.4; }
+  .container { max-width: 1500px; margin: 0 auto; }
+  .page-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; padding: 12px 16px; background: white; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); flex-wrap: wrap; }
+  .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748B; }
+  .breadcrumb a { color: #3B82F6; text-decoration: none; font-weight: 500; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #CBD5E1; }
+  .back-btn { display: inline-flex; align-items: center; gap: 6px; background: #0F172A; color: white; padding: 8px 14px; border-radius: 8px; text-decoration: none; font-size: 12.5px; font-weight: 600; }
+  .page-header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+  .page-header .icon { font-size: 32px; }
+  .page-header h1 { margin: 0; font-size: 26px; color: #0F172A; letter-spacing: -0.4px; }
+  .page-sub { color: #64748B; font-size: 13px; margin-bottom: 24px; padding-left: 46px; }
+  .page-sub code { background: #E2E8F0; padding: 1px 6px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; color: #334155; }
+  .overview-mini { background: white; padding: 16px 18px; border-radius: 10px; margin-bottom: 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .overview-mini-title { font-size: 12px; font-weight: 700; color: #334155; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px; }
+  .overview-chain { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .overview-chip { background: #F8FAFC; padding: 6px 12px; border-radius: 6px; border-left: 3px solid #3B82F6; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; font-weight: 600; color: #0F172A; text-decoration: none; display: inline-block; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+  .overview-chip .lbl { display: block; font-size: 9.5px; color: #64748B; font-weight: 500; margin-bottom: 2px; font-family: inherit; text-transform: uppercase; letter-spacing: 0.5px; }
+  .overview-sep { color: #94A3B8; font-size: 18px; font-weight: bold; }
+  .box { background: white; border-radius: 8px; padding: 9px 13px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 4px solid #94A3B8; width: 100%; max-width: 100%; }
+  .box.backend { border-left-color: #3B82F6; }
+  .box.worker { border-left-color: #10B981; }
+  .box.db { border-left-color: #F59E0B; }
+  .box.redis { border-left-color: #EF4444; }
+  .box.s3 { border-left-color: #8B5CF6; }
+  .box.external { border-left-color: #64748B; }
+  .box.decision { border-left-color: #EAB308; background: #FEFCE8; }
+  .box.cross { border-left-color: #A855F7; background: #FAF5FF; }
+  .box-title { font-weight: 600; font-size: 12.5px; color: #0F172A; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .box-desc { font-size: 11.5px; color: #475569; }
+  .box-file { font-size: 10px; color: #94A3B8; font-family: 'SF Mono', Menlo, Consolas, monospace; margin-top: 3px; word-break: break-all; }
+  .box code { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; background: #F1F5F9; padding: 1px 4px; border-radius: 3px; color: #334155; word-break: break-word; }
+  .box-desc code { word-break: break-word; }
+  .badge { display: inline-block; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; }
+  .badge.migrated { background: #D1FAE5; color: #065F46; }
+  .badge.legacy { background: #FEE2E2; color: #991B1B; }
+  .badge.mixed { background: #FEF3C7; color: #92400E; }
+  .badge.step { background: #E0E7FF; color: #3730A3; font-size: 10px; }
+  .badge.cross { background: #F3E8FF; color: #6B21A8; }
+  .arrow { color: #64748B; font-size: 22px; line-height: 1; margin: 1px 0; text-align: center; }
+  .fn-card { margin-top: 28px; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .fn-card-header { background: linear-gradient(to right, #0F172A, #1E293B); color: white; padding: 14px 20px 14px 44px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; cursor: pointer; position: relative; user-select: none; transition: background 0.15s; }
+  .fn-card-header .fn-title { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+  .fn-card-header .fn-title code { background: rgba(255,255,255,0.15); padding: 3px 8px; border-radius: 4px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 13px; }
+  .fn-card-header .fn-loc { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; color: #CBD5E1; }
+  .fn-card-header:hover { background: linear-gradient(to right, #1E293B, #334155); }
+  .fn-card-header::before { content: "▾"; position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: #94A3B8; font-size: 14px; transition: transform 0.2s ease; line-height: 1; }
+  .fn-card.collapsed .fn-card-header::before { transform: translateY(-50%) rotate(-90deg); }
+  .fn-card.collapsed .fn-card-body { display: none; }
+  .fn-card-body { padding: 20px; }
+  .fn-signature { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; background: #F1F5F9; padding: 8px 12px; border-radius: 6px; color: #334155; margin-bottom: 16px; overflow-x: auto; }
+  .fn-purpose { font-size: 13px; color: #475569; margin-bottom: 12px; padding: 10px 14px; background: #EFF6FF; border-left: 3px solid #3B82F6; border-radius: 6px; }
+  .fn-friendly { font-size: 13px; color: #334155; margin-bottom: 20px; padding: 12px 14px 12px 44px; background: #F0FDF4; border-left: 3px solid #10B981; border-radius: 6px; position: relative; line-height: 1.55; }
+  .fn-friendly::before { content: "💬"; position: absolute; left: 14px; top: 10px; font-size: 18px; }
+  .fn-friendly strong { color: #065F46; }
+  .step-friendly { font-size: 13.5px; color: #334155; margin-bottom: 28px; padding: 16px 18px 16px 52px; background: #F0FDF4; border-left: 4px solid #10B981; border-radius: 10px; position: relative; line-height: 1.6; box-shadow: 0 1px 3px rgba(16, 185, 129, 0.08); }
+  .step-friendly::before { content: "💬"; position: absolute; left: 18px; top: 14px; font-size: 22px; }
+  .step-friendly-title { font-weight: 700; color: #065F46; font-size: 13px; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; }
+  .step-friendly ul { margin: 0; padding-left: 18px; }
+  .step-friendly li { margin-bottom: 6px; }
+  .step-friendly li:last-child { margin-bottom: 0; }
+  .step-friendly strong { color: #065F46; }
+  .step-friendly code { background: #DCFCE7; padding: 1px 5px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; color: #065F46; }
+  .step-friendly em { color: #047857; font-style: italic; }
+  .fn-body-cols { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr); gap: 20px; }
+  @media (max-width: 900px) { .fn-body-cols { grid-template-columns: 1fr; } }
+  .fn-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .fn-asides { display: flex; flex-direction: column; gap: 12px; }
+  .aside { background: #FEF3C7; border-left: 4px solid #F59E0B; border-radius: 6px; padding: 10px 12px; font-size: 11.5px; color: #78350F; }
+  .aside.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .aside.warn { background: #FEE2E2; border-left-color: #EF4444; color: #991B1B; }
+  .aside.helper { background: #F3E8FF; border-left-color: #A855F7; color: #6B21A8; }
+  .aside-title { font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+  .aside code { background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 10.5px; word-break: break-word; }
+  .cascade { background: #FEFCE8; border: 1px dashed #EAB308; border-radius: 8px; padding: 12px; margin: 6px 0; }
+  .cascade-title { font-size: 11px; font-weight: 700; color: #713F12; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .cascade-step { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; padding: 6px 8px; background: white; border-radius: 6px; margin-bottom: 4px; font-size: 11.5px; }
+  .cascade-step .cond { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; color: #334155; }
+  .cascade-step .result { font-weight: 700; font-size: 10.5px; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+  .cascade-step .result.pass { background: #D1FAE5; color: #065F46; }
+  .cascade-step .result.deny { background: #FEE2E2; color: #991B1B; }
+  .cascade-step .result.next { background: #E0E7FF; color: #3730A3; }
+  .cascade-step .result.call { background: #FEF3C7; color: #78350F; }
+  .cascade-num { background: #EAB308; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+  .nested-flow { margin: 6px 0; padding: 12px; background: #F0FDF4; border: 1px dashed #10B981; border-radius: 8px; }
+  .nested-flow-title { font-size: 10.5px; font-weight: 700; color: #065F46; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .code-block { background: #0F172A; color: #E2E8F0; padding: 12px 16px; border-radius: 6px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; line-height: 1.6; overflow-x: auto; margin: 6px 0; }
+  .code-block .k { color: #93C5FD; }
+  .code-block .s { color: #86EFAC; }
+  .code-block .c { color: #64748B; font-style: italic; }
+  .code-block .t { color: #FDE68A; }
+  .note { background: #FEF3C7; border-left: 4px solid #F59E0B; padding: 12px 16px; border-radius: 6px; font-size: 12.5px; color: #78350F; margin: 20px 0; }
+  .note.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .note code { background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; }
+  .page-footer-nav { margin-top: 48px; padding: 16px; background: white; border-radius: 10px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .field-table { width: 100%; border-collapse: collapse; font-size: 11px; margin: 8px 0; }
+  .field-table th { text-align: left; padding: 6px 8px; background: #F1F5F9; color: #334155; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; font-size: 10px; border-bottom: 1px solid #CBD5E1; }
+  .field-table td { padding: 5px 8px; border-bottom: 1px solid #F1F5F9; vertical-align: top; }
+  .field-table td:first-child { font-family: 'SF Mono', Menlo, Consolas, monospace; color: #0F172A; font-weight: 600; white-space: nowrap; font-size: 10.5px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-nav">
+    <div class="breadcrumb">
+      <a href="../index.html">📋 Execução de Agente</a>
+      <span class="sep">›</span>
+      <span>Passo 1.5a — Detalhamento</span>
+    </div>
+    <a href="../index.html#step-1-5a" class="back-btn">← Voltar ao diagrama</a>
+  </div>
+
+  <div class="page-header">
+    <span class="icon">🧹</span>
+    <h1>Passo 1.5a — stripStaleErrorState + montagem de edges</h1>
+  </div>
+  <div class="page-sub">
+    Bloco em <code>flux.service.ts:2513-2520</code>. Higieniza os nodes do run anterior removendo error-state gruda (<code>errorMessage</code>, <code>errorStatusCode</code>, <code>hasExecutionError</code>) e reduz cada edge a apenas os 5 campos que o scheduler realmente lê. Impl de <code>stripStaleErrorState</code> em <code>flux.service.ts:444-459</code>.
+  </div>
+
+  <div class="step-friendly">
+    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <ul>
+      <li><strong>Limpa restos de erros anteriores em cada node:</strong> se o run anterior falhou e deixou <code>errorMessage</code>, <code>errorStatusCode</code> ou <code>hasExecutionError</code> gravados no <code>node.data</code> (via <code>persistNodeSuccess</code> na fase 4), essa função remove — evita que o coletor de erros do passo 4.2 confunda erro velho com erro novo do run atual.</li>
+      <li><strong>Cai um nível de profundidade a mais:</strong> se <code>node.data.text</code> for objeto (não string), também limpa <code>errorMessage</code>/<code>errorStatusCode</code> lá dentro. Isso pega o caso do <code>commandContentNode</code> que grava erros dentro de <code>data.text.errorMessage</code>.</li>
+      <li><strong>Retorna um array novo (imutável):</strong> nada é mutado in-place — <code>.map(node =&gt; ...)</code> devolve nodes novos com <code>data</code> spread. Isso é crítico porque as versões originais no banco não devem ser mexidas até que <code>persistNodeSuccess</code> escreva de novo.</li>
+      <li><strong>Enxuga cada edge pro shape mínimo:</strong> pega só <code>{ id, source, sourceHandle, target, targetHandle }</code>. Descarta <code>data</code>, <code>type</code>, coordenadas, style — tudo que o frontend usa mas o scheduler não precisa. Reduz footprint em memória quando o loop principal iterar centenas de vezes lendo edges.</li>
+      <li><strong>Downstream:</strong> o array retornado é atribuído a <code>const nodes = ...</code>, que vira <code>let updatedFlows = [...nodes]</code> na linha 2523 — a partir daqui, esse é o array canônico do run inteiro. Os <code>edges</code> viram source of truth pra scheduler encontrar next nodes.</li>
+    </ul>
+  </div>
+
+  <div class="note info">
+    <strong>Contexto:</strong> essa higienização evita um bug clássico — sem o strip, o coletor de erros da fase 4 (nodesWithError filter) pegaria <em>também</em> nodes que falharam num run passado mas rodaram OK agora, marcando o run atual como falho erroneamente.
+  </div>
+
+  <div class="overview-mini">
+    <div class="overview-mini-title">Cadeia em 1.5a</div>
+    <div class="overview-chain">
+      <a href="#fn-a" class="overview-chip"><span class="lbl">A</span>stripStaleErrorState(nodes)</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>Montagem enxuta de edges</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>Uso downstream (fase 4)</a>
+    </div>
+    <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
+      Resultado final: <code>const nodes</code> higienizado + <code>const edges</code> enxuto. Base do <code>updatedFlows</code> que atravessa o loop inteiro.
+    </div>
+  </div>
+
+  <!-- FN A -->
+  <div class="fn-card collapsed" id="fn-a">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#EAB308;color:white">A</span>
+        <code>stripStaleErrorState(nodes)</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:2513 (call) + 444-459 (impl)</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        private stripStaleErrorState(nodes: any[]): any[]
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Remove <em>error state gruda</em> gravado no <code>data</code> de cada node em runs anteriores. Se o run passado gravou <code>errorMessage</code>, <code>errorStatusCode</code> ou <code>hasExecutionError</code> via <code>persistNodeSuccess</code>, essa função limpa antes do run novo começar.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> é o <em>zelador</em> que passa antes do run começar. Cada node no banco pode ter herdado sujeira de execuções passadas — se um <code>apiCaller</code> falhou ontem, o error message ficou salvo em <code>data.errorMessage</code>. Essa função corre a lista, tira uma cópia de cada <code>data</code>, apaga as chaves <code>errorMessage</code>, <code>errorStatusCode</code>, <code>hasExecutionError</code> e ainda desce um nível — se <code>data.text</code> for objeto (não string), limpa lá dentro também, porque <code>commandContentNode</code> historicamente aninhava erros em <code>data.text.errorMessage</code>. Retorna sempre um array novo — nunca muta o original — pra preservar o que veio do banco. Sem essa passada, o filtro <code>nodesWithError</code> na fase 4 sinalizaria falso positivo: nodes que rodaram OK mas tinham error de run passado marcado seriam contados como "erros deste run".
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">A1</span> Chamada no apiV2</div>
+            <div class="box-desc">
+              <code>const nodes = this.stripStaleErrorState(getFlow.nodes);</code>
+              <br><br><code>getFlow.nodes</code> vem do banco via <code>flowService.getFlowWithNodesAndEdges</code> (passo 1.2). O array retornado é <em>o input canônico</em> pro loop de execução — vira <code>updatedFlows</code> na próxima linha.
+            </div>
+            <div class="box-file">flux.service.ts:2513</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="nested-flow">
+            <div class="nested-flow-title">↳ Implementação: flux.service.ts:444-459</div>
+            <div class="code-block">
+<span class="k">private</span> stripStaleErrorState(nodes: <span class="t">any</span>[]): <span class="t">any</span>[] {
+  <span class="k">return</span> nodes.<span class="t">map</span>(node =&gt; {
+    <span class="k">if</span> (!node?.data) <span class="k">return</span> node;
+    <span class="k">const</span> cleanData = { ...node.data };
+    <span class="k">delete</span> cleanData.errorMessage;
+    <span class="k">delete</span> cleanData.errorStatusCode;
+    <span class="k">delete</span> cleanData.hasExecutionError;
+    <span class="k">if</span> (cleanData.text &amp;&amp; <span class="k">typeof</span> cleanData.text === <span class="s">'object'</span>) {
+      <span class="k">const</span> cleanText = { ...cleanData.text };
+      <span class="k">delete</span> cleanText.errorMessage;
+      <span class="k">delete</span> cleanText.errorStatusCode;
+      cleanData.text = cleanText;
+    }
+    <span class="k">return</span> { ...node, data: cleanData };
+  });
+}
+            </div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="cascade">
+            <div class="cascade-title">🧹 Chaves removidas</div>
+            <div class="cascade-step">
+              <span class="cascade-num">1</span>
+              <span class="cond"><code>data.errorMessage</code></span>
+              <span class="result deny">delete</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">2</span>
+              <span class="cond"><code>data.errorStatusCode</code></span>
+              <span class="result deny">delete</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">3</span>
+              <span class="cond"><code>data.hasExecutionError</code></span>
+              <span class="result deny">delete</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">4a</span>
+              <span class="cond"><code>data.text.errorMessage</code> (se text é objeto)</span>
+              <span class="result deny">delete</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">4b</span>
+              <span class="cond"><code>data.text.errorStatusCode</code> (se text é objeto)</span>
+              <span class="result deny">delete</span>
+            </div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Por que 2 níveis?</div>
+            <code>commandContentNode</code> guarda todo o resultado em <code>data.text</code> como objeto (<code>{ result, errorMessage, ...}</code>). Outros nodes usam <code>data.text</code> como string. O <code>typeof === 'object'</code> distingue os dois e só desce quando é objeto.
+          </div>
+          <div class="aside">
+            <div class="aside-title">📎 Onde esses campos são gravados</div>
+            <code>persistNodeSuccess</code> (worker + backend) grava esses 3 campos no <code>data</code> do node quando node falha durante execução. Ficam persistidos no Postgres até o próximo run, quando essa função limpa.
+          </div>
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Só 3 chaves — não é exhaustive</div>
+            Se algum node type gravar erro em outra chave (ex.: <code>data.errorCode</code>, <code>data.stackTrace</code>), essa função <em>não pega</em>. Precisa manter sincronizado com o que <code>persistNodeSuccess</code> grava.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 Imutabilidade via spread</div>
+            <code>{ ...node, data: cleanData }</code> — spread cria referências novas em ambos níveis. O original em <code>getFlow.nodes</code> continua intacto (importante se algo mais adiante quiser inspecionar o pré-strip).
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FN B -->
+  <div class="fn-card collapsed" id="fn-b">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#F59E0B;color:white">B</span>
+        <code>Montagem enxuta de edges</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:2514-2520</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        const edges = getFlow.edges.map(edge =&gt; ({ id, source, sourceHandle, target, targetHandle }))
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Reduz cada edge do banco a só os 5 campos que o scheduler realmente lê ao decidir "de onde pra onde ir". Descarta metadata visual (<code>type</code>, <code>data</code>, animações, style, position) que só o frontend usa.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> as edges no banco carregam um monte de coisa que só interessa pra desenhar o grafo — <code>type</code>, <code>data</code>, animações, estilo, cor de handle, tudo bagagem visual. O scheduler precisa apenas de "quem é o source, quem é o target, qual handle de cada lado" pra decidir o próximo node. Essa linha faz um <code>.map()</code> que pega só as 5 chaves relevantes. Efeito: (1) menos memória — se um flow tem 500 edges com <code>data</code> pesado, isso corta pesadamente; (2) menos superfície de atenção — quem lê o loop principal não fica se perguntando "hmm, essa <code>edge.data</code> aqui é usada?"; (3) imutabilidade forte — quem quiser mutar o edge tem que criar um novo com só esses 5 campos. Trade-off: se algum dia o scheduler precisar de outro campo do edge (ex.: <code>edge.type</code> pra diferenciar edges "condicionais" das normais), tem que ser adicionado aqui explicitamente.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B1</span> Projeção via .map({ ...5 campos })</div>
+            <div class="code-block">
+<span class="k">const</span> edges = getFlow.edges.<span class="t">map</span>(edge =&gt; ({
+  id: edge.id,
+  source: edge.source,
+  sourceHandle: edge.sourceHandle,
+  target: edge.target,
+  targetHandle: edge.targetHandle,
+}));
+            </div>
+            <div class="box-file">flux.service.ts:2514-2520</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box decision">
+            <div class="box-title">Shape final vs shape do banco</div>
+            <table class="field-table">
+              <tr><th>Campo</th><th>No banco?</th><th>No enxuto?</th></tr>
+              <tr><td>id</td><td>sim</td><td>sim ✓</td></tr>
+              <tr><td>source</td><td>sim</td><td>sim ✓</td></tr>
+              <tr><td>sourceHandle</td><td>sim</td><td>sim ✓</td></tr>
+              <tr><td>target</td><td>sim</td><td>sim ✓</td></tr>
+              <tr><td>targetHandle</td><td>sim</td><td>sim ✓</td></tr>
+              <tr><td>type</td><td>sim</td><td>não ✗</td></tr>
+              <tr><td>data</td><td>sim (JSONB)</td><td>não ✗</td></tr>
+              <tr><td>animated / style</td><td>sim</td><td>não ✗</td></tr>
+            </table>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Onde edges é lido depois</div>
+            • <code>edges.find(e =&gt; e.source.includes('flow-global-starter'))</code> — L2560 (achar starter)
+            <br>• Scheduler / prefetch — decide next node por match de <code>source</code>/<code>target</code> + handles
+            <br>• Nada em runtime lê <code>data</code>, <code>type</code> ou <code>style</code> do edge
+          </div>
+          <div class="aside">
+            <div class="aside-title">📎 Ordem no map</div>
+            A ordem no <code>{...}</code> literal é: <code>id</code>, <code>source</code>, <code>sourceHandle</code>, <code>target</code>, <code>targetHandle</code> — reflete o que aparece na visualização (aresta indo de source→target).
+          </div>
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Perda silenciosa de campos</div>
+            Se o schema de edges ganhar um campo novo (ex.: <code>edge.condition</code> pra branch semantics), esse map <strong>não vai propagar</strong>. Bug fácil de esconder.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 Não é deep-clone</div>
+            Cada string é copiada por valor (JS primitives). Mas se algum dia um campo virasse objeto, o spread aqui pegaria por referência — nesse caso, mutar edge.X mutaria o banco também.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FN C -->
+  <div class="fn-card collapsed" id="fn-c">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#3B82F6;color:white">C</span>
+        <code>Uso downstream — como isso previne bugs na fase 4</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:4854 (nodesWithError filter)</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        // Coletor de erros da fase 4: nodesWithError = myUpdatedNodes.filter(n =&gt; n.data.errorMessage)
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Deixar claro por que o strip é <em>necessário</em>. Na fase 4, o coletor de erros lê <code>node.data.errorMessage</code> pra montar <code>nodesWithError</code> — se error velho estivesse gruda no <code>data</code>, marcaria falso positivo.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> a fase 4 do apiV2 (encerramento) faz um filtro simples: "quais nodes têm <code>errorMessage</code>?" — e usa a resposta pra decidir se o run inteiro foi sucesso ou erro. Se stripStaleErrorState não rodasse, o cenário seria: run 1 falhou num <code>apiCaller</code>, gravou <code>errorMessage</code>. Run 2 começa, esse mesmo <code>apiCaller</code> nem é executado (talvez porque o flow rodou uma branch diferente). Na fase 4, o coletor vê o error message velho <em>ainda ali</em> e conclui "esse run falhou". Resultado: métricas erradas, notificação errada, flow log com status errado. O strip prévio garante que os nodes começam <em>limpos</em>, então o único jeito de aparecer <code>errorMessage</code> lá é o run atual ter falhado nele.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box cross">
+            <div class="box-title"><span class="badge step">C1</span> nodesWithError filter (fase 4)</div>
+            <div class="box-desc">
+              <code>const nodesWithError = myUpdatedNodes.filter(n =&gt; n.data?.errorMessage);</code>
+              <br><br>Sem o strip, esse filter pegaria erros de runs passados.
+            </div>
+            <div class="box-file">flux.service.ts:4854 (fase 4)</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box cross">
+            <div class="box-title"><span class="badge step">C2</span> logStatus / logErrorMessage</div>
+            <div class="box-desc">
+              <code>logStatus = nodesWithError.length &gt; 0 ? 'error' : 'success'</code>
+              <br><code>logErrorMessage = nodesWithError.length &gt; 0 ? nodesWithError[0].data.errorMessage : null</code>
+              <br><br>Alimenta <code>flowLogsService.createLog</code> em L4869 e <code>SpaceRunLog.status</code> em L4897.
+            </div>
+            <div class="box-file">flux.service.ts:4856-4866</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box backend">
+            <div class="box-title">Efeito cumulativo do strip</div>
+            <div class="box-desc">
+              Com <code>stripStaleErrorState</code>: o único errorMessage que sobrevive até a fase 4 é o que <em>este</em> run gravou. Sem ele: falsos positivos e logs corrompidos por runs passados.
+            </div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 O contract implícito</div>
+            "Se um node tem <code>errorMessage</code> depois do loop, é porque falhou <em>neste</em> run" — esse contract só vale se algum <code>strip</code> rodou antes. Se em algum refactor esse strip sumir, o contract quebra silenciosamente.
+          </div>
+          <div class="aside">
+            <div class="aside-title">📎 Passo 1.5b vs 1.5a</div>
+            1.5a limpa <em>erros de runs passados</em>. 1.5b (mesmo bloco, linhas 2525-2558) limpa <em>output de runs passados</em> pra nodes com <code>clearOnExecution</code> ligado. São higienizações distintas com propósitos distintos.
+          </div>
+          <div class="aside warn">
+            <div class="aside-title">⚠️ getFlow.nodes ainda com error state</div>
+            <code>getFlow.nodes</code> (o original do banco) continua com o error state. Se algum código futuro ler direto de <code>getFlow.nodes</code> em vez de <code>nodes</code>, pega o sujo.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 Alternativa não-usada</div>
+            Poderia ter feito UPDATE no banco antes do run começar (limpar via SQL). Não é feito — em vez disso, mantém o estado no banco (útil pra debug post-mortem) e limpa <em>em memória</em> pra este run.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note info" style="margin-top:32px">
+    <strong>Resumo — o que sai de 1.5a:</strong>
+    <br>• <code>const nodes</code> — cópia enxuta e limpa dos nodes (sem error state gruda)
+    <br>• <code>const edges</code> — cópia enxuta com só 5 campos por edge
+    <br>• Alocações: N + M objetos novos (N nodes, M edges) — todos rasos
+    <br>• Zero I/O — puro compute em memória
+    <br>• Contract preservado: <em>quaisquer</em> errorMessage no <code>data</code> depois desse ponto vem <em>deste</em> run
+  </div>
+
+  <div class="note">
+    <strong>Observações para migração:</strong>
+    <br>• <code>stripStaleErrorState</code> é função pura — replicável 1:1 no worker sem esforço.
+    <br>• Se a migração passar a limpar error state <em>no banco</em> antes do run (via UPDATE), esse método pode até sumir. Mas cuidado: perde a granularidade de "limpo em memória sem alterar o Postgres até o próximo persist".
+    <br>• O shape enxuto de edges é uma otimização de memória <em>e</em> um contract implícito com o scheduler. Se o worker rodar o scheduler, precisa herdar essa restrição — ou o start-args do workflow envia edges já enxutas.
+    <br>• Prioridade média: não é blocker, mas é preciso preservar o "contract implícito" da fase 4 (só errorMessage deste run sobrevive).
+    <br>• Watch out: se a lista de chaves erradas crescer (ex.: adicionar <code>errorCode</code>), atualizar <em>ambos</em> <code>stripStaleErrorState</code> e o coletor da fase 4 pra continuar consistente.
+  </div>
+
+  <div class="page-footer-nav">
+    <a href="../index.html#step-1-5a" class="back-btn">← Voltar ao diagrama principal</a>
+  </div>
+
+</div>
+<script>
+(function() {
+  function toggle(card) { if (card) card.classList.toggle('collapsed'); }
+  function expand(card) { if (card && card.classList.contains('collapsed')) card.classList.remove('collapsed'); }
+  document.querySelectorAll('.fn-card-header').forEach(function(header) {
+    header.addEventListener('click', function(e) {
+      if (e.target.closest('a')) return;
+      toggle(header.parentElement);
+    });
+  });
+  document.querySelectorAll('a[href^="#fn-"]').forEach(function(link) {
+    link.addEventListener('click', function() {
+      var id = link.getAttribute('href').slice(1);
+      expand(document.getElementById(id));
+    });
+  });
+  if (window.location.hash && window.location.hash.startsWith('#fn-')) {
+    expand(document.querySelector(window.location.hash));
+  }
+  window.addEventListener('hashchange', function() {
+    if (window.location.hash.startsWith('#fn-')) {
+      expand(document.querySelector(window.location.hash));
+    }
+  });
+})();
+</script>
+</body>
+</html>

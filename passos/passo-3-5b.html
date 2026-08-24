@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Passo 3.5b — publishInApiNodeOutput + persistSmallMemoryEntries | Detalhamento</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #F1F5F9;
+    color: #0F172A;
+    margin: 0;
+    padding: 32px 24px 80px;
+    line-height: 1.4;
+  }
+  .container { max-width: 1500px; margin: 0 auto; }
+
+  .page-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-bottom: 24px; padding: 12px 16px;
+    background: white; border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06); flex-wrap: wrap;
+  }
+  .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748B; }
+  .breadcrumb a { color: #3B82F6; text-decoration: none; font-weight: 500; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #CBD5E1; }
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #0F172A; color: white; padding: 8px 14px;
+    border-radius: 8px; text-decoration: none; font-size: 12.5px; font-weight: 600;
+  }
+
+  .page-header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+  .page-header .icon { font-size: 32px; }
+  .page-header h1 { margin: 0; font-size: 26px; color: #0F172A; letter-spacing: -0.4px; }
+  .page-sub { color: #64748B; font-size: 13px; margin-bottom: 24px; padding-left: 46px; }
+  .page-sub code {
+    background: #E2E8F0; padding: 1px 6px; border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; color: #334155;
+  }
+
+  .overview-mini {
+    background: white; padding: 16px 18px; border-radius: 10px;
+    margin-bottom: 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .overview-mini-title {
+    font-size: 12px; font-weight: 700; color: #334155;
+    text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px;
+  }
+  .overview-chain { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .overview-chip {
+    background: #F8FAFC; padding: 6px 12px; border-radius: 6px;
+    border-left: 3px solid #3B82F6;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px; font-weight: 600; color: #0F172A;
+    text-decoration: none; display: inline-block; box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+  .overview-chip .lbl {
+    display: block; font-size: 9.5px; color: #64748B; font-weight: 500;
+    margin-bottom: 2px; font-family: inherit; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .overview-sep { color: #94A3B8; font-size: 18px; font-weight: bold; }
+
+  .box {
+    background: white; border-radius: 8px; padding: 9px 13px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 4px solid #94A3B8;
+    width: 100%; max-width: 100%;
+  }
+  .box.backend    { border-left-color: #3B82F6; }
+  .box.worker     { border-left-color: #10B981; }
+  .box.db         { border-left-color: #F59E0B; }
+  .box.redis      { border-left-color: #EF4444; }
+  .box.s3         { border-left-color: #8B5CF6; }
+  .box.external   { border-left-color: #64748B; }
+  .box.decision   { border-left-color: #EAB308; background: #FEFCE8; }
+  .box.cross      { border-left-color: #A855F7; background: #FAF5FF; }
+
+  .box-title { font-weight: 600; font-size: 12.5px; color: #0F172A; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .box-desc { font-size: 11.5px; color: #475569; }
+  .box-file { font-size: 10px; color: #94A3B8; font-family: 'SF Mono', Menlo, Consolas, monospace; margin-top: 3px; word-break: break-all; }
+  .box code {
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px;
+    background: #F1F5F9; padding: 1px 4px; border-radius: 3px; color: #334155; word-break: break-word;
+  }
+  .box-desc code { word-break: break-word; }
+
+  .badge {
+    display: inline-block; font-size: 9px; font-weight: 700;
+    padding: 2px 6px; border-radius: 4px; text-transform: uppercase;
+    letter-spacing: 0.3px; white-space: nowrap;
+  }
+  .badge.migrated { background: #D1FAE5; color: #065F46; }
+  .badge.legacy   { background: #FEE2E2; color: #991B1B; }
+  .badge.mixed    { background: #FEF3C7; color: #92400E; }
+  .badge.step     { background: #E0E7FF; color: #3730A3; font-size: 10px; }
+  .badge.cross    { background: #F3E8FF; color: #6B21A8; }
+
+  .arrow { color: #64748B; font-size: 22px; line-height: 1; margin: 1px 0; text-align: center; }
+
+  .fn-card {
+    margin-top: 28px; border: 1px solid #E2E8F0; border-radius: 12px;
+    overflow: hidden; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .fn-card-header {
+    background: linear-gradient(to right, #0F172A, #1E293B);
+    color: white; padding: 14px 20px 14px 44px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px; cursor: pointer; position: relative;
+    user-select: none; transition: background 0.15s;
+  }
+  .fn-card-header .fn-title { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+  .fn-card-header .fn-title code {
+    background: rgba(255,255,255,0.15); padding: 3px 8px;
+    border-radius: 4px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 13px;
+  }
+  .fn-card-header .fn-loc { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; color: #CBD5E1; }
+  .fn-card-header:hover { background: linear-gradient(to right, #1E293B, #334155); }
+  .fn-card-header::before {
+    content: "▾"; position: absolute; left: 20px; top: 50%;
+    transform: translateY(-50%); color: #94A3B8; font-size: 14px;
+    transition: transform 0.2s ease; line-height: 1;
+  }
+  .fn-card.collapsed .fn-card-header::before { transform: translateY(-50%) rotate(-90deg); }
+  .fn-card.collapsed .fn-card-body { display: none; }
+  .fn-card-body { padding: 20px; }
+
+  .fn-signature {
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px;
+    background: #F1F5F9; padding: 8px 12px; border-radius: 6px;
+    color: #334155; margin-bottom: 16px; overflow-x: auto;
+  }
+  .fn-purpose {
+    font-size: 13px; color: #475569; margin-bottom: 12px;
+    padding: 10px 14px; background: #EFF6FF;
+    border-left: 3px solid #3B82F6; border-radius: 6px;
+  }
+  .fn-friendly {
+    font-size: 13px; color: #334155; margin-bottom: 20px;
+    padding: 12px 14px 12px 44px; background: #F0FDF4;
+    border-left: 3px solid #10B981; border-radius: 6px;
+    position: relative; line-height: 1.55;
+  }
+  .fn-friendly::before { content: "💬"; position: absolute; left: 14px; top: 10px; font-size: 18px; }
+  .fn-friendly strong { color: #065F46; }
+
+  .step-friendly {
+    font-size: 13.5px; color: #334155; margin-bottom: 28px;
+    padding: 16px 18px 16px 52px; background: #F0FDF4;
+    border-left: 4px solid #10B981; border-radius: 10px;
+    position: relative; line-height: 1.6;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.08);
+  }
+  .step-friendly::before { content: "💬"; position: absolute; left: 18px; top: 14px; font-size: 22px; }
+  .step-friendly-title {
+    font-weight: 700; color: #065F46; font-size: 13px;
+    text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px;
+  }
+  .step-friendly ul { margin: 0; padding-left: 18px; }
+  .step-friendly li { margin-bottom: 6px; }
+  .step-friendly li:last-child { margin-bottom: 0; }
+  .step-friendly strong { color: #065F46; }
+  .step-friendly code {
+    background: #DCFCE7; padding: 1px 5px; border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; color: #065F46;
+  }
+  .step-friendly em { color: #047857; font-style: italic; }
+
+  .fn-body-cols { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr); gap: 20px; }
+  @media (max-width: 900px) { .fn-body-cols { grid-template-columns: 1fr; } }
+  .fn-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .fn-asides { display: flex; flex-direction: column; gap: 12px; }
+
+  .aside {
+    background: #FEF3C7; border-left: 4px solid #F59E0B; border-radius: 6px;
+    padding: 10px 12px; font-size: 11.5px; color: #78350F;
+  }
+  .aside.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .aside.warn { background: #FEE2E2; border-left-color: #EF4444; color: #991B1B; }
+  .aside.helper { background: #F3E8FF; border-left-color: #A855F7; color: #6B21A8; }
+  .aside-title {
+    font-weight: 700; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.4px; margin-bottom: 4px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .aside code {
+    background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 10.5px; word-break: break-word;
+  }
+
+  .nested-flow { margin: 6px 0; padding: 12px; background: #F0FDF4; border: 1px dashed #10B981; border-radius: 8px; }
+  .nested-flow-title { font-size: 10.5px; font-weight: 700; color: #065F46; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+
+  .code-block {
+    background: #0F172A; color: #E2E8F0;
+    padding: 12px 16px; border-radius: 6px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px; line-height: 1.6; overflow-x: auto; margin: 6px 0;
+  }
+  .code-block .k { color: #93C5FD; }
+  .code-block .s { color: #86EFAC; }
+  .code-block .c { color: #64748B; font-style: italic; }
+  .code-block .t { color: #FDE68A; }
+
+  .note {
+    background: #FEF3C7; border-left: 4px solid #F59E0B;
+    padding: 12px 16px; border-radius: 6px;
+    font-size: 12.5px; color: #78350F; margin: 20px 0;
+  }
+  .note.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .note code {
+    background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px;
+  }
+
+  .page-footer-nav {
+    margin-top: 48px; padding: 16px; background: white;
+    border-radius: 10px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .field-table { width: 100%; border-collapse: collapse; font-size: 11px; margin: 8px 0; }
+  .field-table th {
+    text-align: left; padding: 6px 8px;
+    background: #F1F5F9; color: #334155;
+    font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.3px; font-size: 10px;
+    border-bottom: 1px solid #CBD5E1;
+  }
+  .field-table td { padding: 5px 8px; border-bottom: 1px solid #F1F5F9; vertical-align: top; }
+  .field-table td:first-child {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    color: #0F172A; font-weight: 600; white-space: nowrap; font-size: 10.5px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- TOP NAV -->
+  <div class="page-nav">
+    <div class="breadcrumb">
+      <a href="../index.html">📋 Execução de Agente</a>
+      <span class="sep">›</span>
+      <span>Passo 3.5b — Detalhamento</span>
+    </div>
+    <a href="../index.html#step-3-5b" class="back-btn">← Voltar ao diagrama</a>
+  </div>
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <span class="icon">📤</span>
+    <h1>Passo 3.5b — publishInApiNodeOutput + persistSmallMemoryEntries</h1>
+  </div>
+  <div class="page-sub">
+    Bloco em <code>flux.service.ts:4562-4581</code>. Depois que o handler de um nó terminou e o resultado está em <code>myUpdatedNodes</code>, esse bloco é o equivalente inline de <strong>W7-W9 do worker</strong>: propaga o output pros nós conectados (via schema/edges) e persiste as entries de <code>fluxObject</code> (Small Memory) no banco. Só roda se o nó <em>não</em> for Temporal e <em>não</em> for integração roteada pro worker.
+  </div>
+
+  <!-- Step friendly summary -->
+  <div class="step-friendly">
+    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <ul>
+      <li><strong>Gate de "isso é meu problema?":</strong> <code>!isTemporalNode(node.type) && !isWorkerRoutedIntegration(processedNode)</code>. Se o nó já é processado pelo worker (7 tipos Temporal ou 9 providers de integração migrados), o worker faz W8/W9 lá — <em>pular</em>. Só entra aqui quando o backend inline é o responsável.</li>
+      <li><strong>Propaga output pra downstream:</strong> <code>publishInApiNodeOutput</code> delega pra <code>addConnectToNodes</code> (em <code>folw/contants.ts</code>), que <em>reescreve</em> o array de nodes rodando <code>modifyData</code> pra cada source de edge — os nós à jusante recebem o output do nó que acabou de rodar, refletido no <code>data</code> deles. Também chama <code>onMutateSchema(nodeSchema(nodes))</code>, atualizando o schema global.</li>
+      <li><strong>Reassign, não mutação:</strong> <code>myUpdatedNodes = this.publishInApiNodeOutput({...})</code> — o método retorna um <em>novo</em> array (via <code>[...nds]</code> + <code>.map</code>) e o loop reatribui a referência. Segue o mesmo padrão de closure mutation de 1.5 (<code>onMutateObjectCallerData</code>).</li>
+      <li><strong>Persiste Small Memory:</strong> <code>persistSmallMemoryEntries</code> varre os <code>edges</code> procurando quais targets estão ligados via <code>targetHandle === 'inputAdd'</code> ao nó de origem. Pra cada <code>fluxObject</code> (que é o <code>SMALL_MEMORY_TYPE</code>), faz <code>UPDATE flows_nodes SET data = ...</code> com <code>entries</code> + <code>userSessionsChat</code>.</li>
+      <li><strong>Sem filtro por tamanho:</strong> apesar do nome "SmallMemory", <em>não há</em> validação de tamanho aqui. "Small" refere-se ao <em>tipo de nó</em> (o <code>fluxObject</code> foi renomeado pra "Small Memory" na UI), não a um cap de bytes. Persiste tudo que estiver em <code>memoryNode.data.entries</code>.</li>
+    </ul>
+  </div>
+
+  <div class="note info">
+    <strong>Contexto:</strong> esse par (<code>publishInApiNodeOutput</code> + <code>persistSmallMemoryEntries</code>) é o "eu não sou Temporal, então tenho que fazer eu mesmo". No worker, W7-W9 já cuidam disso pros nós migrados. Aqui, o backend inline precisa replicar manualmente pra manter compatibilidade — enquanto a migração pro Temporal continua sendo incremental.
+  </div>
+
+  <!-- Overview chain -->
+  <div class="overview-mini">
+    <div class="overview-mini-title">Cadeia de chamadas em 3.5b</div>
+    <div class="overview-chain">
+      <a href="#fn-a" class="overview-chip"><span class="lbl">A · gate</span>isTemporal + isWorkerRouted</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>publishInApiNodeOutput</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>addConnectToNodes (helper)</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>persistSmallMemoryEntries</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-e" class="overview-chip"><span class="lbl">E</span>persistNodeDataToLiveRow</a>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION A: gate -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-a">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#EAB308;color:white">A</span>
+        <code>Gate: !isTemporalNode && !isWorkerRoutedIntegration</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:4562-4565</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        if (!this.isTemporalNode(node.type) && !isWorkerRoutedIntegration(processedNode)) { /* publish + persist */ }
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Evitar dupla execução. Se o nó já foi rodado pelo Temporal worker (ou vai ser roteado pra lá), o worker já fez W7-W9 — publicar output + persistir memória. Rodar aqui de novo <em>corromperia</em> o state (double-persist, edges reprocessadas duas vezes).
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> pense nele como um <em>guarda de reciclagem</em> na porta: "esse nó já foi lá pro fundo (Temporal) fazer o serviço dele? Então nem tenta reprocessar aqui." Ele checa dois grupos: (1) tipos Temporal — 7 tipos hardcoded (<code>commandTextNode</code>, <code>scripting</code>, <code>apiCaller</code>, <code>mathFunction</code>, <code>counterNode</code>, <code>outputController</code>, <code>mcpNode</code>) — esses o worker inteiro toma conta; (2) integrações roteadas ao worker — os providers listados em <code>MIGRATED_INTEGRATION_PROVIDERS</code> (Stripe, WordPress, Slack, Notion, Zapier, HubSpot, Supabase, Pinecone, MCP). Se o nó cair em qualquer um dos dois, o backend inline <em>não</em> republica nem persiste — o worker já fez.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box decision">
+            <div class="box-title"><span class="badge step">A1</span> isTemporalNode — lista hardcoded</div>
+            <div class="code-block">
+<span class="k">private</span> <span class="t">isTemporalNode</span>(type: string): boolean {
+  <span class="k">return</span> [
+    <span class="s">'commandTextNode'</span>,
+    <span class="s">'scripting'</span>,
+    <span class="s">'apiCaller'</span>,
+    <span class="s">'mathFunction'</span>,
+    <span class="s">'counterNode'</span>,
+    <span class="s">'outputController'</span>,
+    <span class="s">'mcpNode'</span>,
+  ].includes(type);
+}
+            </div>
+            <div class="box-file">flux.service.ts:801-811</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box decision">
+            <div class="box-title"><span class="badge step">A2</span> isWorkerRoutedIntegration — providers migrados</div>
+            <div class="box-desc">
+              Chama <code>resolveIntegrationProvider(node)</code> e testa contra <code>MIGRATED_INTEGRATION_PROVIDERS</code>. Providers hoje no worker: <code>stripe, wordpress, slack, notion, zapier, hubspot, supabase, pinecone, mcp</code>.
+              <br><br>Suporta 2 formatos: <code>thirdPartyIntegration</code> (lê <code>data.provider</code>) ou node dedicado como <code>hubSpotCRM</code> (via <code>DEDICATED_INTEGRATION_PROVIDER_BY_NODE_TYPE</code>).
+            </div>
+            <div class="box-file">shared/integration/integration-executable-node.ts:16-46</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Lista hardcoded — divergência silenciosa</div>
+            Se um novo tipo de nó for migrado pro Temporal mas <em>não</em> for adicionado a <code>isTemporalNode</code>, o backend inline vai continuar tentando publicar/persistir depois do worker já ter feito — <strong>double-persist bug</strong>.
+            <br><br>Simétrico: se um provider for tirado de <code>MIGRATED_INTEGRATION_PROVIDERS</code> mas ainda estiver roteado ao worker, o backend inline <em>não</em> vai publicar — nada persiste, nada propaga.
+          </div>
+
+          <div class="aside info">
+            <div class="aside-title">📎 Por que dois testes separados?</div>
+            <code>isTemporalNode</code> testa <strong>tipo do nó</strong>. <code>isWorkerRoutedIntegration</code> testa <strong>provider da integração</strong> (mesmo tipo, mas depende de <code>data.provider</code>).
+            <br><br>Um nó <code>thirdPartyIntegration</code> com <code>provider=stripe</code> vai pro worker; o mesmo tipo com <code>provider=airtable</code> não vai. Só o segundo teste consegue distinguir.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 Mesmo gate aparece 6x</div>
+            No arquivo, o par <code>!isTemporalNode && !isWorkerRoutedIntegration</code> aparece nas linhas 3353, 4325, 4563, 4657, 4684, 4768 — em cada ponto onde o backend inline precisa decidir se cuida da coisa ou deixa pro worker.
+            <br><br>Candidato óbvio pra extrair como <code>isBackendInlineOwned(node, processedNode)</code>.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION B: publishInApiNodeOutput -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-b">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#F59E0B;color:white">B</span>
+        <code>publishInApiNodeOutput()</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:729-754</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        private publishInApiNodeOutput({ nodeId, nodes, edges, onMutateSchema, objectCallerData }): any[]
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Marcar o nó como finalizado no array <code>myUpdatedNodes</code> e propagar o <code>data</code> dele pros nós conectados via edges, delegando pra <code>addConnectToNodes</code>. O retorno é reatribuído a <code>myUpdatedNodes</code>, o que garante que o próximo nó do loop já veja o estado atualizado.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> pense nele como um <em>carteiro que anuncia o resultado</em>. Depois que o nó terminou, o resultado dele está guardado em <code>myUpdatedNodes</code>, mas ainda em formato "meu". Esse método (1) acha o nó finalizado no array, (2) passa a lista inteira pra <code>addConnectToNodes</code> — que vai varrer todas as edges e, pra cada nó que <em>recebe</em> conexão desse nó finalizado, injeta o <code>data</code> dele nos campos apropriados via <code>modifyData</code>. Assim quando o próximo nó do loop for lido, ele já tem os inputs corretos. Como bônus, também recalcula o schema global via <code>nodeSchema(nodes)</code> e joga no <code>onMutateSchema</code> — mesmo padrão de closure mutation que 1.5.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B1</span> Acha o nó finalizado</div>
+            <div class="code-block">
+<span class="k">const</span> finishedNode = nodes.<span class="t">find</span>(n =&gt; n.id === nodeId);
+<span class="k">if</span> (!finishedNode) <span class="k">return</span> nodes;
+            </div>
+            <div class="box-desc">
+              Se por algum motivo o nó sumiu do array, retorna a lista intacta (defensive check).
+            </div>
+            <div class="box-file">flux.service.ts:742-745</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B2</span> Delega pra addConnectToNodes</div>
+            <div class="code-block">
+<span class="k">return</span> <span class="t">addConnectToNodes</span>({
+  edges,
+  nds: nodes,
+  nodeData: { id: nodeId, data: finishedNode.data },
+  onMutateSchema,
+  changeType: <span class="s">'execute'</span>,
+  objectCallerData,
+});
+            </div>
+            <div class="box-file">flux.service.ts:746-753</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="nested-flow">
+            <div class="nested-flow-title">↳ addConnectToNodes — folw/contants.ts:2045-2089</div>
+            <div class="box backend" style="margin-top:6px">
+              <div class="box-title">O que ela faz</div>
+              <div class="box-desc">
+                (1) Clona <code>edges</code> e <code>nds</code>. (2) Para o nó finalizado, faz shallow merge do <code>data</code> novo. (3) Coleta todos os <code>source</code> de edges únicos e, pra cada source presente no array, chama <code>modifyData(nodes, id, newEdges, objectCallerData, nodeData?.id, 'execute')</code> — que propaga output pros nós à jusante conectados àquele source. (4) Recalcula <code>nodeSchema(nodes)</code> e chama <code>onMutateSchema(sx)</code>.
+              </div>
+              <div class="box-file">folw/contants.ts:2045-2089</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 changeType: 'execute'</div>
+            <code>modifyData</code> tem múltiplos modos (<code>'execute'</code>, <code>'default'</code>, etc.). Em <code>'execute'</code>, ele propaga output resultante da execução do nó. Em <code>'default'</code> (usado no fim do run, linha 4943), é reset/limpeza.
+          </div>
+
+          <div class="aside">
+            <div class="aside-title">📎 objectCallerData vai junto</div>
+            <code>modifyData</code> precisa da lista atual de objetos personalizados (do passo 1.5) porque nós tipo <code>nodesBox</code> podem ler valores de objetos ao construir input dos nós filhos.
+          </div>
+
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Não emite WebSocket aqui</div>
+            Apesar do nome "publish", <strong>não há emit de WebSocket</strong> nesse método. O status do nó no frontend é emitido em outros pontos (via <code>notificationsGateway.sendToUser</code> em <code>emitNodeStatus</code>, <code>emitCancelledRunStatuses</code>, etc.). "Publish" aqui significa "publicar output no grafo local, propagar via edges".
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION D: persistSmallMemoryEntries -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-d">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#3B82F6;color:white">C</span>
+        <code>persistSmallMemoryEntries()</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:759-799</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        private async persistSmallMemoryEntries({ sourceNodeId, nodes, edges, flowId, flowVersionHistoryId }): Promise&lt;void&gt;
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Persistir no banco as entries que o nó que <em>acabou de rodar</em> escreveu num <code>fluxObject</code> (Small Memory) conectado a ele. Sem isso, o valor gravado durante a run existe só em memória e some quando o process reinicia. É o <em>write-back</em> pro <code>flows_nodes.data</code>.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> pense nele como <em>gravar o rascunho no HD</em>. Durante a run, quando um nó (por exemplo, um LLM ou <code>outputController</code>) grava algo numa Small Memory conectada via handle <code>inputAdd</code>, isso fica só no <code>myUpdatedNodes</code> — memória do process. Se o backend cair no meio do run, o dado <strong>se perde</strong>. Esse método é a resposta: assim que o nó terminou, ele varre os edges procurando qualquer Small Memory conectada como target de <code>inputAdd</code> a esse nó, pega os campos <code>entries</code> e <code>userSessionsChat</code> do nó de memória, e faz <code>UPDATE flows_nodes SET data = ...</code> naquela row específica. Nome enganoso: apesar de "small memory", <strong>não tem filtro de tamanho</strong> — o "small" é o nome do produto na UI (nó do tipo <code>fluxObject</code>), não um limite.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">D1</span> Filtra edges: source é o nó atual + handle inputAdd</div>
+            <div class="code-block">
+<span class="k">const</span> memoryIds = <span class="k">new</span> <span class="t">Set</span>(
+  (edges ?? [])
+    .<span class="t">filter</span>(edge =&gt;
+      edge?.source === sourceNodeId &amp;&amp;
+      edge?.targetHandle === <span class="s">SMALL_MEMORY_INPUT_HANDLE</span>) <span class="c">// 'inputAdd'</span>
+    .<span class="t">map</span>(edge =&gt; edge.target),
+);
+<span class="k">if</span> (memoryIds.size === 0) <span class="k">return</span>;
+            </div>
+            <div class="box-file">flux.service.ts:772-783</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">D2</span> Para cada memory target, verifica tipo</div>
+            <div class="code-block">
+<span class="k">for</span> (<span class="k">const</span> memoryId <span class="k">of</span> memoryIds) {
+  <span class="k">const</span> memoryNode = nodes.<span class="t">find</span>(n =&gt; n.id === memoryId);
+  <span class="k">if</span> (memoryNode?.type !== <span class="s">SMALL_MEMORY_TYPE</span>) <span class="k">continue</span>; <span class="c">// 'fluxObject'</span>
+  <span class="c">// ... persist</span>
+}
+            </div>
+            <div class="box-file">flux.service.ts:784-788</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box db">
+            <div class="box-title"><span class="badge step">D3</span> Persiste na row live</div>
+            <div class="code-block">
+<span class="k">await this</span>.<span class="t">persistNodeDataToLiveRow</span>(
+  flowId,
+  memoryId,
+  {
+    entries: memoryNode.data?.entries ?? [],
+    userSessionsChat: memoryNode.data?.userSessionsChat ?? [],
+  },
+  flowVersionHistoryId,
+);
+            </div>
+            <div class="box-file">flux.service.ts:789-797</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="nested-flow">
+            <div class="nested-flow-title">↳ persistNodeDataToLiveRow — flux.service.ts:2235-2262</div>
+            <div class="box db" style="margin-top:6px">
+              <div class="box-title">UPDATE flows_nodes</div>
+              <div class="box-desc">
+                Se <code>flowVersionHistoryId</code> existe: chama <code>flowNodeService.updateSingleNodeDataInHistory(...)</code>. Senão: <code>flowNodeService.updateSingleNodeData(flowId, nodeId, data)</code>. Try/catch: se falhar, loga com <code>error_type: 'live_node_persist_failed'</code> mas <strong>não</strong> propaga o erro — o run continua.
+              </div>
+              <div class="box-file">flux.service.ts:2235-2262</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside warn">
+            <div class="aside-title">⚠️ "Small" não existe como cap</div>
+            Apesar do nome, não há limite de tamanho na hora de persistir. Se <code>entries</code> tem 10 MB de JSON, os 10 MB vão pro Postgres. O nome vem da UI ("Small Memory" node) — não é uma constraint técnica.
+            <br><br>Ver constante em <code>small-memory.ts:1</code>: <code>SMALL_MEMORY_TYPE = 'fluxObject'</code>.
+          </div>
+
+          <div class="aside info">
+            <div class="aside-title">📎 Handle mágico: inputAdd</div>
+            <code>SMALL_MEMORY_INPUT_HANDLE = 'inputAdd'</code> — <em>string handle</em> específico. Só edges com esse <code>targetHandle</code> triggeram persist. Outros handles do fluxObject (leitura, session switch) não persistem.
+            <br><br>Regra tácita: "quem escreve na memória se conecta em <code>inputAdd</code>".
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 Persist falha silenciosa</div>
+            <code>persistNodeDataToLiveRow</code> tem <code>try/catch</code> interno — se o <code>UPDATE</code> falhar (deadlock, constraint, banco fora), loga <code>error_type: 'live_node_persist_failed'</code> e o método volta <code>void</code>. O run <em>não</em> aborta.
+            <br><br>Efeito: em pane de banco, todas as Small Memory persistences fracassam silenciosamente e o usuário só descobre no próximo run.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="note info" style="margin-top:32px">
+    <strong>Resumo — o que sai de 3.5b:</strong>
+    <br>• <code>myUpdatedNodes</code> = novo array com o nó finalizado + edges downstream atualizadas via <code>modifyData</code>
+    <br>• Schema global recalculado e propagado via <code>onMutateSchema</code>
+    <br>• Rows de <code>fluxObject</code> conectadas via <code>inputAdd</code> persistidas em <code>flows_nodes.data</code> (ou <code>flow_version_history_nodes</code>)
+    <br>• Um <code>UPDATE</code> por Small Memory conectada — sem batching, sem paralelismo (loop <code>for ... of</code> com <code>await</code>)
+  </div>
+
+  <div class="note">
+    <strong>Observações para migração:</strong>
+    <br>• Este par é o <strong>equivalente inline de W7-W9 do worker</strong>. Migrar um novo tipo de nó pro Temporal significa: (1) adicionar em <code>isTemporalNode</code>; (2) garantir que W7-W9 no worker chamam a mesma lógica; (3) o gate desse passo automaticamente vai pular pro nó novo, evitando double-persist.
+    <br>• <code>publishInApiNodeOutput</code> muta um array via <code>[...nds]</code>/<code>.map</code> — <strong>não</strong> muta <code>myUpdatedNodes</code> in-place. Preserva referências para o padrão de closure mutation (mesmo estilo do 1.5).
+    <br>• <code>persistSmallMemoryEntries</code> é <em>fire-and-forget</em> — <code>await</code> mas o erro é engolido no <code>try/catch</code> interno de <code>persistNodeDataToLiveRow</code>. No worker, ideal seria activity com retry policy.
+    <br>• Handle mágico (<code>'inputAdd'</code>) e type mágico (<code>'fluxObject'</code>) estão em constantes num arquivo dedicado (<code>flux/small-memory.ts</code>) — fácil de reaproveitar no worker.
+    <br>• Prioridade média-alta na migração: enquanto backend inline existir, esse par tem que continuar funcionando, mas cada tipo novo migrado remove clientes desse código path.
+  </div>
+
+  <!-- FOOTER NAV -->
+  <div class="page-footer-nav">
+    <a href="../index.html#step-3-5b" class="back-btn">← Voltar ao diagrama principal</a>
+  </div>
+
+</div>
+<script>
+(function() {
+  function toggle(card) { if (card) card.classList.toggle('collapsed'); }
+  function expand(card) { if (card && card.classList.contains('collapsed')) card.classList.remove('collapsed'); }
+  document.querySelectorAll('.fn-card-header').forEach(function(header) {
+    header.addEventListener('click', function(e) {
+      if (e.target.closest('a')) return;
+      toggle(header.parentElement);
+    });
+  });
+  document.querySelectorAll('a[href^="#fn-"]').forEach(function(link) {
+    link.addEventListener('click', function() {
+      var id = link.getAttribute('href').slice(1);
+      expand(document.getElementById(id));
+    });
+  });
+  if (window.location.hash && window.location.hash.startsWith('#fn-')) {
+    expand(document.querySelector(window.location.hash));
+  }
+  window.addEventListener('hashchange', function() {
+    if (window.location.hash.startsWith('#fn-')) {
+      expand(document.querySelector(window.location.hash));
+    }
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Passo 1.1b — Chamadores internos da fila (fire-and-forget) | Detalhamento</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #F1F5F9;
+    color: #0F172A;
+    margin: 0;
+    padding: 32px 24px 80px;
+    line-height: 1.4;
+  }
+  .container { max-width: 1500px; margin: 0 auto; }
+
+  /* Top nav */
+  .page-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    flex-wrap: wrap;
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #64748B;
+  }
+  .breadcrumb a {
+    color: #3B82F6;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #CBD5E1; }
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #0F172A;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+
+  /* Page header */
+  .page-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 8px;
+  }
+  .page-header .icon { font-size: 32px; }
+  .page-header h1 {
+    margin: 0;
+    font-size: 26px;
+    color: #0F172A;
+    letter-spacing: -0.4px;
+  }
+  .page-sub {
+    color: #64748B;
+    font-size: 13px;
+    margin-bottom: 24px;
+    padding-left: 46px;
+  }
+  .page-sub code {
+    background: #E2E8F0;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 12px;
+    color: #334155;
+  }
+
+  /* Overview chain */
+  .overview-mini {
+    background: white;
+    padding: 16px 18px;
+    border-radius: 10px;
+    margin-bottom: 28px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .overview-mini-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 12px;
+  }
+  .overview-chain {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .overview-chip {
+    background: #F8FAFC;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border-left: 3px solid #3B82F6;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #0F172A;
+    text-decoration: none;
+    display: inline-block;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+  .overview-chip .lbl {
+    display: block;
+    font-size: 9.5px;
+    color: #64748B;
+    font-weight: 500;
+    margin-bottom: 2px;
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .overview-sep { color: #94A3B8; font-size: 18px; font-weight: bold; }
+
+  /* Boxes */
+  .box {
+    background: white;
+    border-radius: 8px;
+    padding: 9px 13px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border-left: 4px solid #94A3B8;
+    width: 100%;
+    max-width: 100%;
+  }
+  .box.backend    { border-left-color: #3B82F6; }
+  .box.worker     { border-left-color: #10B981; }
+  .box.db         { border-left-color: #F59E0B; }
+  .box.redis      { border-left-color: #EF4444; }
+  .box.s3         { border-left-color: #8B5CF6; }
+  .box.external   { border-left-color: #64748B; }
+  .box.decision { border-left-color: #EAB308; background: #FEFCE8; }
+  .box.cross { border-left-color: #A855F7; background: #FAF5FF; }
+
+  .box-title {
+    font-weight: 600;
+    font-size: 12.5px;
+    color: #0F172A;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .box-desc { font-size: 11.5px; color: #475569; }
+  .box-file {
+    font-size: 10px;
+    color: #94A3B8;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    margin-top: 3px;
+    word-break: break-all;
+  }
+  .box code {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    background: #F1F5F9;
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: #334155;
+    word-break: break-word;
+  }
+  .box-desc code { word-break: break-word; }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .badge.migrated { background: #D1FAE5; color: #065F46; }
+  .badge.legacy   { background: #FEE2E2; color: #991B1B; }
+  .badge.mixed    { background: #FEF3C7; color: #92400E; }
+  .badge.step     { background: #E0E7FF; color: #3730A3; font-size: 10px; }
+  .badge.cross    { background: #F3E8FF; color: #6B21A8; }
+
+  /* Arrows */
+  .arrow {
+    color: #64748B;
+    font-size: 22px;
+    line-height: 1;
+    margin: 1px 0;
+    text-align: center;
+  }
+  .converge { text-align: center; color: #64748B; font-size: 22px; margin: 6px 0; }
+
+  /* Function card */
+  .fn-card {
+    margin-top: 28px;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .fn-card-header {
+    background: linear-gradient(to right, #0F172A, #1E293B);
+    color: white;
+    padding: 14px 20px 14px 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .fn-card-header .fn-title {
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .fn-card-header .fn-title code {
+    background: rgba(255,255,255,0.15);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 13px;
+  }
+  .fn-card-header .fn-loc {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #CBD5E1;
+  }
+  .fn-card-header:hover { background: linear-gradient(to right, #1E293B, #334155); }
+  .fn-card-header::before {
+    content: "▾";
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+    font-size: 14px;
+    transition: transform 0.2s ease;
+    line-height: 1;
+  }
+  .fn-card.collapsed .fn-card-header::before {
+    transform: translateY(-50%) rotate(-90deg);
+  }
+  .fn-card.collapsed .fn-card-body { display: none; }
+  .fn-card-body { padding: 20px; }
+
+  .fn-signature {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    background: #F1F5F9;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: #334155;
+    margin-bottom: 16px;
+    overflow-x: auto;
+  }
+  .fn-purpose {
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    background: #EFF6FF;
+    border-left: 3px solid #3B82F6;
+    border-radius: 6px;
+  }
+  .fn-friendly {
+    font-size: 13px;
+    color: #334155;
+    margin-bottom: 20px;
+    padding: 12px 14px 12px 44px;
+    background: #F0FDF4;
+    border-left: 3px solid #10B981;
+    border-radius: 6px;
+    position: relative;
+    line-height: 1.55;
+  }
+  .fn-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 14px;
+    top: 10px;
+    font-size: 18px;
+  }
+  .fn-friendly strong {
+    color: #065F46;
+  }
+
+  /* Step-level friendly summary (page-wide, appears after page-sub) */
+  .step-friendly {
+    font-size: 13.5px;
+    color: #334155;
+    margin-bottom: 28px;
+    padding: 16px 18px 16px 52px;
+    background: #F0FDF4;
+    border-left: 4px solid #10B981;
+    border-radius: 10px;
+    position: relative;
+    line-height: 1.6;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.08);
+  }
+  .step-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 18px;
+    top: 14px;
+    font-size: 22px;
+  }
+  .step-friendly-title {
+    font-weight: 700;
+    color: #065F46;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 8px;
+  }
+  .step-friendly ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .step-friendly li {
+    margin-bottom: 6px;
+  }
+  .step-friendly li:last-child {
+    margin-bottom: 0;
+  }
+  .step-friendly strong {
+    color: #065F46;
+  }
+  .step-friendly code {
+    background: #DCFCE7;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: #065F46;
+  }
+  .step-friendly em {
+    color: #047857;
+    font-style: italic;
+  }
+
+  .fn-body-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 900px) {
+    .fn-body-cols { grid-template-columns: 1fr; }
+  }
+  .fn-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .fn-asides {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Aside panels */
+  .aside {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 11.5px;
+    color: #78350F;
+  }
+  .aside.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .aside.warn { background: #FEE2E2; border-left-color: #EF4444; color: #991B1B; }
+  .aside.helper { background: #F3E8FF; border-left-color: #A855F7; color: #6B21A8; }
+  .aside-title {
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .aside code {
+    background: rgba(255,255,255,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    word-break: break-word;
+  }
+
+  /* Cascade */
+  .cascade {
+    background: #FEFCE8;
+    border: 1px dashed #EAB308;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 6px 0;
+  }
+  .cascade-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #713F12;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .cascade-step {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 8px;
+    background: white;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    font-size: 11.5px;
+  }
+  .cascade-step .cond {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #334155;
+  }
+  .cascade-step .result {
+    font-weight: 700;
+    font-size: 10.5px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .cascade-step .result.pass  { background: #D1FAE5; color: #065F46; }
+  .cascade-step .result.deny  { background: #FEE2E2; color: #991B1B; }
+  .cascade-step .result.next  { background: #E0E7FF; color: #3730A3; }
+  .cascade-step .result.call  { background: #FEF3C7; color: #78350F; }
+  .cascade-num {
+    background: #EAB308;
+    color: white;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* Nested sub-flow */
+  .nested-flow {
+    margin: 6px 0;
+    padding: 12px;
+    background: #F0FDF4;
+    border: 1px dashed #10B981;
+    border-radius: 8px;
+  }
+  .nested-flow-title {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #065F46;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  /* Code block */
+  .code-block {
+    background: #0F172A;
+    color: #E2E8F0;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 6px 0;
+  }
+  .code-block .k { color: #93C5FD; }
+  .code-block .s { color: #86EFAC; }
+  .code-block .c { color: #64748B; font-style: italic; }
+  .code-block .t { color: #FDE68A; }
+
+  /* Notes */
+  .note {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    color: #78350F;
+    margin: 20px 0;
+  }
+  .note.info {
+    background: #EFF6FF;
+    border-left-color: #3B82F6;
+    color: #1E3A8A;
+  }
+  .note code {
+    background: rgba(255,255,255,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+  }
+
+  .page-footer-nav {
+    margin-top: 48px;
+    padding: 16px;
+    background: white;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .field-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin: 8px 0;
+  }
+  .field-table th {
+    text-align: left;
+    padding: 6px 8px;
+    background: #F1F5F9;
+    color: #334155;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    font-size: 10px;
+    border-bottom: 1px solid #CBD5E1;
+  }
+  .field-table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid #F1F5F9;
+    vertical-align: top;
+  }
+  .field-table td:first-child {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    color: #0F172A;
+    font-weight: 600;
+    white-space: nowrap;
+    font-size: 10.5px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- TOP NAV -->
+  <div class="page-nav">
+    <div class="breadcrumb">
+      <a href="../index.html">📋 Execução de Agente</a>
+      <span class="sep">›</span>
+      <span>Passo 1.1b — Detalhamento</span>
+    </div>
+    <a href="../index.html#step-1-1" class="back-btn">← Voltar ao diagrama</a>
+  </div>
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <span class="icon">🔀</span>
+    <h1>Passo 1.1b — Chamadores internos da fila (fire-and-forget)</h1>
+  </div>
+  <div class="page-sub">
+    Dois nós dentro do próprio <code>flux.service.ts</code> — <code>flowCallerNode</code> (linhas 5593-5660) e <code>libraryNode</code> (linhas 5960-6026) — podem <em>disparar</em> a fila do 1.1 em vez de rodar o sub-flow inline. É controlado pela flag <code>executionMode</code> do caller: <code>'triggerOnly'</code> vai pra fila, <code>'returnAfterFlow'</code> (default) roda síncrono.
+  </div>
+
+  <!-- Step friendly summary -->
+  <div class="step-friendly">
+    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <ul>
+      <li><strong>Uma flag no nó decide o caminho:</strong> <code>callerData.executionMode</code> (ou <code>libraryCallerData.executionMode</code> pro library-node). Default <code>'returnAfterFlow'</code> — roda o sub-flow inline. Quando o usuário marca <code>'triggerOnly'</code>, o nó só dispara e segue em frente sem esperar resultado.</li>
+      <li><strong>Fire-and-forget de verdade:</strong> a chamada <code>this.apiV2Queue.enqueueApiV2Job(...)</code> <strong>não</strong> é await-ed — vai <code>.catch(...)</code> só pra logar. O nó considera o disparo bem-sucedido no exato momento em que o Redis aceitou o job. O resultado do sub-flow nunca volta pra esse run.</li>
+      <li><strong>Nó marca próprio estado como "enqueued":</strong> depois do disparo, <code>addConnectToNodes</code> atualiza o nó com <code>{ triggerStatus: 'enqueued', triggerMessage, lastTriggeredAt }</code>. O usuário vê "enfileirado" no editor — não vê output porque não teve.</li>
+      <li><strong>runType prefixado indica origem:</strong> <code>'flow-caller-node (trigger-only) - flowId: X'</code> ou <code>'library-node (trigger-only) - flowId: X'</code>. O runType do trigger-only <em>não</em> é o mesmo do síncrono — dá pra filtrar em logs qual caminho o run veio.</li>
+      <li><strong>Caminho síncrono é distinto:</strong> quando <code>executionMode !== 'triggerOnly'</code>, o nó <em>não</em> passa pela fila — chama <code>this.apiV2(...)</code> direto (via <code>nodeCancelContext.run</code>), passando <code>parentProcessId</code>, <code>parentCancelRunKey</code> e <code>injectedRunLogCollector</code>. Isso mantém o run como um só, com run-log unificado e cancelamento propagado.</li>
+      <li><strong>Assimetria library vs flow-caller:</strong> o <code>libraryNode</code> passa <code>billingFlowId</code> no payload (cobrança direcionada); o <code>flowCallerNode</code> não.</li>
+    </ul>
+  </div>
+
+  <div class="note info">
+    <strong>Contexto:</strong> esses dois nós são os únicos pontos <em>dentro</em> do próprio motor de execução (Fase 3) que voltam a chamar a fila — todos os outros disparos externos vêm de endpoints REST ou MCP. É recursão indireta: o run pai passa por <code>apiV2</code>, dentro dele o handler de <code>flowCallerNode</code> chama a fila <code>api-v2</code> de novo, que roda outro <code>apiV2</code> completo (o filho).
+  </div>
+
+  <!-- Overview chain -->
+  <div class="overview-mini">
+    <div class="overview-mini-title">Cadeia de chamadas em 1.1b</div>
+    <div class="overview-chain">
+      <a href="#fn-a" class="overview-chip"><span class="lbl">A · gate</span>executionMode === 'triggerOnly'</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>flowCallerNode.enqueue(...).catch()</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>libraryNode.enqueue(...).catch()</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-d" class="overview-chip"><span class="lbl">D · contraste</span>caminho síncrono (nodeCancelContext.run)</a>
+    </div>
+    <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
+      Resultado do trigger-only: nó do editor marcado como <code>enqueued</code>, job novo no Redis, run pai continua sem esperar. Resultado do síncrono: <code>nestedFlowResult</code> preenchido com output do filho, incorporado no output do pai.
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION A: gate executionMode -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-a">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#EAB308;color:white">A</span>
+        <code>gate executionMode === 'triggerOnly'</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:5574 · 5593 · 5957 · 5960</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        const executionMode = callerData?.executionMode || 'returnAfterFlow';
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Decide, dentro do handler de cada nó, se vai <em>enfileirar</em> (trigger-only, fire-and-forget) ou rodar <em>inline</em> (síncrono, com output incorporado no pai). Default é síncrono.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> essa parte é o <em>seletor de trilho</em>. Antes de sair chamando qualquer coisa, o handler lê a configuração que o usuário colocou no nó: <code>callerData.executionMode</code> pro flow-caller ou <code>libraryCallerData.executionMode</code> pro library. Se veio a string <code>'triggerOnly'</code>, o handler segue pro trilho da fila (fire-and-forget). Se veio qualquer outra coisa (ou nada), cai no default <code>'returnAfterFlow'</code> e roda inline. Os defaults são idênticos nos dois nós; a diferença é só qual objeto tem a config. Note que <em>não</em> tem enum — é comparação de string. Se alguém digitar <code>'trigger_only'</code> ou <code>'triggeronly'</code>, cai no default e vira síncrono sem avisar — bug latente do frontend precisar mandar exatamente <code>'triggerOnly'</code>.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box decision">
+            <div class="box-title"><span class="badge step">A1</span> Fonte do executionMode — flow-caller</div>
+            <div class="code-block">
+<span class="k">const</span> executionMode = callerData?.<span class="s">executionMode</span> || <span class="s">'returnAfterFlow'</span>;
+            </div>
+            <div class="box-file">flux.service.ts:5574</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box decision">
+            <div class="box-title"><span class="badge step">A2</span> Fonte do executionMode — library-node</div>
+            <div class="code-block">
+<span class="k">const</span> executionMode = libraryCallerData?.<span class="s">executionMode</span> || <span class="s">'returnAfterFlow'</span>;
+            </div>
+            <div class="box-file">flux.service.ts:5957-5958</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="cascade">
+            <div class="cascade-title">🪜 Branching do handler</div>
+            <div class="cascade-step">
+              <span class="cascade-num">1</span>
+              <span class="cond"><code>executionMode === 'triggerOnly'</code></span>
+              <span class="result call">→ enqueue (fn B/C)</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">2</span>
+              <span class="cond">qualquer outro valor / default</span>
+              <span class="result next">→ inline (fn D)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">📎 callerData vs libraryCallerData</div>
+            <code>callerData</code> = objeto de config do <code>flowCallerNode</code> (variáveis de entrada, session mode, executionMode, etc.).
+            <br><br><code>libraryCallerData</code> = mesma ideia pro <code>libraryNode</code>. Configuração paralela porque os dois nós têm UIs diferentes no editor.
+          </div>
+
+          <div class="aside">
+            <div class="aside-title">🎯 Default seguro</div>
+            <code>|| 'returnAfterFlow'</code> — se a config veio <code>undefined</code>, <code>null</code>, string vazia, o default vale. Preserva compatibilidade retroativa: flows salvos antes da flag existir continuam rodando síncrono.
+          </div>
+
+          <div class="aside warn">
+            <div class="aside-title">⚠️ String literal sem enum</div>
+            Comparação exata com <code>'triggerOnly'</code>. Não existe validação, TS type ou enum protegendo. Se um future refactor renomear pra <code>'fireAndForget'</code>, todos os flows antigos com <code>'triggerOnly'</code> viram síncrono silenciosamente.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 Nomes das opções na UI</div>
+            <code>'triggerOnly'</code> — dispara e esquece
+            <br><code>'returnAfterFlow'</code> — espera o sub-flow, usa output no pai
+            <br><br>Não há um terceiro valor no código atual — se aparecer, cai no default.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION B: flowCallerNode enqueue -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-b">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#F59E0B;color:white">B</span>
+        <code>flowCallerNode — fire-and-forget</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:5593-5636</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        this.apiV2Queue.enqueueApiV2Job({ params: {...} }).catch(error => logger.error(...))
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Dispara execução assíncrona do sub-flow chamado pelo <code>flowCallerNode</code>. O run atual não espera; o nó é marcado como <em>enqueued</em> e o handler retorna imediatamente.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> essa parte é o <em>disparador do flowCaller</em>. O handler monta o <code>body</code> com <code>variableInputs</code>, <code>webhook</code>, <code>spaceId</code>, monta o <code>params</code> com o flow selecionado, user, session, contadores, e chama <code>enqueueApiV2Job</code> <strong>sem</strong> <code>await</code>. Isso é intencional: o padrão é <code>.enqueue(...).catch(...)</code>, ou seja, se o enfileiramento der ruim (Redis fora, Bull travado), o <code>.catch</code> só loga o erro e a promise morre. O nó pai <strong>segue em frente</strong> como se tudo tivesse dado certo. O <code>runType</code> passado pra fila é <code>'flow-caller-node (trigger-only) - flowId: X'</code> — dá pra rastrear em logs qual caminho o run veio. Depois do disparo, o handler atualiza o nó no schema com <code>triggerStatus: 'enqueued'</code>, uma mensagem descritiva e o timestamp — o editor mostra o status pro usuário.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B1</span> Payload enfileirado</div>
+            <div class="code-block">
+this.apiV2Queue
+  .<span class="t">enqueueApiV2Job</span>({
+    <span class="k">params</span>: {
+      body,                            <span class="c">// { variableInputs, webhook, spaceId }</span>
+      <span class="k">user</span>: user <span class="k">as</span> User,
+      <span class="k">flowId</span>: flowIdSelected,
+      sessionId,
+      sendEmail,
+      apiTriggers,
+      emailTriggers,
+      autoTriggers,
+      <span class="k">runType</span>: <span class="s">`flow-caller-node (trigger-only) - flowId: ${flowIdSelected}`</span>,
+    },
+  })
+  .<span class="t">catch</span>(error =&gt; { … })
+            </div>
+            <div class="box-file">flux.service.ts:5593-5618</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box cross">
+            <div class="box-title"><span class="badge step">B2</span> Catch — só loga, não propaga</div>
+            <div class="code-block">
+.<span class="t">catch</span>(error =&gt; {
+  this.loggerService.<span class="t">error</span>({
+    <span class="k">message</span>: <span class="s">`Failed to enqueue flow execution job: ${error.message}`</span>,
+    <span class="k">metadata</span>: {
+      <span class="k">status</span>: <span class="s">500</span>,
+      <span class="k">error_type</span>: <span class="s">'queue_error'</span>,
+      <span class="k">user</span>: user <span class="k">as</span> User,
+      <span class="k">flow</span>: { id: flowIdSelected } <span class="k">as</span> Flow,
+    },
+  });
+});
+            </div>
+            <div class="box-file">flux.service.ts:5608-5618</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B3</span> Marca o nó no schema — triggerStatus/triggerMessage/lastTriggeredAt</div>
+            <div class="code-block">
+<span class="k">const</span> newNodes = <span class="t">addConnectToNodes</span>({
+  edges,
+  nds: myUpdatedNodes,
+  <span class="k">nodeData</span>: {
+    id: node.id,
+    <span class="k">data</span>: {
+      triggerStatus: <span class="s">'enqueued'</span>,
+      triggerMessage: <span class="s">`Flow ${flowIdSelected} enqueued for execution`</span>,
+      lastTriggeredAt: <span class="k">new</span> Date().<span class="t">toISOString</span>(),
+    },
+  },
+  onMutateSchema,
+  objectCallerData,
+});
+<span class="k">return</span> { nodes: newNodes };
+            </div>
+            <div class="box-file">flux.service.ts:5620-5635</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside warn">
+            <div class="aside-title">⚠️ O .catch() só loga — falha invisível pro usuário</div>
+            Se o Redis estiver fora ou o Bull rejeitar o add (ex.: duplicate jobId ativo), o <code>.catch()</code> escreve um log e a promise morre. <strong>O nó vira <code>triggerStatus: 'enqueued'</code> mesmo se o enfileiramento falhou</strong> — porque o marcaStatus roda antes do <code>.catch</code> resolver. Usuário vê "enfileirado" mesmo quando não foi.
+            <br><br>Sequência real: <code>enqueue(...)</code> começa (retorna Promise), depois <code>addConnectToNodes</code> roda sync marcando enqueued, depois o handler retorna, e só <em>então</em> — em outra tick do event loop — a Promise resolve/reject.
+          </div>
+
+          <div class="aside info">
+            <div class="aside-title">📎 Sem parentProcessId no payload</div>
+            Diferente do caminho síncrono (fn D), a chamada fire-and-forget <strong>não</strong> passa <code>parentProcessId</code>. O run filho vira um "run raiz" — não é conectado ao run pai no run-log. Rastreabilidade de árvore quebra aqui.
+          </div>
+
+          <div class="aside">
+            <div class="aside-title">🎯 runType como marcador</div>
+            <code>`flow-caller-node (trigger-only) - flowId: X`</code> — string livre, sem enum. Consumido por dashboards e queries de log. Se mudar o texto, alertas quebram.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 body enviado ao filho</div>
+            <code>{ variableInputs, webhook, spaceId }</code> — <code>variableInputs</code> tem <code>{ inputId, inputText, links, files, isExtraction, typeOCR }</code>. É o payload de entrada do filho — vai virar <code>body</code> no <code>apiV2</code> dele.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION C: libraryNode enqueue -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-c">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#3B82F6;color:white">C</span>
+        <code>libraryNode — fire-and-forget</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:5960-6004</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        this.apiV2Queue.enqueueApiV2Job({ params: {..., billingFlowId} }).catch(...)
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Igual a (B), mas pro <code>libraryNode</code> — que roda flows da biblioteca (mesa) do usuário. Diferença crítica: passa <code>billingFlowId</code> pra separar cobrança do flow instalado vs flow original.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> essa é a <em>versão biblioteca</em> do disparador. O padrão é praticamente idêntico ao do flow-caller: <code>enqueue(...).catch(logger)</code>, marca o nó como <em>enqueued</em>, retorna. A grande diferença está numa linha só: o payload inclui <code>billingFlowId: billingFlowIdForExecution</code>. Isso resolve um problema específico de biblioteca — quando um usuário instala um flow público da biblioteca, cada execução tem <em>dois</em> flowIds envolvidos: o <code>flowId</code> real que vai rodar (a cópia do usuário) e o <code>billingFlowId</code> que aponta pro flow original (pra cobrança/attribuição correta). O flow-caller não tem essa complexidade porque só chama flows do próprio workspace. O runType também é diferente: <code>'library-node (trigger-only)'</code> — dá pra separar em logs quantos disparos vieram de biblioteca vs quantos vieram de flow-caller normal.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">C1</span> Payload enfileirado (com billingFlowId)</div>
+            <div class="code-block">
+this.apiV2Queue
+  .<span class="t">enqueueApiV2Job</span>({
+    <span class="k">params</span>: {
+      body,
+      <span class="k">user</span>: user <span class="k">as</span> User,
+      <span class="k">flowId</span>: flowIdSelected,
+      sessionId,
+      sendEmail,
+      apiTriggers,
+      emailTriggers,
+      autoTriggers,
+      <span class="k">runType</span>: <span class="s">`library-node (trigger-only) - flowId: ${flowIdSelected}`</span>,
+      <span class="k">billingFlowId</span>: billingFlowIdForExecution,   <span class="c">// DIFERENÇA vs flow-caller</span>
+    },
+  })
+  .<span class="t">catch</span>(error =&gt; { … })
+            </div>
+            <div class="box-file">flux.service.ts:5960-5986</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">C2</span> Marca o nó — mesma estrutura do B3</div>
+            <div class="code-block">
+<span class="k">data</span>: {
+  triggerStatus: <span class="s">'enqueued'</span>,
+  triggerMessage: <span class="s">`Library flow ${flowIdSelected} enqueued for execution`</span>,
+  lastTriggeredAt: <span class="k">new</span> Date().<span class="t">toISOString</span>(),
+}
+            </div>
+            <div class="box-file">flux.service.ts:5988-6003</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 billingFlowId — flow original vs cópia</div>
+            Quando um user instala um flow da biblioteca (marketplace), a cópia dele ganha um novo id (<code>flowId</code>). Mas pra <strong>cobrança/analytics</strong>, é útil apontar pro flow "de origem" (<code>billingFlowId</code>). Isso permite: (1) autor original recebe créditos de execução; (2) analytics agregam por flow público, não por cópia.
+            <br><br>Passado até o <code>apiV2</code> filho, que usa na lógica de billing.
+          </div>
+
+          <div class="aside">
+            <div class="aside-title">📎 triggerMessage prefixado</div>
+            <code>Library flow ${id} enqueued for execution</code> — texto diferente do flow-caller (<code>Flow ${id} enqueued</code>). Ajuda o usuário no editor a distinguir de onde veio o disparo.
+          </div>
+
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Mesmo bug do .catch() silencioso</div>
+            Igual ao flow-caller: se enfileirar falhar, log rola mas o nó vira <em>enqueued</em>. UI mente pro usuário. Aqui é ainda pior porque <em>bibliotecas costumam ser usadas em cascata</em> — se 10 library-nodes disparam num run e Redis cair no meio, 5 podem falhar sem sinal visual.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 buildClearedLibraryOutputs</div>
+            Existe uma diferença sutil no caminho de erro do library síncrono (fn D contrast): usa <code>buildClearedLibraryOutputs(staleLibraryNode?.data)</code> pra limpar outputs anteriores. Não se aplica no trigger-only porque nunca houve output pra limpar.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION D: caminho síncrono -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-d">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#A855F7;color:white">D</span>
+        <code>caminho síncrono — nodeCancelContext.run(() =&gt; this.apiV2(...))</code>
+        <span class="badge cross" style="font-size:9px">contraste</span>
+      </div>
+      <div class="fn-loc">flux.service.ts:5645-5660 (flow-caller) · 6010-6026 (library)</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        await nodeCancelContext.run(undefined, () => this.apiV2({ ...body, parentProcessId, parentCancelRunKey, injectedRunLogCollector }))
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Rodar o sub-flow <em>dentro do mesmo processo</em>, preservando run-log unificado, cancelamento propagado e output incorporado no nó pai. É o default quando <code>executionMode !== 'triggerOnly'</code>.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> aqui é a face oposta do trigger-only — <em>tudo unificado</em>, um run só. O handler abre um <code>AsyncLocalStorage</code> (<code>nodeCancelContext.run(undefined, () =&gt; ...)</code>) pra isolar contexto de cancelamento e chama <code>this.apiV2(...)</code> <strong>com await</strong>. Passa 3 coisas que o trigger-only <em>não</em> passa: <code>parentProcessId</code> (pra ligar o run filho ao pai no run-log), <code>parentCancelRunKey</code> (pra que cancelar o pai cancele o filho automaticamente) e <code>injectedRunLogCollector</code> (pra que o run-log do filho apareça como sub-run dentro do pai, não como run raiz separado). O resultado (<code>nestedFlowResult</code>) é usado logo depois — se falhou, marca erro no nó; se deu certo, incorpora outputs no nó pai. É o modo de execução <em>caro mas rico</em>: paga o custo de esperar, ganha rastreabilidade completa e cancelamento em cascata.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">D1</span> flow-caller síncrono — chamada completa</div>
+            <div class="code-block">
+<span class="k">const</span> flowCallerSubCollector =
+  parentRunLogCollector?.<span class="t">startFlowCallerSubRun</span>(parentRunLogNode ?? <span class="k">null</span>, {
+    flowId: flowIdSelected,
+    flowName: flowSelected?.name ?? <span class="s">''</span>,
+    input: body,
+  }) ?? <span class="k">null</span>;
+
+<span class="k">const</span> nestedFlowResult = <span class="k">await</span> nodeCancelContext.<span class="t">run</span>(<span class="k">undefined</span>, () =&gt;
+  this.<span class="t">apiV2</span>({
+    body,
+    user,
+    flowId: flowIdSelected,
+    sessionId,
+    sendEmail,
+    apiTriggers,
+    emailTriggers,
+    autoTriggers,
+    <span class="k">runType</span>: <span class="s">`flow-caller-node - flowId: ${flowIdSelected}`</span>,   <span class="c">// SEM (trigger-only)</span>
+    <span class="k">parentProcessId</span>: parentRunLogCollector?.<span class="s">processId</span>,       <span class="c">// vínculo</span>
+    parentCancelRunKey,                                          <span class="c">// cancel cascade</span>
+    <span class="k">injectedRunLogCollector</span>: flowCallerSubCollector,           <span class="c">// sub-log</span>
+  }),
+);
+            </div>
+            <div class="box-file">flux.service.ts:5638-5660</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">D2</span> library síncrono — mesma estrutura, com billingFlowId</div>
+            <div class="code-block">
+<span class="k">const</span> librarySubCollector =
+  parentRunLogCollector?.<span class="t">startLibrarySubRun</span>(parentRunLogNode ?? <span class="k">null</span>) ?? <span class="k">null</span>;
+
+<span class="k">const</span> nestedFlowResult = <span class="k">await</span> nodeCancelContext.<span class="t">run</span>(<span class="k">undefined</span>, () =&gt;
+  this.<span class="t">apiV2</span>({
+    body,
+    user,
+    flowId: flowIdSelected,
+    sessionId,
+    sendEmail,
+    apiTriggers,
+    emailTriggers,
+    autoTriggers,
+    <span class="k">runType</span>: <span class="s">`library-node - flowId: ${flowIdSelected}`</span>,
+    <span class="k">billingFlowId</span>: billingFlowIdForExecution,                <span class="c">// billing</span>
+    parentProcessId: parentRunLogCollector?.processId,
+    parentCancelRunKey,
+    <span class="k">injectedRunLogCollector</span>: librarySubCollector,
+  }),
+);
+            </div>
+            <div class="box-file">flux.service.ts:6006-6026</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box decision">
+            <div class="box-title"><span class="badge step">D3</span> nestedFlowResult é usado imediatamente</div>
+            <div class="box-desc">
+              Se <code>isFlowCallerRunFailed(nestedFlowResult)</code>: marca <code>errorMessage/errorStatusCode/lastExecutedAt</code> no nó pai. Se deu certo: usa <code>nestedFlowResult.message</code> pra popular outputs. Nada disso acontece no trigger-only — nó pai <strong>nunca vê</strong> o resultado.
+            </div>
+            <div class="box-file">flux.service.ts:5662-5678, 6028-6048</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 3 coisas que só o síncrono passa</div>
+            <strong>1. parentProcessId</strong> — run-log conecta filho ao pai como sub-run
+            <br><strong>2. parentCancelRunKey</strong> — cancelamento propaga do pai pro filho automaticamente
+            <br><strong>3. injectedRunLogCollector</strong> — <code>startFlowCallerSubRun</code>/<code>startLibrarySubRun</code> abre um coletor filho aninhado no coletor do pai
+            <br><br>Sem isso, o filho seria um run raiz órfão.
+          </div>
+
+          <div class="aside">
+            <div class="aside-title">📎 runType SEM sufixo</div>
+            <code>'flow-caller-node - flowId: X'</code> (sem <code>(trigger-only)</code>). Facilita filtrar em logs: <code>WHERE runType LIKE '%(trigger-only)%'</code> pega só os fire-and-forget.
+          </div>
+
+          <div class="aside warn">
+            <div class="aside-title">⚠️ nodeCancelContext.run(undefined, ...) — isolamento intencional</div>
+            <code>undefined</code> como primeiro arg do <code>AsyncLocalStorage.run</code> zera qualquer contexto de cancelamento herdado — o filho começa "limpo". O cancelamento vem via <code>parentCancelRunKey</code>, não via herança de AsyncLocalStorage.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 Comparação lado a lado</div>
+            <table class="field-table">
+              <tr><th>Aspecto</th><th>trigger-only</th><th>síncrono</th></tr>
+              <tr><td>await</td><td>não</td><td>sim</td></tr>
+              <tr><td>catch</td><td>logger + morre</td><td>throw pro pai</td></tr>
+              <tr><td>parentProcessId</td><td>—</td><td>vínculo</td></tr>
+              <tr><td>parentCancelRunKey</td><td>—</td><td>cascade</td></tr>
+              <tr><td>injectedRunLogCollector</td><td>—</td><td>sub-log</td></tr>
+              <tr><td>runType suffix</td><td>(trigger-only)</td><td>—</td></tr>
+              <tr><td>output no nó</td><td>—</td><td>preenchido</td></tr>
+              <tr><td>triggerStatus</td><td>'enqueued'</td><td>—</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="note info" style="margin-top:32px">
+    <strong>Resumo — o que sai de 1.1b:</strong>
+    <br>• <strong>Trigger-only:</strong> novo job na fila <code>api-v2</code> (com runType prefixado), nó pai atualizado com <code>triggerStatus: 'enqueued' + triggerMessage + lastTriggeredAt</code>, run atual continua sem esperar
+    <br>• <strong>Síncrono:</strong> sub-run completo executado dentro do run pai, com run-log aninhado (startFlowCallerSubRun/startLibrarySubRun), cancelamento em cascata, output incorporado no nó pai via <code>nestedFlowResult.message</code>
+    <br>• <strong>Assimetria:</strong> só <code>libraryNode</code> passa <code>billingFlowId</code> — <code>flowCallerNode</code> não
+    <br>• Falha silenciosa possível no trigger-only: <code>.catch()</code> loga mas o nó continua marcado como <em>enqueued</em>
+  </div>
+
+  <div class="note">
+    <strong>Observações para migração:</strong>
+    <br>• <strong>Trigger-only e síncrono precisam ser migrados juntos.</strong> Se o worker Temporal absorver a execução mas o backend ainda chama <code>this.apiV2(...)</code> no caminho síncrono, todas as flags <code>parentProcessId/parentCancelRunKey/injectedRunLogCollector</code> deixam de existir — o worker isola cada nó, não compartilha esse contexto.
+    <br>• <strong>Solução natural:</strong> quando o pai roda no Temporal, chamar sub-flow vira <code>await workflow.executeChildWorkflow(subAgentWorkflow, ...)</code> — que já é await-able (síncrono do ponto de vista lógico) e tem cancelamento em cascata builtin. Trigger-only vira <code>await workflow.startChild(subAgentWorkflow, { parentClosePolicy: ABANDON })</code>.
+    <br>• <strong>Rastreabilidade:</strong> Temporal tem workflow-id relationship (parent/child) que substitui <code>parentProcessId</code>. Run-log aninhado (<code>startFlowCallerSubRun</code>) precisa ser reescrito pra usar as APIs do Temporal ou continuar no Postgres com a mesma estrutura.
+    <br>• <strong>Bug do <code>.catch()</code> silencioso:</strong> corrigir junto — no Temporal, o start de child workflow pode falhar (workflow existe? task queue tá saudável?). Precisa propagar status real pro nó em vez de assumir 'enqueued'.
+    <br>• <strong>billingFlowId</strong> continua fazendo sentido no worker — passa como argumento do workflow. Nenhum impacto arquitetural.
+    <br>• <strong>Cuidado com AsyncLocalStorage:</strong> <code>nodeCancelContext.run(undefined, ...)</code> é padrão específico do fluxo síncrono atual. No worker Temporal, cancelamento é via CancellationScope — modelo diferente. Não tentar portar 1:1.
+  </div>
+
+  <!-- FOOTER NAV -->
+  <div class="page-footer-nav">
+    <a href="../index.html#step-1-1" class="back-btn">← Voltar ao diagrama principal</a>
+  </div>
+
+</div>
+<script>
+(function() {
+  function toggle(card) {
+    if (card) card.classList.toggle('collapsed');
+  }
+  function expand(card) {
+    if (card && card.classList.contains('collapsed')) card.classList.remove('collapsed');
+  }
+  document.querySelectorAll('.fn-card-header').forEach(function(header) {
+    header.addEventListener('click', function(e) {
+      if (e.target.closest('a')) return;
+      toggle(header.parentElement);
+    });
+  });
+  document.querySelectorAll('a[href^="#fn-"]').forEach(function(link) {
+    link.addEventListener('click', function() {
+      var id = link.getAttribute('href').slice(1);
+      expand(document.getElementById(id));
+    });
+  });
+  if (window.location.hash && window.location.hash.startsWith('#fn-')) {
+    expand(document.querySelector(window.location.hash));
+  }
+  window.addEventListener('hashchange', function() {
+    if (window.location.hash.startsWith('#fn-')) {
+      expand(document.querySelector(window.location.hash));
+    }
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Passo 4.1a — Publicação de status cancelado | Detalhamento</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #F1F5F9;
+    color: #0F172A;
+    margin: 0;
+    padding: 32px 24px 80px;
+    line-height: 1.4;
+  }
+  .container { max-width: 1500px; margin: 0 auto; }
+
+  .page-nav {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-bottom: 24px; padding: 12px 16px;
+    background: white; border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06); flex-wrap: wrap;
+  }
+  .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748B; }
+  .breadcrumb a { color: #3B82F6; text-decoration: none; font-weight: 500; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #CBD5E1; }
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #0F172A; color: white; padding: 8px 14px;
+    border-radius: 8px; text-decoration: none; font-size: 12.5px; font-weight: 600;
+  }
+
+  .page-header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+  .page-header .icon { font-size: 32px; }
+  .page-header h1 { margin: 0; font-size: 26px; color: #0F172A; letter-spacing: -0.4px; }
+  .page-sub { color: #64748B; font-size: 13px; margin-bottom: 24px; padding-left: 46px; }
+  .page-sub code {
+    background: #E2E8F0; padding: 1px 6px; border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; color: #334155;
+  }
+
+  .overview-mini {
+    background: white; padding: 16px 18px; border-radius: 10px;
+    margin-bottom: 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .overview-mini-title {
+    font-size: 12px; font-weight: 700; color: #334155;
+    text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px;
+  }
+  .overview-chain { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .overview-chip {
+    background: #F8FAFC; padding: 6px 12px; border-radius: 6px;
+    border-left: 3px solid #3B82F6;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px; font-weight: 600; color: #0F172A;
+    text-decoration: none; display: inline-block; box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+  .overview-chip .lbl {
+    display: block; font-size: 9.5px; color: #64748B; font-weight: 500;
+    margin-bottom: 2px; font-family: inherit; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .overview-sep { color: #94A3B8; font-size: 18px; font-weight: bold; }
+
+  .box {
+    background: white; border-radius: 8px; padding: 9px 13px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 4px solid #94A3B8;
+    width: 100%; max-width: 100%;
+  }
+  .box.backend    { border-left-color: #3B82F6; }
+  .box.worker     { border-left-color: #10B981; }
+  .box.db         { border-left-color: #F59E0B; }
+  .box.redis      { border-left-color: #EF4444; }
+  .box.s3         { border-left-color: #8B5CF6; }
+  .box.external   { border-left-color: #64748B; }
+  .box.decision   { border-left-color: #EAB308; background: #FEFCE8; }
+  .box.cross      { border-left-color: #A855F7; background: #FAF5FF; }
+
+  .box-title { font-weight: 600; font-size: 12.5px; color: #0F172A; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .box-desc { font-size: 11.5px; color: #475569; }
+  .box-file { font-size: 10px; color: #94A3B8; font-family: 'SF Mono', Menlo, Consolas, monospace; margin-top: 3px; word-break: break-all; }
+  .box code {
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px;
+    background: #F1F5F9; padding: 1px 4px; border-radius: 3px; color: #334155; word-break: break-word;
+  }
+  .box-desc code { word-break: break-word; }
+
+  .badge {
+    display: inline-block; font-size: 9px; font-weight: 700;
+    padding: 2px 6px; border-radius: 4px; text-transform: uppercase;
+    letter-spacing: 0.3px; white-space: nowrap;
+  }
+  .badge.migrated { background: #D1FAE5; color: #065F46; }
+  .badge.legacy   { background: #FEE2E2; color: #991B1B; }
+  .badge.mixed    { background: #FEF3C7; color: #92400E; }
+  .badge.step     { background: #E0E7FF; color: #3730A3; font-size: 10px; }
+  .badge.cross    { background: #F3E8FF; color: #6B21A8; }
+
+  .arrow { color: #64748B; font-size: 22px; line-height: 1; margin: 1px 0; text-align: center; }
+
+  .fn-card {
+    margin-top: 28px; border: 1px solid #E2E8F0; border-radius: 12px;
+    overflow: hidden; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .fn-card-header {
+    background: linear-gradient(to right, #0F172A, #1E293B);
+    color: white; padding: 14px 20px 14px 44px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px; cursor: pointer; position: relative;
+    user-select: none; transition: background 0.15s;
+  }
+  .fn-card-header .fn-title { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+  .fn-card-header .fn-title code {
+    background: rgba(255,255,255,0.15); padding: 3px 8px;
+    border-radius: 4px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 13px;
+  }
+  .fn-card-header .fn-loc { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; color: #CBD5E1; }
+  .fn-card-header:hover { background: linear-gradient(to right, #1E293B, #334155); }
+  .fn-card-header::before {
+    content: "▾"; position: absolute; left: 20px; top: 50%;
+    transform: translateY(-50%); color: #94A3B8; font-size: 14px;
+    transition: transform 0.2s ease; line-height: 1;
+  }
+  .fn-card.collapsed .fn-card-header::before { transform: translateY(-50%) rotate(-90deg); }
+  .fn-card.collapsed .fn-card-body { display: none; }
+  .fn-card-body { padding: 20px; }
+
+  .fn-signature {
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px;
+    background: #F1F5F9; padding: 8px 12px; border-radius: 6px;
+    color: #334155; margin-bottom: 16px; overflow-x: auto;
+  }
+  .fn-purpose {
+    font-size: 13px; color: #475569; margin-bottom: 12px;
+    padding: 10px 14px; background: #EFF6FF;
+    border-left: 3px solid #3B82F6; border-radius: 6px;
+  }
+  .fn-friendly {
+    font-size: 13px; color: #334155; margin-bottom: 20px;
+    padding: 12px 14px 12px 44px; background: #F0FDF4;
+    border-left: 3px solid #10B981; border-radius: 6px;
+    position: relative; line-height: 1.55;
+  }
+  .fn-friendly::before { content: "💬"; position: absolute; left: 14px; top: 10px; font-size: 18px; }
+  .fn-friendly strong { color: #065F46; }
+
+  .step-friendly {
+    font-size: 13.5px; color: #334155; margin-bottom: 28px;
+    padding: 16px 18px 16px 52px; background: #F0FDF4;
+    border-left: 4px solid #10B981; border-radius: 10px;
+    position: relative; line-height: 1.6;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.08);
+  }
+  .step-friendly::before { content: "💬"; position: absolute; left: 18px; top: 14px; font-size: 22px; }
+  .step-friendly-title {
+    font-weight: 700; color: #065F46; font-size: 13px;
+    text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px;
+  }
+  .step-friendly ul { margin: 0; padding-left: 18px; }
+  .step-friendly li { margin-bottom: 6px; }
+  .step-friendly li:last-child { margin-bottom: 0; }
+  .step-friendly strong { color: #065F46; }
+  .step-friendly code {
+    background: #DCFCE7; padding: 1px 5px; border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; color: #065F46;
+  }
+  .step-friendly em { color: #047857; font-style: italic; }
+
+  .fn-body-cols { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr); gap: 20px; }
+  @media (max-width: 900px) { .fn-body-cols { grid-template-columns: 1fr; } }
+  .fn-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .fn-asides { display: flex; flex-direction: column; gap: 12px; }
+
+  .aside {
+    background: #FEF3C7; border-left: 4px solid #F59E0B; border-radius: 6px;
+    padding: 10px 12px; font-size: 11.5px; color: #78350F;
+  }
+  .aside.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .aside.warn { background: #FEE2E2; border-left-color: #EF4444; color: #991B1B; }
+  .aside.helper { background: #F3E8FF; border-left-color: #A855F7; color: #6B21A8; }
+  .aside-title {
+    font-weight: 700; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.4px; margin-bottom: 4px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .aside code {
+    background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 10.5px; word-break: break-word;
+  }
+
+  .code-block {
+    background: #0F172A; color: #E2E8F0;
+    padding: 12px 16px; border-radius: 6px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px; line-height: 1.6; overflow-x: auto; margin: 6px 0;
+  }
+  .code-block .k { color: #93C5FD; }
+  .code-block .s { color: #86EFAC; }
+  .code-block .c { color: #64748B; font-style: italic; }
+  .code-block .t { color: #FDE68A; }
+
+  .note {
+    background: #FEF3C7; border-left: 4px solid #F59E0B;
+    padding: 12px 16px; border-radius: 6px;
+    font-size: 12.5px; color: #78350F; margin: 20px 0;
+  }
+  .note.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .note code {
+    background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px;
+  }
+
+  .page-footer-nav {
+    margin-top: 48px; padding: 16px; background: white;
+    border-radius: 10px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .field-table { width: 100%; border-collapse: collapse; font-size: 11px; margin: 8px 0; }
+  .field-table th {
+    text-align: left; padding: 6px 8px;
+    background: #F1F5F9; color: #334155;
+    font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.3px; font-size: 10px;
+    border-bottom: 1px solid #CBD5E1;
+  }
+  .field-table td { padding: 5px 8px; border-bottom: 1px solid #F1F5F9; vertical-align: top; }
+  .field-table td:first-child {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    color: #0F172A; font-weight: 600; white-space: nowrap; font-size: 10.5px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- TOP NAV -->
+  <div class="page-nav">
+    <div class="breadcrumb">
+      <a href="../index.html">📋 Execução de Agente</a>
+      <span class="sep">›</span>
+      <span>Passo 4.1a — Detalhamento</span>
+    </div>
+    <a href="../index.html#step-4-1a" class="back-btn">← Voltar ao diagrama</a>
+  </div>
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <span class="icon">🛑</span>
+    <h1>Passo 4.1a — Publicação de status cancelado</h1>
+  </div>
+  <div class="page-sub">
+    Bloco em <code>flux.service.ts:4805-4825</code>. Depois que o loop principal <code>break</code>ou por causa de cancel, esse bloco (1) calcula quais nós <em>não</em> foram executados, (2) grava isso em <code>flow_run_states</code> como registro definitivo do cancelamento, e (3) emite um <strong>evento WebSocket</strong> pra UI marcar todos aqueles nós como <code>CANCELLED</code>.
+  </div>
+
+  <!-- Step friendly summary -->
+  <div class="step-friendly">
+    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <ul>
+      <li><strong>Gate simples:</strong> só entra se <code>stoppedByCancel === true</code> — flag setada no loop quando <code>cancelWatch?.wasAborted()</code> voltou <code>true</code> (linha 4596) ou em outros 3 pontos de detecção (3290, 3877, 4716).</li>
+      <li><strong>Calcula footprint:</strong> <code>resolveCancelledRunFootprint</code> filtra os <code>schedState.nodeIds</code> tirando quem já completou ou morreu (dead-scheduled). Sobram os <em>não executados</em> — cada um mapeado pra <code>{ nodeId, label, type }</code>. O <code>stoppedAtNodeId</code> é o último nó que <em>chegou a começar</em> (<code>lastExecutedNodeId</code>).</li>
+      <li><strong>Persiste no banco:</strong> <code>runCancellationService.markCancelled</code> faz <code>UPDATE flow_run_states SET cancelledAt = now(), stoppedAtNodeId = $2, notExecutedNodeIds = $3::jsonb</code>. Se falhar, retenta até 3 vezes com 200ms entre elas — mas <em>não</em> propaga erro no final (fire-and-forget definitivo).</li>
+      <li><strong>Emite WebSocket:</strong> <code>emitCancelledRunStatuses</code> chama <code>notificationsGateway.sendToUser</code>, mandando um payload <code>{ runId, flowId, userId, flowVersionHistoryId, nodes: { [nodeId]: { status: 'CANCELLED' } } }</code> pro evento <code>room_status_updated</code>. A UI escuta esse evento e pinta os nós de <em>cancelado</em> na hora.</li>
+      <li><strong>Diferenciação de erro:</strong> a row em <code>flow_run_states</code> não guarda status "cancelled" nem "error" — o discriminador é <em>a presença de <code>cancelledAt</code></em>. Runs com erro têm essa coluna nula; runs cancelados têm timestamp. É o mesmo <code>UPDATE</code> que também exige <code>WHERE cancelledAt IS NULL</code> — idempotente.</li>
+    </ul>
+  </div>
+
+  <!-- Overview chain -->
+  <div class="overview-mini">
+    <div class="overview-mini-title">Cadeia de chamadas em 4.1a</div>
+    <div class="overview-chain">
+      <a href="#fn-a" class="overview-chip"><span class="lbl">A · gate</span>if (stoppedByCancel)</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>resolveCancelledRunFootprint</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>runCancellationService.markCancelled</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>emitCancelledRunStatuses</a>
+    </div>
+    <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
+      Resultado final: row <code>flow_run_states</code> marcada como cancelada + eventos WebSocket enviados pro browser marcando nós não executados como <code>CANCELLED</code>.
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION A: gate stoppedByCancel -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-a">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#EAB308;color:white">A</span>
+        <code>if (stoppedByCancel)</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:4805</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        let stoppedByCancel = false; // ... if (stoppedByCancel) { ... }
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Distinguir cancelamento intencional dos outros modos de término (sucesso, erro de nó, loopBehavior). Só quando essa flag foi setada é que vale a pena persistir o cancelamento e notificar o browser.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> pense nele como um <em>marcador de "eu fui interrompido de propósito"</em>. Ao longo do loop principal, existem <strong>4 pontos</strong> onde o código detecta que o usuário cancelou e seta essa flag pra <code>true</code>: (1) linha 3290, na entrada do idx=0; (2) linha 3877, quando algum sub-loop de sub-run pegou o abort; (3) linha 4596, o principal — checagem <code>cancelWatch?.wasAborted()</code> depois do handler do nó rodar; (4) linha 4716, outro branch de saída de sub-run. Todos causam <code>break</code>. Depois de sair do loop, esse <code>if</code> distingue "acabou naturalmente" (<code>stoppedByCancel = false</code>) de "usuário mandou parar" (<code>true</code>) — e só no segundo caso o bloco de persistência e emit dispara.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box decision">
+            <div class="box-title"><span class="badge step">A1</span> 4 pontos de setagem no loop</div>
+            <div class="box-desc">
+              <code>stoppedByCancel = true</code> aparece em:
+              <br>• <code>flux.service.ts:3290</code> — cancel detectado no prefetch/idx=0
+              <br>• <code>flux.service.ts:3877</code> — cancel detectado num handler de sub-run
+              <br>• <code>flux.service.ts:4596</code> — principal: <code>if (cancelWatch?.wasAborted())</code> após handler
+              <br>• <code>flux.service.ts:4716</code> — saída de sub-run com abort observado
+              <br><br>Todos causam <code>break</code> do loop.
+            </div>
+            <div class="box-file">flux.service.ts (grep stoppedByCancel = true)</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">A2</span> Discriminador global depois do loop</div>
+            <div class="box-desc">
+              A flag é usada em:
+              <br>• Linha 4805 (este passo)
+              <br>• Linha 4830 — evita logar "flow_truncated" quando o cancel foi intencional
+              <br>• Linha 4858 — passa pra <code>resolveRunLogStatus</code> pra decidir status final
+              <br>• Linha 4859 — mesma coisa em outro branch
+            </div>
+            <div class="box-file">flux.service.ts:4805, 4830, 4858, 4859</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Por que uma flag e não um retorno estruturado?</div>
+            O loop tem múltiplos pontos de saída (loopBehavior, erro de nó, cancel, término natural). Usar flags <code>stoppedByCancel</code>, <code>stoppedByLoopBehavior</code>, <code>stoppedByNodeFailure</code> permite o código pós-loop decidir a intenção sem precisar de <code>return</code> antecipado.
+          </div>
+
+          <div class="aside warn">
+            <div class="aside-title">⚠️ 4 pontos de setagem = 4 lugares pra bug</div>
+            Se um novo caminho de saída for adicionado ao loop <em>sem</em> setar <code>stoppedByCancel</code>, o cancel do usuário vira "run terminou naturalmente" — nenhuma persistência, nenhum WebSocket. UI fica com nós <em>pendentes</em> pra sempre.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 Fluxo em cascata das flags</div>
+            <code>stoppedByCancel</code> tem <strong>precedência</strong> sobre <code>stoppedByNodeFailure</code> em <code>resolveRunLogStatus</code>: se o cancel foi setado, o status final é "cancelled" mesmo que algum nó anterior tenha errado.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION B: resolveCancelledRunFootprint -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-b">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#F59E0B;color:white">B</span>
+        <code>resolveCancelledRunFootprint()</code>
+      </div>
+      <div class="fn-loc">cancelled-run-footprint.ts:14-36</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        function resolveCancelledRunFootprint(params: { nodeIds; completed; dead; lastExecutedNodeId; nodes }): CancelledRunFootprint
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Função pura (sem I/O). Classifica cada nó do run em uma de duas categorias — <em>executado</em> (completed ou dead) ou <em>não executado</em> (o resto) — e devolve o footprint pra ser persistido e emitido: qual nó foi o último a começar (<code>stoppedAtNodeId</code>) e a lista completa de nós que ficaram na fila sem rodar.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> pense nela como uma <em>fotografia final do cemitério</em>. Ela recebe 5 informações: todos os nós que estavam agendados pra rodar (<code>schedState.nodeIds</code>), quais já terminaram com sucesso (<code>schedState.completed</code>), quais foram marcados como mortos por dependência anterior falhar (<code>schedState.dead</code>), qual foi o último que chegou a começar (<code>lastExecutedNodeId</code>) e a lista atual de nós com seus <code>data.label</code>/<code>type</code>. Ela filtra: quem <em>não</em> está em <code>completed</code> e <em>não</em> está em <code>dead</code> — sobra o que ficou pra trás. Cada um é mapeado pra <code>{ nodeId, label, type }</code>. Isso vira o que a UI e o banco vão registrar como "nós não executados por cancelamento". O <code>stoppedAtNodeId</code> aponta pro último que <em>começou</em> — ele pode ter completado ou ter sido abortado no meio, mas foi o "ponto onde a coisa parou".
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B1</span> Index dos nodes por id</div>
+            <div class="code-block">
+<span class="k">const</span> nodeById = <span class="k">new</span> <span class="t">Map</span>(
+  params.nodes.<span class="t">map</span>(node =&gt; [node.id, node])
+);
+            </div>
+            <div class="box-file">cancelled-run-footprint.ts:21</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B2</span> Filtro: não completed && não dead</div>
+            <div class="code-block">
+<span class="k">const</span> notExecutedNodeIds = [...params.nodeIds]
+  .<span class="t">filter</span>(nodeId =&gt;
+    !params.completed.<span class="t">has</span>(nodeId) &amp;&amp;
+    !params.dead.<span class="t">has</span>(nodeId))
+  .<span class="t">map</span>(nodeId =&gt; {
+    <span class="k">const</span> node = nodeById.<span class="t">get</span>(nodeId);
+    <span class="k">return</span> {
+      nodeId,
+      label: node?.data?.label ?? <span class="k">null</span>,
+      type: node?.type ?? <span class="k">null</span>,
+    };
+  });
+            </div>
+            <div class="box-file">cancelled-run-footprint.ts:22-31</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box decision">
+            <div class="box-title"><span class="badge step">B3</span> Retorno — CancelledRunFootprint</div>
+            <div class="code-block">
+<span class="k">return</span> {
+  stoppedAtNodeId: params.lastExecutedNodeId ?? <span class="k">null</span>,
+  notExecutedNodeIds,
+};
+            </div>
+            <div class="box-desc">
+              <code>notExecutedNodeIds</code> é <code>NotExecutedNode[]</code> — array de <code>{ nodeId, label, type }</code> definido em <code>flow_run_state.entity.ts:5-9</code>.
+            </div>
+            <div class="box-file">cancelled-run-footprint.ts:32-35</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Três estados no scheduler</div>
+            O <code>schedState</code> classifica cada nó em uma de três buckets:
+            <br>• <strong>completed</strong> — rodou até o fim com sucesso
+            <br>• <strong>dead</strong> — não vai rodar porque uma dependência anterior falhou (não é cancelado, é "morto de sede")
+            <br>• <strong>pendente</strong> (implícito) — o resto, incluindo cancelados
+          </div>
+
+          <div class="aside">
+            <div class="aside-title">📎 stoppedAtNodeId semântica</div>
+            É o <strong>último nó que começou</strong> — pode ter completado com sucesso e o cancel foi entre ele e o próximo, ou pode ter sido abortado no meio da execução (via <code>AbortSignal</code>). Não distingue os dois casos.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 Função pura e testada</div>
+            Sem I/O, sem side effect. Recebe tudo por parâmetro, retorna um objeto. Tem spec dedicado (<code>cancelled-run-footprint.spec.ts</code>). Ideal pra reuso no worker.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION C: markCancelled -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-c">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#3B82F6;color:white">C</span>
+        <code>runCancellationService.markCancelled()</code>
+      </div>
+      <div class="fn-loc">run-cancellation.service.ts:99-132</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        async markCancelled(params: { runId; stoppedAtNodeId; notExecutedNodeIds }): Promise&lt;void&gt;
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Gravar em <code>flow_run_states</code> o momento oficial do cancelamento (<code>cancelledAt = now()</code>) mais os campos de contexto (onde parou, o que ficou pra trás). Tem retry policy de 3 tentativas com 200ms de delay — se todas falharem, o método volta <code>void</code> sem propagar erro.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> pense nele como <em>o cartório que registra o divórcio</em>. A row em <code>flow_run_states</code> foi criada quando o usuário clicou em "Cancelar" (via <code>requestCancel</code>, INSERT com <code>ON CONFLICT DO NOTHING</code>). Nesse momento ela só tem <code>runId</code>, <code>flowId</code>, <code>requestedByUserId</code>, <code>requestedAt</code>. Agora que o loop de fato parou, esse método atualiza <em>a mesma row</em> preenchendo três campos: <code>cancelledAt</code> (o timestamp de conclusão do cancel), <code>stoppedAtNodeId</code> (o "endereço" onde parou) e <code>notExecutedNodeIds</code> (JSONB com a lista de nós que ficaram pra trás). O <code>WHERE cancelledAt IS NULL</code> garante idempotência: se por algum motivo esse método rodar duas vezes pro mesmo run, a segunda vez é no-op. Se der erro no <code>UPDATE</code> (deadlock, banco caído), retenta até 3 vezes; se todas falharem, apenas loga e desiste. O run não trava por causa disso.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box db">
+            <div class="box-title"><span class="badge step">C1</span> Query UPDATE idempotente</div>
+            <div class="code-block">
+<span class="t">UPDATE</span> <span class="s">"flow_run_states"</span>
+<span class="t">SET</span> <span class="s">"cancelledAt"</span> = <span class="t">now</span>(),
+    <span class="s">"stoppedAtNodeId"</span> = $2,
+    <span class="s">"notExecutedNodeIds"</span> = $3::jsonb,
+    <span class="s">"updatedAt"</span> = <span class="t">now</span>()
+<span class="t">WHERE</span> <span class="s">"runId"</span> = $1
+  <span class="t">AND</span> <span class="s">"cancelledAt"</span> <span class="t">IS NULL</span>
+            </div>
+            <div class="box-file">run-cancellation.service.ts:106-112</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">C2</span> Retry loop — 3 tentativas, 200ms de delay</div>
+            <div class="code-block">
+<span class="k">for</span> (<span class="k">let</span> attempt = 1; attempt &lt;= <span class="s">MARK_CANCELLED_ATTEMPTS</span>; attempt++) {
+  <span class="k">try</span> {
+    <span class="k">await</span> <span class="k">this</span>.repository.<span class="t">query</span>(...);
+    <span class="k">return</span>;
+  } <span class="k">catch</span> (error) {
+    <span class="k">const</span> isLastAttempt = attempt === <span class="s">MARK_CANCELLED_ATTEMPTS</span>;
+    <span class="t">console.error</span>(<span class="s">'Failed to record the cancelled run'</span>, ...);
+    <span class="k">if</span> (isLastAttempt) <span class="k">return</span>; <span class="c">// engole erro</span>
+    <span class="k">await</span> <span class="t">wait</span>(<span class="s">MARK_CANCELLED_RETRY_DELAY_MS</span>); <span class="c">// 200ms</span>
+  }
+}
+            </div>
+            <div class="box-file">run-cancellation.service.ts:104-131</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box db">
+            <div class="box-title"><span class="badge step">C3</span> Estrutura da tabela flow_run_states</div>
+            <table class="field-table">
+              <tr><th>Campo</th><th>Descrição</th></tr>
+              <tr><td>runId</td><td>PK — mesmo <code>runLogProcessId</code>/<code>cancelRunKey</code></td></tr>
+              <tr><td>flowId</td><td>Referência ao flow</td></tr>
+              <tr><td>requestedByUserId</td><td>Quem clicou em cancelar</td></tr>
+              <tr><td>requestedAt</td><td>Timestamp do clique (INSERT)</td></tr>
+              <tr><td>cancelledAt</td><td>Timestamp da confirmação (UPDATE) — nullable</td></tr>
+              <tr><td>stoppedAtNodeId</td><td>Último nó que começou — varchar nullable</td></tr>
+              <tr><td>notExecutedNodeIds</td><td>JSONB — <code>NotExecutedNode[]</code></td></tr>
+            </table>
+            <div class="box-file">flow_run_state.entity.ts:1-41</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Discriminação cancel vs. erro</div>
+            A tabela <code>flow_run_states</code> só existe pra <strong>runs cancelados</strong>. Se um run terminou com erro (mas não cancelado), <em>não há row</em>. O status "run com erro" é derivado de <code>flow_logs</code>. O status "run cancelado" precisa da row em <code>flow_run_states</code> com <code>cancelledAt</code> preenchido.
+          </div>
+
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Fail-open no retry final</div>
+            Se as 3 tentativas falharem, o método retorna sem lançar. O run <em>segue</em> pro emit de WebSocket (D) mesmo sem o cancelamento ter sido persistido. Isso pode gerar inconsistência: browser vê nós cancelados, banco nunca soube.
+            <br><br>Fica só o <code>console.error</code>.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 Constantes de retry</div>
+            <code>MARK_CANCELLED_ATTEMPTS = 3</code>
+            <br><code>MARK_CANCELLED_RETRY_DELAY_MS = 200</code>
+            <br><code>CANCEL_CHECK_TTL_MS = 1500</code>
+            <br>Todos hardcoded em <code>run-cancellation.service.ts:9-13</code>.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION D: emitCancelledRunStatuses -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-d">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#A855F7;color:white">D</span>
+        <code>emitCancelledRunStatuses()</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:2154-2189</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        private emitCancelledRunStatuses({ runId, flowId, userId, flowVersionHistoryId, nodeIds }): void
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Notificar a UI (via WebSocket/Socket.io) que N nós ficaram em status <code>CANCELLED</code>. Sem esse emit, o browser não sabe que o run parou e continua mostrando os nós como pendentes ou "loading" pra sempre — mesmo que o banco já esteja atualizado.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> pense nele como um <em>anúncio no alto-falante</em> pra UI. Ele monta um payload com todos os nós que ficaram pra trás — cada um marcado como <code>{ status: 'CANCELLED' }</code> — e joga tudo num único evento WebSocket via <code>NotificationsGateway.sendToUser</code>. O gateway rotea via Socket.io usando a fórmula <code>room_user_{userId}_flow_{flowId}</code> — só quem está no editor daquele flow, logado como aquele user, recebe. O evento é <code>'room_status_updated'</code> — o frontend escuta e atualiza a UI dos nós. Se por algum motivo o emit falhar (broker Socket.io down, gateway não pronto), há um <code>try/catch</code> externo que loga com <code>error_type: 'node_status_emit_failed'</code>. Se <code>userId</code> ou <code>flowId</code> não vier, ou se <code>nodeIds</code> vier vazio, faz early return silencioso.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">D1</span> Guards de entrada</div>
+            <div class="code-block">
+<span class="k">if</span> (!userId || !flowId || nodeIds.length === 0) <span class="k">return</span>;
+            </div>
+            <div class="box-file">flux.service.ts:2167</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box cross">
+            <div class="box-title"><span class="badge step">D2</span> Monta payload — nodes como Record</div>
+            <div class="code-block">
+<span class="k">this</span>.notificationsGateway.<span class="t">sendToUser</span>({
+  runId,
+  flowId,
+  userId,
+  flowVersionHistoryId,
+  nodes: <span class="t">Object.fromEntries</span>(
+    nodeIds.<span class="t">map</span>(nodeId =&gt;
+      [nodeId, { status: <span class="s">'CANCELLED'</span> }])
+  ),
+});
+            </div>
+            <div class="box-desc">
+              Formato flat: <code>{ nodeA: { status: 'CANCELLED' }, nodeB: { status: 'CANCELLED' }, ... }</code>. Um único emit contempla todos os nós.
+            </div>
+            <div class="box-file">flux.service.ts:2169-2177</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box cross">
+            <div class="box-title"><span class="badge step">D3</span> NotificationsGateway.sendToUser — rota por sala</div>
+            <div class="code-block">
+<span class="k">sendToUser</span>(data) {
+  <span class="k">this</span>.server
+    .<span class="t">to</span>(<span class="s">`room_user_${data.userId}_flow_${data.flowId}`</span>)
+    .<span class="t">emit</span>(<span class="s">'room_status_updated'</span>, data);
+}
+            </div>
+            <div class="box-desc">
+              Convenção da sala: <code>room_user_{userId}_flow_{flowId}</code>. Cliente entra na sala automaticamente em <code>handleConnection</code> ou explicitamente via <code>@SubscribeMessage('subscribe_to_flow')</code>.
+              <br><br>Evento no browser: <code>'room_status_updated'</code>.
+            </div>
+            <div class="box-file">temporal/notifications.gateway.ts:36-40</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">D4</span> Fallback de erro</div>
+            <div class="box-desc">
+              Todo o emit está dentro de <code>try/catch</code>. Se falhar, chama <code>loggerService.error</code> com <code>error_type: 'node_status_emit_failed'</code>, <code>status: 500</code> e <code>other: { runId, flowId, nodeIds: nodeIds.slice(0, 20) }</code>. Não propaga — o run finaliza normalmente.
+            </div>
+            <div class="box-file">flux.service.ts:2178-2188</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Socket.io como transport</div>
+            <code>@WebSocketGateway({ cors: { origin: '*' } })</code> — Socket.io por baixo. Salas são identificadas por string, cliente se conecta com <code>?userId=X&flowId=Y</code> na query string.
+            <br><br>Ver <code>notifications.gateway.ts:11-24</code>.
+          </div>
+
+          <div class="aside">
+            <div class="aside-title">📎 Sem flowVersionHistoryId, ainda funciona</div>
+            O payload inclui <code>flowVersionHistoryId</code>, mas o gateway usa só <code>userId</code> + <code>flowId</code> pra montar a sala. Se estiver <code>null</code>, o emit acontece mesmo assim (é apenas dado auxiliar pro frontend).
+          </div>
+
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Sem confirmação de entrega</div>
+            Emit Socket.io é <em>fire-and-forget</em>. Se o cliente estiver desconectado (fechou o browser, perdeu net), o evento é jogado fora. Não há retry, não há queueing. O usuário só descobre que cancelou olhando de novo (via GET no runlog ou reload da UI).
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 Contraste com emitNodeStatus</div>
+            <code>emitNodeStatus</code> (linha 2191) manda status <em>por nó individualmente</em> durante o run (<code>RUNNING</code>, <code>COMPLETED</code>, <code>FAILED</code>, <code>CANCELLED</code>). <code>emitCancelledRunStatuses</code> é uma versão em <em>batch</em> — um único emit com N nós de uma vez, no fim.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="note info" style="margin-top:32px">
+    <strong>Resumo — o que sai de 4.1a:</strong>
+    <br>• Row em <code>flow_run_states</code> com <code>cancelledAt</code>, <code>stoppedAtNodeId</code>, <code>notExecutedNodeIds</code> preenchidos
+    <br>• Evento <code>'room_status_updated'</code> emitido no Socket.io — todos os nós não-executados marcados como <code>CANCELLED</code>
+    <br>• Loop principal já saiu antes; esse bloco só documenta e comunica
+    <br>• Se qualquer step falhar (retry esgotado ou emit crash), o run <em>não</em> aborta — segue pra criação do <code>flow_logs</code> normal
+  </div>
+
+  <div class="note">
+    <strong>Observações para migração:</strong>
+    <br>• <code>resolveCancelledRunFootprint</code> é função pura, sem I/O, com spec — reutilizável direto no worker.
+    <br>• <code>runCancellationService.markCancelled</code> depende do Postgres + retry — pode ser chamada de dentro do worker via injection ou virar activity. O retry (3x, 200ms) é razoável pra activity Temporal com custom retry policy.
+    <br>• <code>emitCancelledRunStatuses</code> exige <code>NotificationsGateway</code> (Socket.io do backend). No worker isso <em>não existe</em> — a activity precisa devolver o payload e o backend chamar o emit. Ou usar o padrão do <code>temporal.controller.ts:90</code> que já faz o relay quando a activity termina.
+    <br>• Ordem importa: <em>persist antes de emit</em>. Se inverter, o browser pode receber "cancelled" enquanto o banco ainda não sabe — usuário refresh e vê "pendente".
+    <br>• Prioridade: baixa. Se o worker rodar, ele já tem cancelamento nativo via Temporal signal. Esse código path pode virar dead code depois da migração completa.
+  </div>
+
+  <!-- FOOTER NAV -->
+  <div class="page-footer-nav">
+    <a href="../index.html#step-4-1a" class="back-btn">← Voltar ao diagrama principal</a>
+  </div>
+
+</div>
+<script>
+(function() {
+  function toggle(card) { if (card) card.classList.toggle('collapsed'); }
+  function expand(card) { if (card && card.classList.contains('collapsed')) card.classList.remove('collapsed'); }
+  document.querySelectorAll('.fn-card-header').forEach(function(header) {
+    header.addEventListener('click', function(e) {
+      if (e.target.closest('a')) return;
+      toggle(header.parentElement);
+    });
+  });
+  document.querySelectorAll('a[href^="#fn-"]').forEach(function(link) {
+    link.addEventListener('click', function() {
+      var id = link.getAttribute('href').slice(1);
+      expand(document.getElementById(id));
+    });
+  });
+  if (window.location.hash && window.location.hash.startsWith('#fn-')) {
+    expand(document.querySelector(window.location.hash));
+  }
+  window.addEventListener('hashchange', function() {
+    if (window.location.hash.startsWith('#fn-')) {
+      expand(document.querySelector(window.location.hash));
+    }
+  });
+})();
+</script>
+</body>
+</html>

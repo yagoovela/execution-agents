@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Passo 1.7a — Reset de nós com clearOnExecution por tipo | Detalhamento</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F1F5F9; color: #0F172A; margin: 0; padding: 32px 24px 80px; line-height: 1.4; }
+  .container { max-width: 1500px; margin: 0 auto; }
+  .page-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; padding: 12px 16px; background: white; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); flex-wrap: wrap; }
+  .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748B; }
+  .breadcrumb a { color: #3B82F6; text-decoration: none; font-weight: 500; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #CBD5E1; }
+  .back-btn { display: inline-flex; align-items: center; gap: 6px; background: #0F172A; color: white; padding: 8px 14px; border-radius: 8px; text-decoration: none; font-size: 12.5px; font-weight: 600; }
+  .page-header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+  .page-header .icon { font-size: 32px; }
+  .page-header h1 { margin: 0; font-size: 26px; color: #0F172A; letter-spacing: -0.4px; }
+  .page-sub { color: #64748B; font-size: 13px; margin-bottom: 24px; padding-left: 46px; }
+  .page-sub code { background: #E2E8F0; padding: 1px 6px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; color: #334155; }
+  .overview-mini { background: white; padding: 16px 18px; border-radius: 10px; margin-bottom: 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .overview-mini-title { font-size: 12px; font-weight: 700; color: #334155; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px; }
+  .overview-chain { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .overview-chip { background: #F8FAFC; padding: 6px 12px; border-radius: 6px; border-left: 3px solid #3B82F6; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; font-weight: 600; color: #0F172A; text-decoration: none; display: inline-block; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+  .overview-chip .lbl { display: block; font-size: 9.5px; color: #64748B; font-weight: 500; margin-bottom: 2px; font-family: inherit; text-transform: uppercase; letter-spacing: 0.5px; }
+  .overview-sep { color: #94A3B8; font-size: 18px; font-weight: bold; }
+  .box { background: white; border-radius: 8px; padding: 9px 13px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 4px solid #94A3B8; width: 100%; max-width: 100%; }
+  .box.backend { border-left-color: #3B82F6; }
+  .box.worker { border-left-color: #10B981; }
+  .box.db { border-left-color: #F59E0B; }
+  .box.redis { border-left-color: #EF4444; }
+  .box.s3 { border-left-color: #8B5CF6; }
+  .box.external { border-left-color: #64748B; }
+  .box.decision { border-left-color: #EAB308; background: #FEFCE8; }
+  .box.cross { border-left-color: #A855F7; background: #FAF5FF; }
+  .box-title { font-weight: 600; font-size: 12.5px; color: #0F172A; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .box-desc { font-size: 11.5px; color: #475569; }
+  .box-file { font-size: 10px; color: #94A3B8; font-family: 'SF Mono', Menlo, Consolas, monospace; margin-top: 3px; word-break: break-all; }
+  .box code { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; background: #F1F5F9; padding: 1px 4px; border-radius: 3px; color: #334155; word-break: break-word; }
+  .box-desc code { word-break: break-word; }
+  .badge { display: inline-block; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; }
+  .badge.migrated { background: #D1FAE5; color: #065F46; }
+  .badge.legacy { background: #FEE2E2; color: #991B1B; }
+  .badge.mixed { background: #FEF3C7; color: #92400E; }
+  .badge.step { background: #E0E7FF; color: #3730A3; font-size: 10px; }
+  .badge.cross { background: #F3E8FF; color: #6B21A8; }
+  .arrow { color: #64748B; font-size: 22px; line-height: 1; margin: 1px 0; text-align: center; }
+  .fn-card { margin-top: 28px; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .fn-card-header { background: linear-gradient(to right, #0F172A, #1E293B); color: white; padding: 14px 20px 14px 44px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; cursor: pointer; position: relative; user-select: none; transition: background 0.15s; }
+  .fn-card-header .fn-title { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+  .fn-card-header .fn-title code { background: rgba(255,255,255,0.15); padding: 3px 8px; border-radius: 4px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 13px; }
+  .fn-card-header .fn-loc { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; color: #CBD5E1; }
+  .fn-card-header:hover { background: linear-gradient(to right, #1E293B, #334155); }
+  .fn-card-header::before { content: "▾"; position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: #94A3B8; font-size: 14px; transition: transform 0.2s ease; line-height: 1; }
+  .fn-card.collapsed .fn-card-header::before { transform: translateY(-50%) rotate(-90deg); }
+  .fn-card.collapsed .fn-card-body { display: none; }
+  .fn-card-body { padding: 20px; }
+  .fn-signature { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; background: #F1F5F9; padding: 8px 12px; border-radius: 6px; color: #334155; margin-bottom: 16px; overflow-x: auto; }
+  .fn-purpose { font-size: 13px; color: #475569; margin-bottom: 12px; padding: 10px 14px; background: #EFF6FF; border-left: 3px solid #3B82F6; border-radius: 6px; }
+  .fn-friendly { font-size: 13px; color: #334155; margin-bottom: 20px; padding: 12px 14px 12px 44px; background: #F0FDF4; border-left: 3px solid #10B981; border-radius: 6px; position: relative; line-height: 1.55; }
+  .fn-friendly::before { content: "💬"; position: absolute; left: 14px; top: 10px; font-size: 18px; }
+  .fn-friendly strong { color: #065F46; }
+  .step-friendly { font-size: 13.5px; color: #334155; margin-bottom: 28px; padding: 16px 18px 16px 52px; background: #F0FDF4; border-left: 4px solid #10B981; border-radius: 10px; position: relative; line-height: 1.6; box-shadow: 0 1px 3px rgba(16, 185, 129, 0.08); }
+  .step-friendly::before { content: "💬"; position: absolute; left: 18px; top: 14px; font-size: 22px; }
+  .step-friendly-title { font-weight: 700; color: #065F46; font-size: 13px; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; }
+  .step-friendly ul { margin: 0; padding-left: 18px; }
+  .step-friendly li { margin-bottom: 6px; }
+  .step-friendly li:last-child { margin-bottom: 0; }
+  .step-friendly strong { color: #065F46; }
+  .step-friendly code { background: #DCFCE7; padding: 1px 5px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; color: #065F46; }
+  .step-friendly em { color: #047857; font-style: italic; }
+  .fn-body-cols { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr); gap: 20px; }
+  @media (max-width: 900px) { .fn-body-cols { grid-template-columns: 1fr; } }
+  .fn-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .fn-asides { display: flex; flex-direction: column; gap: 12px; }
+  .aside { background: #FEF3C7; border-left: 4px solid #F59E0B; border-radius: 6px; padding: 10px 12px; font-size: 11.5px; color: #78350F; }
+  .aside.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .aside.warn { background: #FEE2E2; border-left-color: #EF4444; color: #991B1B; }
+  .aside.helper { background: #F3E8FF; border-left-color: #A855F7; color: #6B21A8; }
+  .aside-title { font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+  .aside code { background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 10.5px; word-break: break-word; }
+  .cascade { background: #FEFCE8; border: 1px dashed #EAB308; border-radius: 8px; padding: 12px; margin: 6px 0; }
+  .cascade-title { font-size: 11px; font-weight: 700; color: #713F12; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .cascade-step { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; padding: 6px 8px; background: white; border-radius: 6px; margin-bottom: 4px; font-size: 11.5px; }
+  .cascade-step .cond { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; color: #334155; }
+  .cascade-step .result { font-weight: 700; font-size: 10.5px; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+  .cascade-step .result.pass { background: #D1FAE5; color: #065F46; }
+  .cascade-step .result.deny { background: #FEE2E2; color: #991B1B; }
+  .cascade-step .result.next { background: #E0E7FF; color: #3730A3; }
+  .cascade-step .result.call { background: #FEF3C7; color: #78350F; }
+  .cascade-num { background: #EAB308; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+  .nested-flow { margin: 6px 0; padding: 12px; background: #F0FDF4; border: 1px dashed #10B981; border-radius: 8px; }
+  .nested-flow-title { font-size: 10.5px; font-weight: 700; color: #065F46; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .code-block { background: #0F172A; color: #E2E8F0; padding: 12px 16px; border-radius: 6px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; line-height: 1.6; overflow-x: auto; margin: 6px 0; }
+  .code-block .k { color: #93C5FD; }
+  .code-block .s { color: #86EFAC; }
+  .code-block .c { color: #64748B; font-style: italic; }
+  .code-block .t { color: #FDE68A; }
+  .note { background: #FEF3C7; border-left: 4px solid #F59E0B; padding: 12px 16px; border-radius: 6px; font-size: 12.5px; color: #78350F; margin: 20px 0; }
+  .note.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .note code { background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; }
+  .page-footer-nav { margin-top: 48px; padding: 16px; background: white; border-radius: 10px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .field-table { width: 100%; border-collapse: collapse; font-size: 11px; margin: 8px 0; }
+  .field-table th { text-align: left; padding: 6px 8px; background: #F1F5F9; color: #334155; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; font-size: 10px; border-bottom: 1px solid #CBD5E1; }
+  .field-table td { padding: 5px 8px; border-bottom: 1px solid #F1F5F9; vertical-align: top; }
+  .field-table td:first-child { font-family: 'SF Mono', Menlo, Consolas, monospace; color: #0F172A; font-weight: 600; white-space: nowrap; font-size: 10.5px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-nav">
+    <div class="breadcrumb">
+      <a href="../index.html">📋 Execução de Agente</a>
+      <span class="sep">›</span>
+      <span>Passo 1.7a — Detalhamento</span>
+    </div>
+    <a href="../index.html#step-1-7a" class="back-btn">← Voltar ao diagrama</a>
+  </div>
+
+  <div class="page-header">
+    <span class="icon">🔄</span>
+    <h1>Passo 1.7a — Reset de nós com clearOnExecution por tipo</h1>
+  </div>
+  <div class="page-sub">
+    Bloco em <code>flux.service.ts:2724-2812</code>. Um <code>.map</code> gigantesco em <code>updatedFlows</code> que trata <strong>duas hierarquias distintas</strong> de reset: (1) <code>outputObjectNode</code> sempre limpa (fora do gate), (2) todo o resto testa <code>clearOnExecution</code> truthy e cai numa árvore de sub-branches por tipo. No fim, <code>conditionNode</code> zera o loop counter <em>também</em> fora do gate.
+  </div>
+
+  <div class="step-friendly">
+    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <ul>
+      <li><strong>Um único .map — três fatiamentos distintos:</strong> pra cada node em <code>updatedFlows</code>, primeiro testa se é <code>outputObjectNode</code> (limpeza incondicional), depois se <code>clearOnExecution</code> é truthy (aí cai numa árvore por tipo), e por último se é <code>conditionNode</code> (zera <code>currentLoopCounter</code>). Os dois "sempre limpa" (outputObjectNode e conditionNode) <strong>ignoram</strong> o gate do <code>clearOnExecution</code>.</li>
+      <li><strong>outputObjectNode — reset incondicional:</strong> tudo dele é output derivado, sempre limpa <code>text: ''</code> e <code>textData: []</code>. Não tem sentido preservar entre runs — o output é sempre re-gerado.</li>
+      <li><strong>fluxBox / libraryNode com clearOnExecution:</strong> <code>clearOnExecution</code> aqui é um <em>objeto</em> <code>{ campo1: true, campo2: false }</code>. Faz <code>Object.entries</code> e zera cada campo cuja flag é <code>true</code>. Isso é <em>por-campo</em>, não wholesale.</li>
+      <li><strong>Types que resetam por default:</strong> <code>commandTextNode</code>, <code>voiceBoxNode</code>, <code>imageGenerator</code>, <code>commandContentNode</code>, <code>audioReaderNode</code>, <code>apiCaller</code>, <code>mcpNode</code> — se <code>clearOnExecution</code> truthy, zeram <code>text: ''</code> e <code>canceled: false</code>. Sub-branches: <code>voiceBoxNode</code> retorna cedo com <code>{ canceled: false, audioUrl: '' }</code>; <code>commandContentNode</code> adiciona <code>text.result = ''</code>; <code>apiCaller</code>/<code>mcpNode</code> adicionam <code>{ response: null, errorMessage: null, errorStatusCode: null }</code>.</li>
+      <li><strong>conditionNode.currentLoopCounter — sempre 0:</strong> zerado fora do gate. Necessário porque loop counters seriam eternos entre runs. Mutação in-place — não retorna node novo, muta a referência (footgun sutil).</li>
+    </ul>
+  </div>
+
+  <div class="note info">
+    <strong>Contexto:</strong> essa é a "segunda pasada" de reset — o passo 1.5b tratou fluxObjects; agora 1.7a trata todos os outros types que têm output ou state runtime. Existe uma versão consolidada dessa lógica em <code>node-output-reset.ts</code> (<code>clearStaleNodeOutput</code>, <code>buildClearOnExecutionReset</code>), mas o apiV2 ainda usa o if/else inline aqui — <strong>discrepância viva</strong>.
+  </div>
+
+  <div class="overview-mini">
+    <div class="overview-mini-title">Cadeia em 1.7a</div>
+    <div class="overview-chain">
+      <a href="#fn-a" class="overview-chip"><span class="lbl">A</span>outputObjectNode (sempre)</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>Gate clearOnExecution</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>fluxBox/libraryNode (por campo)</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>7 types com fallback (voice/apiCaller/commandContent/...)</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-e" class="overview-chip"><span class="lbl">E</span>conditionNode.currentLoopCounter = 0</a>
+    </div>
+    <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
+      Resultado: <code>updatedFlows</code> tem output limpo pros types listados + <code>currentLoopCounter = 0</code> em todos os conditionNodes.
+    </div>
+  </div>
+
+  <!-- FN A -->
+  <div class="fn-card collapsed" id="fn-a">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#EAB308;color:white">A</span>
+        <code>outputObjectNode — reset incondicional</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:2725-2734</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        if (nd.type === 'outputObjectNode') { return { ...nd, data: { ...nd.data, text: '', textData: [] } }; }
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Zera o output do <code>outputObjectNode</code> em <em>todos</em> os runs, sem gate. É o único type que faz reset incondicional dentro desse .map — o resto tudo depende do <code>clearOnExecution</code>.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> <code>outputObjectNode</code> é o "endpoint" do agent — o que o run vai devolver como resposta. Seu output é <em>sempre</em> re-gerado a partir dos nodes upstream, então não faz sentido preservar entre runs. Por isso, o reset é hardcoded, não depende de flag. Duas keys são zeradas: <code>text</code> pra string vazia e <code>textData</code> pra array vazio — que é o formato que o output do agent tem (texto puro + array de itens estruturados). O <code>return</code> corta o resto do <code>.map</code> pra esse node — não passa pelo gate do <code>clearOnExecution</code> nem pelo bloco do <code>conditionNode</code>. Bug latente: um <code>outputObjectNode</code> que também tivesse <code>data.currentLoopCounter</code> (impossível na prática, mas em teoria) não seria zerado — o return atalha.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">A1</span> Branch incondicional</div>
+            <div class="code-block">
+<span class="k">if</span> (nd.type === <span class="s">'outputObjectNode'</span>) {
+  <span class="k">return</span> {
+    ...nd,
+    data: {
+      ...nd.data,
+      text: <span class="s">''</span>,
+      textData: [],
+    },
+  };
+}
+            </div>
+            <div class="box-file">flux.service.ts:2725-2734</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box decision">
+            <div class="box-title">Return curto no .map</div>
+            <div class="box-desc">
+              O <code>return</code> curta o resto do map pra esse node — nenhum outro branch (clearOnExecution, conditionNode) é testado.
+            </div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Por que sem gate?</div>
+            O output do agent é sempre re-gerado. Preservar <code>text</code> entre runs enganaria o próximo run mostrando a resposta velha se algo falhar no meio.
+          </div>
+          <div class="aside">
+            <div class="aside-title">📎 Duplicação com clearRunOutputForSeed</div>
+            <code>clearRunOutputForSeed</code> (passo 1.7b) também zera <code>outputObjectNode.text = ''</code>. Redundância intencional — sob-e desce mais uma vez pra garantir.
+          </div>
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Return corta subsequent branches</div>
+            Se um outputObjectNode tivesse também <code>currentLoopCounter</code> (não tem em prática), o zero-loop-counter não roda. Feature: outputObjectNode nunca tem loop counter.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FN B -->
+  <div class="fn-card collapsed" id="fn-b">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#F59E0B;color:white">B</span>
+        <code>Gate clearOnExecution (truthy)</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:2736-2738</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        const clearOnExecution = nd?.data?.clearOnExecution || false;<br>
+        if (clearOnExecution) { ... }
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Porta única de entrada pros branches por-tipo. Só entra se <code>clearOnExecution</code> for truthy (undefined vira false pelo <code>|| false</code>). Tudo lá dentro depende disso — quem não tem a flag, atravessa o gate sem reset.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> a mesma lógica de <code>Boolean(clearOnExecution)</code> do 1.5b, mas em vez de <code>Boolean()</code>, usa <code>|| false</code>. Diferença sutil: <code>Boolean({})</code> = <code>true</code>, mas <code>({}) || false</code> também = <code>{}</code> (que é truthy, então o <code>if</code> passa). Efeito prático: idêntico. O gate simplesmente separa "todo mundo com opt-in de clearing" (dentro do bloco) de "quem não quer" (nada acontece). Nota importante: <em>fluxObjects</em> também têm <code>clearOnExecution</code> mas foram tratados no 1.5b — se um fluxObject caísse aqui (impossível em prática, mas se o filter do 1.5b falhasse), esse bloco não sabe o que fazer com ele (não tem branch pra fluxObject).
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B1</span> Extract + gate</div>
+            <div class="code-block">
+<span class="k">const</span> clearOnExecution = nd?.data?.clearOnExecution || <span class="k">false</span>;
+<span class="k">if</span> (clearOnExecution) {
+  <span class="c">// ... branches por tipo</span>
+}
+            </div>
+            <div class="box-file">flux.service.ts:2736-2738</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="cascade">
+            <div class="cascade-title">🚪 Que types entram no bloco?</div>
+            <div class="cascade-step">
+              <span class="cascade-num">1</span>
+              <span class="cond">fluxBox / libraryNode</span>
+              <span class="result next">branch por-campo (FN C)</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">2</span>
+              <span class="cond">commandTextNode, voiceBoxNode, imageGenerator, commandContentNode, audioReaderNode, apiCaller, mcpNode</span>
+              <span class="result next">branch por-type (FN D)</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">3</span>
+              <span class="cond">outros types com clearOnExecution truthy</span>
+              <span class="result deny">nada acontece</span>
+            </div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Diferença semântica</div>
+            Em <code>fluxBox/libraryNode</code>, <code>clearOnExecution</code> é <em>objeto</em> ({key: bool}). Nos outros, é <em>boolean</em>. A branch acomoda os dois shapes sem checar formato explicitamente.
+          </div>
+          <div class="aside warn">
+            <div class="aside-title">⚠️ fluxObject cai no gate mas sem branch</div>
+            Um fluxObject com <code>clearOnExecution</code> truthy passaria o gate mas não tem branch aqui — ficaria inalterado. Só funciona porque o 1.5b já cuidou dele em memória.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 || false vs Boolean()</div>
+            <code>x || false</code> devolve <code>x</code> se truthy, senão <code>false</code>. <code>Boolean(x)</code> devolve <code>true</code>/<code>false</code>. Aqui o if trata igual, mas <code>clearOnExecution</code> na variável fica com o valor original — importante pro FN C que precisa iterar as chaves.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FN C -->
+  <div class="fn-card collapsed" id="fn-c">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#3B82F6;color:white">C</span>
+        <code>fluxBox / libraryNode — clear por campo</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:2739-2752</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        if (nd.type === 'fluxBox' || nd.type === 'libraryNode') { Object.entries(clearOnExecution).forEach(...) }
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Iterar as chaves de <code>clearOnExecution</code> (objeto <code>{key: bool}</code>) e zerar cada campo do <code>data</code> cujo flag é <code>true</code> — <em>se</em> a chave já existe no <code>data</code>.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> pra <code>fluxBox</code> e <code>libraryNode</code>, o usuário no editor pode escolher <em>por campo</em> qual output resetar — o <code>clearOnExecution</code> não é boolean, é um dicionário tipo <code>{ output1: true, output2: false, output3: true }</code>. Esse branch itera esse dicionário: pra cada par (<code>key</code>, <code>shouldClear</code>), se <code>shouldClear === true</code> e <code>key</code> existe em <code>newData</code>, zera pra string vazia. Curioso: se o <code>output1</code> for um array ou objeto no schema, ainda vira <code>''</code> — o clear é sempre string vazia, sem respeitar shape. Pode causar bugs downstream se algum handler esperar array e receber string. A helper equivalente em <code>node-output-reset.ts:94-114</code> (<code>buildClearOnExecutionReset</code>) é mais defensiva (usa <code>&amp;&amp; data[key] !== ''</code> pra não regravar quando já vazio), mas a versão inline do apiV2 não.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">C1</span> Object.entries + forEach com gate</div>
+            <div class="code-block">
+<span class="k">if</span> (nd.type === <span class="s">'fluxBox'</span> || nd.type === <span class="s">'libraryNode'</span>) {
+  <span class="k">const</span> newData = { ...nd.data };
+  Object.entries(clearOnExecution).forEach(([key, shouldClear]) =&gt; {
+    <span class="k">if</span> (shouldClear === <span class="k">true</span> &amp;&amp; key <span class="k">in</span> newData) {
+      newData[key] = <span class="s">''</span>;
+    }
+  });
+  <span class="k">return</span> { ...nd, data: newData };
+}
+            </div>
+            <div class="box-file">flux.service.ts:2739-2752</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box decision">
+            <div class="box-title">Guardas dentro do forEach</div>
+            <div class="cascade">
+              <div class="cascade-step">
+                <span class="cascade-num">1</span>
+                <span class="cond"><code>shouldClear === true</code> (estrito)</span>
+                <span class="result next">continua</span>
+              </div>
+              <div class="cascade-step">
+                <span class="cascade-num">2</span>
+                <span class="cond"><code>key in newData</code></span>
+                <span class="result next">continua</span>
+              </div>
+              <div class="cascade-step">
+                <span class="cascade-num">3</span>
+                <span class="cond">ambos true</span>
+                <span class="result pass"><code>newData[key] = ''</code></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Sempre string vazia</div>
+            Não importa se o campo original é array/object/number — o clear é sempre <code>''</code>. Isso é a convenção do sistema: "output limpo = string vazia".
+          </div>
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Discrepância com node-output-reset.ts</div>
+            A helper <code>buildClearOnExecutionReset</code> (node-output-reset.ts:94-114) é mais correta — usa <code>data[key] !== ''</code> pra evitar regravar quando já vazio, e retorna só o patch (não o data todo). A versão inline aqui é <em>legacy</em>, ainda não migrada pra usar a helper.
+            <br><br>Bug latente: se algum handler regravar output entre runs, essa versão inline pode zerar coisa nova que foi gravada.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 shouldClear === true strict</div>
+            <code>=== true</code> — comparação estrita. <code>shouldClear = 'true'</code> string ou <code>1</code> não passam. Só literal boolean.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FN D -->
+  <div class="fn-card collapsed" id="fn-d">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#8B5CF6;color:white">D</span>
+        <code>7 types com fallback (voice/apiCaller/commandContent/...)</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:2754-2804</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        if (nd.type === 'commandTextNode' || 'voiceBoxNode' || 'imageGenerator' || 'commandContentNode' || 'audioReaderNode' || 'apiCaller' || 'mcpNode') { ... }
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Reset genérico pros 7 types que têm output "chapado" (não por-campo como fluxBox). Sub-branches especiais pra <code>voiceBoxNode</code> (return cedo com audioUrl), <code>commandContentNode</code> (text.result:''), e <code>apiCaller/mcpNode</code> (response:null + error fields).
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> depois do gate <code>clearOnExecution</code>, se o node cai na lista dos 7 types, entra num sub-if inline enorme. A árvore é: primeiro <code>voiceBoxNode</code> tem um <code>return</code> cedo — ele é especial porque tem <code>audioUrl</code> em vez de <code>text</code>, e retorna direto com <code>{ canceled: false, audioUrl: '' }</code>. Depois define <code>newData</code> inicialmente <code>{}</code> e adiciona: <code>text: { ...nd.data.text, result: '' }</code> se é <code>commandContentNode</code> (esse type usa text como objeto aninhado com <code>result</code>); ou <code>{ response: null, errorMessage: null, errorStatusCode: null }</code> se é <code>apiCaller</code> ou <code>mcpNode</code>. Por fim, retorna <code>{ ...nd, data: { ...nd.data, text: '', canceled: false, ...newData } }</code> — <em>todos</em> os 7 types ganham <code>text: ''</code> e <code>canceled: false</code> como base, plus o newData específico. Curiosidade: <code>audioReaderNode</code>, <code>commandTextNode</code>, <code>imageGenerator</code> não têm <code>newData</code> especial — só levam o reset base. Nota: essa lógica tem uma versão já refatorada em <code>clearStaleNodeOutput</code> em <code>node-output-reset.ts:20-55</code> — mais limpa, includes <code>jsonRequestBody: ''</code> no apiCaller/mcpNode que essa versão inline <strong>não tem</strong>.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">D1</span> Early return: voiceBoxNode</div>
+            <div class="code-block">
+<span class="k">if</span> (nd.type === <span class="s">'voiceBoxNode'</span>) {
+  <span class="k">return</span> {
+    ...nd,
+    data: { ...nd.data, canceled: <span class="k">false</span>, audioUrl: <span class="s">''</span> },
+  };
+}
+            </div>
+            <div class="box-file">flux.service.ts:2763-2772</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">D2</span> Sub-branch: commandContentNode</div>
+            <div class="code-block">
+<span class="k">const</span> isCommandContentNode = nd.type === <span class="s">'commandContentNode'</span>;
+<span class="k">let</span> newData = {};
+<span class="k">if</span> (isCommandContentNode) {
+  newData = {
+    text: { ...nd.data.text, result: <span class="s">''</span> },
+  };
+}
+            </div>
+            <div class="box-file">flux.service.ts:2774-2785</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">D3</span> Sub-branch: apiCaller / mcpNode</div>
+            <div class="code-block">
+<span class="k">const</span> isApiCaller = nd.type === <span class="s">'apiCaller'</span> || nd.type === <span class="s">'mcpNode'</span>;
+<span class="k">if</span> (isApiCaller) {
+  newData = {
+    response: <span class="k">null</span>,
+    errorMessage: <span class="k">null</span>,
+    errorStatusCode: <span class="k">null</span>,
+  };
+}
+            </div>
+            <div class="box-file">flux.service.ts:2787-2793</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">D4</span> Merge final — todos os 7 types</div>
+            <div class="code-block">
+<span class="k">return</span> {
+  ...nd,
+  data: {
+    ...nd.data,
+    text: <span class="s">''</span>,
+    canceled: <span class="k">false</span>,
+    ...newData,  <span class="c">// pode ter text: {...} sobrescrevendo o text: ''</span>
+  },
+};
+            </div>
+            <div class="box-file">flux.service.ts:2795-2803</div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Discrepância com clearStaleNodeOutput</div>
+            A versão refatorada em <code>node-output-reset.ts:20-55</code> inclui <code>jsonRequestBody: ''</code> no reset de apiCaller/mcpNode. A versão inline <strong>não</strong> tem isso. Bug latente: request body velho pode vazar pro run novo em apiCaller.
+          </div>
+          <div class="aside info">
+            <div class="aside-title">🎯 Precedência do spread</div>
+            <code>{ text: '', canceled: false, ...newData }</code> — se <code>newData.text</code> existir (commandContentNode), sobrescreve o <code>text: ''</code>. Ordem intencional.
+          </div>
+          <div class="aside">
+            <div class="aside-title">📎 audioReaderNode / imageGenerator sem newData</div>
+            Esses dois estão na lista de types mas nenhum sub-branch os trata especificamente. Recebem só <code>text: ''</code> + <code>canceled: false</code>.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 Onde clearStaleNodeOutput é usado?</div>
+            <code>clearRunOutputForSeed</code> (passo 1.7b) chama <code>clearStaleNodeOutput</code>. Ou seja, existe caminho <em>duplicado</em> — esse .map inline + clearRunOutputForSeed <em>logo depois</em>. Legacy sobreposto com versão nova.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FN E -->
+  <div class="fn-card collapsed" id="fn-e">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#EF4444;color:white">E</span>
+        <code>conditionNode.currentLoopCounter = 0</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:2807-2809</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        if (nd.type === 'conditionNode') { nd.data.currentLoopCounter = 0; }
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Zerar o contador de loops <em>fora</em> do gate de <code>clearOnExecution</code>. É a única mutação in-place no .map — muta <code>nd.data.currentLoopCounter</code> diretamente sem retornar node novo.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> <code>conditionNode</code> tem um contador de iterações usado pra terminar loops (semelhante a "for count &lt; 10"). Esse contador deve começar em zero pra cada run — se ficasse com o valor do run passado, o loop terminaria imediatamente ou não sairia. Curiosidade: o reset é <strong>mutação in-place</strong> — <code>nd.data.currentLoopCounter = 0</code> muta o objeto original, não retorna novo. Isso é diferente do resto do .map, que sempre spread cria novos. É um footgun sutil porque se algum código de <em>fora</em> tiver referência pro node original, essa mutação aparece lá também. Em prática, funciona porque o <code>getFlow.nodes</code> foi processado pelo <code>stripStaleErrorState</code> (passo 1.5a) que já criou cópias — a referência original do banco não é mais compartilhada. Mas fica como "convenção sem contract".
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">E1</span> Mutação in-place</div>
+            <div class="code-block">
+<span class="k">if</span> (nd.type === <span class="s">'conditionNode'</span>) {
+  nd.data.currentLoopCounter = <span class="k">0</span>;
+  <span class="c">// nota: sem return — cai no return nd default lá embaixo</span>
+}
+
+<span class="k">return</span> nd;  <span class="c">// default do .map</span>
+            </div>
+            <div class="box-file">flux.service.ts:2807-2811</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box decision">
+            <div class="box-title">Efeito no updatedFlows</div>
+            <div class="box-desc">
+              O node retornado é o <em>mesmo</em> objeto (mutado in-place), não uma cópia. Se algum código já leu <code>nd.data.currentLoopCounter</code> antes desse map, viu o valor velho — a mutação só afeta reads depois.
+            </div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Única mutação in-place do .map</div>
+            Todos os outros branches criam objetos novos via spread. Só o conditionNode muta a referência original. Inconsistência de estilo — pode ser refactor accident ou intenção obscura.
+          </div>
+          <div class="aside info">
+            <div class="aside-title">🎯 Fora do gate clearOnExecution</div>
+            Loop counter <strong>sempre</strong> reseta, independente de flag. Faz sentido: um loop counter velho quebra semântica de loop.
+          </div>
+          <div class="aside">
+            <div class="aside-title">📎 Onde currentLoopCounter é usado</div>
+            No handler do <code>conditionNode</code> na fase 3 do apiV2. Incrementa a cada iteração do loop, testa contra <code>data.maxLoop</code> pra decidir se continua.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 Como isso combina com outputObjectNode</div>
+            Se um node é <em>ambos</em> outputObjectNode e conditionNode (impossível no schema), o <code>return</code> de A curta antes de E. Em prática, types são exclusivos.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note info" style="margin-top:32px">
+    <strong>Resumo — o que sai de 1.7a:</strong>
+    <br>• <code>updatedFlows</code> mutado: <code>outputObjectNode</code> zerado (sempre); nodes com clearOnExecution truthy resetados por type
+    <br>• <code>conditionNode.currentLoopCounter</code> = 0 em <em>todos</em> os conditionNodes
+    <br>• Alocações: N nodes novos (spread), 1 mutação in-place (conditionNode)
+    <br>• Zero I/O — puro compute em memória
+  </div>
+
+  <div class="note">
+    <strong>Observações para migração:</strong>
+    <br>• <strong>Discrepância crítica com node-output-reset.ts</strong>: esse .map inline é uma <em>versão legacy</em> das helpers em <code>node-output-reset.ts</code>. As helpers têm o <code>jsonRequestBody: ''</code> pro apiCaller e são mais defensivas. Migração deve usar as helpers e deletar o inline — mas <em>testar rigorosamente</em> por causa da assimetria.
+    <br>• Mutação in-place do <code>currentLoopCounter</code> quebra pattern de imutabilidade — no worker, precisaria retornar node novo ou explicitar contract.
+    <br>• A árvore de branches por type é <em>manutenção infeliz</em>: adicionar um novo node type que precisa reset exige tocar aqui, <code>clearStaleNodeOutput</code>, <code>buildFluxObjectClearOnExecution</code>, <code>clearRunOutputForSeed</code>. Fácil esquecer.
+    <br>• Prioridade média-alta: se o worker rodar sem esse reset, resposta do run anterior "vaza" pro novo — bug visível pra usuário.
+    <br>• <strong>Watch out</strong>: se qualquer parte migrar antes das outras, os dois paths podem divergir silenciosamente (backend legacy resetando um jeito, worker resetando outro). Consolidar tudo em node-output-reset.ts <em>antes</em> de migrar.
+  </div>
+
+  <div class="page-footer-nav">
+    <a href="../index.html#step-1-7a" class="back-btn">← Voltar ao diagrama principal</a>
+  </div>
+
+</div>
+<script>
+(function() {
+  function toggle(card) { if (card) card.classList.toggle('collapsed'); }
+  function expand(card) { if (card && card.classList.contains('collapsed')) card.classList.remove('collapsed'); }
+  document.querySelectorAll('.fn-card-header').forEach(function(header) {
+    header.addEventListener('click', function(e) {
+      if (e.target.closest('a')) return;
+      toggle(header.parentElement);
+    });
+  });
+  document.querySelectorAll('a[href^="#fn-"]').forEach(function(link) {
+    link.addEventListener('click', function() {
+      var id = link.getAttribute('href').slice(1);
+      expand(document.getElementById(id));
+    });
+  });
+  if (window.location.hash && window.location.hash.startsWith('#fn-')) {
+    expand(document.querySelector(window.location.hash));
+  }
+  window.addEventListener('hashchange', function() {
+    if (window.location.hash.startsWith('#fn-')) {
+      expand(document.querySelector(window.location.hash));
+    }
+  });
+})();
+</script>
+</body>
+</html>

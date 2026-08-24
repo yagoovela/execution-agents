@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Passo 1.1a — Serviços auxiliares acionados pela fila | Detalhamento</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #F1F5F9;
+    color: #0F172A;
+    margin: 0;
+    padding: 32px 24px 80px;
+    line-height: 1.4;
+  }
+  .container { max-width: 1500px; margin: 0 auto; }
+
+  /* Top nav */
+  .page-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    flex-wrap: wrap;
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #64748B;
+  }
+  .breadcrumb a {
+    color: #3B82F6;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #CBD5E1; }
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #0F172A;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+
+  /* Page header */
+  .page-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 8px;
+  }
+  .page-header .icon { font-size: 32px; }
+  .page-header h1 {
+    margin: 0;
+    font-size: 26px;
+    color: #0F172A;
+    letter-spacing: -0.4px;
+  }
+  .page-sub {
+    color: #64748B;
+    font-size: 13px;
+    margin-bottom: 24px;
+    padding-left: 46px;
+  }
+  .page-sub code {
+    background: #E2E8F0;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 12px;
+    color: #334155;
+  }
+
+  /* Overview chain */
+  .overview-mini {
+    background: white;
+    padding: 16px 18px;
+    border-radius: 10px;
+    margin-bottom: 28px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .overview-mini-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 12px;
+  }
+  .overview-chain {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .overview-chip {
+    background: #F8FAFC;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border-left: 3px solid #3B82F6;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #0F172A;
+    text-decoration: none;
+    display: inline-block;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+  .overview-chip .lbl {
+    display: block;
+    font-size: 9.5px;
+    color: #64748B;
+    font-weight: 500;
+    margin-bottom: 2px;
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .overview-sep { color: #94A3B8; font-size: 18px; font-weight: bold; }
+
+  /* Boxes */
+  .box {
+    background: white;
+    border-radius: 8px;
+    padding: 9px 13px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border-left: 4px solid #94A3B8;
+    width: 100%;
+    max-width: 100%;
+  }
+  .box.backend    { border-left-color: #3B82F6; }
+  .box.worker     { border-left-color: #10B981; }
+  .box.db         { border-left-color: #F59E0B; }
+  .box.redis      { border-left-color: #EF4444; }
+  .box.s3         { border-left-color: #8B5CF6; }
+  .box.external   { border-left-color: #64748B; }
+  .box.decision { border-left-color: #EAB308; background: #FEFCE8; }
+  .box.cross { border-left-color: #A855F7; background: #FAF5FF; }
+
+  .box-title {
+    font-weight: 600;
+    font-size: 12.5px;
+    color: #0F172A;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .box-desc { font-size: 11.5px; color: #475569; }
+  .box-file {
+    font-size: 10px;
+    color: #94A3B8;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    margin-top: 3px;
+    word-break: break-all;
+  }
+  .box code {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    background: #F1F5F9;
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: #334155;
+    word-break: break-word;
+  }
+  .box-desc code { word-break: break-word; }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .badge.migrated { background: #D1FAE5; color: #065F46; }
+  .badge.legacy   { background: #FEE2E2; color: #991B1B; }
+  .badge.mixed    { background: #FEF3C7; color: #92400E; }
+  .badge.step     { background: #E0E7FF; color: #3730A3; font-size: 10px; }
+  .badge.cross    { background: #F3E8FF; color: #6B21A8; }
+
+  /* Arrows */
+  .arrow {
+    color: #64748B;
+    font-size: 22px;
+    line-height: 1;
+    margin: 1px 0;
+    text-align: center;
+  }
+  .converge { text-align: center; color: #64748B; font-size: 22px; margin: 6px 0; }
+
+  /* Function card */
+  .fn-card {
+    margin-top: 28px;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .fn-card-header {
+    background: linear-gradient(to right, #0F172A, #1E293B);
+    color: white;
+    padding: 14px 20px 14px 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .fn-card-header .fn-title {
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .fn-card-header .fn-title code {
+    background: rgba(255,255,255,0.15);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 13px;
+  }
+  .fn-card-header .fn-loc {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #CBD5E1;
+  }
+  .fn-card-header:hover { background: linear-gradient(to right, #1E293B, #334155); }
+  .fn-card-header::before {
+    content: "▾";
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+    font-size: 14px;
+    transition: transform 0.2s ease;
+    line-height: 1;
+  }
+  .fn-card.collapsed .fn-card-header::before {
+    transform: translateY(-50%) rotate(-90deg);
+  }
+  .fn-card.collapsed .fn-card-body { display: none; }
+  .fn-card-body { padding: 20px; }
+
+  .fn-signature {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    background: #F1F5F9;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: #334155;
+    margin-bottom: 16px;
+    overflow-x: auto;
+  }
+  .fn-purpose {
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    background: #EFF6FF;
+    border-left: 3px solid #3B82F6;
+    border-radius: 6px;
+  }
+  .fn-friendly {
+    font-size: 13px;
+    color: #334155;
+    margin-bottom: 20px;
+    padding: 12px 14px 12px 44px;
+    background: #F0FDF4;
+    border-left: 3px solid #10B981;
+    border-radius: 6px;
+    position: relative;
+    line-height: 1.55;
+  }
+  .fn-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 14px;
+    top: 10px;
+    font-size: 18px;
+  }
+  .fn-friendly strong {
+    color: #065F46;
+  }
+
+  /* Step-level friendly summary (page-wide, appears after page-sub) */
+  .step-friendly {
+    font-size: 13.5px;
+    color: #334155;
+    margin-bottom: 28px;
+    padding: 16px 18px 16px 52px;
+    background: #F0FDF4;
+    border-left: 4px solid #10B981;
+    border-radius: 10px;
+    position: relative;
+    line-height: 1.6;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.08);
+  }
+  .step-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 18px;
+    top: 14px;
+    font-size: 22px;
+  }
+  .step-friendly-title {
+    font-weight: 700;
+    color: #065F46;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 8px;
+  }
+  .step-friendly ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .step-friendly li {
+    margin-bottom: 6px;
+  }
+  .step-friendly li:last-child {
+    margin-bottom: 0;
+  }
+  .step-friendly strong {
+    color: #065F46;
+  }
+  .step-friendly code {
+    background: #DCFCE7;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: #065F46;
+  }
+  .step-friendly em {
+    color: #047857;
+    font-style: italic;
+  }
+
+  .fn-body-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 900px) {
+    .fn-body-cols { grid-template-columns: 1fr; }
+  }
+  .fn-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .fn-asides {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Aside panels */
+  .aside {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 11.5px;
+    color: #78350F;
+  }
+  .aside.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .aside.warn { background: #FEE2E2; border-left-color: #EF4444; color: #991B1B; }
+  .aside.helper { background: #F3E8FF; border-left-color: #A855F7; color: #6B21A8; }
+  .aside-title {
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .aside code {
+    background: rgba(255,255,255,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    word-break: break-word;
+  }
+
+  /* Cascade */
+  .cascade {
+    background: #FEFCE8;
+    border: 1px dashed #EAB308;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 6px 0;
+  }
+  .cascade-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #713F12;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .cascade-step {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 8px;
+    background: white;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    font-size: 11.5px;
+  }
+  .cascade-step .cond {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #334155;
+  }
+  .cascade-step .result {
+    font-weight: 700;
+    font-size: 10.5px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .cascade-step .result.pass  { background: #D1FAE5; color: #065F46; }
+  .cascade-step .result.deny  { background: #FEE2E2; color: #991B1B; }
+  .cascade-step .result.next  { background: #E0E7FF; color: #3730A3; }
+  .cascade-step .result.call  { background: #FEF3C7; color: #78350F; }
+  .cascade-num {
+    background: #EAB308;
+    color: white;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* Nested sub-flow */
+  .nested-flow {
+    margin: 6px 0;
+    padding: 12px;
+    background: #F0FDF4;
+    border: 1px dashed #10B981;
+    border-radius: 8px;
+  }
+  .nested-flow-title {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #065F46;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  /* Code block */
+  .code-block {
+    background: #0F172A;
+    color: #E2E8F0;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 6px 0;
+  }
+  .code-block .k { color: #93C5FD; }
+  .code-block .s { color: #86EFAC; }
+  .code-block .c { color: #64748B; font-style: italic; }
+  .code-block .t { color: #FDE68A; }
+
+  /* Notes */
+  .note {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    color: #78350F;
+    margin: 20px 0;
+  }
+  .note.info {
+    background: #EFF6FF;
+    border-left-color: #3B82F6;
+    color: #1E3A8A;
+  }
+  .note code {
+    background: rgba(255,255,255,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+  }
+
+  .page-footer-nav {
+    margin-top: 48px;
+    padding: 16px;
+    background: white;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .field-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin: 8px 0;
+  }
+  .field-table th {
+    text-align: left;
+    padding: 6px 8px;
+    background: #F1F5F9;
+    color: #334155;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    font-size: 10px;
+    border-bottom: 1px solid #CBD5E1;
+  }
+  .field-table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid #F1F5F9;
+    vertical-align: top;
+  }
+  .field-table td:first-child {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    color: #0F172A;
+    font-weight: 600;
+    white-space: nowrap;
+    font-size: 10.5px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- TOP NAV -->
+  <div class="page-nav">
+    <div class="breadcrumb">
+      <a href="../index.html">📋 Execução de Agente</a>
+      <span class="sep">›</span>
+      <span>Passo 1.1a — Detalhamento</span>
+    </div>
+    <a href="../index.html#step-1-1" class="back-btn">← Voltar ao diagrama</a>
+  </div>
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <span class="icon">📊</span>
+    <h1>Passo 1.1a — Serviços auxiliares acionados pela fila</h1>
+  </div>
+  <div class="page-sub">
+    Bloco em <code>apiV2Job.processor.ts:38-42</code> (injects) + <code>:63-108</code> (start/mid) + <code>:133-152</code> (catch). O processor grava rastreamento em <strong>duas tabelas independentes</strong>: <code>mcp_run_status</code> (via <code>McpRunStatusService</code>) e <code>flow_execution_status</code> (via <code>FlowExecutionStatusService</code>). Cada uma é opcional e ativada por gate diferente no payload.
+  </div>
+
+  <!-- Step friendly summary -->
+  <div class="step-friendly">
+    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <ul>
+      <li><strong>Dois rastreadores independentes convivendo:</strong> o processor injeta <code>McpRunStatusService</code> E <code>FlowExecutionStatusService</code> — cada um escreve numa tabela própria, com colunas parecidas mas separadas. Nenhum dos dois é obrigatório; ambos têm gate.</li>
+      <li><strong>Gate MCP:</strong> só grava em <code>mcp_run_status</code> se <code>params.mcpTracking</code> veio preenchido no payload — objeto com <code>{ workspaceId, agentId, tokenId }</code>. Isso só acontece quando o run foi disparado via MCP tool.</li>
+      <li><strong>Gate FES:</strong> só grava em <code>flow_execution_status</code> se <code>params.executionId</code> veio no payload. Esse ID é criado por endpoints HTTP de trigger que oferecem callback opt-in (o cliente cria o registro antes de enfileirar).</li>
+      <li><strong>Marcações em pares:</strong> antes do <code>apiV2</code> ⇒ <code>markRunning</code> (MCP) + <code>markInProgress</code> (FES). Depois do <code>apiV2</code> ⇒ <code>markFinished</code> (MCP) com status <code>completed</code>/<code>error</code> + <code>markCompleted</code>/<code>markError</code> (FES). Ambos recebem <code>durationMs</code>, tokens e cost.</li>
+      <li><strong>Catch replica tudo:</strong> em exception, ambas as marcações finais rodam de novo com <code>status: 'error'</code>, tokens <code>0</code>, cost <code>0</code>, e a mensagem do erro. Nada é deixado em <em>in_progress</em>.</li>
+      <li><strong>Consumo:</strong> MCP é lida pela API do MCP (endpoints de status/run history da tool). FES é lida por endpoints REST que polling do status de execuções trigadas — cliente consulta pelo <code>executionId</code>.</li>
+    </ul>
+  </div>
+
+  <div class="note info">
+    <strong>Contexto:</strong> essas duas tabelas foram criadas em <em>épocas</em> diferentes pra necessidades parecidas. MCP surgiu pra atender a ferramenta MCP (agente conversando com Claude/etc.); FES surgiu pra callbacks REST v2 (webhooks confiáveis). Elas <strong>não se conversam</strong> — se o mesmo run precisar dos dois, o processor escreve nos dois lugares.
+  </div>
+
+  <!-- Overview chain -->
+  <div class="overview-mini">
+    <div class="overview-mini-title">Cadeia de chamadas em 1.1a</div>
+    <div class="overview-chain">
+      <a href="#fn-a" class="overview-chip"><span class="lbl">A · gate MCP</span>markRunning(processId)</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>markFinished({status, tokens, cost, durationMs, error})</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-c" class="overview-chip"><span class="lbl">C · gate FES</span>markInProgress(id)</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>markCompleted / markError</a>
+    </div>
+    <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
+      Resultado final: 0, 1 ou 2 rows atualizadas em tabelas diferentes conforme os gates. Colunas <code>tokens/cost/durationMs</code> só ficam corretas no happy path — no catch vão zeradas.
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION A: markRunning -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-a">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#EAB308;color:white">A</span>
+        <code>McpRunStatusService.markRunning(processId)</code>
+        <span class="badge mixed" style="font-size:9px">condicional</span>
+      </div>
+      <div class="fn-loc">mcp-run-status.service.ts:38-40</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        async markRunning(id: string): Promise&lt;void&gt;  // UPDATE mcp_run_status SET status='in_progress' WHERE id=$1
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Marca a row do MCP como <em>in_progress</em> — sinaliza que o job Bull saiu da <em>pending</em> (criada pelo endpoint MCP) e entrou em execução. <strong>Só executa se</strong> <code>params.mcpTracking</code> veio preenchido no payload.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> pense nele como um <em>vigia da linha de produção</em>. Quando o run começa via MCP, existe uma row lá em <code>mcp_run_status</code> com status <em>pending</em> (criada pelo endpoint que chamou a tool). O processor entra em ação, vê que o payload tem <code>mcpTracking</code>, e sacode aquela row: "opa, agora está rodando de verdade". É uma única query <code>UPDATE</code> — nenhuma checagem de existência, nenhum retorno. Se o <code>processId</code> não bater com nada, o UPDATE some silenciosamente. E note o gate: se o run veio de outro caminho que não é MCP (ex.: um trigger interno de <code>flowCallerNode</code>), esse método <strong>nem é chamado</strong> — a tabela MCP ignora.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box decision">
+            <div class="box-title"><span class="badge step">A1</span> Gate no processor</div>
+            <div class="code-block">
+<span class="k">if</span> (params.<span class="s">mcpTracking</span>) {
+  <span class="k">await</span> this.mcpRunStatusService.<span class="t">markRunning</span>(processId);
+}
+            </div>
+            <div class="box-file">apiV2Job.processor.ts:63-65</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box db">
+            <div class="box-title"><span class="badge step">A2</span> UPDATE mcp_run_status SET status='in_progress'</div>
+            <div class="code-block">
+<span class="k">async</span> <span class="t">markRunning</span>(id: <span class="t">string</span>): <span class="t">Promise&lt;void&gt;</span> {
+  <span class="k">await</span> this.repository.<span class="t">update</span>(
+    { id },
+    { status: <span class="s">'in_progress'</span> }
+  );
+}
+            </div>
+            <div class="box-file">mcp-run-status.service.ts:38-40</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">📊 Tabela mcp_run_status</div>
+            Row = uma execução de run via MCP tool. Campos-chave (<code>mcp_run_status.entity.ts</code>):
+            <table class="field-table">
+              <tr><th>Campo</th><th>Descrição</th></tr>
+              <tr><td>id</td><td>UUID (= processId do job)</td></tr>
+              <tr><td>workspaceId</td><td>MCP workspace (indexed)</td></tr>
+              <tr><td>agentId</td><td>Agente/flow que roda</td></tr>
+              <tr><td>status</td><td>pending / in_progress / completed / error</td></tr>
+              <tr><td>tokens</td><td>float, default 0</td></tr>
+              <tr><td>cost</td><td>float, default 0</td></tr>
+              <tr><td>durationMs</td><td>int, default 0</td></tr>
+              <tr><td>errorMessage</td><td>text, nullable</td></tr>
+              <tr><td>versionId</td><td>uuid, nullable</td></tr>
+              <tr><td>currentWorkflowId</td><td>varchar, nullable (Temporal wf id)</td></tr>
+              <tr><td>triggeredByTokenId</td><td>uuid, nullable</td></tr>
+            </table>
+          </div>
+
+          <div class="aside">
+            <div class="aside-title">🎯 Consumido por</div>
+            Endpoints do <code>app-mcp/</code> que retornam status de runs pro cliente MCP (Claude Desktop / etc.). O cliente faz polling nessa tabela via <code>findByProcessId</code>.
+            <br><br>Também usado por <code>resolveTriggeredByName</code> (mcp-run-status.service.ts:84-91) pra mostrar qual token disparou o run.
+          </div>
+
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Sem checagem de existência</div>
+            <code>repository.update({ id }, ...)</code> silenciosamente não faz nada se o id não bater. Se o endpoint MCP não criou a row antes (via <code>createPending</code>), o marcaRunning some sem log. Debug ruim.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 params.mcpTracking shape</div>
+            <code>{ workspaceId: string; agentId: string; tokenId: string }</code> — vem do <code>ApiV2QueueModel.params.mcpTracking</code> (models/apiV2JobModel.ts:28). O <code>tokenId</code> daqui vira o <code>mcpTokenId</code> passado pro <code>apiV2</code>.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION B: markFinished -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-b">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#F59E0B;color:white">B</span>
+        <code>McpRunStatusService.markFinished({ id, status, tokens, cost, durationMs, errorMessage })</code>
+      </div>
+      <div class="fn-loc">mcp-run-status.service.ts:42-60</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        async markFinished(params: { id, status: 'completed' | 'error', tokens, cost, durationMs, errorMessage }): Promise&lt;void&gt;
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Fecha a row do MCP com resultado — status <code>completed</code> ou <code>error</code> + métricas totais. Chamado no <em>happy path</em> (com valores reais) e no <em>catch</em> (com zeros).
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> é o <em>fechamento da linha de produção</em> pra MCP. Recebe 6 campos e faz uma única query <code>UPDATE</code> populando todos: status, tokens, cost, durationMs, errorMessage. O tipo do <code>status</code> é apertado (só <code>'completed'</code> ou <code>'error'</code>, via <code>Extract&lt;McpRunStatusValue, ...&gt;</code>) — impossível marcar como <em>in_progress</em> por engano aqui. No happy path, o processor calcula os números reais (<code>result.totalTokensUsed</code>, <code>result.totalCost</code>, <code>Date.now() - startedAt</code>). No catch, hardcoded como <code>0</code>. Detalhe importante: a query <strong>não</strong> seta <code>updatedAt</code> manualmente — o TypeORM cuida disso via <code>@UpdateDateColumn</code>. E igual ao markRunning, se o <code>id</code> não existir, o UPDATE some sem barulho.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B1</span> Chamada happy path (com métricas reais)</div>
+            <div class="code-block">
+<span class="k">if</span> (params.<span class="s">mcpTracking</span>) {
+  <span class="k">await</span> this.mcpRunStatusService.<span class="t">markFinished</span>({
+    <span class="k">id</span>: processId,
+    <span class="k">status</span>: result.<span class="s">nodeError</span> ? <span class="s">'error'</span> : <span class="s">'completed'</span>,
+    <span class="k">tokens</span>: result.<span class="s">totalTokensUsed</span>,
+    <span class="k">cost</span>: result.<span class="s">totalCost</span>,
+    durationMs,
+    <span class="k">errorMessage</span>: result.<span class="s">nodeError</span> ?? <span class="k">null</span>,
+  });
+}
+            </div>
+            <div class="box-file">apiV2Job.processor.ts:79-88</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B2</span> Chamada no catch (zeros hard-coded)</div>
+            <div class="code-block">
+<span class="k">if</span> (params.<span class="s">mcpTracking</span>) {
+  <span class="k">await</span> this.mcpRunStatusService.<span class="t">markFinished</span>({
+    <span class="k">id</span>: processId,
+    <span class="k">status</span>: <span class="s">'error'</span>,
+    <span class="k">tokens</span>: <span class="s">0</span>,       <span class="c">// hardcoded</span>
+    <span class="k">cost</span>: <span class="s">0</span>,         <span class="c">// hardcoded</span>
+    durationMs,
+    errorMessage,
+  });
+}
+            </div>
+            <div class="box-file">apiV2Job.processor.ts:133-142</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box db">
+            <div class="box-title"><span class="badge step">B3</span> Impl — repository.update com 5 campos</div>
+            <div class="code-block">
+<span class="k">await</span> this.repository.<span class="t">update</span>(
+  { id: params.id },
+  {
+    status: params.status,
+    tokens: params.tokens,
+    cost: params.cost,
+    durationMs: params.durationMs,
+    errorMessage: params.errorMessage,
+  },
+);
+            </div>
+            <div class="box-file">mcp-run-status.service.ts:50-59</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Extract type — status apertado</div>
+            <code>status: Extract&lt;McpRunStatusValue, 'completed' | 'error'&gt;</code> — o TS impede passar <em>pending</em> ou <em>in_progress</em> pro markFinished. Segurança de tipo pra evitar corromper a máquina de estado.
+          </div>
+
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Catch zera métricas reais</div>
+            Se o <code>apiV2</code> jogou exception <em>depois</em> de fazer calls caras pra provider (Anthropic, OpenAI), os tokens/cost reais ficam invisíveis nessa tabela. Fica <code>0</code>. Contabilidade fica bugada. Pra billing preciso, precisa cruzar com outras fontes (logs de provider, run_log).
+          </div>
+
+          <div class="aside">
+            <div class="aside-title">📎 Diferença vs markCancelled</div>
+            Existe também <code>markCancelled(id)</code> (mcp-run-status.service.ts:66-71) que grava <code>{ status: 'error', errorMessage: 'Run cancelled' }</code> sem tocar em tokens/cost. Usado por endpoint de cancel — <strong>não</strong> é chamado pelo processor aqui.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 Timestamps automáticos</div>
+            <code>updatedAt</code> é atualizado sozinho via <code>@UpdateDateColumn</code>. O <code>createdAt</code> foi setado no <code>createPending</code>. Não tem <em>finishedAt</em> explícito — o timestamp de fim é implicitamente o <code>updatedAt</code> da última mudança.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION C: markInProgress -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-c">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#3B82F6;color:white">C</span>
+        <code>FlowExecutionStatusService.markInProgress(executionId)</code>
+        <span class="badge mixed" style="font-size:9px">condicional</span>
+      </div>
+      <div class="fn-loc">flow-execution-status.service.ts:28-33</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        async markInProgress(id: string): Promise&lt;void&gt;  // status='in_progress', startedAt=NOW()
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Marca a row em <code>flow_execution_status</code> como <em>in_progress</em> e <strong>grava o timestamp de início</strong>. É o análogo do <code>markRunning</code> pro rastreamento REST v2 (independente do MCP).
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> é o <em>equivalente do vigia, mas pra outra tabela</em>. Se o run veio de um endpoint REST v2 que oferece callback opt-in, o endpoint criou uma row <em>pending</em> em <code>flow_execution_status</code> antes de enfileirar (via <code>create</code>), e passou o <code>executionId</code> no payload. Aqui o processor confere: se o <code>executionId</code> existe, chama <code>markInProgress</code> — que faz o UPDATE trocando status pra <em>in_progress</em> <strong>e</strong> populando <code>startedAt</code> com <code>new Date()</code>. Essa diferença é importante em relação ao markRunning do MCP: <strong>FES tem startedAt/finishedAt explícitos</strong>, MCP não tem (só o updatedAt automático). Consequência: no FES, dá pra calcular a duração diretamente pelas colunas; no MCP, só via o campo <code>durationMs</code> que o processor calcula em memória.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box decision">
+            <div class="box-title"><span class="badge step">C1</span> Gate no processor</div>
+            <div class="code-block">
+<span class="k">if</span> (executionId) {
+  <span class="k">await</span> this.flowExecutionStatusService.<span class="t">markInProgress</span>(executionId);
+}
+            </div>
+            <div class="box-file">apiV2Job.processor.ts:67-69</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box db">
+            <div class="box-title"><span class="badge step">C2</span> UPDATE flow_execution_status</div>
+            <div class="code-block">
+<span class="k">async</span> <span class="t">markInProgress</span>(id: <span class="t">string</span>): <span class="t">Promise&lt;void&gt;</span> {
+  <span class="k">await</span> this.repository.<span class="t">update</span>(
+    { id },
+    {
+      status: <span class="s">'in_progress'</span>,
+      startedAt: <span class="k">new</span> Date(),      <span class="c">// timestamp explícito</span>
+    },
+  );
+}
+            </div>
+            <div class="box-file">flow-execution-status.service.ts:28-33</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">📊 Tabela flow_execution_status</div>
+            <table class="field-table">
+              <tr><th>Campo</th><th>Descrição</th></tr>
+              <tr><td>id</td><td>UUID (= executionId do payload)</td></tr>
+              <tr><td>flowId</td><td>uuid, indexed</td></tr>
+              <tr><td>userId</td><td>uuid, indexed</td></tr>
+              <tr><td>status</td><td>pending / in_progress / completed / error</td></tr>
+              <tr><td>callbackUrl</td><td>text, nullable</td></tr>
+              <tr><td>output</td><td>jsonb, nullable</td></tr>
+              <tr><td>errorMessage</td><td>text, nullable</td></tr>
+              <tr><td>tokensUsed</td><td>float, default 0</td></tr>
+              <tr><td>totalCost</td><td>float, default 0</td></tr>
+              <tr><td>durationMs</td><td>int, nullable</td></tr>
+              <tr><td>startedAt</td><td>timestamptz, nullable</td></tr>
+              <tr><td>finishedAt</td><td>timestamptz, nullable</td></tr>
+              <tr><td>createdAt / updatedAt</td><td>auto</td></tr>
+            </table>
+          </div>
+
+          <div class="aside">
+            <div class="aside-title">🎯 Consumido por</div>
+            Endpoints REST que retornam status de execução: <code>findByIdForUser</code> (linha 76-81) recupera pela combinação <code>id + userId</code> — não vaza pra outro usuário.
+          </div>
+
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Row precisa existir antes</div>
+            Igual ao MCP, o <code>update({ id })</code> some se não tiver row. Quem cria é o endpoint que enfileira (via <code>create({ id, flowId, userId, callbackUrl })</code>). Se o cliente enfileirar sem criar antes, todo esse rastreamento é perdido.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 startedAt vs createdAt</div>
+            <code>createdAt</code> = quando a row foi criada (pending) — geralmente milissegundos antes do enqueue.
+            <br><code>startedAt</code> = quando o job saiu de pending pra in_progress (aqui). A diferença mede tempo em fila.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- FUNCTION D: markCompleted / markError -->
+  <!-- ============================================================ -->
+  <div class="fn-card collapsed" id="fn-d">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#8B5CF6;color:white">D</span>
+        <code>FlowExecutionStatusService.markCompleted / markError</code>
+      </div>
+      <div class="fn-loc">flow-execution-status.service.ts:35-74</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        async markCompleted({ id, output, tokensUsed, totalCost, durationMs })<br>
+        async markError({ id, errorMessage, tokensUsed, totalCost, durationMs })
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Fecham a row do FES com resultado. <code>markCompleted</code> grava o <code>output</code> completo em jsonb e limpa o <code>errorMessage</code>; <code>markError</code> grava só a mensagem de erro. Ambos setam <code>finishedAt: new Date()</code>.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> essa dupla é o <em>ponteiro final</em> da linha FES. O processor decide qual chamar olhando <code>result.nodeError</code>: se veio preenchido, <code>markError</code>; senão, <code>markCompleted</code>. A diferença essencial entre os dois: <code>markCompleted</code> salva o <code>result</code> inteiro no campo <code>output</code> (jsonb) — permite consultas futuras recuperarem o payload de resposta —, enquanto <code>markError</code> guarda só a string do erro. E os dois zeram tokens/cost <em>separadamente</em> quando o processor entrega <code>0</code> (no catch). Assim como no MCP, o <code>finishedAt</code> é o momento do UPDATE — não do fim real do <code>apiV2</code>, que teria sido milissegundos antes. Fica bem próximo, mas não é o mesmo timestamp.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box decision">
+            <div class="box-title"><span class="badge step">D1</span> Dispatch no happy path</div>
+            <div class="code-block">
+<span class="k">if</span> (executionId) {
+  <span class="k">if</span> (result.<span class="s">nodeError</span>) {
+    <span class="k">await</span> this.flowExecutionStatusService.<span class="t">markError</span>({
+      id: executionId,
+      errorMessage: result.<span class="s">nodeError</span>,
+      tokensUsed: result.<span class="s">totalTokensUsed</span> ?? <span class="s">0</span>,
+      totalCost: result.<span class="s">totalCost</span> ?? <span class="s">0</span>,
+      durationMs,
+    });
+  } <span class="k">else</span> {
+    <span class="k">await</span> this.flowExecutionStatusService.<span class="t">markCompleted</span>({
+      id: executionId,
+      output: result,
+      tokensUsed: result.<span class="s">totalTokensUsed</span> ?? <span class="s">0</span>,
+      totalCost: result.<span class="s">totalCost</span> ?? <span class="s">0</span>,
+      durationMs,
+    });
+  }
+}
+            </div>
+            <div class="box-file">apiV2Job.processor.ts:90-108</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box db">
+            <div class="box-title"><span class="badge step">D2</span> markCompleted — grava output completo</div>
+            <div class="code-block">
+<span class="k">await</span> this.repository.<span class="t">update</span>(
+  { id: params.id },
+  {
+    status: <span class="s">'completed'</span>,
+    output: params.output,             <span class="c">// jsonb (result cru)</span>
+    tokensUsed: params.tokensUsed,
+    totalCost: params.totalCost,
+    durationMs: params.durationMs,
+    errorMessage: <span class="k">null</span>,               <span class="c">// limpa qualquer erro anterior</span>
+    finishedAt: <span class="k">new</span> Date(),
+  },
+);
+            </div>
+            <div class="box-file">flow-execution-status.service.ts:42-53</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box db">
+            <div class="box-title"><span class="badge step">D3</span> markError — só errorMessage</div>
+            <div class="code-block">
+<span class="k">await</span> this.repository.<span class="t">update</span>(
+  { id: params.id },
+  {
+    status: <span class="s">'error'</span>,
+    errorMessage: params.errorMessage,
+    tokensUsed: params.tokensUsed,
+    totalCost: params.totalCost,
+    durationMs: params.durationMs,
+    finishedAt: <span class="k">new</span> Date(),
+  },
+);
+            </div>
+            <div class="box-file">flow-execution-status.service.ts:56-73</div>
+          </div>
+          <div class="arrow">↓</div>
+
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">D4</span> Catch replica só markError</div>
+            <div class="box-desc">
+              No catch (linha 144-152), <em>sempre</em> markError com <code>tokensUsed: 0, totalCost: 0</code>. Nunca markCompleted.
+            </div>
+            <div class="box-file">apiV2Job.processor.ts:144-152</div>
+          </div>
+        </div>
+
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 output no jsonb</div>
+            <code>output</code> é <code>jsonb nullable</code> — recebe o objeto <code>result</code> inteiro do <code>apiV2</code>. Isso inclui <code>outputs[]</code>, <code>totalTokensUsed</code>, <code>totalCost</code>, e potencialmente muito mais dependendo do run. Pode crescer bastante em runs grandes.
+            <br><br>Cliente REST que fizer GET no status vai ver isso tudo.
+          </div>
+
+          <div class="aside warn">
+            <div class="aside-title">⚠️ markError NÃO limpa output</div>
+            Diferente do markCompleted (que limpa <code>errorMessage: null</code>), o markError <strong>não</strong> zera o campo <code>output</code>. Se por algum motivo a row já tinha um output de tentativa anterior, ele fica. Baixo risco porque <code>attempts: 1</code>, mas latente.
+          </div>
+
+          <div class="aside">
+            <div class="aside-title">📎 finishedAt = timestamp do UPDATE</div>
+            Não é o momento exato em que o <code>apiV2</code> retornou — é o UPDATE em si. A diferença é minúscula (o UPDATE roda logo depois), mas se o markCompleted travar (lock, connection pool), <code>finishedAt</code> mostra o tempo do UPDATE, não do fim de execução.
+          </div>
+
+          <div class="aside helper">
+            <div class="aside-title">🔧 Nullish coalescing defensivo</div>
+            <code>result.totalTokensUsed ?? 0</code> e <code>result.totalCost ?? 0</code> — se o <code>apiV2</code> não populou (retornou undefined), o UPDATE ainda tem valores numéricos válidos. Coluna é <code>float default 0</code>, então preserva o tipo.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="note info" style="margin-top:32px">
+    <strong>Resumo — o que sai de 1.1a:</strong>
+    <br>• <strong>0, 1 ou 2 rows atualizadas</strong> em tabelas independentes: <code>mcp_run_status</code> se <code>mcpTracking</code>, <code>flow_execution_status</code> se <code>executionId</code>. Um mesmo run pode escrever em zero, um ou nos dois.
+    <br>• Sequência em cada tabela: <code>pending</code> (criada por quem enfileirou) → <code>in_progress</code> (aqui, antes do apiV2) → <code>completed</code>/<code>error</code> (aqui, depois do apiV2 ou no catch).
+    <br>• Métricas: <code>tokens / cost / durationMs</code> corretas no happy path; zeradas no catch (mesmo se apiV2 já consumiu tokens caros antes do throw).
+    <br>• <code>flow_execution_status</code> tem <code>startedAt</code>/<code>finishedAt</code> explícitos e persiste o <code>output</code> em jsonb — <code>mcp_run_status</code> não.
+  </div>
+
+  <div class="note">
+    <strong>Observações para migração:</strong>
+    <br>• <strong>Duplicidade de rastreamento é o maior débito técnico aqui.</strong> Duas tabelas independentes, com colunas parecidas (tokens/cost/durationMs/status), gates separados, sem foreign key entre elas. Se o worker Temporal absorver a execução, é a hora ideal pra consolidar numa <code>flow_execution_status</code> unificada (com um campo <code>mcpRunId</code> nullable, se ainda precisar da granularidade MCP).
+    <br>• Se ficarem separadas, ambas viram atividades Temporal: <code>markInProgressActivity</code>, <code>markCompletedActivity</code>, <code>markErrorActivity</code>. Vantagem: Temporal garante que a atividade roda ao menos uma vez (retry configurável), corrigindo o problema atual de "row nunca sai de in_progress" quando o job estoura timeout do Bull.
+    <br>• <strong>Ordem importa:</strong> hoje o processor faz <code>markRunning</code> ANTES de <code>markInProgress</code>. Se migrar, é bom manter (algum código de status usa ordem cronológica). No Temporal fica <code>await activity(mcp); await activity(fes)</code>.
+    <br>• <strong>Riscos de deixar pra depois:</strong> o <code>tokens: 0 / cost: 0</code> no catch é um bug de contabilidade real — se um run gastou $10 em tokens e crashou no final, o billing perde essa cobrança. Vale corrigir junto: <code>result?.totalTokensUsed ?? tokensAcumuladosPorNodesJaExecutados</code>.
+    <br>• Se um serviço equivalente à <code>FlowExecutionStatusService</code> precisar ser criado ou renomeado no worker, o arquivo <code>src/app-api/flux/flow-execution-status.service.ts</code> é a fonte canônica atual — mover pra <code>src/shared/</code> ou <code>src/services/</code> antes da migração pra ser consumível pelo worker.
+  </div>
+
+  <!-- FOOTER NAV -->
+  <div class="page-footer-nav">
+    <a href="../index.html#step-1-1" class="back-btn">← Voltar ao diagrama principal</a>
+  </div>
+
+</div>
+<script>
+(function() {
+  function toggle(card) {
+    if (card) card.classList.toggle('collapsed');
+  }
+  function expand(card) {
+    if (card && card.classList.contains('collapsed')) card.classList.remove('collapsed');
+  }
+  document.querySelectorAll('.fn-card-header').forEach(function(header) {
+    header.addEventListener('click', function(e) {
+      if (e.target.closest('a')) return;
+      toggle(header.parentElement);
+    });
+  });
+  document.querySelectorAll('a[href^="#fn-"]').forEach(function(link) {
+    link.addEventListener('click', function() {
+      var id = link.getAttribute('href').slice(1);
+      expand(document.getElementById(id));
+    });
+  });
+  if (window.location.hash && window.location.hash.startsWith('#fn-')) {
+    expand(document.querySelector(window.location.hash));
+  }
+  window.addEventListener('hashchange', function() {
+    if (window.location.hash.startsWith('#fn-')) {
+      expand(document.querySelector(window.location.hash));
+    }
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Passo 1.0a — Setup inicial pré-tudo | Detalhamento</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #F1F5F9;
+    color: #0F172A;
+    margin: 0;
+    padding: 32px 24px 80px;
+    line-height: 1.4;
+  }
+  .container { max-width: 1500px; margin: 0 auto; }
+  .page-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    flex-wrap: wrap;
+  }
+  .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748B; }
+  .breadcrumb a { color: #3B82F6; text-decoration: none; font-weight: 500; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #CBD5E1; }
+  .back-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #0F172A; color: white; padding: 8px 14px; border-radius: 8px;
+    text-decoration: none; font-size: 12.5px; font-weight: 600;
+  }
+  .page-header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+  .page-header .icon { font-size: 32px; }
+  .page-header h1 { margin: 0; font-size: 26px; color: #0F172A; letter-spacing: -0.4px; }
+  .page-sub { color: #64748B; font-size: 13px; margin-bottom: 24px; padding-left: 46px; }
+  .page-sub code {
+    background: #E2E8F0; padding: 1px 6px; border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; color: #334155;
+  }
+  .overview-mini {
+    background: white; padding: 16px 18px; border-radius: 10px;
+    margin-bottom: 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .overview-mini-title {
+    font-size: 12px; font-weight: 700; color: #334155;
+    text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px;
+  }
+  .overview-chain { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .overview-chip {
+    background: #F8FAFC; padding: 6px 12px; border-radius: 6px;
+    border-left: 3px solid #3B82F6;
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; font-weight: 600;
+    color: #0F172A; text-decoration: none; display: inline-block;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+  .overview-chip .lbl {
+    display: block; font-size: 9.5px; color: #64748B; font-weight: 500;
+    margin-bottom: 2px; font-family: inherit; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .overview-sep { color: #94A3B8; font-size: 18px; font-weight: bold; }
+  .box {
+    background: white; border-radius: 8px; padding: 9px 13px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 4px solid #94A3B8;
+    width: 100%; max-width: 100%;
+  }
+  .box.backend    { border-left-color: #3B82F6; }
+  .box.worker     { border-left-color: #10B981; }
+  .box.db         { border-left-color: #F59E0B; }
+  .box.redis      { border-left-color: #EF4444; }
+  .box.s3         { border-left-color: #8B5CF6; }
+  .box.external   { border-left-color: #64748B; }
+  .box.decision   { border-left-color: #EAB308; background: #FEFCE8; }
+  .box.cross      { border-left-color: #A855F7; background: #FAF5FF; }
+  .box-title {
+    font-weight: 600; font-size: 12.5px; color: #0F172A; margin-bottom: 2px;
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  }
+  .box-desc { font-size: 11.5px; color: #475569; }
+  .box-file {
+    font-size: 10px; color: #94A3B8; font-family: 'SF Mono', Menlo, Consolas, monospace;
+    margin-top: 3px; word-break: break-all;
+  }
+  .box code {
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px;
+    background: #F1F5F9; padding: 1px 4px; border-radius: 3px; color: #334155; word-break: break-word;
+  }
+  .box-desc code { word-break: break-word; }
+  .badge {
+    display: inline-block; font-size: 9px; font-weight: 700; padding: 2px 6px;
+    border-radius: 4px; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap;
+  }
+  .badge.migrated { background: #D1FAE5; color: #065F46; }
+  .badge.legacy   { background: #FEE2E2; color: #991B1B; }
+  .badge.mixed    { background: #FEF3C7; color: #92400E; }
+  .badge.step     { background: #E0E7FF; color: #3730A3; font-size: 10px; }
+  .badge.cross    { background: #F3E8FF; color: #6B21A8; }
+  .arrow { color: #64748B; font-size: 22px; line-height: 1; margin: 1px 0; text-align: center; }
+  .fn-card {
+    margin-top: 28px; border: 1px solid #E2E8F0; border-radius: 12px;
+    overflow: hidden; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .fn-card-header {
+    background: linear-gradient(to right, #0F172A, #1E293B); color: white;
+    padding: 14px 20px 14px 44px; display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px; cursor: pointer; position: relative; user-select: none;
+    transition: background 0.15s;
+  }
+  .fn-card-header .fn-title { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+  .fn-card-header .fn-title code {
+    background: rgba(255,255,255,0.15); padding: 3px 8px; border-radius: 4px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 13px;
+  }
+  .fn-card-header .fn-loc {
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; color: #CBD5E1;
+  }
+  .fn-card-header:hover { background: linear-gradient(to right, #1E293B, #334155); }
+  .fn-card-header::before {
+    content: "▾"; position: absolute; left: 20px; top: 50%;
+    transform: translateY(-50%); color: #94A3B8; font-size: 14px;
+    transition: transform 0.2s ease; line-height: 1;
+  }
+  .fn-card.collapsed .fn-card-header::before { transform: translateY(-50%) rotate(-90deg); }
+  .fn-card.collapsed .fn-card-body { display: none; }
+  .fn-card-body { padding: 20px; }
+  .fn-signature {
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px;
+    background: #F1F5F9; padding: 8px 12px; border-radius: 6px;
+    color: #334155; margin-bottom: 16px; overflow-x: auto;
+  }
+  .fn-purpose {
+    font-size: 13px; color: #475569; margin-bottom: 12px;
+    padding: 10px 14px; background: #EFF6FF; border-left: 3px solid #3B82F6; border-radius: 6px;
+  }
+  .fn-friendly {
+    font-size: 13px; color: #334155; margin-bottom: 20px;
+    padding: 12px 14px 12px 44px; background: #F0FDF4;
+    border-left: 3px solid #10B981; border-radius: 6px;
+    position: relative; line-height: 1.55;
+  }
+  .fn-friendly::before {
+    content: "💬"; position: absolute; left: 14px; top: 10px; font-size: 18px;
+  }
+  .fn-friendly strong { color: #065F46; }
+  .step-friendly {
+    font-size: 13.5px; color: #334155; margin-bottom: 28px;
+    padding: 16px 18px 16px 52px; background: #F0FDF4;
+    border-left: 4px solid #10B981; border-radius: 10px;
+    position: relative; line-height: 1.6;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.08);
+  }
+  .step-friendly::before {
+    content: "💬"; position: absolute; left: 18px; top: 14px; font-size: 22px;
+  }
+  .step-friendly-title {
+    font-weight: 700; color: #065F46; font-size: 13px;
+    text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px;
+  }
+  .step-friendly ul { margin: 0; padding-left: 18px; }
+  .step-friendly li { margin-bottom: 6px; }
+  .step-friendly li:last-child { margin-bottom: 0; }
+  .step-friendly strong { color: #065F46; }
+  .step-friendly code {
+    background: #DCFCE7; padding: 1px 5px; border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; color: #065F46;
+  }
+  .step-friendly em { color: #047857; font-style: italic; }
+  .fn-body-cols {
+    display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr); gap: 20px;
+  }
+  @media (max-width: 900px) { .fn-body-cols { grid-template-columns: 1fr; } }
+  .fn-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .fn-asides { display: flex; flex-direction: column; gap: 12px; }
+  .aside {
+    background: #FEF3C7; border-left: 4px solid #F59E0B; border-radius: 6px;
+    padding: 10px 12px; font-size: 11.5px; color: #78350F;
+  }
+  .aside.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .aside.warn { background: #FEE2E2; border-left-color: #EF4444; color: #991B1B; }
+  .aside.helper { background: #F3E8FF; border-left-color: #A855F7; color: #6B21A8; }
+  .aside-title {
+    font-weight: 700; font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.4px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;
+  }
+  .aside code {
+    background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 10.5px; word-break: break-word;
+  }
+  .cascade {
+    background: #FEFCE8; border: 1px dashed #EAB308; border-radius: 8px;
+    padding: 12px; margin: 6px 0;
+  }
+  .cascade-title {
+    font-size: 11px; font-weight: 700; color: #713F12;
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;
+  }
+  .cascade-step {
+    display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center;
+    padding: 6px 8px; background: white; border-radius: 6px; margin-bottom: 4px; font-size: 11.5px;
+  }
+  .cascade-step .cond { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; color: #334155; }
+  .cascade-step .result {
+    font-weight: 700; font-size: 10.5px; padding: 2px 8px; border-radius: 4px; white-space: nowrap;
+  }
+  .cascade-step .result.pass { background: #D1FAE5; color: #065F46; }
+  .cascade-step .result.deny { background: #FEE2E2; color: #991B1B; }
+  .cascade-step .result.next { background: #E0E7FF; color: #3730A3; }
+  .cascade-step .result.call { background: #FEF3C7; color: #78350F; }
+  .cascade-num {
+    background: #EAB308; color: white; width: 20px; height: 20px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700; flex-shrink: 0;
+  }
+  .nested-flow {
+    margin: 6px 0; padding: 12px; background: #F0FDF4;
+    border: 1px dashed #10B981; border-radius: 8px;
+  }
+  .nested-flow-title {
+    font-size: 10.5px; font-weight: 700; color: #065F46;
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
+  }
+  .code-block {
+    background: #0F172A; color: #E2E8F0; padding: 12px 16px; border-radius: 6px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; line-height: 1.6;
+    overflow-x: auto; margin: 6px 0;
+  }
+  .code-block .k { color: #93C5FD; }
+  .code-block .s { color: #86EFAC; }
+  .code-block .c { color: #64748B; font-style: italic; }
+  .code-block .t { color: #FDE68A; }
+  .note {
+    background: #FEF3C7; border-left: 4px solid #F59E0B; padding: 12px 16px; border-radius: 6px;
+    font-size: 12.5px; color: #78350F; margin: 20px 0;
+  }
+  .note.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .note code {
+    background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px;
+  }
+  .page-footer-nav {
+    margin-top: 48px; padding: 16px; background: white; border-radius: 10px;
+    text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .field-table { width: 100%; border-collapse: collapse; font-size: 11px; margin: 8px 0; }
+  .field-table th {
+    text-align: left; padding: 6px 8px; background: #F1F5F9; color: #334155;
+    font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;
+    font-size: 10px; border-bottom: 1px solid #CBD5E1;
+  }
+  .field-table td { padding: 5px 8px; border-bottom: 1px solid #F1F5F9; vertical-align: top; }
+  .field-table td:first-child {
+    font-family: 'SF Mono', Menlo, Consolas, monospace; color: #0F172A;
+    font-weight: 600; white-space: nowrap; font-size: 10.5px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-nav">
+    <div class="breadcrumb">
+      <a href="../index.html">📋 Execução de Agente</a>
+      <span class="sep">›</span>
+      <span>Passo 1.0a — Detalhamento</span>
+    </div>
+    <a href="../index.html#step-1-0a" class="back-btn">← Voltar ao diagrama</a>
+  </div>
+
+  <div class="page-header">
+    <span class="icon">🔧</span>
+    <h1>Passo 1.0a — Setup inicial pré-tudo</h1>
+  </div>
+  <div class="page-sub">
+    Bloco em <code>flux.service.ts:2319-2337</code>. As primeiras 19 linhas do <code>apiV2()</code>, executadas <strong>antes</strong> de qualquer query, guard ou try/catch. Estabiliza <code>sessionId</code>, cria os contadores de billing, resolve o <code>runLogProcessId</code> canônico e liga a lookup socket→run pro chatbot.
+  </div>
+
+  <div class="step-friendly">
+    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <ul>
+      <li><strong>Limpa o sessionId:</strong> um <code>?.trim()</code> defensivo — string com espaços, <code>undefined</code> ou <code>null</code> viram <em>string vazia</em>. Isso importa depois porque <code>sessionId === ''</code> tem semântica especial (o passo 1.5 cai pra <code>'default'</code> se o flow tem <code>fluxObject.chat</code>).</li>
+      <li><strong>Abre a caixa registradora:</strong> declara <code>totalTokensUsed</code> e <code>totalCost</code> como zero, e cria o closure <code>onUpdateTokens(t, c)</code> que soma nesses contadores. Esse callback é passado adiante e é a única forma de billing "achar o caminho de volta" pros contadores desse run.</li>
+      <li><strong>Decide o ID do run:</strong> cascata em 4 fontes na ordem <code>execId → injectedRunLogCollector.processId → parentProcessId → uuid()</code>. É o "número do processo" que todo mundo usa como chave: WebSocket, run logs de space, feature flags de cancelamento.</li>
+      <li><strong>Registra o socket do chatbot:</strong> se veio <code>socketId</code>, faz <code>chatbotSocketByRun.set(runLogProcessId, socketId)</code> num Map da classe. Isso permite que o worker (via 3.x) devolva eventos pro browser certo mesmo quando o handoff é async. Cleanup só vai acontecer lá no passo 5.3 (finally block).</li>
+      <li><strong>Marca isNestedRunLog:</strong> flag booleana derivada de <code>!!injectedRunLogCollector</code>. É o que diferencia um run "raiz" (que vai flushar seu próprio SpaceRunLog) de um run "aninhado" chamado por outro flow (que deve <em>anexar</em> ao coletor do pai em vez de flushar sozinho).</li>
+    </ul>
+  </div>
+
+  <div class="note info">
+    <strong>Contexto:</strong> essas 19 linhas não fazem I/O, não jogam exceção e não têm try/catch — puro setup em memória. Tudo aqui existe pra dar às fases seguintes um contexto <em>estável e imutável</em> (contadores, IDs, refs) antes de qualquer coisa que possa falhar.
+  </div>
+
+  <div class="overview-mini">
+    <div class="overview-mini-title">Cadeia de setup em 1.0a</div>
+    <div class="overview-chain">
+      <a href="#fn-a" class="overview-chip"><span class="lbl">A</span>sessionId.trim()</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>contadores + onUpdateTokens</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>runLogProcessId (4 fontes)</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>chatbotSocketByRun.set</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-e" class="overview-chip"><span class="lbl">E</span>isNestedRunLog</a>
+    </div>
+    <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
+      Resultado final: estado inicial imutável — <code>sessionId</code>, contadores + closure, <code>runLogProcessId</code>, socket lookup, flag <code>isNestedRunLog</code>.
+    </div>
+  </div>
+
+  <!-- FN A -->
+  <div class="fn-card collapsed" id="fn-a">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#EAB308;color:white">A</span>
+        <code>Trim defensivo do sessionId</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:2319</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        const sessionId = untrimmedSessionId?.trim() || '';
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Normaliza o <code>sessionId</code> recebido do controller. Espaços em branco, <code>undefined</code>, <code>null</code>, string vazia — tudo vira <code>''</code>. A convenção "sessionId vazia = sem sessão" é usada por vários outros passos, então essa linha garante que todos leem a mesma coisa.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> pense nisso como um <em>filtro de entrada</em> — o parâmetro cru chega com nome longo (<code>untrimmedSessionId</code>) justamente pra deixar claro que ele <strong>não está pronto pra uso</strong>. A linha faz o encaixe safe: se veio texto, tira as bordas; se veio <code>null</code>/<code>undefined</code>, o optional-chaining pula e o <code>|| ''</code> cai pro default. A partir dessa linha, <em>todo mundo</em> lê <code>sessionId</code> sem se preocupar com whitespace, null-check ou tipo — é só string. Detalhe importante: <code>' '.trim() = ''</code> também vira vazio, então whitespace-only é tratado como "sem sessão", não como sessão nomeada " ".
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">A1</span> Optional chaining + fallback vazio</div>
+            <div class="box-desc">
+              O parâmetro entra desestruturado como <code>sessionId: untrimmedSessionId</code> (rename inline). A operação é síncrona, sem I/O.
+            </div>
+            <div class="box-file">flux.service.ts:2285 (destructuring), 2319 (trim)</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box decision">
+            <div class="box-title">Consequências do valor</div>
+            <div class="cascade">
+              <div class="cascade-step">
+                <span class="cascade-num">1</span>
+                <span class="cond"><code>untrimmedSessionId = 'chat-42 '</code></span>
+                <span class="result pass"><code>'chat-42'</code></span>
+              </div>
+              <div class="cascade-step">
+                <span class="cascade-num">2</span>
+                <span class="cond"><code>undefined</code> / <code>null</code></span>
+                <span class="result pass"><code>''</code></span>
+              </div>
+              <div class="cascade-step">
+                <span class="cascade-num">3</span>
+                <span class="cond"><code>'   '</code> (só espaços)</span>
+                <span class="result pass"><code>''</code></span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Por que rename inline?</div>
+            O nome <code>untrimmedSessionId</code> só existe no escopo do destructuring — em uma linha depois, ele "some" e vira <code>sessionId</code>. Truque de legibilidade: força qualquer leitor a passar pelo trim antes de usar.
+          </div>
+          <div class="aside">
+            <div class="aside-title">📎 Onde sessionId é usado depois</div>
+            • Passo 1.5b (clear session state) — <code>ownerUserId</code> + <code>sessionKey</code>
+            <br>• Passo 1.6 (fluxObject.chat) — <code>sessionIdForChat = sessionId || (hasFluxObjectChat ? 'default' : '')</code>
+            <br>• clearObjects — <code>selectedSession = sessionId || 'default'</code>
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 Convenção de sessão vazia</div>
+            <code>''</code> significa "não tem sessão nomeada". Alguns caminhos (fluxObject.chat) sobem pra <code>'default'</code>; outros continuam vazios pra dizer "não persista nada".
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FN B -->
+  <div class="fn-card collapsed" id="fn-b">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#F59E0B;color:white">B</span>
+        <code>Contadores + closure onUpdateTokens</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:2321-2327</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        let totalTokensUsed = 0;<br>
+        let totalCost = 0;<br>
+        const onUpdateTokens = (tokensUsed, cost) =&gt; { totalTokensUsed += tokensUsed; totalCost += cost; };
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Cria a "caixa registradora" do run. Contadores mutáveis (<code>let</code>) e um closure que os incrementa. É o único mecanismo pelo qual providers de AI, execuções de node no worker e sub-flows conseguem acumular tokens/custos <em>no total desse run</em>.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> é o <em>caixinha do dia</em> — dois contadores começam em zero e vão sendo somados conforme os nós rodam e cobram AI. Quem precisa somar não recebe uma referência aos números (JS não passa <code>number</code> por referência), recebe o <em>closure</em> <code>onUpdateTokens</code> — uma função pequena que sabe onde os contadores moram e faz o incremento. Esse padrão é o único que funciona pra billing distribuído: o worker roda um LLM, chama <code>onUpdateTokens(t, c)</code>, e os totais no backend crescem sem precisar de round-trip. No final, os totais são usados pra <code>flowLogsService.createLog</code> (passo 4.3) e pro <code>SpaceRunLog.finalize</code> (passo 4.4).
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B1</span> Declarações mutáveis</div>
+            <div class="box-desc">
+              Ambos <code>let</code>, ambos zero. O padrão é: closure captura por referência de escopo, e cada <code>+=</code> muta a variável do escopo pai.
+            </div>
+            <div class="box-file">flux.service.ts:2321-2322</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B2</span> Closure onUpdateTokens</div>
+            <div class="box-desc">
+              Fecha sobre <code>totalTokensUsed</code> e <code>totalCost</code>. Recebe dois argumentos numéricos e soma in-place.
+            </div>
+            <div class="code-block">
+<span class="k">const</span> onUpdateTokens = (tokensUsed: <span class="t">number</span>, cost: <span class="t">number</span>) =&gt; {
+  totalTokensUsed += tokensUsed;
+  totalCost += cost;
+};
+            </div>
+            <div class="box-file">flux.service.ts:2324-2327</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box cross">
+            <div class="box-title"><span class="badge step">B3</span> Consumidores do callback</div>
+            <div class="box-desc">
+              O callback é passado para:
+              <br>• <code>executeNodeViaTemporal</code> — worker devolve tokens após execução do node (via <code>tokenTransactionService.sumChargesByExecution</code>, flux.service.ts:695-703)
+              <br>• Providers legacy (Anthropic, OpenAI, etc.) — somam direto quando geram texto no backend
+              <br>• Sub-flows chamados por <code>flowCallerNode</code> — cobram no run pai
+            </div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Por que closure e não objeto?</div>
+            Um <code>{ tokens, cost }</code> passado por referência teria o mesmo efeito, mas o callback esconde a estrutura: consumidor só sabe "chamar essa função com (t, c)". Isolamento simples que não vaza detalhes internos.
+          </div>
+          <div class="aside">
+            <div class="aside-title">📎 Destino final dos totais</div>
+            <code>totalTokensUsed</code> e <code>totalCost</code> viram <code>spent_tokens</code> e <code>cost</code> no FlowLog (flux.service.ts:4873-4874) e <code>totalTokens</code>/<code>totalCost</code> no SpaceRunLog (flux.service.ts:4895-4896).
+          </div>
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Sem lock — mas na prática sequencial</div>
+            O loop principal executa nós sequencialmente, então não há race. Mas se algum dia rodar nós em paralelo (branches concorrentes), <code>+=</code> não é atomic — dois callbacks quase-simultâneos podem perder um write.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 Padrão idêntico em 1.5</div>
+            Mesma técnica de <code>onMutateObjectCallerData</code> (passo 1.5-E) e <code>onMutateSchema</code>: closure captura variável <code>let</code> e permite mutação de fora sem passar ref de objeto.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FN C -->
+  <div class="fn-card collapsed" id="fn-c">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#3B82F6;color:white">C</span>
+        <code>Cascata do runLogProcessId (4 fontes)</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:2329-2330</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        const runLogProcessId = execId ?? injectedRunLogCollector?.processId ?? parentProcessId ?? uuid();
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Elege o <em>ID canônico</em> desse run — o que aparece em WebSocket, SpaceRunLog, FeatureFlags de cancel, prefetch, cross-run cache. Cascata em 4 níveis: quem já tem ID (execId externo, coletor injetado, parent) reutiliza; senão gera UUID novo.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> pense num <em>número de protocolo</em> — todo run precisa de um, e a ordem importa muito. Primeiro, se veio <code>execId</code> de fora (uma execução programada, um Temporal workflow que já batizou o run), respeita esse. Segundo, se o run é aninhado com um <code>injectedRunLogCollector</code> já em uso, herda o <code>processId</code> dele — assim o SpaceRunLog do pai coleta tudo junto. Terceiro, se veio <code>parentProcessId</code> (flow-caller-node encadeando runs), reusa esse. Quarto e último, se nada veio, o backend gera um <code>uuid()</code> fresh. O ID resultante é a chave de <em>todo mundo</em> lá pra frente: <code>chatbotSocketByRun</code>, <code>runCancellationService</code>, o run log no Mongo, o dashboard. Trocar essa ordem quebra correlação entre pai/filho em flow-caller.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="cascade">
+            <div class="cascade-title">🪜 Cascata de resolução (primeiro não-null ganha)</div>
+            <div class="cascade-step">
+              <span class="cascade-num">1</span>
+              <span class="cond"><code>execId</code> presente (Temporal / execução programada)</span>
+              <span class="result pass">usa <code>execId</code></span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">2</span>
+              <span class="cond"><code>injectedRunLogCollector?.processId</code> presente (run aninhado com collector do pai)</span>
+              <span class="result pass">usa <code>collector.processId</code></span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">3</span>
+              <span class="cond"><code>parentProcessId</code> presente (flow-caller-node)</span>
+              <span class="result pass">usa <code>parentProcessId</code></span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">4</span>
+              <span class="cond">nenhum dos anteriores</span>
+              <span class="result pass"><code>uuid()</code> novo</span>
+            </div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box decision">
+            <div class="box-title">Consumidores diretos do runLogProcessId</div>
+            <div class="box-desc">
+              • <code>chatbotSocketByRun.set(runLogProcessId, socketId)</code> — flux.service.ts:2332
+              <br>• Log de gate do SpaceRunLog — flux.service.ts:2428
+              <br>• <code>resolveCancelRunKey({ runLogProcessId, ... })</code> — flux.service.ts:3243
+              <br>• <code>spaceRunLogsService.flushNow({ processId: runLogProcessId, ... })</code> — flux.service.ts:4903
+              <br>• <code>runCancellationService.forgetRun(runLogProcessId)</code> — flux.service.ts:5430
+            </div>
+            <div class="box-file">flux.service.ts:2329-2330</div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Por que 4 fontes?</div>
+            Cada fonte cobre um cenário diferente:
+            <br>• <code>execId</code> — quem chamou já tem ID (Temporal replay-safe)
+            <br>• <code>injectedRunLogCollector.processId</code> — run aninhado deve virar entrada dentro do log do pai
+            <br>• <code>parentProcessId</code> — legacy path pré-collector, ainda usa flow-caller
+            <br>• <code>uuid()</code> — top-level run sem nada preset
+          </div>
+          <div class="aside">
+            <div class="aside-title">📎 execId vs runLogProcessId</div>
+            Quando <code>execId</code> vem preenchido, <code>runLogProcessId === execId</code>. Nos outros casos, são desiguais. Vários locais downstream tratam <code>runLogProcessId</code> como o "de facto" execId.
+          </div>
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Nullish coalescing (??) — não falsy</div>
+            Usa <code>??</code>, não <code>||</code>. String vazia <code>''</code> passaria como "presente" pelo <code>??</code>, mas seria descartada por <code>||</code>. Como todos aqui são UUIDs quando presentes, na prática não importa — mas é bom saber.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 uuid() = import de 'uuid'</div>
+            <code>import { v4 as uuid } from 'uuid'</code> (v4 random). Retorna string tipo <code>'a1b2c3d4-...'</code>. Colisão prática = zero.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FN D -->
+  <div class="fn-card collapsed" id="fn-d">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#8B5CF6;color:white">D</span>
+        <code>chatbotSocketByRun.set (com gate)</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:2331-2333</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        if (socketId) { this.chatbotSocketByRun.set(runLogProcessId, socketId); }
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Registra a associação <code>runLogProcessId → socketId</code> num Map de instância. Isso permite que qualquer código que sabe o <code>runId</code> (por exemplo <code>executeNodeViaTemporal</code>) descubra o socket do browser pra enviar eventos progressivos (streaming, node-started, cancel).
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> é o <em>livro de endereços</em> do chatbot — antes de qualquer node rodar, o backend anota "esse runId aqui está sendo assistido por esse socket". Sem essa anotação, os handlers do Temporal (que rodam em contexto async, sem saber quem originou a chamada) não conseguiriam mandar eventos de volta pra tela do usuário. O gate <code>if (socketId)</code> importa: só chatbot manda socketId; runs via API/webhook/cronjob passam <code>undefined</code> e nada é registrado. O <em>cleanup</em> não acontece aqui — vai no <code>finally</code> block do apiV2 (passo 5.3, linha 5427-5429). Se um run crashar antes de chegar no finally, o entry vaza no Map (leak lento em cima de dias — footgun histórico).
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">D1</span> Map<string, string> na instância</div>
+            <div class="box-desc">
+              Declarado em <code>flux.service.ts:360</code> como <code>private readonly chatbotSocketByRun = new Map()</code>. É estado <em>por processo NestJS</em> — se rodar em cluster, cada worker tem seu Map isolado.
+            </div>
+            <div class="box-file">flux.service.ts:360</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="cascade">
+            <div class="cascade-title">🚪 Gate — só chatbot registra</div>
+            <div class="cascade-step">
+              <span class="cascade-num">1</span>
+              <span class="cond"><code>socketId</code> truthy</span>
+              <span class="result call"><code>.set(runLogProcessId, socketId)</code></span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">2</span>
+              <span class="cond">falsy (API/webhook/cronjob)</span>
+              <span class="result deny">skip</span>
+            </div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box cross">
+            <div class="box-title"><span class="badge step">D2</span> Cleanup no finally (passo 5.3)</div>
+            <div class="box-desc">
+              <code>if (socketId) { this.chatbotSocketByRun.delete(runLogProcessId); }</code>
+              <br>Ver flux.service.ts:5427-5429. Cleanup gate = mesma condição do set (se registrou, deleta).
+            </div>
+            <div class="box-file">flux.service.ts:5427-5429</div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Onde é lido</div>
+            <code>this.chatbotSocketByRun.get(runId) ?? null</code> em flux.service.ts:689, passado pro <code>executeNodeViaTemporal(...)</code> como último argumento. O worker abre um handler de socket com esse ID pra streamar tokens de LLM ao vivo.
+          </div>
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Leak em crash antes do finally</div>
+            Se algo entre linha 2333 e o finally jogar uma exception <em>que escape</em> do try/catch principal (raro mas possível — throws antes do try, por exemplo), o Map fica com entrada órfã.
+            <br><br>Em prática nunca aconteceu (tudo relevante está dentro do try), mas é um risk se algum refactor mover setup pra antes do try.
+          </div>
+          <div class="aside">
+            <div class="aside-title">📎 Por que Map e não Redis?</div>
+            Socket handshake é local (o cliente está falando com esse pod específico via WebSocket). Sockets não migram entre pods, então Map local basta e evita round-trip.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 socketId shape</div>
+            String opaca vinda do gateway (Socket.io). Formato interno do Socket.io — o backend só faz proxy dela pra localizar o cliente conectado.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FN E -->
+  <div class="fn-card collapsed" id="fn-e">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#EF4444;color:white">E</span>
+        <code>isNestedRunLog flag</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:2337</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        const isNestedRunLog = !!injectedRunLogCollector;
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Marca se esse run é uma <em>sub-execução</em> chamada por outro flow (flow-caller-node) que já veio com um <code>RunLogCollector</code> ativo do pai. Em vez de flushar seu próprio SpaceRunLog, o run aninhado deve <em>anexar</em> nós no coletor injetado e deixar o pai flushar.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> é o <em>etiqueta de sub-item</em> — quando um run é filho de outro (flow-caller-node dispara um sub-flow), o pai passa seu <code>RunLogCollector</code> em <code>injectedRunLogCollector</code>. Essa flag simplifica a decisão em vários pontos: se <code>isNestedRunLog</code> for <code>true</code>, o filho deve pular várias coisas que <em>só</em> fazem sentido pra um run raiz: <code>assertOwnerCanRunFlow</code> (billing gate já foi checado pelo pai), o log de gate do SpaceRunLog (pai já logou), o <code>flushNow</code> do documento no Mongo (pai vai flushar tudo junto no final). Investigação: usada em 5 lugares — 2409 (gate assertOwner), 2415 (gate log), 3241 (feed pro cancel-watch), 4900 (skip flushNow success), 5351 (skip flushNow error). É um "boolean derivativo" clássico: computa uma vez, usa muito.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">E1</span> Derivação booleana</div>
+            <div class="box-desc">
+              <code>!!</code> coerção pra boolean puro. <code>null</code>/<code>undefined</code> viram <code>false</code>; qualquer objeto vira <code>true</code>.
+            </div>
+            <div class="box-file">flux.service.ts:2337</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="cascade">
+            <div class="cascade-title">🔎 Todos os gates controlados pela flag</div>
+            <div class="cascade-step">
+              <span class="cascade-num">1</span>
+              <span class="cond">L2409 — <code>if (!isNestedRunLog) assertOwnerCanRunFlow(getFlow)</code></span>
+              <span class="result deny">skip billing gate</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">2</span>
+              <span class="cond">L2415 — <code>if (!isNestedRunLog) { ...console.log [SpaceRunLog gate]... }</code></span>
+              <span class="result deny">skip log de gate</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">3</span>
+              <span class="cond">L3241 — <code>isNestedRun: isNestedRunLog || Boolean(parentProcessId)</code></span>
+              <span class="result next">feed cancel-watch</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">4</span>
+              <span class="cond">L4900 — <code>if (runLogDoc &amp;&amp; !isNestedRunLog) flushNow(...)</code></span>
+              <span class="result deny">skip flush sucesso</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">5</span>
+              <span class="cond">L5351 — <code>if (runLogDoc &amp;&amp; !isNestedRunLog) flushNow(...)</code></span>
+              <span class="result deny">skip flush error</span>
+            </div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Semântica "nested"</div>
+            "Nested" aqui = "chamado com um coletor pré-existente". Não é o mesmo que "tem parent" — um flow pode ter <code>parentProcessId</code> sem coletor injetado (legacy path). O gate de flush usa <em>essa flag específica</em>.
+          </div>
+          <div class="aside">
+            <div class="aside-title">📎 Combinado com parentProcessId</div>
+            No L3241, o cancel-watch usa a união: <code>isNestedRunLog || Boolean(parentProcessId)</code>. Ou seja, o cancel-watch trata os dois cenários como "sub-run" — sub-run não instala próprio watcher, herda do pai.
+          </div>
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Skip do assertOwnerCanRunFlow</div>
+            Se um sub-flow escapar do billing check do pai (por bug em quem injeta o collector), a flag faz ele passar direto sem checar. Depende de o pai <em>já ter checado</em>. Testes de integração devem cobrir esse contract implícito.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 RunLogCollector class</div>
+            Definido em <code>src/app-api/space_run_logs/run-log-collector.ts</code>. Tem <code>processId</code> readonly + métodos <code>appendNode</code>, <code>finalize</code>, etc. É o "buffer" que junta nós ao longo do run.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note info" style="margin-top:32px">
+    <strong>Resumo — o que sai de 1.0a:</strong>
+    <br>• <code>sessionId</code> = string trimada (pode ser <code>''</code>)
+    <br>• <code>totalTokensUsed</code>, <code>totalCost</code> = contadores mutáveis em 0
+    <br>• <code>onUpdateTokens(t, c)</code> = closure de billing
+    <br>• <code>runLogProcessId</code> = ID canônico do run (cascata 4-fontes)
+    <br>• <code>chatbotSocketByRun</code> Map atualizado (se socketId veio)
+    <br>• <code>isNestedRunLog</code> = flag booleana derivada do collector injetado
+    <br>• Nenhum I/O, nenhum throw, tudo dentro do <code>try</code> ainda por vir
+  </div>
+
+  <div class="note">
+    <strong>Observações para migração:</strong>
+    <br>• Tudo aqui é <em>puro setup</em> — trivialmente replicável no worker.
+    <br>• A cascata do <code>runLogProcessId</code> é business-critical: qualquer worker precisa preservar exatamente essa ordem, senão sub-runs perdem correlação com pai.
+    <br>• O <code>chatbotSocketByRun</code> Map <strong>não</strong> vai pro worker — sockets são locais ao pod do backend. No worker, streaming teria que sair via callback/API pro backend, que faria o proxy pro socket.
+    <br>• <code>onUpdateTokens</code> é o padrão de closure mais crítico do apiV2 — não migra 1:1 pro worker. No worker, cada activity teria que gravar tokens numa tabela e o backend lê no final (que já é o padrão de <code>tokenTransactionService.sumChargesByExecution</code>, ver flux.service.ts:696).
+    <br>• <code>isNestedRunLog</code> depende do collector ser injetado; no worker isso vira parâmetro de start-args.
+    <br>• Essencial: sim, mas <em>trivial</em>. É o menor risco da migração — só precisa de disciplina pra manter a mesma cascata.
+  </div>
+
+  <div class="page-footer-nav">
+    <a href="../index.html#step-1-0a" class="back-btn">← Voltar ao diagrama principal</a>
+  </div>
+
+</div>
+<script>
+(function() {
+  function toggle(card) { if (card) card.classList.toggle('collapsed'); }
+  function expand(card) { if (card && card.classList.contains('collapsed')) card.classList.remove('collapsed'); }
+  document.querySelectorAll('.fn-card-header').forEach(function(header) {
+    header.addEventListener('click', function(e) {
+      if (e.target.closest('a')) return;
+      toggle(header.parentElement);
+    });
+  });
+  document.querySelectorAll('a[href^="#fn-"]').forEach(function(link) {
+    link.addEventListener('click', function() {
+      var id = link.getAttribute('href').slice(1);
+      expand(document.getElementById(id));
+    });
+  });
+  if (window.location.hash && window.location.hash.startsWith('#fn-')) {
+    expand(document.querySelector(window.location.hash));
+  }
+  window.addEventListener('hashchange', function() {
+    if (window.location.hash.startsWith('#fn-')) {
+      expand(document.querySelector(window.location.hash));
+    }
+  });
+})();
+</script>
+</body>
+</html>

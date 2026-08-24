@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Passo 1.5b — Reset de fluxObject com clearOnExecution | Detalhamento</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F1F5F9; color: #0F172A; margin: 0; padding: 32px 24px 80px; line-height: 1.4; }
+  .container { max-width: 1500px; margin: 0 auto; }
+  .page-nav { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; padding: 12px 16px; background: white; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); flex-wrap: wrap; }
+  .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #64748B; }
+  .breadcrumb a { color: #3B82F6; text-decoration: none; font-weight: 500; }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #CBD5E1; }
+  .back-btn { display: inline-flex; align-items: center; gap: 6px; background: #0F172A; color: white; padding: 8px 14px; border-radius: 8px; text-decoration: none; font-size: 12.5px; font-weight: 600; }
+  .page-header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+  .page-header .icon { font-size: 32px; }
+  .page-header h1 { margin: 0; font-size: 26px; color: #0F172A; letter-spacing: -0.4px; }
+  .page-sub { color: #64748B; font-size: 13px; margin-bottom: 24px; padding-left: 46px; }
+  .page-sub code { background: #E2E8F0; padding: 1px 6px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 12px; color: #334155; }
+  .overview-mini { background: white; padding: 16px 18px; border-radius: 10px; margin-bottom: 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .overview-mini-title { font-size: 12px; font-weight: 700; color: #334155; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px; }
+  .overview-chain { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .overview-chip { background: #F8FAFC; padding: 6px 12px; border-radius: 6px; border-left: 3px solid #3B82F6; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; font-weight: 600; color: #0F172A; text-decoration: none; display: inline-block; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+  .overview-chip .lbl { display: block; font-size: 9.5px; color: #64748B; font-weight: 500; margin-bottom: 2px; font-family: inherit; text-transform: uppercase; letter-spacing: 0.5px; }
+  .overview-sep { color: #94A3B8; font-size: 18px; font-weight: bold; }
+  .box { background: white; border-radius: 8px; padding: 9px 13px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border-left: 4px solid #94A3B8; width: 100%; max-width: 100%; }
+  .box.backend { border-left-color: #3B82F6; }
+  .box.worker { border-left-color: #10B981; }
+  .box.db { border-left-color: #F59E0B; }
+  .box.redis { border-left-color: #EF4444; }
+  .box.s3 { border-left-color: #8B5CF6; }
+  .box.external { border-left-color: #64748B; }
+  .box.decision { border-left-color: #EAB308; background: #FEFCE8; }
+  .box.cross { border-left-color: #A855F7; background: #FAF5FF; }
+  .box-title { font-weight: 600; font-size: 12.5px; color: #0F172A; margin-bottom: 2px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .box-desc { font-size: 11.5px; color: #475569; }
+  .box-file { font-size: 10px; color: #94A3B8; font-family: 'SF Mono', Menlo, Consolas, monospace; margin-top: 3px; word-break: break-all; }
+  .box code { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; background: #F1F5F9; padding: 1px 4px; border-radius: 3px; color: #334155; word-break: break-word; }
+  .box-desc code { word-break: break-word; }
+  .badge { display: inline-block; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; }
+  .badge.migrated { background: #D1FAE5; color: #065F46; }
+  .badge.legacy { background: #FEE2E2; color: #991B1B; }
+  .badge.mixed { background: #FEF3C7; color: #92400E; }
+  .badge.step { background: #E0E7FF; color: #3730A3; font-size: 10px; }
+  .badge.cross { background: #F3E8FF; color: #6B21A8; }
+  .arrow { color: #64748B; font-size: 22px; line-height: 1; margin: 1px 0; text-align: center; }
+  .fn-card { margin-top: 28px; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; background: white; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .fn-card-header { background: linear-gradient(to right, #0F172A, #1E293B); color: white; padding: 14px 20px 14px 44px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; cursor: pointer; position: relative; user-select: none; transition: background 0.15s; }
+  .fn-card-header .fn-title { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+  .fn-card-header .fn-title code { background: rgba(255,255,255,0.15); padding: 3px 8px; border-radius: 4px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 13px; }
+  .fn-card-header .fn-loc { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; color: #CBD5E1; }
+  .fn-card-header:hover { background: linear-gradient(to right, #1E293B, #334155); }
+  .fn-card-header::before { content: "▾"; position: absolute; left: 20px; top: 50%; transform: translateY(-50%); color: #94A3B8; font-size: 14px; transition: transform 0.2s ease; line-height: 1; }
+  .fn-card.collapsed .fn-card-header::before { transform: translateY(-50%) rotate(-90deg); }
+  .fn-card.collapsed .fn-card-body { display: none; }
+  .fn-card-body { padding: 20px; }
+  .fn-signature { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; background: #F1F5F9; padding: 8px 12px; border-radius: 6px; color: #334155; margin-bottom: 16px; overflow-x: auto; }
+  .fn-purpose { font-size: 13px; color: #475569; margin-bottom: 12px; padding: 10px 14px; background: #EFF6FF; border-left: 3px solid #3B82F6; border-radius: 6px; }
+  .fn-friendly { font-size: 13px; color: #334155; margin-bottom: 20px; padding: 12px 14px 12px 44px; background: #F0FDF4; border-left: 3px solid #10B981; border-radius: 6px; position: relative; line-height: 1.55; }
+  .fn-friendly::before { content: "💬"; position: absolute; left: 14px; top: 10px; font-size: 18px; }
+  .fn-friendly strong { color: #065F46; }
+  .step-friendly { font-size: 13.5px; color: #334155; margin-bottom: 28px; padding: 16px 18px 16px 52px; background: #F0FDF4; border-left: 4px solid #10B981; border-radius: 10px; position: relative; line-height: 1.6; box-shadow: 0 1px 3px rgba(16, 185, 129, 0.08); }
+  .step-friendly::before { content: "💬"; position: absolute; left: 18px; top: 14px; font-size: 22px; }
+  .step-friendly-title { font-weight: 700; color: #065F46; font-size: 13px; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 8px; }
+  .step-friendly ul { margin: 0; padding-left: 18px; }
+  .step-friendly li { margin-bottom: 6px; }
+  .step-friendly li:last-child { margin-bottom: 0; }
+  .step-friendly strong { color: #065F46; }
+  .step-friendly code { background: #DCFCE7; padding: 1px 5px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; color: #065F46; }
+  .step-friendly em { color: #047857; font-style: italic; }
+  .fn-body-cols { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr); gap: 20px; }
+  @media (max-width: 900px) { .fn-body-cols { grid-template-columns: 1fr; } }
+  .fn-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .fn-asides { display: flex; flex-direction: column; gap: 12px; }
+  .aside { background: #FEF3C7; border-left: 4px solid #F59E0B; border-radius: 6px; padding: 10px 12px; font-size: 11.5px; color: #78350F; }
+  .aside.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .aside.warn { background: #FEE2E2; border-left-color: #EF4444; color: #991B1B; }
+  .aside.helper { background: #F3E8FF; border-left-color: #A855F7; color: #6B21A8; }
+  .aside-title { font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+  .aside code { background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 10.5px; word-break: break-word; }
+  .cascade { background: #FEFCE8; border: 1px dashed #EAB308; border-radius: 8px; padding: 12px; margin: 6px 0; }
+  .cascade-title { font-size: 11px; font-weight: 700; color: #713F12; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .cascade-step { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; padding: 6px 8px; background: white; border-radius: 6px; margin-bottom: 4px; font-size: 11.5px; }
+  .cascade-step .cond { font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; color: #334155; }
+  .cascade-step .result { font-weight: 700; font-size: 10.5px; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+  .cascade-step .result.pass { background: #D1FAE5; color: #065F46; }
+  .cascade-step .result.deny { background: #FEE2E2; color: #991B1B; }
+  .cascade-step .result.next { background: #E0E7FF; color: #3730A3; }
+  .cascade-step .result.call { background: #FEF3C7; color: #78350F; }
+  .cascade-num { background: #EAB308; color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+  .nested-flow { margin: 6px 0; padding: 12px; background: #F0FDF4; border: 1px dashed #10B981; border-radius: 8px; }
+  .nested-flow-title { font-size: 10.5px; font-weight: 700; color: #065F46; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .code-block { background: #0F172A; color: #E2E8F0; padding: 12px 16px; border-radius: 6px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11px; line-height: 1.6; overflow-x: auto; margin: 6px 0; }
+  .code-block .k { color: #93C5FD; }
+  .code-block .s { color: #86EFAC; }
+  .code-block .c { color: #64748B; font-style: italic; }
+  .code-block .t { color: #FDE68A; }
+  .note { background: #FEF3C7; border-left: 4px solid #F59E0B; padding: 12px 16px; border-radius: 6px; font-size: 12.5px; color: #78350F; margin: 20px 0; }
+  .note.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .note code { background: rgba(255,255,255,0.6); padding: 1px 4px; border-radius: 3px; font-family: 'SF Mono', Menlo, Consolas, monospace; font-size: 11.5px; }
+  .page-footer-nav { margin-top: 48px; padding: 16px; background: white; border-radius: 10px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .field-table { width: 100%; border-collapse: collapse; font-size: 11px; margin: 8px 0; }
+  .field-table th { text-align: left; padding: 6px 8px; background: #F1F5F9; color: #334155; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; font-size: 10px; border-bottom: 1px solid #CBD5E1; }
+  .field-table td { padding: 5px 8px; border-bottom: 1px solid #F1F5F9; vertical-align: top; }
+  .field-table td:first-child { font-family: 'SF Mono', Menlo, Consolas, monospace; color: #0F172A; font-weight: 600; white-space: nowrap; font-size: 10.5px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-nav">
+    <div class="breadcrumb">
+      <a href="../index.html">📋 Execução de Agente</a>
+      <span class="sep">›</span>
+      <span>Passo 1.5b — Detalhamento</span>
+    </div>
+    <a href="../index.html#step-1-5b" class="back-btn">← Voltar ao diagrama</a>
+  </div>
+
+  <div class="page-header">
+    <span class="icon">🗑️</span>
+    <h1>Passo 1.5b — Reset de fluxObject com clearOnExecution</h1>
+  </div>
+  <div class="page-sub">
+    Bloco em <code>flux.service.ts:2525-2558</code>. Para todo node <code>fluxObject</code> com <code>data.clearOnExecution</code> truthy: (1) limpa session state no Postgres <em>se</em> for chat/session-enabled, (2) persiste o reset no live node row, (3) reaplica o reset em memória no <code>updatedFlows</code>.
+  </div>
+
+  <div class="step-friendly">
+    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <ul>
+      <li><strong>Acha os fluxObject com flag ligada:</strong> <code>updatedFlows.filter(isFluxObjectClearOnExecution)</code> — helper puro em <code>node-output-reset.ts:137-143</code> que testa <code>node.type === 'fluxObject' &amp;&amp; Boolean(node.data.clearOnExecution)</code>. Se não há nenhum, o bloco todo é pulado.</li>
+      <li><strong>Loop com 2 side effects por node:</strong> pra cada <code>nodeToClear</code>, testa <code>fluxObjectPersistsEntries(node)</code> — que devolve <code>true</code> se <code>data.chat === true</code> ou <code>data.sessionEnabled === true</code>. Se sim, chama <code>sessionStateService.clear</code> que DELETE-a as rows daquele scope no Postgres.</li>
+      <li><strong>Persiste o reset in-flight:</strong> chama <code>persistNodeDataToLiveRow</code> passando <code>buildFluxObjectClearOnExecution(node)</code> — que resolve pra <code>{ entries: [] }</code> por default ou pra estrutura complexa com <code>userSessionsChat</code> se tiver sessão selecionada não-default. Grava no <code>flow_version_history</code> (se versionado) ou direto no <code>flow_nodes</code>.</li>
+      <li><strong>Reaplica em memória no updatedFlows:</strong> depois do loop, <code>updatedFlows.map</code> re-executa <code>buildFluxObjectClearOnExecution</code> em <em>todos</em> os nodes (não só os "clear"). Se o resultado não é vazio (só volta não-vazio pros fluxObject com flag), faz spread merge — assim o array em memória fica alinhado com o que foi gravado.</li>
+      <li><strong>Duas fontes de verdade — banco + memória — em sync:</strong> o design é meio complicado (grava e depois re-aplica em memória) mas garante que quem lê o node dali pra frente vê o estado limpo, e quem consultar o banco também.</li>
+    </ul>
+  </div>
+
+  <div class="note info">
+    <strong>Contexto:</strong> <code>clearOnExecution</code> é um <em>opt-in</em> por node — o usuário liga no editor pra dizer "toda vez que rodar, esquece o histórico". Sem esse mecanismo, chats acumulam infinitamente entre runs.
+  </div>
+
+  <div class="overview-mini">
+    <div class="overview-mini-title">Cadeia em 1.5b</div>
+    <div class="overview-chain">
+      <a href="#fn-a" class="overview-chip"><span class="lbl">A</span>filter isFluxObjectClearOnExecution</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>gate fluxObjectPersistsEntries</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>sessionStateService.clear</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>persistNodeDataToLiveRow</a>
+      <span class="overview-sep">→</span>
+      <a href="#fn-e" class="overview-chip"><span class="lbl">E</span>Reaplica updatedFlows.map</a>
+    </div>
+    <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
+      Resultado: <code>fluxObject</code> nodes com <code>clearOnExecution</code> ligado começam o run com <code>entries: []</code>, tanto em memória quanto no banco.
+    </div>
+  </div>
+
+  <!-- FN A -->
+  <div class="fn-card collapsed" id="fn-a">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#EAB308;color:white">A</span>
+        <code>isFluxObjectClearOnExecution(node)</code>
+      </div>
+      <div class="fn-loc">node-output-reset.ts:137-143 (impl) + flux.service.ts:2525 (uso)</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        export function isFluxObjectClearOnExecution&lt;T&gt;(node: T): boolean
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Identificar nodes tipo <code>fluxObject</code> que têm o flag <code>clearOnExecution</code> ligado. É a "porta de entrada" desse bloco — se o filter devolver array vazio, todo o resto é pulado.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> uma verificação bem enxuta: "é do tipo <code>fluxObject</code>? e tem <code>clearOnExecution</code> caindo pra truthy?". A verificação usa <code>Boolean()</code> porque <code>clearOnExecution</code> pode chegar como (a) <code>undefined</code> = falso, (b) <code>{}</code> objeto vazio = <em>truthy</em>! (c) <code>{ campo: true }</code> = truthy. Ou seja, um objeto <em>vazio</em> ali dentro ainda dispara o clear — o que faz sentido no domain: se o usuário setou o campo, mesmo vazio, é opt-in explícito. Investigação: existem outros types (fluxBox, libraryNode) que também usam <code>clearOnExecution</code>, mas com semântica diferente — eles são tratados no passo 1.7a. Só o <code>fluxObject</code> tem essa lógica especial de session state + persist.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">A1</span> Impl é puro-check</div>
+            <div class="code-block">
+<span class="k">const</span> FLUX_OBJECT_TYPE = <span class="s">'fluxObject'</span>;
+
+<span class="k">export function</span> <span class="t">isFluxObjectClearOnExecution</span>(node) {
+  <span class="k">return</span> (
+    node?.type === FLUX_OBJECT_TYPE &amp;&amp;
+    Boolean(node?.data?.clearOnExecution)
+  );
+}
+            </div>
+            <div class="box-file">node-output-reset.ts:135-143</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">A2</span> filter no updatedFlows</div>
+            <div class="box-desc">
+              <code>const fluxObjectsToClear = updatedFlows.filter(isFluxObjectClearOnExecution);</code>
+              <br><br>Se <code>.length === 0</code>, todo o bloco 1.5b é skip (L2529 gate).
+            </div>
+            <div class="box-file">flux.service.ts:2525-2527</div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Por que <code>Boolean()</code>?</div>
+            <code>data.clearOnExecution</code> pode ser <code>undefined</code>, um objeto <code>{}</code>, ou <code>{ field: true }</code>. <code>Boolean({})</code> = <code>true</code> (objeto vazio é truthy em JS), então mesmo config vazio dispara o clear.
+          </div>
+          <div class="aside">
+            <div class="aside-title">📎 fluxObject vs fluxBox/libraryNode</div>
+            Todos podem ter <code>clearOnExecution</code>, mas só <code>fluxObject</code> tem session state persistente (chat entries) — os outros só têm output fields simples (tratados no passo 1.7a).
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 Generic T</div>
+            Signature <code>&lt;T extends { type?: string; data?: Record&lt;string, any&gt; }&gt;</code> — trabalha com qualquer objeto que tenha type+data. Não amarra numa entity específica.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FN B -->
+  <div class="fn-card collapsed" id="fn-b">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#F59E0B;color:white">B</span>
+        <code>fluxObjectPersistsEntries(node)</code>
+      </div>
+      <div class="fn-loc">node-output-reset.ts:145-149 (impl) + flux.service.ts:2531 (uso)</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        export function fluxObjectPersistsEntries&lt;T&gt;(node: T): boolean
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Sub-gate dentro do loop: só chama <code>sessionStateService.clear</code> se o node é <em>chat</em> ou tem <em>sessions</em>. Sem esse gate, o clear rodaria pra fluxObjects "normais" (sem session) e faria DELETE inútil no Postgres.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> nem todo <code>fluxObject</code> guarda coisas no session state — só os que estão em <em>chat mode</em> (<code>data.chat === true</code>) ou com <em>sessions ligadas</em> (<code>data.sessionEnabled === true</code>). Esse gate distingue: se o node é só um armazém estático de chaves-valor, o session state está vazio e não vale a pena rodar DELETE. Se é chat/session, aí sim precisa varrer a tabela. É otimização + correção: evita queries desnecessárias e não rodar código de "clear session" em nodes que não têm session pra limpar.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">B1</span> Impl — union de 2 flags</div>
+            <div class="code-block">
+<span class="k">export function</span> <span class="t">fluxObjectPersistsEntries</span>(node) {
+  <span class="k">return</span> node?.data?.chat === <span class="k">true</span>
+       || node?.data?.sessionEnabled === <span class="k">true</span>;
+}
+            </div>
+            <div class="box-file">node-output-reset.ts:145-149</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box decision">
+            <div class="box-title">Gate no loop</div>
+            <div class="box-desc">
+              <code>if (fluxObjectPersistsEntries(nodeToClear)) { await sessionStateService.clear(...); }</code>
+              <br>Se false, pula direto pro <code>persistNodeDataToLiveRow</code>.
+            </div>
+            <div class="box-file">flux.service.ts:2531-2542</div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Comparação estrita ===true</div>
+            Usa <code>=== true</code>, não <code>!!</code>. Isso significa que <code>data.chat = 'yes'</code> (string) ou <code>data.chat = 1</code> (number) <em>não</em> passam. Só <code>true</code> literal booleano.
+          </div>
+          <div class="aside">
+            <div class="aside-title">📎 Onde essas flags são setadas</div>
+            No editor do frontend: user liga toggle "Chat mode" (seta <code>data.chat = true</code>) ou "Enable sessions" (seta <code>data.sessionEnabled = true</code>).
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 Contract com o passo 1.6</div>
+            No 1.6, esse mesmo <code>fluxObjectPersistsEntries</code> é reconstruído inline: <code>chatNode?.data?.chat === true || chatNode?.data?.sessionEnabled === true</code> — decidir se lê contents pra fluxObject com chat. Mesma lógica, contract compartilhado.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FN C -->
+  <div class="fn-card collapsed" id="fn-c">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#3B82F6;color:white">C</span>
+        <code>sessionStateService.clear({ scopeType, scopeId, sessionKey, ownerUserId })</code>
+      </div>
+      <div class="fn-loc">session-state.service.ts:189-199 + flux.service.ts:2532-2540</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        async clear(scope: SessionStateScope): Promise&lt;void&gt;
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Deleta <em>todas</em> as rows da tabela <code>session_state_entry</code> que casam com o scope (chat + scopeId + sessionKey [+ ownerUserId]). Escopo aqui é <code>type='chat', id='{flowId}:{nodeId}', sessionKey=data.selectedChat || 'default'</code>.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> é o <em>furacão</em> que passa e apaga tudo do session state daquele node/sessão. O scope é composto: <code>scopeType = 'chat'</code> (fixo aqui), <code>scopeId = flowId:nodeId</code> (construído por <code>buildNodeScopeId</code>), <code>sessionKey = data.selectedChat || 'default'</code> (qual sessão do chat limpar) e <code>ownerUserId</code> se veio. O service monta um <code>where</code> dinâmico — se <code>ownerUserId</code> for undefined, não entra no WHERE (limpa cross-user daquele scope, o que na prática não acontece porque sempre passa <code>user?.id</code>). Depois chama <code>sessionStateRepository.delete(where)</code> — hard delete, sem soft-delete. É irreversível. Cada chamada aqui deleta 1..N rows no Postgres.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">C1</span> Chamada no loop</div>
+            <div class="code-block">
+<span class="k">await</span> <span class="k">this</span>.sessionStateService.clear({
+  scopeType: <span class="s">'chat'</span>,
+  scopeId: <span class="k">this</span>.sessionStateService.buildNodeScopeId(
+    flowId, nodeToClear.id,
+  ),
+  sessionKey: nodeToClear.data?.selectedChat || <span class="s">'default'</span>,
+  ownerUserId: user?.id,
+});
+            </div>
+            <div class="box-file">flux.service.ts:2532-2540</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="nested-flow">
+            <div class="nested-flow-title">↳ Implementação: session-state.service.ts:189-199</div>
+            <div class="code-block">
+<span class="k">async</span> clear(scope: <span class="t">SessionStateScope</span>): <span class="t">Promise&lt;void&gt;</span> {
+  <span class="k">const</span> where: <span class="t">Record&lt;string, string&gt;</span> = {
+    scopeType: scope.scopeType,
+    scopeId: scope.scopeId,
+    sessionKey: <span class="k">this</span>.resolveSessionKey(scope.sessionKey),
+  };
+  <span class="k">if</span> (scope.ownerUserId) {
+    where.ownerUserId = scope.ownerUserId;
+  }
+  <span class="k">await</span> <span class="k">this</span>.sessionStateRepository.delete(where);
+}
+            </div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box db">
+            <div class="box-title"><span class="badge step">C2</span> DELETE FROM session_state_entry</div>
+            <div class="box-desc">
+              WHERE scope_type='chat' AND scope_id='{flowId}:{nodeId}' AND session_key=... [AND owner_user_id=...]
+              <br><br>Hard delete. Sem transação — se falhar no meio, algumas rows apagadas outras não.
+            </div>
+            <div class="box-file">session-state.service.ts:198</div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 resolveSessionKey normaliza</div>
+            <code>resolveSessionKey('')</code> retorna <code>'default'</code>. O trim + fallback é feito dentro do service. <code>buildNodeScopeId(flowId, nodeId)</code> = <code>&#96;${flowId}:${nodeId}&#96;</code> — concat simples com <code>:</code>.
+          </div>
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Falha silenciosa nesse fluxo</div>
+            O <code>await</code> aqui está <em>dentro</em> do <code>try</code> maior do apiV2 — se falhar, joga direto no <code>catch</code> geral e o run inteiro falha. Não há retry ou soft-fail — clear é hard-required.
+          </div>
+          <div class="aside warn">
+            <div class="aside-title">⚠️ ownerUserId opcional no where</div>
+            Se <code>user?.id</code> vier undefined, o where <em>não</em> filtra por owner — deleta cross-user. Só é seguro porque em prática <code>user</code> sempre vem preenchido nessa altura (validado antes).
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 Scope tipos</div>
+            <code>SessionScopeType = 'chat' | 'object' | 'memory' | 'counter'</code>. Aqui usa só <code>chat</code>. O <code>object</code> é usado no clearObjects (1.7b). Cada scope tem semântica diferente mas mesma tabela.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FN D -->
+  <div class="fn-card collapsed" id="fn-d">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#8B5CF6;color:white">D</span>
+        <code>persistNodeDataToLiveRow + buildFluxObjectClearOnExecution</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:2543-2548, 2235-2262 + node-output-reset.ts:151-169</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        await this.persistNodeDataToLiveRow(flowId, nodeId, buildFluxObjectClearOnExecution(node), flowVersionHistoryId)
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Grava no Postgres <em>o reset</em> — patch parcial do <code>data</code> desse node — pra que o canvas do frontend reflita imediatamente que aquele fluxObject foi zerado. Sem esse write, o banco continuaria com o estado velho até <code>persistNodeSuccess</code> do worker regravar.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> a helper <code>buildFluxObjectClearOnExecution</code> monta o <em>patch</em> — o que precisa ir pro banco. Tem dois modos: (1) se <code>selectedChat === 'default'</code> ou não há <code>userSessionsChat</code>, o patch é só <code>{ entries: [] }</code> — zerar as entries. (2) se tem sessão nomeada não-default, o patch é bem mais complexo: <code>{ entries: [], userSessionsChat: [...map que zera entries da sessão ativa]}</code> — preserva as outras sessões mas limpa a selecionada. Depois, <code>persistNodeDataToLiveRow</code> aplica esse patch: se o run é versionado (<code>flowVersionHistoryId</code> presente), atualiza o snapshot do version history; senão, atualiza a live row em <code>flow_nodes</code>. Bug se falhar: dá catch dentro do próprio persist, loga o erro mas <em>não</em> propaga — o run continua mesmo se o write falhar. Ou seja, o banco pode ficar dessincronizado com a memória se algo der errado aqui, mas o run em si prossegue.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">D1</span> buildFluxObjectClearOnExecution — patch resolver</div>
+            <div class="code-block">
+<span class="k">export function</span> <span class="t">buildFluxObjectClearOnExecution</span>(node) {
+  <span class="k">if</span> (!isFluxObjectClearOnExecution(node)) <span class="k">return</span> {};
+  <span class="k">const</span> data = node.data;
+  <span class="k">const</span> selectedChat = data.selectedChat || <span class="s">'default'</span>;
+  <span class="k">if</span> (selectedChat === <span class="s">'default'</span>
+      || !Array.isArray(data.userSessionsChat)) {
+    <span class="k">return</span> { entries: [] };
+  }
+  <span class="k">return</span> {
+    entries: [],
+    userSessionsChat: data.userSessionsChat.<span class="t">map</span>(
+      session =&gt; session?.id === selectedChat
+        ? { ...session, entries: [] } : session,
+    ),
+  };
+}
+            </div>
+            <div class="box-file">node-output-reset.ts:151-169</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="nested-flow">
+            <div class="nested-flow-title">↳ persistNodeDataToLiveRow — flux.service.ts:2235-2262</div>
+            <div class="code-block">
+<span class="k">private async</span> <span class="t">persistNodeDataToLiveRow</span>(flowId, nodeId, data, flowVersionHistoryId) {
+  <span class="k">try</span> {
+    <span class="k">if</span> (flowVersionHistoryId) {
+      <span class="k">await</span> flowNodeService.updateSingleNodeDataInHistory(
+        flowVersionHistoryId, nodeId, data,
+      );
+      <span class="k">return</span>;
+    }
+    <span class="k">await</span> flowNodeService.updateSingleNodeData(flowId, nodeId, data);
+  } <span class="k">catch</span> (error) {
+    loggerService.error(...);  <span class="c">// log-only, não propaga</span>
+  }
+}
+            </div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="cascade">
+            <div class="cascade-title">🚪 Cascade de destino</div>
+            <div class="cascade-step">
+              <span class="cascade-num">1</span>
+              <span class="cond"><code>flowVersionHistoryId</code> presente (run em versão específica)</span>
+              <span class="result call">updateSingleNodeDataInHistory</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">2</span>
+              <span class="cond">senão</span>
+              <span class="result call">updateSingleNodeData (live)</span>
+            </div>
+            <div class="cascade-step">
+              <span class="cascade-num">3</span>
+              <span class="cond">erro</span>
+              <span class="result deny">log-only, não propaga</span>
+            </div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Por que 2 modos no patch?</div>
+            <code>selectedChat = 'default'</code> = usuário está no chat padrão, só limpa <code>entries</code>. Não há <code>userSessionsChat</code> pra mexer. Sessão nomeada = tem várias sessions no array; só zera as entries da <em>ativa</em>, preservando as outras.
+          </div>
+          <div class="aside">
+            <div class="aside-title">📎 Docstring do persistNodeDataToLiveRow</div>
+            "Persist a node's run-time data to the live flow JSON so the canvas reflects it. Used for values the worker never writes back (persistNodeSuccess): a data-input node's resolved value, and the entries a Small Memory node drops at the start of a clear-on-execution run."
+          </div>
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Log-only catch — sync silencioso</div>
+            Se o UPDATE falhar (deadlock, connection dropped), log é gravado mas o run continua. Banco fica dessincronizado com memória temporariamente até o próximo persist regravar.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 flowNodeService métodos</div>
+            <code>updateSingleNodeData(flowId, nodeId, patch)</code> — update JSONB merge no <code>flow_nodes.data</code>. <code>updateSingleNodeDataInHistory(historyId, nodeId, patch)</code> — mesmo mas no snapshot do version history.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FN E -->
+  <div class="fn-card collapsed" id="fn-e">
+    <div class="fn-card-header">
+      <div class="fn-title">
+        <span class="badge migrated" style="background:#A855F7;color:white">E</span>
+        <code>Reaplica em memória via updatedFlows.map</code>
+      </div>
+      <div class="fn-loc">flux.service.ts:2551-2557</div>
+    </div>
+    <div class="fn-card-body">
+      <div class="fn-signature">
+        updatedFlows = updatedFlows.map(nd =&gt; { const reset = buildFluxObjectClearOnExecution(nd); ... });
+      </div>
+      <div class="fn-purpose">
+        <strong>Propósito:</strong> Reaplica o reset em memória em <em>todos</em> os nodes de <code>updatedFlows</code> — só volta patch não-vazio pros <code>fluxObject</code> com flag; os outros retornam do jeito que estavam. Sync memory ↔ banco.
+      </div>
+      <div class="fn-friendly">
+        <strong>Em resumo:</strong> depois de gravar no banco os resets, o array em memória <code>updatedFlows</code> ainda está com o estado <em>velho</em> — o loop anterior só escreveu no Postgres. Essa segunda passada, um <code>.map</code>, chama <code>buildFluxObjectClearOnExecution</code> pra cada node do array — a helper devolve <code>{}</code> se o node não é fluxObject-com-flag, e devolve o patch caso contrário. Se veio <code>{}</code>, retorna o node inalterado. Se veio patch não-vazio, faz <code>{ ...nd, data: { ...nd.data, ...reset } }</code> — merge shallow. Resultado: o array em memória fica alinhado com o que foi persistido. O jeito é ligeiramente redundante (chama <code>buildFluxObjectClearOnExecution</code> pra todos, quando só os fluxObjects com flag interessam), mas o custo é baixo e a lógica fica centralizada em uma helper única.
+      </div>
+
+      <div class="fn-body-cols">
+        <div class="fn-main">
+          <div class="box backend">
+            <div class="box-title"><span class="badge step">E1</span> Segunda pasada — .map cross-array</div>
+            <div class="code-block">
+updatedFlows = updatedFlows.<span class="t">map</span>(nd =&gt; {
+  <span class="k">const</span> reset = buildFluxObjectClearOnExecution(nd);
+  <span class="k">if</span> (Object.keys(reset).length === 0) {
+    <span class="k">return</span> nd;  <span class="c">// não é fluxObject-com-flag, deixa como está</span>
+  }
+  <span class="k">return</span> { ...nd, data: { ...nd.data, ...reset } };
+});
+            </div>
+            <div class="box-file">flux.service.ts:2551-2557</div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box decision">
+            <div class="box-title">Efeito por tipo de node</div>
+            <div class="cascade">
+              <div class="cascade-step">
+                <span class="cascade-num">1</span>
+                <span class="cond">Node não é fluxObject</span>
+                <span class="result pass">return nd (inalterado)</span>
+              </div>
+              <div class="cascade-step">
+                <span class="cascade-num">2</span>
+                <span class="cond">fluxObject sem clearOnExecution</span>
+                <span class="result pass">return nd (inalterado)</span>
+              </div>
+              <div class="cascade-step">
+                <span class="cascade-num">3</span>
+                <span class="cond">fluxObject com clearOnExecution</span>
+                <span class="result next">merge shallow com reset</span>
+              </div>
+            </div>
+          </div>
+          <div class="arrow">↓</div>
+          <div class="box backend">
+            <div class="box-title">Reatribuição do array (imutável)</div>
+            <div class="box-desc">
+              <code>updatedFlows = ...</code> — reatribui a variável <code>let</code>. O array antigo é descartado, o novo tem elementos novos onde há mudanças e referências velhas onde não há.
+            </div>
+            <div class="box-file">flux.service.ts:2551</div>
+          </div>
+        </div>
+        <div class="fn-asides">
+          <div class="aside info">
+            <div class="aside-title">🎯 Por que chamar em todos?</div>
+            A helper é pura e barata. Chamar em todos e testar o resultado é mais simples que ter dois passos (filtrar + aplicar). O custo é uma call de function por node.
+          </div>
+          <div class="aside">
+            <div class="aside-title">📎 Merge shallow</div>
+            <code>data: { ...nd.data, ...reset }</code> — spread merge. Se <code>reset</code> tem <code>{ entries: [] }</code>, sobrescreve <code>data.entries</code>. Se tem <code>userSessionsChat: [...]</code>, sobrescreve inteiro (não faz deep merge).
+          </div>
+          <div class="aside warn">
+            <div class="aside-title">⚠️ Redundância com D3 do worker</div>
+            Quando o worker rodar esse fluxObject depois, <code>persistNodeSuccess</code> pode regravar. Se o worker não respeitar o reset e regravar entries velhas, o banco volta pro estado sujo. Sem contract explícito — só correto por convenção.
+          </div>
+          <div class="aside helper">
+            <div class="aside-title">🔧 buildFluxObjectClearOnExecution é chamada 2x</div>
+            Uma vez em D (pra montar patch pro persist), uma vez aqui em E (pra montar patch pro merge). Chamada é idempotente e barata — helper pura.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note info" style="margin-top:32px">
+    <strong>Resumo — o que sai de 1.5b:</strong>
+    <br>• <code>updatedFlows</code> mutado: <code>fluxObject</code> com <code>clearOnExecution</code> ligado têm <code>data.entries = []</code> (e opcionalmente <code>data.userSessionsChat</code> re-mapeado)
+    <br>• Banco atualizado: mesmas mudanças persistidas via <code>flow_nodes</code> ou <code>flow_version_history</code>
+    <br>• Session state deletado: pra fluxObjects <em>chat/session-enabled</em>, rows relevantes em <code>session_state_entry</code> apagadas
+    <br>• I/O: 1 DELETE (chat/session) + 1 UPDATE por node com flag — em série (sem batch)
+  </div>
+
+  <div class="note">
+    <strong>Observações para migração:</strong>
+    <br>• As helpers (<code>isFluxObjectClearOnExecution</code>, <code>fluxObjectPersistsEntries</code>, <code>buildFluxObjectClearOnExecution</code>) são <em>funções puras</em> em <code>node-output-reset.ts</code> — replicáveis 1:1 no worker.
+    <br>• <code>sessionStateService.clear</code> depende do Postgres — se o worker precisar limpar, precisa: (a) fazer round-trip pro backend, ou (b) receber conexão pra tabela <code>session_state_entry</code>.
+    <br>• <code>persistNodeDataToLiveRow</code> é <em>write-through</em>: se o worker rodar isso, precisa ter as mesmas duas branches (live vs version-history) e o mesmo comportamento log-only-catch.
+    <br>• A "reaplicação em memória" (E) só faz sentido enquanto o loop de execução compartilha memória. No worker, a versão canônica dos nodes viria dos start-args — o backend teria que reset <em>antes</em> de dar start no workflow.
+    <br>• Prioridade média-alta: chats sem clearOnExecution respeitado ficariam com histórico eterno, o que quebra semântica de vários agents.
+    <br>• Watch out: os <em>outros</em> types com clearOnExecution (fluxBox, libraryNode) são tratados no 1.7a com lógica <strong>diferente</strong> — não misturar!
+  </div>
+
+  <div class="page-footer-nav">
+    <a href="../index.html#step-1-5b" class="back-btn">← Voltar ao diagrama principal</a>
+  </div>
+
+</div>
+<script>
+(function() {
+  function toggle(card) { if (card) card.classList.toggle('collapsed'); }
+  function expand(card) { if (card && card.classList.contains('collapsed')) card.classList.remove('collapsed'); }
+  document.querySelectorAll('.fn-card-header').forEach(function(header) {
+    header.addEventListener('click', function(e) {
+      if (e.target.closest('a')) return;
+      toggle(header.parentElement);
+    });
+  });
+  document.querySelectorAll('a[href^="#fn-"]').forEach(function(link) {
+    link.addEventListener('click', function() {
+      var id = link.getAttribute('href').slice(1);
+      expand(document.getElementById(id));
+    });
+  });
+  if (window.location.hash && window.location.hash.startsWith('#fn-')) {
+    expand(document.querySelector(window.location.hash));
+  }
+  window.addEventListener('hashchange', function() {
+    if (window.location.hash.startsWith('#fn-')) {
+      expand(document.querySelector(window.location.hash));
+    }
+  });
+})();
+</script>
+</body>
+</html>

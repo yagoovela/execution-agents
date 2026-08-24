@@ -817,31 +817,105 @@
     <div class="arrow">↓</div>
 
     <div class="flow-column">
-      <div class="box backend">
+      <a href="passos/passo-1-1.html" class="box backend clickable-node" id="step-1-1">
+        <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title">
-          <span class="badge step">1.1</span> Bull queue: ApiV2QueueProcessor.execute()
+          <span class="badge step">1.1</span> Bull queue <code>api-v2</code> — <code>ApiV2QueueProcessor.execute()</code>
           <span class="badge ess">essencial</span>
         </div>
-        <div class="box-desc">Recebe <code>ApiV2QueueModel { jobId, params, webhookUrl }</code>. Define <code>processId = params.parentProcessId ?? jobId</code>. Chama <code>mcpRunStatusService.markRunning()</code>.</div>
-        <div class="box-file">src/app-api/flux/apiV2Job.processor.ts:34-56</div>
-      </div>
-      <div style="width:520px;max-width:100%;background:#FEF3C7;border-left:4px solid #F59E0B;padding:10px 14px;border-radius:6px;font-size:12px;color:#78350F;margin-top:6px">
-        <strong>⚠ Aviso:</strong> A nova regra de fila ainda não foi documentada.
-      </div>
+        <div class="box-desc">
+          Recebe <code>ApiV2QueueModel { jobId, params, webhookUrl, apiV2CallbackFormat }</code>. Config Bull com <code>attempts: 1</code>, <code>timeout: 10min</code>, concorrência via <code>AGENT_CONCURRENCY</code>. Marca <code>markRunning</code>/<code>markInProgress</code>, chama <code>apiV2</code>, publica resultado em <code>McpRunStatus</code>/<code>FlowExecutionStatus</code>, dispara callback HTTP em 2 formatos (novo vs legacy).
+        </div>
+        <div class="box-file">src/jobs/apiV2Job/apiV2Job.queue.ts:18-35 · apiV2Job.processor.ts:16-212 · models/apiV2JobModel.ts:6-33</div>
+        <div class="click-hint">
+          <span class="click-hint-icon">🔍</span>
+          <span>Clique para ver detalhamento (config Bull + processor + callbacks + OnQueueFailed)</span>
+          <span class="click-hint-arrow">→</span>
+        </div>
+      </a>
+      <div class="arrow">↓</div>
+
+      <a href="passos/passo-1-1a.html" class="box cross clickable-node" id="step-1-1a">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title">
+          <span class="badge step">1.1a</span> Serviços auxiliares acionados pela fila
+          <span class="badge cross">cross</span>
+        </div>
+        <div class="box-desc">
+          <code>McpRunStatusService</code> (condicional em <code>mcpTracking</code>) e <code>FlowExecutionStatusService</code> (condicional em <code>executionId</code>) rastreiam o run em 2 caminhos independentes: MCP UI (workspaceId/agentId/tokenId) e persistência de status (markInProgress/markCompleted/markError).
+        </div>
+        <div class="box-file">apiV2Job.processor.ts:38-42, 63-108, 133-152 · src/app-api/flux/flow-execution-status.service.ts</div>
+        <div class="click-hint">
+          <span class="click-hint-icon">🔍</span>
+          <span>Clique para ver detalhamento (2 gates + 3 métodos de cada service)</span>
+          <span class="click-hint-arrow">→</span>
+        </div>
+      </a>
+      <div class="arrow">↓</div>
+
+      <a href="passos/passo-1-1b.html" class="box cross clickable-node" id="step-1-1b">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title">
+          <span class="badge step">1.1b</span> Chamadores <em>internos</em> da fila — pattern fire-and-forget
+        </div>
+        <div class="box-desc">
+          <code>flowCallerNode</code> e <code>libraryNode</code> com <code>executionMode: 'triggerOnly'</code> enfileiram sub-flows via <code>enqueueApiV2Job(...).catch(...)</code> sem await. Contraste com o caminho síncrono default (<code>returnAfterFlow</code>).
+        </div>
+        <div class="box-file">flux.service.ts:5593-5618 (flowCallerNode) · 5960-5986 (libraryNode)</div>
+        <div class="click-hint">
+          <span class="click-hint-icon">🔍</span>
+          <span>Clique para ver detalhamento (2 handlers + gate executionMode + fallback erro)</span>
+          <span class="click-hint-arrow">→</span>
+        </div>
+      </a>
       <div class="arrow">↓</div>
       <div class="arrow-label">todos os endpoints (com ou sem fila) chamam</div>
 
       <div class="box backend">
         <div class="box-title">FluxService.apiV2() — ORQUESTRADOR ÚNICO</div>
         <div class="box-desc">Ponto de entrada de toda execução de agente</div>
-        <div class="box-file">src/app-api/flux/flux.service.ts:2234</div>
+        <div class="box-file">src/app-api/flux/flux.service.ts:2280</div>
       </div>
+      <div class="arrow">↓</div>
+
+      <a href="passos/passo-1-0a.html" class="box backend clickable-node" id="step-1-0a">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title">
+          <span class="badge step">1.0a</span> Setup inicial pré-tudo
+        </div>
+        <div class="box-desc">
+          <code>sessionId</code> trimmed · contadores <code>totalTokensUsed/Cost</code> + closure <code>onUpdateTokens</code> · <code>runLogProcessId</code> resolvido em cascata de 4 fontes · <code>chatbotSocketByRun</code> registrado se <code>socketId</code> · <code>isNestedRunLog</code> flag pra gates downstream.
+        </div>
+        <div class="box-file">flux.service.ts:2319-2337</div>
+        <div class="click-hint">
+          <span class="click-hint-icon">🔍</span>
+          <span>Clique para ver detalhamento (cascata runLogProcessId + closure + flag nested)</span>
+          <span class="click-hint-arrow">→</span>
+        </div>
+      </a>
+      <div class="arrow">↓</div>
+
+      <a href="passos/passo-1-0b.html" class="box backend clickable-node" id="step-1-0b">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title">
+          <span class="badge step">1.0b</span> Resolução do <code>runTypeEnum</code>
+        </div>
+        <div class="box-desc">
+          Switch de 24 linhas mapeando <code>runType</code> (string) pro enum <code>FlowLogRunType</code>. Mapeamento direto por valor + default por prefixo pra <code>flow-caller-node</code>/<code>library-node</code>/<code>WEBHOOK</code>.
+        </div>
+        <div class="box-file">flux.service.ts:2339-2374</div>
+        <div class="click-hint">
+          <span class="click-hint-icon">🔍</span>
+          <span>Clique para ver detalhamento (switch + prefix matching + uso downstream)</span>
+          <span class="click-hint-arrow">→</span>
+        </div>
+      </a>
       <div class="arrow">↓</div>
 
       <div class="box backend">
         <div class="box-title"><span class="badge step">1.2</span> Validação de usuário <span class="badge ess">essencial</span></div>
         <div class="box-desc"><code>userService.findOne({ id: user.id })</code></div>
-        <div class="box-file">flux.service.ts:2333-2335 <em>(era ~1773)</em></div>
+        <div class="box-file">flux.service.ts:2377-2380 <em>(era ~1773)</em></div>
       </div>
       <div class="arrow">↓</div>
 
@@ -891,11 +965,45 @@
       </a>
       <div class="arrow">↓</div>
 
+      <a href="passos/passo-1-5a.html" class="box backend clickable-node" id="step-1-5a">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title">
+          <span class="badge step">1.5a</span> <code>stripStaleErrorState()</code> — limpa erros de runs anteriores
+        </div>
+        <div class="box-desc">
+          Remove <code>errorMessage</code>/<code>errorStatusCode</code> acumulados de execuções passadas antes de começar. Também monta cópia enxuta de <code>edges</code> (só campos usados pelo scheduler).
+        </div>
+        <div class="box-file">flux.service.ts:2513-2520 · 444-448 (stripStaleErrorState)</div>
+        <div class="click-hint">
+          <span class="click-hint-icon">🔍</span>
+          <span>Clique para ver detalhamento (implementação + edges enxuto)</span>
+          <span class="click-hint-arrow">→</span>
+        </div>
+      </a>
+      <div class="arrow">↓</div>
+
+      <a href="passos/passo-1-5b.html" class="box backend clickable-node" id="step-1-5b">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title">
+          <span class="badge step">1.5b</span> Reset de <code>fluxObject</code> com <em>clearOnExecution</em>
+        </div>
+        <div class="box-desc">
+          Filtra nós marcados com <code>clearOnExecution</code> e, se persistem entries, limpa sessão chat via <code>sessionStateService.clear</code>. Depois <code>persistNodeDataToLiveRow</code> grava reset no banco e mapeia <code>updatedFlows</code> em memória.
+        </div>
+        <div class="box-file">flux.service.ts:2525-2558</div>
+        <div class="click-hint">
+          <span class="click-hint-icon">🔍</span>
+          <span>Clique para ver detalhamento (isFluxObjectClearOnExecution + reset)</span>
+          <span class="click-hint-arrow">→</span>
+        </div>
+      </a>
+      <div class="arrow">↓</div>
+
       <a href="passos/passo-1-6.html" class="box backend clickable-node" id="step-1-6">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title"><span class="badge step">1.6</span> Carrega contexto de chat <span class="badge ess">essencial (modo chat)</span></div>
         <div class="box-desc"><code>sessionStateService.readContents()</code> para <code>fluxObject</code> e <code>nodesBox</code> com chat habilitado. Atualiza sessão selecionada.</div>
-        <div class="box-file">flux.service.ts:2491-2618 <em>(era ~1931)</em></div>
+        <div class="box-file">flux.service.ts:2560-2697 <em>(era ~1931)</em></div>
         <div class="click-hint">
           <span class="click-hint-icon">🔍</span>
           <span>Clique para ver detalhamento (gate + 4 blocos de merge)</span>
@@ -908,10 +1016,44 @@
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title"><span class="badge step">1.7</span> Refresh de token Google (condicional) <span class="badge ess">essencial</span></div>
         <div class="box-desc">Só se flow tem <code>pullData</code>/<code>pushData</code> com provider=google. Usa <code>OAuth2Client</code>.</div>
-        <div class="box-file">flux.service.ts:2620-2634 <em>(era ~2060)</em></div>
+        <div class="box-file">flux.service.ts:2699-2722 <em>(era ~2060)</em></div>
         <div class="click-hint">
           <span class="click-hint-icon">🔍</span>
           <span>Clique para ver detalhamento (gate + OAuth2Client refresh)</span>
+          <span class="click-hint-arrow">→</span>
+        </div>
+      </a>
+      <div class="arrow">↓</div>
+
+      <a href="passos/passo-1-7a.html" class="box backend clickable-node" id="step-1-7a">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title">
+          <span class="badge step">1.7a</span> Reset de nós com <code>clearOnExecution</code> — por tipo
+        </div>
+        <div class="box-desc">
+          Map com 7+ branches por <code>node.type</code>: <code>outputObjectNode</code> (text/textData), <code>fluxBox</code>/<code>libraryNode</code> (por key), <code>voiceBoxNode</code> (audioUrl), <code>commandContentNode</code>, <code>apiCaller</code>/<code>mcpNode</code>, tipos genéricos e <code>conditionNode.currentLoopCounter</code>.
+        </div>
+        <div class="box-file">flux.service.ts:2724-2812</div>
+        <div class="click-hint">
+          <span class="click-hint-icon">🔍</span>
+          <span>Clique para ver detalhamento (7+ tipos de reset por node type)</span>
+          <span class="click-hint-arrow">→</span>
+        </div>
+      </a>
+      <div class="arrow">↓</div>
+
+      <a href="passos/passo-1-7b.html" class="box backend clickable-node" id="step-1-7b">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title">
+          <span class="badge step">1.7b</span> <code>clearRunOutputForSeed()</code> + <code>clearObjects()</code>
+        </div>
+        <div class="box-desc">
+          <code>clearRunOutputForSeed</code> zera outputs por-nó via map. <code>clearObjects</code> limpa objetos personalizados marcados para reset (via callback <code>onMutateObjectCallerData</code>). Snapshot final <code>newFlows</code> antes do 1.8.
+        </div>
+        <div class="box-file">flux.service.ts:2814-2825</div>
+        <div class="click-hint">
+          <span class="click-hint-icon">🔍</span>
+          <span>Clique para ver detalhamento (idempotência + closure mutation)</span>
           <span class="click-hint-arrow">→</span>
         </div>
       </a>
@@ -922,17 +1064,30 @@
         <div class="box-title">
           <span class="badge step">1.8</span> Resolução de inputs (<code>varInputNode</code>) + extração/OCR
           <span class="badge ess">essencial</span>
-          <span class="badge new">omitido no doc original</span>
+          <span class="badge new">expandido pós-doc</span>
         </div>
         <div class="box-desc">
-          Consome <code>body.variableInputs</code> / <code>body.dataInput</code>. Para cada <code>varInputNode</code>:
-          upload S3 dos arquivos base64 · <code>extractionService.extractTextFromLink()</code>
-          com provider OCR (<code>mistral_ocr</code> / <code>mistral_vision</code> / <code>google_ocr</code>) ·
-          <code>addConnectToNodes()</code> propaga <code>{ text, uploadedFiles, extractText, isExtraction }</code> pros nós conectados via arestas ·
-          <code>persistInputNodeData()</code> grava no banco.
-          <br><em>Bloco pesado que roda antes do scheduler — é onde PDF/imagem/áudio viram texto pro LLM.</em>
+          <strong>Bloco de 361 linhas</strong> (2827-3189). Muito mais complexo que "resolve variáveis".
+          <br><br>
+          <strong>Fallback <code>dataInput</code> (2829-2850)</strong>: se <code>body.variableInputs</code> vazio E <code>body.dataInput</code> definido E existe pelo menos um <code>varInputNode</code>, sintetiza um input single-shot pro primeiro <code>varInputNode</code>. Aceita <code>dataInput</code> como string OU objeto <code>{ inputText, text }</code>.
+          <br><br>
+          <strong>Para cada <code>variableInput</code></strong> (2853+):
+          <br>• Se <code>node.type === 'varInputNode'</code>:
+          <br>&nbsp;&nbsp;→ Resolve <code>isExtraction</code>: se null e tem links/files, default <code>false</code>
+          <br>&nbsp;&nbsp;→ Ramo <code>isExtraction === true</code> (2893-3008):
+          <br>&nbsp;&nbsp;&nbsp;&nbsp;- Links: <code>extractionService.extractTextFromLink({ fileSrc, fileMimetype, flowId, user, typeOCR })</code> — <code>typeOCR</code> ∈ {<code>mistral_ocr</code>, <code>mistral_vision</code>, <code>google_ocr</code>}, default <code>mistral_ocr</code>
+          <br>&nbsp;&nbsp;&nbsp;&nbsp;- Files (base64): <code>generateFileKeyFromBase64</code> → <code>awsService.uploadFile(buffer, key, mimetype)</code> → mesmo OCR
+          <br>&nbsp;&nbsp;&nbsp;&nbsp;- Try/catch por link e por file — falhas viram string de erro concatenada em <code>extractText</code> (o flow <strong>não</strong> aborta)
+          <br>&nbsp;&nbsp;→ Ramo <code>isExtraction === false</code> (3010-3071):
+          <br>&nbsp;&nbsp;&nbsp;&nbsp;- Links: só concatena URLs em <code>extractText</code> (sem OCR)
+          <br>&nbsp;&nbsp;&nbsp;&nbsp;- Files: upload S3 igual, mas guarda só URLs
+          <br>• Se <code>node.type !== 'varInputNode'</code> (3128-3188): rota de <em>fileUrl fallback</em> — trata inputs pra outros tipos de nó com upload S3 mas sem OCR
+          <br><br>
+          <strong>Após loop</strong>: para cada <code>varInputNode</code> resolvido, chama <code>addConnectToNodes({ edges, nds, nodeData: { id, data: { text, uploadedFiles, extractText, isExtraction, links, files } }, onMutateSchema, objectCallerData })</code> — propaga o input pros nós conectados pelas arestas. Depois <code>persistInputNodeData(...)</code> grava no banco (<code>flows_nodes.data</code>).
+          <br><br>
+          <em>Bloco pesado que roda antes do scheduler — é onde PDF/imagem/áudio viram texto pro LLM. Cada nível de sub-flow (nodesBox/libraryNode/fluxBox) roda esse mesmo mecanismo de novo, com o custo pago em cascata.</em>
         </div>
-        <div class="box-file">flux.service.ts:2772-3134</div>
+        <div class="box-file">flux.service.ts:2827-3189</div>
         <div class="click-hint">
           <span class="click-hint-icon">🔍</span>
           <span>Clique para ver detalhamento (dataInput fallback + OCR + propagação + persistência)</span>
@@ -974,13 +1129,35 @@
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title"><span class="badge step">2.2</span> Variáveis mutáveis de execução <span class="badge ess">essencial (é o que estora RAM hoje)</span></div>
         <div class="box-desc">
-          <code>myUpdatedNodes</code> · <code>nodeSubstitutionSchema</code> · <code>processedNodeIds</code> · <code>totalTokensUsed</code> · <code>totalCost</code>
-          <br><code>stoppedByLoopBehavior</code> · <code>stoppedByNodeFailure</code> · <code>chargeContext.enterWith(...)</code>
+          <strong>Bloco pré-scheduler (3191-3207)</strong>: <code>myUpdatedNodes = newFlows</code> · <code>myTexts = {}</code> · <code>nodeSubstitutionSchema = generateSchemaFromNodes(newFlows)</code>
+          <br><strong>Bloco pré-loop (3234-3249)</strong>:
+          <br>• <code>const processedNodeIds = new Set&lt;string&gt;()</code>
+          <br>• <code>let stoppedByLoopBehavior = false</code>
+          <br>• <code>let stoppedByNodeFailure = false</code>
+          <br>• <code>let stoppedByCancel = false</code>
+          <br>• <code>let lastExecutedNodeId: string | null = null</code>
         </div>
-        <div class="box-file">flux.service.ts:3146-3182</div>
+        <div class="box-file">flux.service.ts:3191-3207, 3234-3249 <em>(ref antiga 3146-3182 estava errada)</em></div>
         <div class="click-hint">
           <span class="click-hint-icon">🔍</span>
           <span>Clique para ver detalhamento (5 grupos de variáveis + cancellation)</span>
+          <span class="click-hint-arrow">→</span>
+        </div>
+      </a>
+      <div class="arrow">↓</div>
+
+      <a href="passos/passo-2-2a.html" class="box backend clickable-node" id="step-2-2a">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title">
+          <span class="badge step">2.2a</span> Setup de cancellation <em>antes</em> do loop
+        </div>
+        <div class="box-desc">
+          <code>shouldWatchCancellation</code> + <code>resolveCancelRunKey</code> + feature flag <code>NODE_CANCEL_IN_FLIGHT_FLAG</code> + <code>startNodeCancelWatch</code> montam o AbortSignal que o loop consulta a cada iteração no <a href="#step-3-cancel" style="color:#3B82F6;text-decoration:underline">3-cancel</a>.
+        </div>
+        <div class="box-file">flux.service.ts:3239-3249 · run-cancellation.service.ts</div>
+        <div class="click-hint">
+          <span class="click-hint-icon">🔍</span>
+          <span>Clique para ver detalhamento (3 gates + AbortSignal + Redis pub/sub)</span>
           <span class="click-hint-arrow">→</span>
         </div>
       </a>
@@ -1020,70 +1197,6 @@
     <div class="note">
       <strong>Ponto crítico:</strong> O <code>nodeSubstitutionSchema</code> é mutado in-place ao longo do loop (a memória cita ~57 sync sites).
       O worker <strong>não tem</strong> engine equivalente — recebe cada nó já pré-substituído pelo backend.
-    </div>
-  </div>
-
- 
-
-  <!-- ================================================== -->
-  <!-- FASE 2.5 - PREFETCH DECISION (NEW) -->
-  <!-- ================================================== -->
-  <div class="section">
-    <div class="section-header">
-      <div class="section-number">2½</div>
-      <div class="section-title">Decisão prefetch vs legacy loop <span class="badge new">novo pós-doc</span></div>
-      <div class="section-desc">Modelo de memória alternativo · desligado em produção (opt-in por env var)</div>
-    </div>
-
-    <div class="note info" style="max-width:1200px;margin-bottom:12px">
-      <strong>Contexto — por que essa decisão existe:</strong>
-      No loop <strong>legacy</strong> (Fase 3), o backend mantém em memória um <em>schema gordo</em> (<code>nodeSubstitutionSchema</code>) que acumula o output completo de <strong>todos</strong> os nós já executados. Cada nó novo faz <code>applySubstitutionToObject</code> sobre esse schema inteiro pra resolver seus <code>{{...}}</code>, mesmo referenciando só 1 ou 2 upstreams. Em agentes grandes (100+ nós, com respostas de LLM longas), esse schema fica com megas de JSON vivendo na heap por toda a execução — é o principal ofensor de perf.
-      <br><br>
-      O <strong>modo prefetch</strong> resolve isso invertendo o fluxo: pra cada nó, primeiro escaneia <em>quais</em> refs (<code>{{...}}</code>) ele realmente usa, e só então <strong>puxa do banco</strong> (<code>node_executions</code>) as saídas desses upstreams específicos. Nada de schema gigante mutando em memória. Ainda roda tudo in-process no backend (não envolve worker/Temporal), só troca o modelo de propagação de dados.
-    </div>
-
-    <div class="flow-column">
-      <div class="box decision">
-        <div class="box-title">Duas condições precisam ser verdadeiras: <code>isPrefetchMode() && canUsePrefetchForFlow(newFlows)</code></div>
-        <div class="box-desc">
-          <strong>1. isPrefetchMode()</strong> — lê <code>process.env.FLUX_EXEC_MEMORY_MODE</code>. Só é <code>true</code> se estiver exatamente <code>'prefetch'</code> (default é <code>'legacy'</code>).<br>
-          <strong>2. canUsePrefetchForFlow(newFlows)</strong> — varre todos os nós do flow e confere se <em>cada tipo</em> está numa whitelist hardcoded. Basta 1 nó fora da lista pra reprovar.
-        </div>
-        <div class="box-file">flux.service.ts:177, 1402-1431, 3198-3226 · prefetch/memory-mode.ts</div>
-      </div>
-    </div>
-
-    <div class="side-by-side">
-      <div class="box backend">
-        <div class="box-title">SIM → runApiV2FlowLoopPrefetch()</div>
-        <div class="box-desc">
-          Chama <code>runPrefetchFlow(nodes, deps)</code>. Loop <strong>parecido com o legacy</strong> (mesmo scheduler, mesmos handlers), <em>mas</em>:
-          <br>• A cada nó pronto → <code>scanPlaceholderRefs</code> descobre só as refs desse nó
-          <br>• <code>loadOutputsByRefs</code> puxa <strong>apenas</strong> as saídas necessárias do <code>node_executions</code>
-          <br>• Monta um <code>schemaForNode</code> pequeno e local (não muta um schema global)
-          <br>• Guarda ponteiros (<code>OutputPointer</code>) — <code>rowId</code>, tipo e tamanho — em vez do payload
-          <br><br>
-          Retorna <code>{ processed, failed, pointer }</code> pro caller montar o resultado final com <code>assembleFinalOutputsFromDb</code>.
-        </div>
-        <div class="box-file">flux.service.ts:1433 · prefetch/prefetch-flow-executor.ts</div>
-      </div>
-      <div class="box backend">
-        <div class="box-title">NÃO → cai na Fase 3 (loop legacy padrão)</div>
-        <div class="box-desc">
-          Caminho <strong>usado em produção hoje</strong>. Cai aqui em 3 cenários:
-          <br>• Env var não está setada como <code>'prefetch'</code> (default)
-          <br>• Env var está, mas o flow tem <em>qualquer</em> nó fora da whitelist (mais comum — praticamente todo agente real usa <code>textGenerator</code>, que <strong>não está</strong> na lista)
-          <br>• Nesse segundo caso o backend loga <code>flux.prefetch.fallback</code> com <code>reason: 'unsupported_node_type_present'</code>
-        </div>
-        <div class="box-file">flux.service.ts:3219-3226</div>
-      </div>
-    </div>
-
-    <div class="note" style="max-width:1200px;margin-top:12px">
-      <strong>Whitelist atual (canUsePrefetchForFlow):</strong>
-      <code>imageGenerator</code>, <code>webSearch</code>, <code>voiceBoxNode</code>, <code>audioReaderNode</code>, <code>commandContentNode</code>, <code>pullData</code>, <code>pushData</code>, <code>thirdPartyIntegration</code>, <code>mcpNode</code>, <code>libraryNode</code>, <code>webCrawling</code>, <code>reportBuilder</code>, <code>sqlQuerier</code>, <code>nodesBox</code>, <code>comment</code>, <code>label</code>, <code>group</code>.
-      <br><br>
-      <strong>Ausências notáveis:</strong> <code>textGenerator</code>, <code>scripting</code>, <code>apiCaller</code>, <code>mathFunction</code>, <code>counter</code>, <code>displayBox</code>, <code>chatNode</code>, <code>condition</code>, <code>arrayNode</code>. Ou seja: <em>qualquer flow que use LLM ou controle de fluxo cai no legacy</em>. Na prática, o prefetch hoje só roda em agentes muito simples/lineares — o rollout é gradual, tipo por tipo de nó.
     </div>
   </div>
 
@@ -1145,8 +1258,12 @@
         <a href="passos/passo-3-4.html" class="box cross clickable-node" id="step-3-4">
           <span class="click-chevron" aria-hidden="true">›</span>
           <div class="box-title"><span class="badge step">3.4</span> runLogCollector.startNode() + chargeContext.enterWith() <span class="badge cross">cross</span></div>
-          <div class="box-desc">Abre <code>RunLogNode</code> hierárquico e entra em contexto de cobrança do nó (async-local storage)</div>
-          <div class="box-file">flux.service.ts:3281-3316</div>
+          <div class="box-desc">
+            Abre <code>RunLogNode</code> hierárquico (aninhado no root criado no <a href="#step-1-4" style="color:#3B82F6;text-decoration:underline">1.4</a>) e ativa <strong>dois</strong> AsyncLocalStorage por nó:
+            <br>• <code>chargeContext.enterWith({ execId: runLogProcessId, nodeId: node.id })</code> — capturado por qualquer <code>charge-tokens</code> feito durante o handler pra atribuir o custo ao nó certo
+            <br>• <code>if (cancelWatch) nodeCancelContext.enterWith(cancelWatch.entry)</code> — só se o watch de cancel foi armado no <a href="#" onclick="return false" style="color:#3B82F6">2.2a</a>. Handlers que chamam <code>await</code> podem consultar esse contexto pra abortar cedo.
+          </div>
+          <div class="box-file">flux.service.ts:3316-3322</div>
           <div class="click-hint">
             <span class="click-hint-icon">🔍</span>
             <span>Clique para ver detalhamento (ALS + startNode + recordLegacyNodeStart)</span>
@@ -1338,7 +1455,7 @@
                 Nós sem handler no dispatch:
                 <br>• <code>varInputNode</code> — <strong>tem</strong> lógica, mas executada em <a href="passos/passo-1-8.html" style="color:#3B82F6;text-decoration:underline">1.8 antes do loop</a> (upload S3 + OCR + propagação via arestas), <em>não</em> em Fase 3
                 <br>• <code>outputController</code>/<code>outputObjectNode</code>/<code>varOutputNode</code> — atravessam o loop como no-op; só têm lógica no passo <a href="passos/passo-4-6.html" style="color:#3B82F6;text-decoration:underline">4.6</a> (<code>persistInputNodeData</code>)
-                <br>• <code>comment</code>/<code>label</code>/<code>group</code> — puramente visuais; passam pelo scheduler como no-op silencioso (ver <em>whitelist prefetch</em> em flux.service.ts:1418-1420)
+                <br>• <code>comment</code>/<code>label</code>/<code>group</code> — puramente visuais; passam pelo scheduler como no-op silencioso
                 <br>• <code>GLOBAL_STARTER</code> — usado como <code>source</code> do <code>flowGlobalEdge</code> no <code>buildSchedulerState</code>
               </em>
             </div>
@@ -1409,6 +1526,23 @@
       <div class="converge">↓ ambos convergem ↓</div>
 
       <div class="flow-column">
+        <a href="passos/passo-3-5b.html" class="box backend clickable-node" id="step-3-5b">
+          <span class="click-chevron" aria-hidden="true">›</span>
+          <div class="box-title">
+            <span class="badge step">3.5b</span> <code>publishInApiNodeOutput()</code> + <code>persistSmallMemoryEntries()</code>
+          </div>
+          <div class="box-desc">
+            Só pra nós inline (não-Temporal, não worker-routed). <code>publishInApiNodeOutput</code> = equivalente inline de W8/W9 do worker; <code>persistSmallMemoryEntries</code> descarrega no banco só campos leves pra reduzir RAM.
+          </div>
+          <div class="box-file">flux.service.ts:4562-4581</div>
+          <div class="click-hint">
+            <span class="click-hint-icon">🔍</span>
+            <span>Clique para ver detalhamento (gate isTemporal + gate worker-routed + reduzir RAM)</span>
+            <span class="click-hint-arrow">→</span>
+          </div>
+        </a>
+        <div class="arrow">↓</div>
+
         <a href="passos/passo-3-6.html" class="box backend clickable-node" id="step-3-6">
           <span class="click-chevron" aria-hidden="true">›</span>
           <div class="box-title"><span class="badge step">3.6</span> updateSchemaWithNodeOutput() <span class="badge ess">essencial</span></div>
@@ -1431,9 +1565,20 @@
           <span class="click-chevron" aria-hidden="true">›</span>
           <div class="box-title"><span class="badge step">3.8</span> Tratamento de erro por nó <span class="badge ess">essencial</span></div>
           <div class="box-desc">
-            Marca <code>errorMessage</code>/<code>errorStatusCode</code> em node.data. Se erro fatal → <code>stoppedByNodeFailure=true</code>.
-            <br>Chama <code>completeCondition(..., DEAD_HANDLE)</code> pra marcar rota morta.
+            <strong>Try-catch envolvendo toda a iteração do while (4702-4794)</strong>.
+            <br><br>
+            No catch, na ordem:
+            <br>1. <code>cancelWatch?.wasAborted()</code> (4703-4718) — se o run foi cancelado durante o handler, muda para o caminho de cancel (não trata como erro real). Seta <code>stoppedByCancel = true</code> e break.
+            <br>2. <code>const detail = extractWorkflowError(error)</code> (4723) — normaliza erro de Temporal + Node em <code>{ message, code, cause }</code>.
+            <br>3. <code>clearFailedNodeOutput({ node, myUpdatedNodes, nodeSubstitutionSchema })</code> (4725) — remove output parcial do nó falhado do schema pra próximos nós não referenciarem lixo.
+            <br>4. <code>runLogCollector?.endNode({ status: 'error', errorMessage, ... })</code> (4739-4748) — fecha o RunLogNode com erro.
+            <br>5. <code>loggerService.error(...)</code> (4750-4766) — Winston com <code>error_type</code>, stack, flow, user.
+            <br>6. <code>recordInApiNodeError({ nodeId, executionId, errorMessage })</code> (4771-4787) — grava row de erro em <code>node_executions</code> pra trace uniforme (mesma tabela dos nós Temporal).
+            <br>7. <code>stoppedByNodeFailure = true</code>; break do while.
+            <br><br>
+            <strong>Marcação de rota morta em condition</strong>: quando é <code>conditionNode</code> que falhou, chama <code>completeCondition(schedState, nodeId, DEAD_HANDLE)</code> antes do break — o scheduler propaga "morte" pros nós downstream inalcançáveis, que aparecem em <a href="#step-4-1" style="color:#3B82F6;text-decoration:underline">4.1</a> como <code>dead</code> e não como <code>unprocessed</code>.
           </div>
+          <div class="box-file">flux.service.ts:4702-4794 (try/catch) · flux.service.ts:5342+ (catch top-level em 5.1)</div>
           <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (soft fail + catch + recordInApiNodeError)</span><span class="click-hint-arrow">→</span></div>
         </a>
         <div class="arrow">↓</div>
@@ -1441,8 +1586,14 @@
         <a href="passos/passo-3-9.html" class="box cross clickable-node" id="step-3-9">
           <span class="click-chevron" aria-hidden="true">›</span>
           <div class="box-title"><span class="badge step">3.9</span> runLogCollector.endNode() <span class="badge cross">cross</span></div>
-          <div class="box-desc">Fecha o RunLogNode com output/tokens/cost/status</div>
-          <div class="box-file">flux.service.ts:4537-4546 · <em>chamada duplicada em 4549-4562 (dead code)</em></div>
+          <div class="box-desc">
+            Fecha o <code>RunLogNode</code> aberto no <a href="#step-3-4" style="color:#3B82F6;text-decoration:underline">3.4</a> passando output final, tokens delta (<code>after - before</code>), custo e status (<code>completed | error | cancelled</code>).
+            <br><br>
+            <strong>⚠ Duplicação / dead code</strong>: no código atual, <code>endNode()</code> aparece 2× em locais próximos:
+            <br>• <code>flux.service.ts:4604-4614</code> — chamada ativa, dentro do path de sucesso
+            <br>• <code>flux.service.ts:4620-4630</code> — bloco duplicado alcançável só em edge cases que já foram capturados acima; é <em>dead code</em> herdado de refatorações e pode ser removido em cleanup dedicado
+          </div>
+          <div class="box-file">flux.service.ts:4604-4614 (ativa) · 4620-4630 (dead code)</div>
           <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (endNode + duplicação/dead code)</span><span class="click-hint-arrow">→</span></div>
         </a>
         <div class="arrow">↓</div>
@@ -1487,8 +1638,42 @@
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title"><span class="badge step">4.1</span> Detecção de nós não-processados <span class="badge cross">cross</span></div>
         <div class="box-desc">Warning se sobrar nó fora de <code>completed</code> ou <code>dead</code>. Loga error com IDs.</div>
-        <div class="box-file">flux.service.ts:4735-4778</div>
+        <div class="box-file">flux.service.ts:4802-4845</div>
         <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (unprocessed + cancel footprint + gate)</span><span class="click-hint-arrow">→</span></div>
+      </a>
+      <div class="arrow">↓</div>
+
+      <a href="passos/passo-4-1a.html" class="box backend clickable-node" id="step-4-1a">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title">
+          <span class="badge step">4.1a</span> Publicação de status cancelado (só se <code>stoppedByCancel</code>)
+        </div>
+        <div class="box-desc">
+          <code>resolveCancelledRunFootprint</code> computa quem completou/skipou/foi cancelled. Depois <code>runCancellationService.markCancelled</code> + <code>emitCancelledRunStatuses</code> distinguem esse run de <em>error</em> na UI.
+        </div>
+        <div class="box-file">flux.service.ts:4805-4825 · run-cancellation.service.ts</div>
+        <div class="click-hint">
+          <span class="click-hint-icon">🔍</span>
+          <span>Clique para ver detalhamento (footprint + markCancelled + emit WebSocket)</span>
+          <span class="click-hint-arrow">→</span>
+        </div>
+      </a>
+      <div class="arrow">↓</div>
+
+      <a href="passos/passo-4-1b.html" class="box backend clickable-node" id="step-4-1b">
+        <span class="click-chevron" aria-hidden="true">›</span>
+        <div class="box-title">
+          <span class="badge step">4.1b</span> Limpeza de <code>flow-global.data.logs</code>
+        </div>
+        <div class="box-desc">
+          Housekeeping menor no nó global: zera <code>data.logs</code> pra não ser persistido gordo no próximo <code>UPDATE flows_nodes</code>.
+        </div>
+        <div class="box-file">flux.service.ts:4851-4855</div>
+        <div class="click-hint">
+          <span class="click-hint-icon">🔍</span>
+          <span>Clique para ver detalhamento (find + mutate + impacto downstream)</span>
+          <span class="click-hint-arrow">→</span>
+        </div>
       </a>
       <div class="arrow">↓</div>
 
@@ -1539,20 +1724,48 @@
 
       <a href="passos/passo-4-7.html" class="box external clickable-node" id="step-4-7">
         <span class="click-chevron" aria-hidden="true">›</span>
-        <div class="box-title"><span class="badge step">4.7</span> Emails + callbacks HTTP <span class="badge cross">cross</span></div>
+        <div class="box-title"><span class="badge step">4.7</span> Emails + callbacks HTTP <span class="badge cross">cross</span> <span class="badge new">expandido pós-doc</span></div>
         <div class="box-desc">
-          Redis dedup <strong>duplo</strong>: run ID (24h TTL, NX) + content hash (90s). Callbacks por nó + callbackUrl consolidado do request.
+          <strong>Bloco de 240 linhas</strong> (4981-5220). Ordem real:
+          <br><br>
+          <strong>1. Extração de outputs (4956-5026)</strong> — <code>getOutputsObjectNodes(myUpdatedNodes)</code> pega todos os <code>outputObjectNode</code>. Para cada um:
+          <br>&nbsp;&nbsp;• <code>persistInputNodeData()</code> grava <code>text</code> e <code>textData</code> definitivos (nasce do <a href="#step-4-6" style="color:#3B82F6;text-decoration:underline">4.6</a> mas concretiza aqui)
+          <br>&nbsp;&nbsp;• Extrai textos e URLs de anexos que virarão payload de email/webhook
+          <br><br>
+          <strong>2. Download de attachments (5041-5070)</strong> — pra cada URL identificada como anexo (S3, external), baixa via <code>httpService</code>/AWS SDK e monta buffer pra API do provider.
+          <br><br>
+          <strong>3. ⚠ Dedup Redis <em>duplo</em> (5094-5160)</strong> — protege contra duplicação de email em 2 cenários diferentes:
+          <br>&nbsp;&nbsp;• <strong>Nível 1 — dedup por run</strong>: chave <code>email-sent:${flowId}:${nodeId}:${runLogProcessId}</code>, TTL <strong>24h</strong>, <code>SET NX</code>. Evita reenvio se o mesmo run for reexecutado (retry manual, crash+resume). Se <code>NX</code> falhar → skip com log.
+          <br>&nbsp;&nbsp;• <strong>Nível 2 — dedup por conteúdo</strong>: hash do payload (destinatários + assunto + corpo), TTL <strong>90s</strong>. Evita disparo duplicado em janela curta (cliques repetidos, race entre workers, etc.). Se hash já existe → skip.
+          <br>&nbsp;&nbsp;<em>Só dispara se ambos os checks passarem.</em>
+          <br><br>
+          <strong>4. Envio via provider (5164-5195)</strong>:
+          <br>&nbsp;&nbsp;• Provider integrado (EmailJs, SendGrid, ...) — API-key do <code>UserIntegration</code>
+          <br>&nbsp;&nbsp;• Fallback pra <code>SMTP</code> nativo
+          <br>&nbsp;&nbsp;• Ou webhook direto se o nó marca <code>useWebhook</code>
+          <br><br>
+          <strong>5. Callback HTTP consolidado (5164-5195)</strong> — se o request original veio com <code>callbackUrl</code>, dispara POST com <code>{ processId, outputs, tokens, cost }</code>. Diferente do callback da fila (que é feito pelo processor no <a href="#" onclick="return false" style="color:#3B82F6">1.1</a>).
         </div>
-        <div class="box-file">flux.service.ts:4907-5161, 5030-5075 (dedup), 5164-5195 (consolidado)</div>
+        <div class="box-file">flux.service.ts:4956-5026 (extração) · 5041-5070 (attachments) · 5094-5160 (dedup Redis duplo) · 5164-5195 (envio + callback)</div>
         <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (dedup Redis + 3 providers + webhooks)</span><span class="click-hint-arrow">→</span></div>
       </a>
       <div class="arrow">↓</div>
 
       <a href="passos/passo-4-8.html" class="box db clickable-node" id="step-4-8">
         <span class="click-chevron" aria-hidden="true">›</span>
-        <div class="box-title"><span class="badge step">4.8</span> Atualização de chat <span class="badge ess">essencial (modo chat)</span></div>
-        <div class="box-desc"><code>sessionStateService.appendEntries()</code> + ChatLog save para fluxObject/nodesBox com chat</div>
-        <div class="box-file">flux.service.ts:5211-5288</div>
+        <div class="box-title"><span class="badge step">4.8</span> Atualização de chat <span class="badge ess">essencial (modo chat)</span> <span class="badge new">expandido pós-doc</span></div>
+        <div class="box-desc">
+          <strong>Só roda se <code>sessionIdForChat</code> foi resolvido no <a href="#step-1-6" style="color:#3B82F6;text-decoration:underline">1.6</a></strong> (havia <code>sessionId</code> explícito OU o flow tem <code>fluxObject</code> com <code>chat: true</code>).
+          <br><br>
+          <strong>1. Coleta de <code>sessionAppends</code> (5223-5266)</strong> — varre <code>myUpdatedNodes</code>, seleciona <code>fluxObject</code>/<code>nodesBox</code> com chat, monta lista <code>[{ scopeId, sessionKey, entries }]</code>.
+          <br><br>
+          <strong>2. Montagem do <code>assistantAnswer</code> (5259-5266)</strong> — junta o output dos <code>outputObjectNode</code> num único texto que representa a resposta do assistente naquele turn.
+          <br><br>
+          <strong>3. Append em SessionState (5273-5286)</strong> — loop por <code>sessionAppends</code>: <code>await this.sessionStateService.appendEntries({ scopeType: 'chat', scopeId, sessionKey, entries, ownerUserId })</code>. É aqui que o histórico "cresce" persistentemente pra próximas invocações com o mesmo <code>sessionId</code>.
+          <br><br>
+          <strong>4. <code>chatLogRepository.save(...)</code> (5305-5313)</strong> — grava row estruturada em <code>chat_logs</code> com <code>{ flowId, sessionId, userMessage, assistantAnswer, tokens, cost, timestamp }</code>. É a fonte pra UI de histórico e pra billing por sessão.
+        </div>
+        <div class="box-file">flux.service.ts:5223-5314</div>
         <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (sessionAppends + appendEntries + chatLogs)</span><span class="click-hint-arrow">→</span></div>
       </a>
       <div class="arrow">↓</div>
