@@ -30,6 +30,13 @@ activity results or workflow state, never from ambient time or randomness.
 today: cancellation propagation (native to Temporal child workflows), nested run logs so child
 node logs still appear under the parent, and billing attributed to the parent's `billingFlowId`.
 
+**In — the run chain.** The child carries a `parentRunId` back to its caller, and the visited-flow
+set and depth counter travel with it (`TASK-S1`). Three things depend on that chain existing at this
+boundary and not only inside one process: the cycle refusal, the depth ceiling, and the spend
+ceiling that `TASK-S3` applies to the chain root. **A child workflow started without the chain is a
+child workflow with no ceilings at all** — and unlike today, a durable platform will sustain the
+result across the fleet.
+
 **In.** The loop-body computation already exists as `computeLoopBody` in the scheduler — use it
 rather than re-deriving the body from indices, which is what the inline `arrayNode` does.
 

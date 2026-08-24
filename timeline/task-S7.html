@@ -1,0 +1,739 @@
+<title>S7 — Authenticate and rate-limit the entry points</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #F1F5F9;
+    color: #0F172A;
+    margin: 0;
+    padding: 32px 24px 80px;
+    line-height: 1.4;
+  }
+  .container { max-width: 1500px; margin: 0 auto; }
+
+  /* Top nav */
+  .page-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    flex-wrap: wrap;
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #64748B;
+  }
+  .breadcrumb a {
+    color: #3B82F6;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #CBD5E1; }
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #0F172A;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+
+  /* Page header */
+  .page-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 8px;
+  }
+  .page-header .icon { font-size: 32px; }
+  .page-header h1 {
+    margin: 0;
+    font-size: 26px;
+    color: #0F172A;
+    letter-spacing: -0.4px;
+  }
+  .page-sub {
+    color: #64748B;
+    font-size: 13px;
+    margin-bottom: 24px;
+    padding-left: 46px;
+  }
+  .page-sub code {
+    background: #E2E8F0;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 12px;
+    color: #334155;
+  }
+
+  /* Overview chain */
+  .overview-mini {
+    background: white;
+    padding: 16px 18px;
+    border-radius: 10px;
+    margin-bottom: 28px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .overview-mini-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 12px;
+  }
+  .overview-chain {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .overview-chip {
+    background: #F8FAFC;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border-left: 3px solid #3B82F6;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #0F172A;
+    text-decoration: none;
+    display: inline-block;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+  .overview-chip .lbl {
+    display: block;
+    font-size: 9.5px;
+    color: #64748B;
+    font-weight: 500;
+    margin-bottom: 2px;
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .overview-sep { color: #94A3B8; font-size: 18px; font-weight: bold; }
+
+  /* Boxes */
+  .box {
+    background: white;
+    border-radius: 8px;
+    padding: 9px 13px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border-left: 4px solid #94A3B8;
+    width: 100%;
+    max-width: 100%;
+  }
+  .box.backend    { border-left-color: #3B82F6; }
+  .box.worker     { border-left-color: #10B981; }
+  .box.db         { border-left-color: #F59E0B; }
+  .box.redis      { border-left-color: #EF4444; }
+  .box.s3         { border-left-color: #8B5CF6; }
+  .box.external   { border-left-color: #64748B; }
+  .box.decision { border-left-color: #EAB308; background: #FEFCE8; }
+  .box.cross { border-left-color: #A855F7; background: #FAF5FF; }
+
+  .box-title {
+    font-weight: 600;
+    font-size: 12.5px;
+    color: #0F172A;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .box-desc { font-size: 11.5px; color: #475569; }
+  .box-file {
+    font-size: 10px;
+    color: #94A3B8;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    margin-top: 3px;
+    word-break: break-all;
+  }
+  .box code {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    background: #F1F5F9;
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: #334155;
+    word-break: break-word;
+  }
+  .box-desc code { word-break: break-word; }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .badge.migrated { background: #D1FAE5; color: #065F46; }
+  .badge.legacy   { background: #FEE2E2; color: #991B1B; }
+  .badge.mixed    { background: #FEF3C7; color: #92400E; }
+  .badge.step     { background: #E0E7FF; color: #3730A3; font-size: 10px; }
+  .badge.cross    { background: #F3E8FF; color: #6B21A8; }
+
+  /* Arrows */
+  .arrow {
+    color: #64748B;
+    font-size: 22px;
+    line-height: 1;
+    margin: 1px 0;
+    text-align: center;
+  }
+  .converge { text-align: center; color: #64748B; font-size: 22px; margin: 6px 0; }
+
+  /* Function card */
+  .fn-card {
+    margin-top: 28px;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .fn-card-header {
+    background: linear-gradient(to right, #0F172A, #1E293B);
+    color: white;
+    padding: 14px 20px 14px 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .fn-card-header .fn-title {
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .fn-card-header .fn-title code {
+    background: rgba(255,255,255,0.15);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 13px;
+  }
+  .fn-card-header .fn-loc {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #CBD5E1;
+  }
+  .fn-card-header:hover { background: linear-gradient(to right, #1E293B, #334155); }
+  .fn-card-header::before {
+    content: "▾";
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+    font-size: 14px;
+    transition: transform 0.2s ease;
+    line-height: 1;
+  }
+  .fn-card.collapsed .fn-card-header::before {
+    transform: translateY(-50%) rotate(-90deg);
+  }
+  .fn-card.collapsed .fn-card-body { display: none; }
+  .fn-card-body { padding: 20px; }
+
+  .fn-signature {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    background: #F1F5F9;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: #334155;
+    margin-bottom: 16px;
+    overflow-x: auto;
+  }
+  .fn-purpose {
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    background: #EFF6FF;
+    border-left: 3px solid #3B82F6;
+    border-radius: 6px;
+  }
+  .fn-friendly {
+    font-size: 13px;
+    color: #334155;
+    margin-bottom: 20px;
+    padding: 12px 14px 12px 44px;
+    background: #F0FDF4;
+    border-left: 3px solid #10B981;
+    border-radius: 6px;
+    position: relative;
+    line-height: 1.55;
+  }
+  .fn-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 14px;
+    top: 10px;
+    font-size: 18px;
+  }
+  .fn-friendly strong {
+    color: #065F46;
+  }
+
+  /* Step-level friendly summary (page-wide, appears after page-sub) */
+  .step-friendly {
+    font-size: 13.5px;
+    color: #334155;
+    margin-bottom: 28px;
+    padding: 16px 18px 16px 52px;
+    background: #F0FDF4;
+    border-left: 4px solid #10B981;
+    border-radius: 10px;
+    position: relative;
+    line-height: 1.6;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.08);
+  }
+  .step-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 18px;
+    top: 14px;
+    font-size: 22px;
+  }
+  .step-friendly-title {
+    font-weight: 700;
+    color: #065F46;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 8px;
+  }
+  .step-friendly ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .step-friendly li {
+    margin-bottom: 6px;
+  }
+  .step-friendly li:last-child {
+    margin-bottom: 0;
+  }
+  .step-friendly strong {
+    color: #065F46;
+  }
+  .step-friendly code {
+    background: #DCFCE7;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: #065F46;
+  }
+  .step-friendly em {
+    color: #047857;
+    font-style: italic;
+  }
+
+  .fn-body-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 900px) {
+    .fn-body-cols { grid-template-columns: 1fr; }
+  }
+  .fn-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .fn-asides {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Aside panels */
+  .aside {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 11.5px;
+    color: #78350F;
+  }
+  .aside.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .aside.warn { background: #FEE2E2; border-left-color: #EF4444; color: #991B1B; }
+  .aside.helper { background: #F3E8FF; border-left-color: #A855F7; color: #6B21A8; }
+  .aside-title {
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .aside code {
+    background: rgba(255,255,255,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    word-break: break-word;
+  }
+
+  /* Cascade */
+  .cascade {
+    background: #FEFCE8;
+    border: 1px dashed #EAB308;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 6px 0;
+  }
+  .cascade-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #713F12;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .cascade-step {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 8px;
+    background: white;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    font-size: 11.5px;
+  }
+  .cascade-step .cond {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #334155;
+  }
+  .cascade-step .result {
+    font-weight: 700;
+    font-size: 10.5px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .cascade-step .result.pass  { background: #D1FAE5; color: #065F46; }
+  .cascade-step .result.deny  { background: #FEE2E2; color: #991B1B; }
+  .cascade-step .result.next  { background: #E0E7FF; color: #3730A3; }
+  .cascade-step .result.call  { background: #FEF3C7; color: #78350F; }
+  .cascade-num {
+    background: #EAB308;
+    color: white;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* Nested sub-flow */
+  .nested-flow {
+    margin: 6px 0;
+    padding: 12px;
+    background: #F0FDF4;
+    border: 1px dashed #10B981;
+    border-radius: 8px;
+  }
+  .nested-flow-title {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #065F46;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  /* Code block */
+  .code-block {
+    background: #0F172A;
+    color: #E2E8F0;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 6px 0;
+  }
+  .code-block .k { color: #93C5FD; }
+  .code-block .s { color: #86EFAC; }
+  .code-block .c { color: #64748B; font-style: italic; }
+  .code-block .t { color: #FDE68A; }
+
+  /* Notes */
+  .note {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    color: #78350F;
+    margin: 20px 0;
+  }
+  .note.info {
+    background: #EFF6FF;
+    border-left-color: #3B82F6;
+    color: #1E3A8A;
+  }
+  .note code {
+    background: rgba(255,255,255,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+  }
+
+  .page-footer-nav {
+    margin-top: 48px;
+    padding: 16px;
+    background: white;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .field-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin: 8px 0;
+  }
+  .field-table th {
+    text-align: left;
+    padding: 6px 8px;
+    background: #F1F5F9;
+    color: #334155;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    font-size: 10px;
+    border-bottom: 1px solid #CBD5E1;
+  }
+  .field-table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid #F1F5F9;
+    vertical-align: top;
+  }
+  .field-table td:first-child {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    color: #0F172A;
+    font-weight: 600;
+    white-space: nowrap;
+    font-size: 10.5px;
+  }
+
+    .code-block{white-space:pre-wrap;word-break:normal;overflow-wrap:anywhere}
+    .top-nav{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+             max-width:1500px;margin:0 auto 20px;padding:0 4px}
+    .back-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:#fff;color:#334155;
+              text-decoration:none;border-radius:8px;border:1px solid #CBD5E1;font-size:12.5px;font-weight:600;
+              box-shadow:0 1px 3px rgba(0,0,0,.06)}
+    .back-btn:hover{background:#EFF6FF}
+    .page-nav{display:flex;gap:10px;flex-wrap:wrap;background:transparent;box-shadow:none;
+              padding:18px 0 0;margin-top:26px;border-top:1px solid #E2E8F0}
+    /* hero */
+    .hero{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:20px 24px;margin-bottom:18px;
+          box-shadow:0 1px 3px rgba(0,0,0,.06)}
+    .hero .code{display:inline-block;font-family:'SF Mono',Menlo,monospace;font-size:12px;font-weight:800;
+                background:#0F172A;color:#fff;padding:4px 10px;border-radius:6px;letter-spacing:.5px}
+    .hero h1{margin:10px 0 8px;font-size:24px;line-height:1.2;letter-spacing:-.4px;color:#0F172A}
+    .hero .goal{font-size:14px;line-height:1.65;color:#334155;background:#EFF6FF;border-left:3px solid #3B82F6;
+                border-radius:6px;padding:11px 15px;margin-bottom:14px}
+    .meta{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+    .meta a,.meta span.pill{font-size:11px;text-decoration:none;color:#334155;border:1px solid #CBD5E1;
+              background:#F8FAFC;padding:5px 11px;border-radius:20px;font-weight:600}
+    .meta a:hover{border-color:#3B82F6;color:#1E40AF;background:#EFF6FF}
+    .wv{font-size:10px;font-weight:800;padding:5px 11px;border-radius:20px;letter-spacing:.5px;text-transform:uppercase}
+    .w0{background:#FEE2E2;color:#991B1B}.w1{background:#FEF3C7;color:#92400E}.w2{background:#DBEAFE;color:#1E40AF}
+    .w3{background:#DBEAFE;color:#1E40AF}.w4{background:#DCFCE7;color:#14532D}.w5{background:#DCFCE7;color:#14532D}
+    .w6{background:#F3E8FF;color:#6B21A8}
+    /* seções em cards */
+    .sec-card{background:#fff;border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;margin-bottom:14px;
+              box-shadow:0 1px 3px rgba(0,0,0,.06)}
+    .sec-head{background:linear-gradient(to right,#0F172A,#1E293B);color:#fff;padding:12px 20px;
+              display:flex;align-items:center;gap:10px;font-size:14.5px;font-weight:600}
+    .sec-card.warn .sec-head{background:linear-gradient(to right,#7F1D1D,#B91C1C)}
+    .sec-card.ok   .sec-head{background:linear-gradient(to right,#065F46,#047857)}
+    .sec-card.files .sec-head{background:linear-gradient(to right,#334155,#475569)}
+    .sec-body{padding:18px 22px;font-size:13px;line-height:1.72;color:#334155}
+    .sec-body p{margin:0 0 12px}
+    .sec-body h4{font-size:13px;font-weight:700;color:#0F172A;margin:18px 0 7px}
+    .sec-body ul.tl{margin:8px 0 12px;padding-left:20px}
+    .sec-body ul.tl li{margin-bottom:5px}
+    .sec-body code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1px 5px;border-radius:4px;
+                   font-family:'SF Mono',Menlo,monospace;font-size:11.5px}
+    .sec-card.files .sec-body{font-family:'SF Mono',Menlo,monospace;font-size:11.5px;color:#475569;line-height:1.9}
+    .field-table{width:100%;border-collapse:collapse;margin:10px 0;font-size:12.5px}
+    .field-table th{background:#F1F5F9;text-align:left;padding:8px 12px;font-weight:700;color:#334155;
+                    border-bottom:2px solid #E2E8F0;font-size:11px;text-transform:uppercase;letter-spacing:.4px}
+    .field-table td{padding:8px 12px;border-bottom:1px solid #F1F5F9;vertical-align:top}
+
+    .lang-sw{display:inline-flex;border:1px solid #CBD5E1;border-radius:8px;overflow:hidden;background:#fff;
+             box-shadow:0 1px 3px rgba(0,0,0,.06)}
+    .lang-sw button{font-family:'SF Mono',Menlo,monospace;font-size:11px;font-weight:700;letter-spacing:.5px;
+             padding:8px 12px;background:transparent;color:#64748B;border:0;cursor:pointer}
+    .lang-sw button+button{border-left:1px solid #E2E8F0}
+    .lang-sw button[aria-pressed="true"]{background:#0F172A;color:#fff}
+    .lang-sw button:focus-visible{outline:2px solid #3B82F6;outline-offset:2px}
+</style>
+<div class="container">
+  <div class="top-nav">
+    <a href="index.html" class="back-btn"><span data-en="← Timeline" data-pt="← Timeline">← Timeline</span></a>
+    <div class="lang-sw" role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">EN-US</button><button type="button" data-lang="pt" aria-pressed="false">PT-BR</button></div>
+  </div>
+  <div class="hero">
+    <span class="code">S7</span>
+    <h1 data-en="Authenticate and rate-limit the entry points" data-pt="Autenticar e limitar as entradas">Authenticate and rate-limit the entry points</h1>
+    <div class="goal" data-en="a run can only be created by someone entitled to create it, and no caller can create an unlimited number of them." data-pt="um run só pode ser criado por quem tem direito de criá-lo, e nenhum chamador pode criar uma quantidade ilimitada deles.">a run can only be created by someone entitled to create it, and no caller can create an unlimited number of them.</div>
+    <div class="meta"><span class="wv w0" data-en="wave 0" data-pt="onda 0">wave 0</span><a href="../complemento/fase-1.html" data-en="where this lands in the flow →" data-pt="onde isto entra no fluxo →">where this lands in the flow →</a><a href="index.html#w0" data-en="other tasks in wave 0 →" data-pt="outras tasks da onda 0 →">other tasks in wave 0 →</a><a href="task-S1.html">S1 →</a></div>
+  </div>
+  <div class="aside" style="max-width:none;margin:0 0 16px"><div class="aside-title"><span data-en="Note" data-pt="Nota">Note</span></div>
+    <span data-en="The body below is the task&#x27;s canonical spec, kept in English by repository convention — it is the same text the team implements." data-pt="O corpo abaixo é a spec canônica da task, mantida em inglês por convenção do repositório — é o mesmo texto que o time implementa.">The body below is the task&#x27;s canonical spec, kept in English by repository convention — it is the same text the team implements.</span></div>
+  <div class="sec-card"><div class="sec-head">📌 <span data-en="Context" data-pt="Contexto">Context</span></div><div class="sec-body"><p><strong>Three of the four ways to start a run are effectively unauthenticated</strong> — the webhook route, the</p>
+<p>email trigger for public flows, and the email trigger for private flows via a forgeable <code>From</code>.</p>
+<p>None of the four is rate limited. Every other ceiling in this epic is downstream of admission.</p>
+<p><strong>Depends on:</strong> nothing. <strong>Ship the first half immediately</strong> — it is a live, unauthenticated spend</p>
+<p>vector, not a scaling concern. <strong>Severity:</strong> critical (review §9.1, §9.2).</p></div></div><div class="sec-card "><div class="sec-head">▸ <span data-en="Part 1 — the webhook entry point (ship first, on its own)" data-pt="Parte 1 — a entrada de webhook">Part 1 — the webhook entry point (ship first, on its own)</span></div><div class="sec-body"><p><code>POST /flux/api-v2-webhook</code> is <code>@Public()</code> (<code>flux.controller.ts:340–341</code>), so it opts out of the</p>
+<p>global auth guard, and it resolves the flow like this:</p>
+<div class="code-block">where: [ { id: query.flowId }, { id: query.flowId, public: true } ]</div>
+<p>The first branch of the OR has <strong>no <code>public</code> condition</strong>, which makes the second dead: any flow</p>
+<p>matches, public or private. The rest of the handler contains no secret, no token and no ownership</p>
+<p>check — only <code>if (!flow)</code>.</p>
+<p><strong>Anyone who knows a flow id can execute that flow and charge its owner.</strong> The only barrier is that</p>
+<p>the id is a UUID, and flow ids travel through published interfaces, chatbot routes, shared links</p>
+<p>and the MCP surface.</p>
+<p><strong>Scope.</strong> A per-flow webhook secret, verified before anything else runs; the <code>public</code> predicate</p>
+<p>corrected so the two branches mean different things; and a decision, written down, about what</p>
+<p><code>public: true</code> is supposed to permit here. If public flows are meant to be webhook-triggerable by</p>
+<p>anyone, say so explicitly and cap them under Part 2 — do not leave it as an artefact of a broken</p>
+<p><code>where</code>.</p>
+<p><strong>Migration matters more than the fix.</strong> Existing integrations call this URL today. Ship the secret</p>
+<p>as optional with a deprecation window and a metric counting unauthenticated calls per flow, then</p>
+<p>enforce. Turning it on cold breaks every customer webhook silently, and the failure looks like</p>
+<p>"my automation stopped" rather than "my webhook is unauthenticated".</p></div></div><div class="sec-card "><div class="sec-head">▸ <span data-en="Part 2 — rate limiting (all entry points)" data-pt="Parte 2 — rate limiting">Part 2 — rate limiting (all entry points)</span></div><div class="sec-body"><p>There is no <code>ThrottlerModule</code>, no <code>@Throttle</code> and no <code>ThrottlerGuard</code> anywhere in <code>back/src</code>. Every</p>
+<p>run-creating route accepts unlimited requests: <code>/flux/api-v2</code> (API key),</p>
+<p><code>/flux/api-v2-webhook</code> (public), <code>/flux/batch-process</code>, <code>/flux/execute-from-canvas</code>.</p>
+<p>The Bull processor's single concurrency throttles <strong>execution</strong>, not <strong>admission</strong> — the queue</p>
+<p>still grows, and rows, logs and dedup keys are written on the way in.</p>
+<p><strong>Scope.</strong> Limits keyed by the thing that pays: API key, organisation, and flow for the webhook</p>
+<p>route. Not by IP, which is meaningless for server-to-server callers.</p>
+<p><strong>Assumption to confirm — reject with <code>429</code> and <code>Retry-After</code>, rather than queueing.</strong> Admission is</p>
+<p>the one place where rejecting is right: queueing an unbounded inbound flood just moves it.</p>
+<p>Note the deliberate contrast with <code>S3</code>, where excess <em>tenant</em> runs are queued — there the caller is</p>
+<p>already entitled to the work.</p></div></div><div class="sec-card "><div class="sec-head">▸ <span data-en="Part 3 — the email trigger (ship with part 1)" data-pt="Parte 3 — o disparo por e-mail">Part 3 — the email trigger (ship with part 1)</span></div><div class="sec-body"><p>Agents are also started by email. <code>mail.service.ts</code> resolves the flow from the **local part of the</p>
+<p>recipient address** — the format the service itself advertises is <code>uuid@upload.fluxprompt.com</code></p>
+<p>(<code>:434</code>) — then feeds <code>From</code>, <code>Subject</code>, the body and any attachments into the flow's</p>
+<p><code>varInputNode</code> and enqueues a run (<code>:503–556</code>).</p>
+<p>Its authorisation is the weakest of the four entry points (<code>:453–487</code>):</p>
+<ul class="tl">
+<li><strong>Public flow → no sender check at all.</strong> Anyone who emails the address runs the flow, charged to</li>
+</ul>
+<p>  the owner, <strong>and controls the prompt</strong> — which, in a flow containing a push node or an</p>
+<p>  integration, means driving side effects with the owner's credentials.</p>
+<ul class="tl">
+<li><strong>Private flow → the sender's <code>From</code> header</strong> is matched against a user and compared to</li>
+</ul>
+<p>  <code>flow.user</code>. Greps for <code>dkim</code>, <code>spf</code>, <code>dmarc</code> and <code>authentication-results</code> in <code>app-api/mail/</code></p>
+<p>  return nothing, so nothing verifies the message came from the address it claims. The check is a</p>
+<p>  request for the attacker to type the owner's email address — which is not secret.</p>
+<p><strong>Scope.</strong></p>
+<ul class="tl">
+<li>Verify the sender: DKIM/SPF/DMARC at the boundary, <strong>or</strong> move the secret into the address</li>
+</ul>
+<p>  (<code>&lt;flowId&gt;+&lt;token&gt;@…</code>) so possession of the address is the credential. Either is defensible;</p>
+<p>  trusting <code>From</code> is not.</p>
+<ul class="tl">
+<li>Decide, and write down, what a <strong>public</strong> flow's email trigger is allowed to do. "Public" should</li>
+</ul>
+<p>  probably mean readable, not "anyone may spend the owner's tokens and drive their integrations".</p>
+<p>  If public email triggers stay, cap them explicitly under part 2 and treat their input as</p>
+<p>  untrusted for any node with side effects.</p>
+<ul class="tl">
+<li>Keep the existing bounce-back replies — telling a sender "flow not found" or "unauthorized" is</li>
+</ul>
+<p>  good behaviour, and it is already there.</p>
+<p><strong>Assumption to confirm — the address-token option is preferred over DKIM.</strong> It is enforceable in</p>
+<p>this codebase today, does not depend on the mail provider's headers, and rotates per flow. DKIM</p>
+<p>verification is the more standard answer and can be added later without undoing it.</p></div></div><div class="sec-card warn"><div class="sec-head">🔬 <span data-en="Verification" data-pt="Verificação">Verification</span></div><div class="sec-body"><ul class="tl">
+<li><strong>Negative control (required), Part 3.</strong> Send a message to a private flow's address with the</li>
+</ul>
+<p>  owner's email forged in <code>From</code>, and confirm the flow runs and is charged. Then confirm it is</p>
+<p>  refused. Do the same for a public flow with body content that would drive an integration — that</p>
+<p>  demonstration is what settles the "what may a public trigger do" decision.</p>
+<ul class="tl">
+<li><strong>Negative control (required), Part 1.</strong> From an unauthenticated client, trigger a <strong>private</strong></li>
+</ul>
+<p>  flow by id and confirm it runs and charges the owner. That demonstration is the justification for</p>
+<p>  the whole task. Then confirm it is refused, and that a correctly-signed call still works.</p>
+<ul class="tl">
+<li><strong>Negative control, Part 2.</strong> Exceed the limit and confirm a <code>429</code>; then confirm the queue depth</li>
+</ul>
+<p>  and the row count stop growing — the point is admission, so measuring the refusal is not enough.</p>
+<ul class="tl">
+<li><strong>Measure before refusing</strong> (PLAN §3.3.2). Both halves refuse traffic, and this is customer</li>
+</ul>
+<p>  traffic. Count real calls per flow and per key over a full cycle, set the limits above the</p>
+<p>  observed peak with margin, and run in <strong>report-only</strong> mode before enforcing. Any legitimate</p>
+<p>  caller refused is a production incident, not a test failure.</p>
+<ul class="tl">
+<li>Confirm the deprecation metric actually names the flows still calling unauthenticated, so someone</li>
+</ul>
+<p>  can contact their owners.</p></div></div><div class="sec-card ok"><div class="sec-head">✅ <span data-en="Done when" data-pt="Pronto quando">Done when</span></div><div class="sec-body"><p>The webhook route authenticates, the <code>public</code> predicate means what it says, every run-creating</p>
+<p>route is limited by the paying entity, both ran in report-only mode against real traffic first,</p>
+<p>and no legitimate caller is refused.</p></div></div><div class="sec-card files"><div class="sec-head">📁 <span data-en="Files" data-pt="Arquivos">Files</span></div><div class="sec-body"><p><code>back/src/app-api/flux/flux.controller.ts:158–160, 221–222, 340–362, 513–514</code> ·</p>
+<p><code>back/src/app-api/mail/mail.service.ts:132, 314, 434, 453–487, 503–556</code> ·</p>
+<p><code>back/src/app-auth/guards/</code> · new throttler configuration · <code>env-vars-sync</code></p></div></div>
+  <div class="page-nav"><a href="index.html" class="back-btn"><span data-en="← Timeline" data-pt="← Timeline">← Timeline</span></a></div>
+</div>
+<script>
+(function(){
+  var n=document.querySelectorAll('[data-en]'),b=document.querySelectorAll('.lang-sw button');
+  function apply(l){
+    n.forEach(function(el){var v=el.getAttribute('data-'+l); if(v===null)return; el.innerHTML=v;});
+    b.forEach(function(x){x.setAttribute('aria-pressed',String(x.getAttribute('data-lang')===l))});
+    document.documentElement.lang = l==='pt' ? 'pt-BR' : 'en';
+    try{localStorage.setItem('flux-lang',l)}catch(e){}
+  }
+  b.forEach(function(x){x.addEventListener('click',function(){apply(x.getAttribute('data-lang'))})});
+  var saved=null; try{saved=localStorage.getItem('flux-lang')}catch(e){}
+  apply(saved==='pt'?'pt':'en');
+})();
+</script>

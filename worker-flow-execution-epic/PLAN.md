@@ -228,6 +228,9 @@ Read as four rules:
 | D2 | Is the prefetch executor the destination for worker-side input resolution, or a stopgap to retire? | B3, C2 | Needs the measurement in C2 first: how many production flows satisfy its whitelist, and what did it save. A flag defaulting to `legacy` whose whitelist excludes every LLM node may be shipped but dormant. |
 | D3 | The nine front-driven types do not run in headless flows today. Intended, or a silent defect for customers with one in a scheduled flow? | A6 | Independent of the worker. Answer it on its own before A6 turns it into a behaviour change. |
 | D4 | Are `sqlQuerier` and `audioReaderNode` unreachable on purpose — a migration paused mid-way — or by oversight? | A3 | Changes whether A3 is "finish it" or "delete it". |
+| D15 | What are X, Y and the chain total? | **Open — must come from measurement.** X per node, Y node executions per run, and a chain total that nesting cannot reset. Set above the largest real value in stored runs | S4 |
+| D13 | Does a sub-flow share the parent's execution identity, get a disconnected one, or a chained one? | **Settled: chained.** Own run identity with a `parentRunId`. Depth, cycle, cancellation and the spend ceiling all read the chain — see `TASK-S1` | S1, B6, S3 |
+| D14 | Is calling a flow already on the chain refused outright, or merely depth-limited? | **Settled: refused outright.** A flow on the chain is awaiting a return; restarting it from the top has no coherent semantics. Applies to the whole chain, not only the direct parent | S1 |
 | D5 | What are `comment`, `label`, `group`? They are trusted by the prefetch whitelist but are not registered front node types. | A1 | The registry cannot be authoritative while three types in a live whitelist are unaccounted for. |
 
 ## 8. What this epic explicitly does not do

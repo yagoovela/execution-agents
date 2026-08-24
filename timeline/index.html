@@ -1,0 +1,721 @@
+<title>Delivery timeline — 32 tasks in 7 waves</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #F1F5F9;
+    color: #0F172A;
+    margin: 0;
+    padding: 32px 24px 80px;
+    line-height: 1.4;
+  }
+  .container { max-width: 1500px; margin: 0 auto; }
+
+  /* Top nav */
+  .page-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    flex-wrap: wrap;
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #64748B;
+  }
+  .breadcrumb a {
+    color: #3B82F6;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #CBD5E1; }
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #0F172A;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+
+  /* Page header */
+  .page-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 8px;
+  }
+  .page-header .icon { font-size: 32px; }
+  .page-header h1 {
+    margin: 0;
+    font-size: 26px;
+    color: #0F172A;
+    letter-spacing: -0.4px;
+  }
+  .page-sub {
+    color: #64748B;
+    font-size: 13px;
+    margin-bottom: 24px;
+    padding-left: 46px;
+  }
+  .page-sub code {
+    background: #E2E8F0;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 12px;
+    color: #334155;
+  }
+
+  /* Overview chain */
+  .overview-mini {
+    background: white;
+    padding: 16px 18px;
+    border-radius: 10px;
+    margin-bottom: 28px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .overview-mini-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 12px;
+  }
+  .overview-chain {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .overview-chip {
+    background: #F8FAFC;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border-left: 3px solid #3B82F6;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #0F172A;
+    text-decoration: none;
+    display: inline-block;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+  .overview-chip .lbl {
+    display: block;
+    font-size: 9.5px;
+    color: #64748B;
+    font-weight: 500;
+    margin-bottom: 2px;
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .overview-sep { color: #94A3B8; font-size: 18px; font-weight: bold; }
+
+  /* Boxes */
+  .box {
+    background: white;
+    border-radius: 8px;
+    padding: 9px 13px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border-left: 4px solid #94A3B8;
+    width: 100%;
+    max-width: 100%;
+  }
+  .box.backend    { border-left-color: #3B82F6; }
+  .box.worker     { border-left-color: #10B981; }
+  .box.db         { border-left-color: #F59E0B; }
+  .box.redis      { border-left-color: #EF4444; }
+  .box.s3         { border-left-color: #8B5CF6; }
+  .box.external   { border-left-color: #64748B; }
+  .box.decision { border-left-color: #EAB308; background: #FEFCE8; }
+  .box.cross { border-left-color: #A855F7; background: #FAF5FF; }
+
+  .box-title {
+    font-weight: 600;
+    font-size: 12.5px;
+    color: #0F172A;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .box-desc { font-size: 11.5px; color: #475569; }
+  .box-file {
+    font-size: 10px;
+    color: #94A3B8;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    margin-top: 3px;
+    word-break: break-all;
+  }
+  .box code {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    background: #F1F5F9;
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: #334155;
+    word-break: break-word;
+  }
+  .box-desc code { word-break: break-word; }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .badge.migrated { background: #D1FAE5; color: #065F46; }
+  .badge.legacy   { background: #FEE2E2; color: #991B1B; }
+  .badge.mixed    { background: #FEF3C7; color: #92400E; }
+  .badge.step     { background: #E0E7FF; color: #3730A3; font-size: 10px; }
+  .badge.cross    { background: #F3E8FF; color: #6B21A8; }
+
+  /* Arrows */
+  .arrow {
+    color: #64748B;
+    font-size: 22px;
+    line-height: 1;
+    margin: 1px 0;
+    text-align: center;
+  }
+  .converge { text-align: center; color: #64748B; font-size: 22px; margin: 6px 0; }
+
+  /* Function card */
+  .fn-card {
+    margin-top: 28px;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .fn-card-header {
+    background: linear-gradient(to right, #0F172A, #1E293B);
+    color: white;
+    padding: 14px 20px 14px 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .fn-card-header .fn-title {
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .fn-card-header .fn-title code {
+    background: rgba(255,255,255,0.15);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 13px;
+  }
+  .fn-card-header .fn-loc {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #CBD5E1;
+  }
+  .fn-card-header:hover { background: linear-gradient(to right, #1E293B, #334155); }
+  .fn-card-header::before {
+    content: "▾";
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+    font-size: 14px;
+    transition: transform 0.2s ease;
+    line-height: 1;
+  }
+  .fn-card.collapsed .fn-card-header::before {
+    transform: translateY(-50%) rotate(-90deg);
+  }
+  .fn-card.collapsed .fn-card-body { display: none; }
+  .fn-card-body { padding: 20px; }
+
+  .fn-signature {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    background: #F1F5F9;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: #334155;
+    margin-bottom: 16px;
+    overflow-x: auto;
+  }
+  .fn-purpose {
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    background: #EFF6FF;
+    border-left: 3px solid #3B82F6;
+    border-radius: 6px;
+  }
+  .fn-friendly {
+    font-size: 13px;
+    color: #334155;
+    margin-bottom: 20px;
+    padding: 12px 14px 12px 44px;
+    background: #F0FDF4;
+    border-left: 3px solid #10B981;
+    border-radius: 6px;
+    position: relative;
+    line-height: 1.55;
+  }
+  .fn-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 14px;
+    top: 10px;
+    font-size: 18px;
+  }
+  .fn-friendly strong {
+    color: #065F46;
+  }
+
+  /* Step-level friendly summary (page-wide, appears after page-sub) */
+  .step-friendly {
+    font-size: 13.5px;
+    color: #334155;
+    margin-bottom: 28px;
+    padding: 16px 18px 16px 52px;
+    background: #F0FDF4;
+    border-left: 4px solid #10B981;
+    border-radius: 10px;
+    position: relative;
+    line-height: 1.6;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.08);
+  }
+  .step-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 18px;
+    top: 14px;
+    font-size: 22px;
+  }
+  .step-friendly-title {
+    font-weight: 700;
+    color: #065F46;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 8px;
+  }
+  .step-friendly ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .step-friendly li {
+    margin-bottom: 6px;
+  }
+  .step-friendly li:last-child {
+    margin-bottom: 0;
+  }
+  .step-friendly strong {
+    color: #065F46;
+  }
+  .step-friendly code {
+    background: #DCFCE7;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: #065F46;
+  }
+  .step-friendly em {
+    color: #047857;
+    font-style: italic;
+  }
+
+  .fn-body-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 900px) {
+    .fn-body-cols { grid-template-columns: 1fr; }
+  }
+  .fn-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .fn-asides {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Aside panels */
+  .aside {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 11.5px;
+    color: #78350F;
+  }
+  .aside.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .aside.warn { background: #FEE2E2; border-left-color: #EF4444; color: #991B1B; }
+  .aside.helper { background: #F3E8FF; border-left-color: #A855F7; color: #6B21A8; }
+  .aside-title {
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .aside code {
+    background: rgba(255,255,255,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    word-break: break-word;
+  }
+
+  /* Cascade */
+  .cascade {
+    background: #FEFCE8;
+    border: 1px dashed #EAB308;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 6px 0;
+  }
+  .cascade-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #713F12;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .cascade-step {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 8px;
+    background: white;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    font-size: 11.5px;
+  }
+  .cascade-step .cond {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #334155;
+  }
+  .cascade-step .result {
+    font-weight: 700;
+    font-size: 10.5px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .cascade-step .result.pass  { background: #D1FAE5; color: #065F46; }
+  .cascade-step .result.deny  { background: #FEE2E2; color: #991B1B; }
+  .cascade-step .result.next  { background: #E0E7FF; color: #3730A3; }
+  .cascade-step .result.call  { background: #FEF3C7; color: #78350F; }
+  .cascade-num {
+    background: #EAB308;
+    color: white;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* Nested sub-flow */
+  .nested-flow {
+    margin: 6px 0;
+    padding: 12px;
+    background: #F0FDF4;
+    border: 1px dashed #10B981;
+    border-radius: 8px;
+  }
+  .nested-flow-title {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #065F46;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  /* Code block */
+  .code-block {
+    background: #0F172A;
+    color: #E2E8F0;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 6px 0;
+  }
+  .code-block .k { color: #93C5FD; }
+  .code-block .s { color: #86EFAC; }
+  .code-block .c { color: #64748B; font-style: italic; }
+  .code-block .t { color: #FDE68A; }
+
+  /* Notes */
+  .note {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    color: #78350F;
+    margin: 20px 0;
+  }
+  .note.info {
+    background: #EFF6FF;
+    border-left-color: #3B82F6;
+    color: #1E3A8A;
+  }
+  .note code {
+    background: rgba(255,255,255,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+  }
+
+  .page-footer-nav {
+    margin-top: 48px;
+    padding: 16px;
+    background: white;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .field-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin: 8px 0;
+  }
+  .field-table th {
+    text-align: left;
+    padding: 6px 8px;
+    background: #F1F5F9;
+    color: #334155;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    font-size: 10px;
+    border-bottom: 1px solid #CBD5E1;
+  }
+  .field-table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid #F1F5F9;
+    vertical-align: top;
+  }
+  .field-table td:first-child {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    color: #0F172A;
+    font-weight: 600;
+    white-space: nowrap;
+    font-size: 10.5px;
+  }
+
+    .wv{font-size:9px;font-weight:800;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.5px}
+    .w0{background:#FEE2E2;color:#991B1B}.w1{background:#FEF3C7;color:#92400E}.w2{background:#DBEAFE;color:#1E40AF}
+    .w3{background:#DBEAFE;color:#1E40AF}.w4{background:#DCFCE7;color:#14532D}.w5{background:#DCFCE7;color:#14532D}
+    .w6{background:#F3E8FF;color:#6B21A8}
+    .tl-wave{position:relative;padding-left:38px;margin-bottom:34px}
+    .tl-wave::before{content:'';position:absolute;left:13px;top:34px;bottom:-34px;width:2px;background:#CBD5E1}
+    .tl-wave:last-of-type::before{display:none}
+    .tl-dot{position:absolute;left:0;top:2px;width:28px;height:28px;border-radius:50%;background:#0F172A;color:#fff;
+            display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px}
+    .tl-wave.t-hazard .tl-dot{background:#B91C1C}.tl-wave.t-data .tl-dot{background:#B45309}
+    .tl-wave.t-control .tl-dot{background:#047857}.tl-wave.t-muted .tl-dot{background:#6B21A8}
+    .tl-head{font-size:17px;font-weight:700;color:#0F172A;margin-bottom:3px}
+    .tl-why{font-size:12.5px;color:#475569;line-height:1.65;max-width:80ch;margin-bottom:10px}
+    .tl-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:9px;margin:10px 0}
+    a.tl-card{display:block;text-decoration:none;background:#fff;border:1px solid #E2E8F0;border-left:3px solid #94A3B8;
+              border-radius:8px;padding:10px 12px;box-shadow:0 1px 3px rgba(0,0,0,.05);position:relative;padding-right:24px}
+    a.tl-card:hover{border-left-color:#3B82F6;box-shadow:0 2px 8px rgba(0,0,0,.09)}
+    a.tl-card .c{font-family:'SF Mono',Menlo,monospace;font-size:10.5px;font-weight:800;color:#0F172A;background:#F1F5F9;
+                 padding:1px 6px;border-radius:4px}
+    a.tl-card .t{display:block;margin-top:5px;font-size:12.5px;font-weight:600;color:#0F172A;line-height:1.3}
+    a.tl-card .g{display:block;margin-top:4px;font-size:11px;color:#64748B;line-height:1.5}
+    a.tl-card .chev{position:absolute;right:9px;top:10px;color:#94A3B8;font-size:16px}
+    .gate{display:grid;grid-template-columns:auto 1fr;gap:8px 12px;background:#F8FAFC;border:1px dashed #94A3B8;
+          border-radius:8px;padding:10px 13px;margin-top:8px;font-size:11.5px;color:#334155;line-height:1.6}
+    .gate b{font-size:9.5px;letter-spacing:.6px;text-transform:uppercase;color:#64748B;white-space:nowrap}
+    h3.sec{font-size:14px;font-weight:700;color:#0F172A;margin:22px 0 8px;padding-bottom:5px;border-bottom:1px solid #E2E8F0}
+    h4{font-size:12.5px;font-weight:700;color:#334155;margin:16px 0 6px}
+    ul.tl{margin:6px 0;padding-left:20px;font-size:12px;color:#334155;line-height:1.7}
+    .task-meta{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 18px;align-items:center}
+    .task-meta a{font-size:11px;text-decoration:none;color:#3B82F6;border:1px solid #BFDBFE;background:#EFF6FF;
+                 padding:4px 11px;border-radius:20px;font-weight:600}
+
+    .code-block{white-space:pre-wrap;word-break:normal;overflow-wrap:anywhere}
+
+    /* padroniza o topo pelo complemento */
+    .top-nav{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+             max-width:1500px;margin:0 auto 20px;padding:0 4px}
+    .back-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:#fff;color:#334155;
+              text-decoration:none;border-radius:8px;border:1px solid #CBD5E1;font-size:12.5px;font-weight:600;
+              box-shadow:0 1px 3px rgba(0,0,0,.06);transition:transform .15s,background .15s}
+    .back-btn:hover{background:#EFF6FF;transform:translateY(-1px)}
+    .page-nav{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-start;background:transparent;
+              box-shadow:none;padding:18px 0 0;margin-top:26px;border-top:1px solid #E2E8F0}
+    .lang-sw{display:inline-flex;border:1px solid #CBD5E1;border-radius:8px;overflow:hidden;background:#fff;
+             box-shadow:0 1px 3px rgba(0,0,0,.06)}
+    .lang-sw button{font-family:'SF Mono',Menlo,monospace;font-size:11px;font-weight:700;letter-spacing:.5px;
+             padding:8px 12px;background:transparent;color:#64748B;border:0;cursor:pointer}
+    .lang-sw button+button{border-left:1px solid #E2E8F0}
+    .lang-sw button[aria-pressed="true"]{background:#0F172A;color:#fff}
+    .lang-sw button:focus-visible{outline:2px solid #3B82F6;outline-offset:2px}
+</style>
+<div class="container">
+  <div class="top-nav">
+    <a href="../arquitetura-v2-complemento.html" class="back-btn"><span class="" data-en="← v2 architecture companion" data-pt="← Complemento da arquitetura v2">← v2 architecture companion</span></a>
+    <div class="lang-sw" role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">EN-US</button><button type="button" data-lang="pt" aria-pressed="false">PT-BR</button></div>
+  </div>
+  <div class="page-header">🗓️ <span class="" data-en="Delivery timeline" data-pt="Timeline de entrega">Delivery timeline</span></div>
+  <div class="page-sub"><span class="" data-en="32 tasks in 7 waves, in the order they make sense to ship · click any task for its detail page" data-pt="32 tasks em 7 ondas, na ordem em que fazem sentido subir · clique em qualquer task para o detalhamento">32 tasks in 7 waves, in the order they make sense to ship · click any task for its detail page</span></div>
+  <div class="aside warn" style="max-width:none;margin:18px 0 26px">
+    <div class="aside-title"><span class="" data-en="The rule that sets the order" data-pt="A regra que define a ordem">The rule that sets the order</span></div>
+    <span class="" data-en="The system is protected today by three accidents: the engine&#x27;s sequential loop, one queued run per replica, and a blocking wait on every Temporal node. None was designed as a safeguard, and all three disappear when the v2 wave loop is switched on. &lt;strong&gt;Every wave that removes a throttle comes after the wave that adds the matching ceiling.&lt;/strong&gt; That, and not preference, is what produces the sequence below." data-pt="Hoje o sistema é protegido por três acidentes: o loop sequencial do engine, um run enfileirado por réplica, e o bloqueio síncrono em todo node do Temporal. Nenhum foi desenhado como proteção, e os três somem quando o loop de ondas da v2 for ligado. &lt;strong&gt;Toda onda que remove um limitador vem depois da onda que adiciona o teto correspondente.&lt;/strong&gt; É isso, e não preferência, que produz a sequência abaixo.">The system is protected today by three accidents: the engine's sequential loop, one queued run per replica, and a blocking wait on every Temporal node. None was designed as a safeguard, and all three disappear when the v2 wave loop is switched on. <strong>Every wave that removes a throttle comes after the wave that adds the matching ceiling.</strong> That, and not preference, is what produces the sequence below.</span>
+  </div>
+  
+  <div class="tl-wave t-hazard" id="w0">
+    <div class="tl-dot">0</div>
+    <div class="tl-head"><span class="" data-en="Wave 0 — Close what is already open" data-pt="Onda 0 — Fechar o que já está aberto">Wave 0 — Close what is already open</span>
+      <span class="wv w0">5 tasks</span></div>
+    <div class="tl-why"><span class="" data-en="Ships without touching the migration. Every item here is a live gap today, and none of them depends on the worker." data-pt="Sobe sem tocar na migração. Todo item aqui é uma brecha aberta hoje, e nenhum depende do worker.">Ships without touching the migration. Every item here is a live gap today, and none of them depends on the worker.</span></div>
+    <div class="tl-cards"><a class="tl-card" href="task-S7.html"><span class="c">S7</span><span class="chev">›</span><span class="t" data-en="Authenticate and rate-limit the entry points" data-pt="Autenticar e limitar as entradas">Authenticate and rate-limit the entry points</span><span class="g" data-en="a run can only be created by someone entitled to create it, and no caller can create an unlimited number of them.…" data-pt="um run só pode ser criado por quem tem direito de criá-lo, e nenhum chamador pode criar uma quantidade ilimitada deles…">a run can only be created by someone entitled to create it, and no caller can create an unlimited number of them.…</span></a><a class="tl-card" href="task-S1.html"><span class="c">S1</span><span class="chev">›</span><span class="t" data-en="Depth ceiling and cycle detection for sub-flows" data-pt="Teto de profundidade e detecção de ciclo para sub-flows">Depth ceiling and cycle detection for sub-flows</span><span class="g" data-en="make a self-referencing flow fail fast instead of recursing until something dies.…" data-pt="fazer um flow que referencia a si mesmo falhar rápido, em vez de recursar até algo morrer.…">make a self-referencing flow fail fast instead of recursing until something dies.…</span></a><a class="tl-card" href="task-S4.html"><span class="c">S4</span><span class="chev">›</span><span class="t" data-en="A loop ceiling the node cannot switch off" data-pt="Orçamento de execução: por node, por run, por cadeia">A loop ceiling the node cannot switch off</span><span class="g" data-en="a maximum number of iterations that holds regardless of how the node is configured.…" data-pt="tornar impossível um run executar sem limite, seja qual for a forma do loop.">a maximum number of iterations that holds regardless of how the node is configured.…</span></a><a class="tl-card" href="task-S5.html"><span class="c">S5</span><span class="chev">›</span><span class="t" data-en="Authorise the claim check, do not just guard it" data-pt="Autorizar o claim check, não apenas guardá-lo">Authorise the claim check, do not just guard it</span><span class="g" data-en="a claim-check key can only be redeemed by the run it belongs to.…" data-pt="uma chave de claim check só pode ser resgatada pelo run a que ela pertence.…">a claim-check key can only be redeemed by the run it belongs to.…</span></a><a class="tl-card" href="task-C3.html"><span class="c">C3</span><span class="chev">›</span><span class="t" data-en="Fix the defects before they get ported" data-pt="Corrigir os defeitos antes de eles serem portados">Fix the defects before they get ported</span><span class="g" data-en="clear the known bugs in the code being moved, so the migration does not copy them into a second place where they must …" data-pt="limpar os bugs conhecidos no código que está sendo movido, para a migração não copiá-los para um segundo lugar onde te…">clear the known bugs in the code being moved, so the migration does not copy them into a second place where they must …</span></a></div>
+    <div class="gate">
+      <b><span class="" data-en="Exit gate" data-pt="Sair da onda">Exit gate</span></b><span><span class="" data-en="Each item has a negative control that failed first. S1 and S4 have their measurement against real data with zero false refusals. Nothing here changes behaviour for a working flow." data-pt="Cada item tem controle negativo que falhou antes. S1 e S4 têm a medição contra dado real com zero falsas recusas. Nada aqui muda comportamento de flow que funciona.">Each item has a negative control that failed first. S1 and S4 have their measurement against real data with zero false refusals. Nothing here changes behaviour for a working flow.</span></span>
+      <b><span class="" data-en="Observable after" data-pt="Observável depois">Observable after</span></b><span><span class="" data-en="A flow id stops being enough to spend someone else&#x27;s money, and a recursive flow fails with a clear message instead of degrading a process." data-pt="Um id de flow deixa de bastar para gastar o dinheiro de outra pessoa, e um flow recursivo falha com mensagem clara em vez de degradar um processo.">A flow id stops being enough to spend someone else's money, and a recursive flow fails with a clear message instead of degrading a process.</span></span>
+    </div>
+  </div>
+  <div class="tl-wave t-data" id="w1">
+    <div class="tl-dot">1</div>
+    <div class="tl-head"><span class="" data-en="Wave 1 — Make the fleet able to grow" data-pt="Onda 1 — Permitir a frota crescer">Wave 1 — Make the fleet able to grow</span>
+      <span class="wv w1">4 tasks</span></div>
+    <div class="tl-why"><span class="" data-en="Nothing here migrates a node. It removes the reasons the fleet cannot grow — and gives back, as an explicit ceiling, the protection that is currently an accident." data-pt="Nada aqui migra node. Remove os motivos de a frota não poder crescer — e devolve, como teto explícito, a proteção que hoje é acidente.">Nothing here migrates a node. It removes the reasons the fleet cannot grow — and gives back, as an explicit ceiling, the protection that is currently an accident.</span></div>
+    <div class="tl-cards"><a class="tl-card" href="task-S2.html"><span class="c">S2</span><span class="chev">›</span><span class="t" data-en="Size the database connections before adding workers" data-pt="Dimensionar as conexões de banco antes de adicionar workers">Size the database connections before adding workers</span><span class="g" data-en="know, and enforce, how many Postgres connections the worker fleet can hold.…" data-pt="saber, e impor, quantas conexões do Postgres a frota de workers pode segurar.…">know, and enforce, how many Postgres connections the worker fleet can hold.…</span></a><a class="tl-card" href="task-S3.html"><span class="c">S3</span><span class="chev">›</span><span class="t" data-en="A ceiling on what one run can spend, and on how much of the fleet one tenant can hold" data-pt="Um teto para o que um run gasta, e para quanto da frota um tenant ocupa">A ceiling on what one run can spend, and on how much of the fleet one tenant can hold</span><span class="g" data-en="bound cost and bound fairness, before parallelism removes the accidental throttle that provides both today.…" data-pt="limitar custo e limitar justiça, antes de o paralelismo remover o limitador acidental que hoje fornece os dois.…">bound cost and bound fairness, before parallelism removes the accidental throttle that provides both today.…</span></a><a class="tl-card" href="task-S8.html"><span class="c">S8</span><span class="chev">›</span><span class="t" data-en="One fire per schedule, one run per cron, and a bus that is sized" data-pt="Um disparo por agendamento, um run por cron, e um barramento dimensionado">One fire per schedule, one run per cron, and a bus that is sized</span><span class="g" data-en="running a second backend replica stops multiplying scheduled work — crons, user schedules and the email poll alike.…" data-pt="subir uma segunda réplica do backend para de multiplicar trabalho agendado — crons, agendamentos de usuário e o poll d…">running a second backend replica stops multiplying scheduled work — crons, user schedules and the email poll alike.…</span></a><a class="tl-card" href="task-E3.html"><span class="c">E3</span><span class="chev">›</span><span class="t" data-en="Make run notifications distributed, and unify the two paths" data-pt="Tornar as notificações de run distribuídas, e unificar os dois caminhos">Make run notifications distributed, and unify the two paths</span><span class="g" data-en="one delivery mechanism for run events, working across backend replicas.…" data-pt="um único mecanismo de entrega para eventos de run, funcionando entre réplicas do backend.…">one delivery mechanism for run events, working across backend replicas.…</span></a></div>
+    <div class="gate">
+      <b><span class="" data-en="Exit gate" data-pt="Sair da onda">Exit gate</span></b><span><span class="" data-en="The capacity arithmetic written down with real numbers. The cost ceiling replayed against the run history with no false refusals. Two replicas fire one schedule once." data-pt="A aritmética de capacidade escrita com números reais. O teto de custo reproduzido contra o histórico de runs sem nenhuma falsa recusa. Duas réplicas rodam um agendamento uma vez.">The capacity arithmetic written down with real numbers. The cost ceiling replayed against the run history with no false refusals. Two replicas fire one schedule once.</span></span>
+      <b><span class="" data-en="Observable after" data-pt="Observável depois">Observable after</span></b><span><span class="" data-en="A number: how many worker replicas this database supports. Every later capacity decision reads it." data-pt="Um número: quantas réplicas de worker este banco suporta. Toda decisão de capacidade depois lê esse número.">A number: how many worker replicas this database supports. Every later capacity decision reads it.</span></span>
+    </div>
+  </div>
+  <div class="tl-wave t-control" id="w2">
+    <div class="tl-dot">2</div>
+    <div class="tl-head"><span class="" data-en="Wave 2 — Make coverage measurable" data-pt="Onda 2 — Tornar a cobertura mensurável">Wave 2 — Make coverage measurable</span>
+      <span class="wv w2">4 tasks</span></div>
+    <div class="tl-why"><span class="" data-en="One place starts answering “does the worker run this?”, and the answer starts being true." data-pt="Um lugar passa a responder “o worker roda isto?”, e a resposta passa a estar certa.">One place starts answering “does the worker run this?”, and the answer starts being true.</span></div>
+    <div class="tl-cards"><a class="tl-card" href="task-A1.html"><span class="c">A1</span><span class="chev">›</span><span class="t" data-en="One dispatch registry" data-pt="Um registro único de dispatch">One dispatch registry</span><span class="g" data-en="replace the four uncoordinated lists that answer &amp;quot;can the worker run this node type?&amp;quot; with one derived source. Every o…" data-pt="substituir as quatro listas descoordenadas que respondem &quot;o worker roda este tipo de node?&quot; por uma fonte única deriva…">replace the four uncoordinated lists that answer &amp;quot;can the worker run this node type?&amp;quot; with one derived source. Every o…</span></a><a class="tl-card" href="task-D2.html"><span class="c">D2</span><span class="chev">›</span><span class="t" data-en="One machine-readable contract, and guidance an agent can trust" data-pt="Um contrato legível por máquina, e orientação em que uma IA possa confiar">One machine-readable contract, and guidance an agent can trust</span><span class="g" data-en="an agent — Claude Code or otherwise — that is asked to add or change a node type gets current facts, not a snapshot fr…" data-pt="uma IA — Claude Code ou outra — a quem se peça adicionar ou mudar um tipo de node recebe fatos atuais, não um retrato …">an agent — Claude Code or otherwise — that is asked to add or change a node type gets current facts, not a snapshot fr…</span></a><a class="tl-card" href="task-A2.html"><span class="c">A2</span><span class="chev">›</span><span class="t" data-en="Promote the finished modules and providers" data-pt="Promover os módulos e providers prontos">Promote the finished modules and providers</span><span class="g" data-en="get the seven node types that already have worker modules into production. This is release work, not engineering — but…" data-pt="levar à produção os sete tipos de node que já têm módulo no worker. Isso é trabalho de release, não de engenharia — ma…">get the seven node types that already have worker modules into production. This is release work, not engineering — but…</span></a><a class="tl-card" href="task-A3.html"><span class="c">A3</span><span class="chev">›</span><span class="t" data-en="Reach the stranded worker modules" data-pt="Alcançar os módulos órfãos do worker">Reach the stranded worker modules</span><span class="g" data-en="resolve `sqlQuerier` and `audioReaderNode`, which have worker modules in production that no dispatch gate routes to.…" data-pt="resolver o `sqlQuerier` e o `audioReaderNode`, que têm módulo no worker em produção e nenhum gate de dispatch os alcan…">resolve `sqlQuerier` and `audioReaderNode`, which have worker modules in production that no dispatch gate routes to.…</span></a></div>
+    <div class="gate">
+      <b><span class="" data-en="Exit gate" data-pt="Sair da onda">Exit gate</span></b><span><span class="" data-en="The behaviour-neutrality table covers every registered type and proves nothing changed. The six promoted satisfy the seven points. No module is left with a worker module and inline dispatch at once." data-pt="A tabela de neutralidade cobre todo tipo registrado e prova que nada mudou. Os seis promovidos satisfazem os sete pontos. Nenhum módulo fica com worker e dispatch inline ao mesmo tempo.">The behaviour-neutrality table covers every registered type and proves nothing changed. The six promoted satisfy the seven points. No module is left with a worker module and inline dispatch at once.</span></span>
+      <b><span class="" data-en="Observable after" data-pt="Observável depois">Observable after</span></b><span><span class="" data-en="Coverage stops being a guess. And the guidance an agent loads stops producing wrong work." data-pt="Cobertura deixa de ser chute. E a orientação que uma IA carrega deixa de produzir trabalho errado.">Coverage stops being a guess. And the guidance an agent loads stops producing wrong work.</span></span>
+    </div>
+  </div>
+  <div class="tl-wave t-control" id="w3">
+    <div class="tl-dot">3</div>
+    <div class="tl-head"><span class="" data-en="Wave 3 — Cover the remaining nodes" data-pt="Onda 3 — Cobrir os nodes restantes">Wave 3 — Cover the remaining nodes</span>
+      <span class="wv w3">7 tasks</span></div>
+    <div class="tl-why"><span class="" data-en="Expect a latency regression in this wave and say so out loud: every migrated node is a blocking round trip until wave 5. It is the price paid up front for what wave 5 gives back." data-pt="Espere regressão de latência nesta onda e diga isso em voz alta: todo node migrado é round trip bloqueante até a onda 5. É o preço adiantado do que a onda 5 devolve.">Expect a latency regression in this wave and say so out loud: every migrated node is a blocking round trip until wave 5. It is the price paid up front for what wave 5 gives back.</span></div>
+    <div class="tl-cards"><a class="tl-card" href="task-A4.html"><span class="c">A4</span><span class="chev">›</span><span class="t" data-en="Migrate `reportBuilder`" data-pt="Migrar o `reportBuilder`">Migrate `reportBuilder`</span><span class="g" data-en="move the cheapest node in the catalogue into the worker, and use it to re-validate the activity template end to end af…" data-pt="mover o node mais barato do catálogo para o worker, e usá-lo para revalidar o template de activity ponta a ponta depoi…">move the cheapest node in the catalogue into the worker, and use it to re-validate the activity template end to end af…</span></a><a class="tl-card" href="task-A5.html"><span class="c">A5</span><span class="chev">›</span><span class="t" data-en="Migrate the image family: `imageGenerator` + `imageReaderNode`" data-pt="Migrar a família de imagem: `imageGenerator` + `imageReaderNode`">Migrate the image family: `imageGenerator` + `imageReaderNode`</span><span class="g" data-en="migrate both image nodes over one shared provider layer in the worker.…" data-pt="migrar os dois nodes de imagem sobre uma única camada compartilhada de provider no worker.…">migrate both image nodes over one shared provider layer in the worker.…</span></a><a class="tl-card" href="task-A6.html"><span class="c">A6</span><span class="chev">›</span><span class="t" data-en="Give the nine front-driven types server-side execution" data-pt="Dar execução no servidor aos nove tipos front-driven">Give the nine front-driven types server-side execution</span><span class="g" data-en="the nine node types that today run only from the browser get an activity and, for the first time, engine dispatch.…" data-pt="os nove tipos de node que hoje só rodam a partir do browser ganham uma activity e, pela primeira vez, dispatch pelo en…">the nine node types that today run only from the browser get an activity and, for the first time, engine dispatch.…</span></a><a class="tl-card" href="task-S6.html"><span class="c">S6</span><span class="chev">›</span><span class="t" data-en="An egress policy for user-controlled URLs" data-pt="Uma política de egresso para URLs controladas pelo usuário">An egress policy for user-controlled URLs</span><span class="g" data-en="decide what a node is allowed to fetch, before moving the code that fetches it into a host with more privileges.…" data-pt="decidir o que um node pode buscar antes de mover o código que busca para um host com mais privilégios.…">decide what a node is allowed to fetch, before moving the code that fetches it into a host with more privileges.…</span></a><a class="tl-card" href="task-A8.html"><span class="c">A8</span><span class="chev">›</span><span class="t" data-en="Move input extraction and OCR off the request path" data-pt="Tirar extração e OCR do caminho da requisição">Move input extraction and OCR off the request path</span><span class="g" data-en="the link extraction, file upload and OCR that `varInputNode` performs at the start of every run stop blocking the back…" data-pt="a extração de link, o upload de arquivo e o OCR que o `varInputNode` faz no começo de todo run param de bloquear o bac…">the link extraction, file upload and OCR that `varInputNode` performs at the start of every run stop blocking the back…</span></a><a class="tl-card" href="task-A9.html"><span class="c">A9</span><span class="chev">›</span><span class="t" data-en="Outbound delivery as activities" data-pt="Entrega de saída como activities">Outbound delivery as activities</span><span class="g" data-en="the emails and HTTP callbacks a run sends stop being fire-and-forget, and start being retried.…" data-pt="os e-mails e callbacks HTTP que um run envia deixam de ser fire-and-forget e passam a ter retry.…">the emails and HTTP callbacks a run sends stop being fire-and-forget, and start being retried.…</span></a><a class="tl-card" href="task-D1.html"><span class="c">D1</span><span class="chev">›</span><span class="t" data-en="Developer documentation" data-pt="Documentação para quem desenvolve">Developer documentation</span><span class="g" data-en="a developer who has never touched the worker can add a node type correctly, and a developer debugging a run can find w…" data-pt="quem nunca tocou no worker consegue adicionar um tipo de node corretamente, e quem está depurando um run consegue acha…">a developer who has never touched the worker can add a node type correctly, and a developer debugging a run can find w…</span></a></div>
+    <div class="gate">
+      <b><span class="" data-en="Exit gate" data-pt="Sair da onda">Exit gate</span></b><span><span class="" data-en="Every executable type is in the worker or explicitly out of scope. No mixed flow remains among the types wave 5 will parallelise. The egress policy ran in report-only mode for a full cycle." data-pt="Todo tipo executável está no worker ou explicitamente fora de escopo. Nenhum flow misto sobra entre os tipos que a onda 5 vai paralelizar. A política de egresso rodou em modo relatório por um ciclo inteiro.">Every executable type is in the worker or explicitly out of scope. No mixed flow remains among the types wave 5 will parallelise. The egress policy ran in report-only mode for a full cycle.</span></span>
+      <b><span class="" data-en="Observable after" data-pt="Observável depois">Observable after</span></b><span><span class="" data-en="Flows that silently produced stale output start producing fresh output — a customer-visible change that needs the product decision before the wave, not during it." data-pt="Flows que produziam saída velha em silêncio passam a produzir saída fresca — mudança visível para o cliente, que precisa da decisão de produto antes, não durante.">Flows that silently produced stale output start producing fresh output — a customer-visible change that needs the product decision before the wave, not during it.</span></span>
+    </div>
+  </div>
+  <div class="tl-wave t-control" id="w4">
+    <div class="tl-dot">4</div>
+    <div class="tl-head"><span class="" data-en="Wave 4 — Move the engine, still sequential" data-pt="Onda 4 — Mover o engine, ainda sequencial">Wave 4 — Move the engine, still sequential</span>
+      <span class="wv w4">6 tasks</span></div>
+    <div class="tl-why"><span class="" data-en="The point of this wave is that &lt;strong&gt;nothing gets faster&lt;/strong&gt;. Shipping the graph move and the parallelism together leaves a rollback unable to tell you which one broke the run." data-pt="O ponto desta onda é que &lt;strong&gt;nada fica mais rápido&lt;/strong&gt;. Subir a mudança do grafo e o paralelismo juntos deixa o rollback incapaz de dizer qual dos dois quebrou o run.">The point of this wave is that <strong>nothing gets faster</strong>. Shipping the graph move and the parallelism together leaves a rollback unable to tell you which one broke the run.</span></div>
+    <div class="tl-cards"><a class="tl-card" href="task-B1.html"><span class="c">B1</span><span class="chev">›</span><span class="t" data-en="One reference per execution, not per node" data-pt="Uma referência por execução, não por node">One reference per execution, not per node</span><span class="g" data-en="make the identifier that travels between nodes name one execution of a node, not &amp;quot;a node within a run&amp;quot;. Everything in …" data-pt="fazer o identificador que trafega entre nodes nomear uma execução de um node, e não &quot;um node dentro de um run&quot;. Tudo n…">make the identifier that travels between nodes name one execution of a node, not &amp;quot;a node within a run&amp;quot;. Everything in …</span></a><a class="tl-card" href="task-B2.html"><span class="c">B2</span><span class="chev">›</span><span class="t" data-en="Decide code sharing, then extract the scheduler and the substitution service" data-pt="Decidir o compartilhamento de código, depois extrair o scheduler e a substituição">Decide code sharing, then extract the scheduler and the substitution service</span><span class="g" data-en="get the two pure modules the worker needs out of `back` — under a decision that is made once, deliberately, rather tha…" data-pt="tirar do `back` os dois módulos puros de que o worker precisa — sob uma decisão tomada uma vez, de propósito, e não po…">get the two pure modules the worker needs out of `back` — under a decision that is made once, deliberately, rather tha…</span></a><a class="tl-card" href="task-B3.html"><span class="c">B3</span><span class="chev">›</span><span class="t" data-en="The consumer resolves its own input" data-pt="O consumidor resolve o próprio input">The consumer resolves its own input</span><span class="g" data-en="stop the API from pre-chewing every node&amp;#x27;s input. Each node reads its upstream outputs by reference and resolves what …" data-pt="parar a API de mastigar o input de cada node. Cada node lê as saídas upstream por referência e resolve o que precisa.…">stop the API from pre-chewing every node&amp;#x27;s input. Each node reads its upstream outputs by reference and resolves what …</span></a><a class="tl-card" href="task-B4.html"><span class="c">B4</span><span class="chev">›</span><span class="t" data-en="Move the DAG loop into a Temporal workflow, sequential first" data-pt="Mover o loop do DAG para um workflow do Temporal, sequencial primeiro">Move the DAG loop into a Temporal workflow, sequential first</span><span class="g" data-en="the worker owns the execution sequence. This task ships with no parallelism at all.…" data-pt="o worker passa a ser dono da sequência de execução. Esta task sobe sem paralelismo nenhum.…">the worker owns the execution sequence. This task ships with no parallelism at all.…</span></a><a class="tl-card" href="task-E1.html"><span class="c">E1</span><span class="chev">›</span><span class="t" data-en="Run observability when the worker owns the loop" data-pt="Observabilidade do run quando o worker for dono do loop">Run observability when the worker owns the loop</span><span class="g" data-en="keep the nested run timeline, the per-node billing attribution and the secret redaction working once the loop is not i…" data-pt="manter funcionando a timeline aninhada do run, a atribuição de cobrança por node e a higienização de segredo quando o …">keep the nested run timeline, the per-node billing attribution and the secret redaction working once the loop is not i…</span></a><a class="tl-card" href="task-E2.html"><span class="c">E2</span><span class="chev">›</span><span class="t" data-en="Align cancellation with Temporal instead of porting the poller" data-pt="Alinhar o cancelamento ao Temporal em vez de portar o poller">Align cancellation with Temporal instead of porting the poller</span><span class="g" data-en="cancelling a run works when the loop is in the worker — by using what Temporal already provides, not by reimplementing…" data-pt="cancelar um run funciona com o loop no worker — usando o que o Temporal já oferece, e não reimplementando o desenho at…">cancelling a run works when the loop is in the worker — by using what Temporal already provides, not by reimplementing…</span></a></div>
+    <div class="gate">
+      <b><span class="" data-en="Exit gate" data-pt="Sair da onda">Exit gate</span></b><span><span class="" data-en="Order equivalence over a corpus of stored flows, node for node. History measured and continueAsNew proven past its boundary. The secret-redaction test green. Cancellation working through a child workflow." data-pt="Equivalência de ordem sobre um corpus de flows guardados, node a node. Histórico medido e o continueAsNew provado além da fronteira. O teste de higienização de segredo verde. Cancelamento funcionando através de child workflow.">Order equivalence over a corpus of stored flows, node for node. History measured and continueAsNew proven past its boundary. The secret-redaction test green. Cancellation working through a child workflow.</span></span>
+      <b><span class="" data-en="Observable after" data-pt="Observável depois">Observable after</span></b><span><span class="" data-en="Nothing, to a user. That is the success criterion." data-pt="Nada, para o usuário. Esse é o critério de sucesso.">Nothing, to a user. That is the success criterion.</span></span>
+    </div>
+  </div>
+  <div class="tl-wave t-hazard" id="w5">
+    <div class="tl-dot">5</div>
+    <div class="tl-head"><span class="" data-en="Wave 5 — Turn on parallelism" data-pt="Onda 5 — Ligar o paralelismo">Wave 5 — Turn on parallelism</span>
+      <span class="wv w5">4 tasks</span></div>
+    <div class="tl-why"><span class="" data-en="Preconditions from earlier waves: S1, S2, S3 and E3. Rollout by cohort, not by switch — and the eligibility gate means most flows simply stay sequential until their nodes are covered." data-pt="Pré-condições vindas das ondas anteriores: S1, S2, S3 e E3. Rollout por coorte, não por chave — e o gate de elegibilidade faz a maioria dos flows continuar sequencial até seus nodes estarem cobertos.">Preconditions from earlier waves: S1, S2, S3 and E3. Rollout by cohort, not by switch — and the eligibility gate means most flows simply stay sequential until their nodes are covered.</span></div>
+    <div class="tl-cards"><a class="tl-card" href="task-B5.html"><span class="c">B5</span><span class="chev">›</span><span class="t" data-en="Turn on parallel dispatch" data-pt="Ligar o dispatch paralelo">Turn on parallel dispatch</span><span class="g" data-en="raise the batch size above one. This is the payoff of the whole epic, and it is one configuration change plus one gate…" data-pt="subir o tamanho do lote acima de um. Este é o retorno de todo o epic, e é uma mudança de configuração mais um gate.…">raise the batch size above one. This is the payoff of the whole epic, and it is one configuration change plus one gate…</span></a><a class="tl-card" href="task-A7.html"><span class="c">A7</span><span class="chev">›</span><span class="t" data-en="Migrate `nodesBox` (Object Caller)" data-pt="Migrar o `nodesBox` (Object Caller)">Migrate `nodesBox` (Object Caller)</span><span class="g" data-en="migrate the one mutating node whose logic is actually extractable, behind two new callbacks and an explicit ordering g…" data-pt="migrar o único node que muta cuja lógica é de fato extraível, atrás de dois callbacks novos e de uma garantia explícit…">migrate the one mutating node whose logic is actually extractable, behind two new callbacks and an explicit ordering g…</span></a><a class="tl-card" href="task-B6.html"><span class="c">B6</span><span class="chev">›</span><span class="t" data-en="Control flow and sub-flows in the workflow" data-pt="Controle de fluxo e sub-flows dentro do workflow">Control flow and sub-flows in the workflow</span><span class="g" data-en="`conditionNode` and `arrayNode` become workflow control flow; `fluxBox` and `libraryNode` become child workflows. The …" data-pt="`conditionNode` e `arrayNode` viram controle de fluxo do workflow; `fluxBox` e `libraryNode` viram child workflows. Os…">`conditionNode` and `arrayNode` become workflow control flow; `fluxBox` and `libraryNode` become child workflows. The …</span></a><a class="tl-card" href="task-B7.html"><span class="c">B7</span><span class="chev">›</span><span class="t" data-en="Batch processing as a durable workflow" data-pt="Processamento em lote como workflow durável">Batch processing as a durable workflow</span><span class="g" data-en="a CSV batch survives a deploy, and stops being a detached loop inside an API process.…" data-pt="um batch de CSV sobrevive a um deploy, e deixa de ser um loop solto dentro de um processo da API.…">a CSV batch survives a deploy, and stops being a detached loop inside an API process.…</span></a></div>
+    <div class="gate">
+      <b><span class="" data-en="Exit gate" data-pt="Sair da onda">Exit gate</span></b><span><span class="" data-en="The corruption test passes: an ineligible flow forced through the parallel path loses a write, and the gate refuses it. Determinism holds across repeated runs. Latency measured against the pre-epic baseline." data-pt="O teste de corrupção passa: um flow inelegível forçado pelo caminho paralelo perde escrita, e o gate o recusa. Determinismo se mantém entre execuções repetidas. Latência medida contra a linha de base anterior ao epic.">The corruption test passes: an ineligible flow forced through the parallel path loses a write, and the gate refuses it. Determinism holds across repeated runs. Latency measured against the pre-epic baseline.</span></span>
+      <b><span class="" data-en="Observable after" data-pt="Observável depois">Observable after</span></b><span><span class="" data-en="Wide flows finish in the time of their slowest path, not the sum of their nodes." data-pt="Flows largos terminam no tempo do caminho mais lento, e não na soma dos nodes.">Wide flows finish in the time of their slowest path, not the sum of their nodes.</span></span>
+    </div>
+  </div>
+  <div class="tl-wave t-muted" id="w6">
+    <div class="tl-dot">6</div>
+    <div class="tl-head"><span class="" data-en="Wave 6 — Remove the old road" data-pt="Onda 6 — Remover a estrada velha">Wave 6 — Remove the old road</span>
+      <span class="wv w6">2 tasks</span></div>
+    <div class="tl-why"><span class="" data-en="What only existed to bridge the migration goes: inline twins, cross-node writes, the legacy endpoint and every flag this epic created." data-pt="O que só existia para atravessar a migração sai: gêmeos inline, escritas cross-node, endpoint legado e toda flag criada por este epic.">What only existed to bridge the migration goes: inline twins, cross-node writes, the legacy endpoint and every flag this epic created.</span></div>
+    <div class="tl-cards"><a class="tl-card" href="task-C1.html"><span class="c">C1</span><span class="chev">›</span><span class="t" data-en="Retire the inline paths and the cross-node writes" data-pt="Aposentar os caminhos inline e as escritas cross-node">Retire the inline paths and the cross-node writes</span><span class="g" data-en="delete what the migration replaced, so the back stops being a second implementation.…" data-pt="apagar o que a migração substituiu, para o back parar de ser uma segunda implementação.…">delete what the migration replaced, so the back stops being a second implementation.…</span></a><a class="tl-card" href="task-C2.html"><span class="c">C2</span><span class="chev">›</span><span class="t" data-en="Retire the legacy surfaces, and settle the prefetch question" data-pt="Aposentar as superfícies legadas e resolver a questão do prefetch">Retire the legacy surfaces, and settle the prefetch question</span><span class="g" data-en="remove the entry points and the flags that only existed to bridge the migration, and decide the prefetch executor&amp;#x27;s fa…" data-pt="remover as entradas e as flags que só existiam para atravessar a migração, e decidir o destino do executor de prefetch…">remove the entry points and the flags that only existed to bridge the migration, and decide the prefetch executor&amp;#x27;s fa…</span></a></div>
+    <div class="gate">
+      <b><span class="" data-en="Exit gate" data-pt="Sair da onda">Exit gate</span></b><span><span class="" data-en="addConnectToNodes has no callers on the run path. No flag from this epic remains. flux.service.ts is materially smaller and the reduction is stated." data-pt="O addConnectToNodes não tem chamador no caminho de run. Nenhuma flag deste epic permanece. O flux.service.ts está materialmente menor, e a redução é declarada.">addConnectToNodes has no callers on the run path. No flag from this epic remains. flux.service.ts is materially smaller and the reduction is stated.</span></span>
+      <b><span class="" data-en="Observable after" data-pt="Observável depois">Observable after</span></b><span><span class="" data-en="One implementation of each node, one dispatch registry, one engine." data-pt="Uma implementação por node, um registro de dispatch, um engine.">One implementation of each node, one dispatch registry, one engine.</span></span>
+    </div>
+  </div>
+  <div class="page-nav">
+    <a href="../arquitetura-v2-complemento.html" class="back-btn"><span class="" data-en="← v2 architecture companion" data-pt="← Complemento da arquitetura v2">← v2 architecture companion</span></a>
+    <a href="../complemento/fase-3.html" class="back-btn"><span class="" data-en="The wave loop in detail →" data-pt="O loop de ondas em detalhe →">The wave loop in detail →</span></a>
+  </div>
+</div>
+<script>
+(function(){
+  var n=document.querySelectorAll('[data-en]'),b=document.querySelectorAll('.lang-sw button');
+  function apply(l){
+    n.forEach(function(el){var v=el.getAttribute('data-'+l); if(v===null)return; el.innerHTML=v;});
+    b.forEach(function(x){x.setAttribute('aria-pressed',String(x.getAttribute('data-lang')===l))});
+    document.documentElement.lang = l==='pt' ? 'pt-BR' : 'en';
+    try{localStorage.setItem('flux-lang',l)}catch(e){}
+  }
+  b.forEach(function(x){x.addEventListener('click',function(){apply(x.getAttribute('data-lang'))})});
+  var saved=null; try{saved=localStorage.getItem('flux-lang')}catch(e){}
+  apply(saved==='pt'?'pt':'en');
+})();
+</script>

@@ -263,6 +263,9 @@ tasks already state — proceeding on the assumption is fine; discovering it was
 | D7 | Behaviour when a run hits its cost ceiling | **abort with a typed error**, not silent degradation | Wave 1 |
 | D8 | Worker pool `max` | **activity concurrency + 2**; PgBouncer in transaction mode recommended | Wave 1 |
 | D9 | Per-tenant concurrency | **queue the excess**, do not reject | Wave 1 |
+| D15 | Execution budget numbers | **open** — X per node, Y per run, chain total; all three from measurement, not from taste | Wave 0 |
+| D13 | Sub-flow execution identity | **chained** — own run id plus `parentRunId`; depth, cycle, cancellation and spend all read the chain | Wave 0 |
+| D14 | Calling a flow already on the chain | **refused outright**, at any depth — it is awaiting a return | Wave 0 |
 | D10 | What `public: true` should permit on the webhook route | none — must be stated, not inherited from a broken `where` | Wave 0 |
 | D11 | Behaviour when a rate limit is hit | **reject with 429 + Retry-After**, deliberately unlike D9 — admission is where rejecting is right | Wave 1 |
 | D12 | Cron single-fire mechanism | **advisory lock per job name**, so nothing needs to know the replica count | Wave 1 |

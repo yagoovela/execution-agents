@@ -7,9 +7,23 @@
 
 ## Why
 
-`(execId, nodeId)` is already the transport for a node's input and output. Inside a loop —
-`arrayNode`, `conditionNode` — the same `nodeId` executes many times under one `execId`, and today
-(analysis §8.4):
+**Corrected 2026-08-24.** An earlier version of this task claimed `(execId, nodeId)` names "a node
+within a run" and that loops break it in general. That is only half true, and the real situation is
+more interesting: **`execId` means two different things depending on which path ran the node.**
+
+- **Temporal path** — `processNodeViaTemporal` does `const execId = uuid()` **per node dispatch**
+  (`flux.service.ts:681`). Each execution, including each loop iteration, gets its own id. Here the
+  pair is already unique.
+- **Legacy path** — `recordLegacyNodeStart` is called with `execId: runLogProcessId`
+  (`flux.service.ts:3304`), which is **the same value for every node in the run**. Here the pair
+  collides on every loop iteration, exactly as originally described.
+
+So the defect is not "loops break the key". It is that **one column carries two incompatible
+meanings**, and this epic is about to merge the two paths into one. Whichever meaning survives has
+to be chosen deliberately, because the merge will otherwise pick one by accident.
+
+The mechanical hazards below are real on the legacy path today, and become general the moment the
+paths converge (analysis §8.4):
 
 - `node_executions` has **no unique constraint** on `(execId, nodeId)`; only a plain index
   (`1776400000000-AlterNodeExecutionsForRunScopedIpc.ts:28`).
@@ -36,6 +50,16 @@ introduces. Fixing it afterwards means changing the transport under running code
   explicit — which B6 will want anyway.
 
 **Pick one, write down why in this file.** The choice constrains B3 and B6.
+
+**Recommendation: keep the Temporal meaning — one id per node execution — and make the legacy path
+conform.** It is already the stricter of the two, it is what `node_executions` was documented to
+be ("one row per node run"), and it is the only one of the two that survives loops and parallelism
+without a discriminator.
+
+**Sub-flows do not share the parent's execution identity.** A sub-flow is a different graph with
+its own scheduler state; merging it into the parent's would mean one state holding two node sets
+and two termination conditions. It gets its own run identity, **chained to the parent** — see
+`TASK-S1`, which owns that chain.
 
 **In.** Whichever wins: a unique constraint or an explicit documented reason there is none,
 `ORDER BY` on every read that can match more than one row, and a targeted `persistNodeSuccess`.

@@ -20,8 +20,19 @@ That accidental serialisation is doing real protective work — and B5 removes i
 
 ## Scope
 
-**In — spend.** A per-run ceiling checked **at charge time**, in the same call that already records
-the spend. That is the only place that keeps working once the worker owns the loop, and it needs no
+**In — spend.** A ceiling checked **at charge time**, in the same call that already records the
+spend.
+
+**The ceiling applies to the run chain, not to a single run** (`TASK-S1`). A sub-flow gets its own
+run identity with a `parentRunId`, so a per-run ceiling would be defeated by nesting: five levels
+buy five ceilings, and recursion becomes the way around the limit. The charge call must resolve the
+chain root and account against it. This is cheap — the chain is already needed for depth, cycle and
+cancellation — but it has to be stated, because a ceiling that recursion can multiply is not a
+ceiling.
+
+**One counter, two limits.** `TASK-S4` needs the same chain-root accounting for its node-execution
+budget. Build it once and carry both units — cost and executions — rather than two accountants that
+resolve the chain independently and can disagree about where the root is. That is the only place that keeps working once the worker owns the loop, and it needs no
 new plumbing: `/worker/charge-tokens` already carries `execId`.
 
 **Assumption to confirm — the run aborts rather than degrades.** Aborting is honest and cheap to
