@@ -769,22 +769,42 @@
     align-items: center;
     gap: 6px;
   }
+
+  /* Inline cross-refs inside a .box (must NOT be <a> — nested anchors break the outer .box card) */
+  .ref-link { color: #3B82F6; text-decoration: underline; cursor: pointer; }
+
+  /* Unified top tabs (shared across the 4 top-level docs) */
+  .doc-nav { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+  .doc-tabs {
+    display: flex; gap: 4px; background: #fff; padding: 5px; border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(15,23,42,0.08); flex-wrap: wrap;
+    border: 1px solid #E2E8F0; flex: 1 1 auto; min-width: 0;
+  }
+  .doc-tabs .doc-tab {
+    flex: 1 1 auto; text-align: center; padding: 9px 16px; border-radius: 8px;
+    text-decoration: none; color: #475569; font-size: 13px; font-weight: 600;
+    letter-spacing: -0.1px; transition: background 0.15s, color 0.15s; white-space: nowrap;
+  }
+  .doc-tabs .doc-tab:hover { background: #F1F5F9; color: #0F172A; }
+  .doc-tabs .doc-tab.is-active {
+    background: #0F172A; color: #fff; box-shadow: 0 1px 2px rgba(15,23,42,0.15);
+  }
+  .doc-tabs .doc-tab.is-active:hover { background: #0F172A; color: #fff; }
 </style>
 </head>
 <body>
 <div class="container">
 
-  <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
-    <a href="arquitetura-v2.html" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:linear-gradient(90deg,#DBEAFE,#F3E8FF);color:#3730A3;text-decoration:none;border-radius:8px;border:1px solid #C7D2FE;font-size:12.5px;font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,0.06);transition:transform 0.15s"
-       onmouseover="this.style.transform='translateY(-1px)'"
-       onmouseout="this.style.transform='translateY(0)'">
-      <span>✦</span>
-      <span>Ver proposta — Arquitetura v2</span>
-      <span style="font-weight:700">→</span>
-    </a>
+  <div class="doc-nav">
+    <nav class="doc-tabs" aria-label="Seções da documentação">
+      <a href="index.html" class="doc-tab is-active">Arquitetura atual</a>
+      <a href="arquitetura-v2.html" class="doc-tab">Arquitetura v2</a>
+      <a href="arquitetura-v2-complemento.html" class="doc-tab">Plano em tarefas</a>
+      <a href="timeline/index.html" class="doc-tab">Timeline</a>
+    </nav>
   </div>
 
-  <h1>Execução de Agente — Estado Atual</h1>
+  <h1>Como funciona a execução do agente na versão atual</h1>
 
   <!-- ================================================== -->
   <!-- FASE 1 — ENTRADA E PREPARAÇÃO -->
@@ -1097,7 +1117,7 @@
     </div>
   </div>
 
- 
+
 
   <!-- ================================================== -->
   <!-- FASE 2 — SETUP DA EXECUÇÃO -->
@@ -1152,7 +1172,7 @@
           <span class="badge step">2.2a</span> Setup de cancellation <em>antes</em> do loop
         </div>
         <div class="box-desc">
-          <code>shouldWatchCancellation</code> + <code>resolveCancelRunKey</code> + feature flag <code>NODE_CANCEL_IN_FLIGHT_FLAG</code> + <code>startNodeCancelWatch</code> montam o AbortSignal que o loop consulta a cada iteração no <a href="#step-3-cancel" style="color:#3B82F6;text-decoration:underline">3-cancel</a>.
+          <code>shouldWatchCancellation</code> + <code>resolveCancelRunKey</code> + feature flag <code>NODE_CANCEL_IN_FLIGHT_FLAG</code> + <code>startNodeCancelWatch</code> montam o AbortSignal que o loop consulta a cada iteração no <span class="ref-link" data-target="step-3-cancel">3-cancel</span>.
         </div>
         <div class="box-file">flux.service.ts:3239-3249 · run-cancellation.service.ts</div>
         <div class="click-hint">
@@ -1200,7 +1220,7 @@
     </div>
   </div>
 
- 
+
 
   <!-- ================================================== -->
   <!-- FASE 3 — LOOP PRINCIPAL -->
@@ -1259,9 +1279,9 @@
           <span class="click-chevron" aria-hidden="true">›</span>
           <div class="box-title"><span class="badge step">3.4</span> runLogCollector.startNode() + chargeContext.enterWith() <span class="badge cross">cross</span></div>
           <div class="box-desc">
-            Abre <code>RunLogNode</code> hierárquico (aninhado no root criado no <a href="#step-1-4" style="color:#3B82F6;text-decoration:underline">1.4</a>) e ativa <strong>dois</strong> AsyncLocalStorage por nó:
+            Abre <code>RunLogNode</code> hierárquico (aninhado no root criado no <span class="ref-link" data-target="step-1-4">1.4</span>) e ativa <strong>dois</strong> AsyncLocalStorage por nó:
             <br>• <code>chargeContext.enterWith({ execId: runLogProcessId, nodeId: node.id })</code> — capturado por qualquer <code>charge-tokens</code> feito durante o handler para atribuir o custo ao nó certo
-            <br>• <code>if (cancelWatch) nodeCancelContext.enterWith(cancelWatch.entry)</code> — só se o watch de cancel foi armado no <a href="#" onclick="return false" style="color:#3B82F6">2.2a</a>. Handlers que chamam <code>await</code> podem consultar esse contexto para abortar cedo.
+            <br>• <code>if (cancelWatch) nodeCancelContext.enterWith(cancelWatch.entry)</code> — só se o watch de cancel foi armado no <span class="ref-link" data-target="step-2-2a">2.2a</span>. Handlers que chamam <code>await</code> podem consultar esse contexto para abortar cedo.
           </div>
           <div class="box-file">flux.service.ts:3316-3322</div>
           <div class="click-hint">
@@ -1576,7 +1596,7 @@
             <br>6. <code>recordInApiNodeError({ nodeId, executionId, errorMessage })</code> (4771-4787) — grava linha de erro em <code>node_executions</code> para trace uniforme (mesma tabela dos nós Temporal).
             <br>7. <code>stoppedByNodeFailure = true</code>; break do while.
             <br><br>
-            <strong>Marcação de rota morta em condition</strong>: quando é <code>conditionNode</code> que falhou, chama <code>completeCondition(schedState, nodeId, DEAD_HANDLE)</code> antes do break — o scheduler propaga "morte" para os nós downstream inalcançáveis, que aparecem em <a href="#step-4-1" style="color:#3B82F6;text-decoration:underline">4.1</a> como <code>dead</code> e não como <code>unprocessed</code>.
+            <strong>Marcação de rota morta em condition</strong>: quando é <code>conditionNode</code> que falhou, chama <code>completeCondition(schedState, nodeId, DEAD_HANDLE)</code> antes do break — o scheduler propaga "morte" para os nós downstream inalcançáveis, que aparecem em <span class="ref-link" data-target="step-4-1">4.1</span> como <code>dead</code> e não como <code>unprocessed</code>.
           </div>
           <div class="box-file">flux.service.ts:4702-4794 (try/catch) · flux.service.ts:5342+ (catch top-level em 5.1)</div>
           <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (soft fail + catch + recordInApiNodeError)</span><span class="click-hint-arrow">→</span></div>
@@ -1587,7 +1607,7 @@
           <span class="click-chevron" aria-hidden="true">›</span>
           <div class="box-title"><span class="badge step">3.9</span> runLogCollector.endNode() <span class="badge cross">cross</span></div>
           <div class="box-desc">
-            Fecha o <code>RunLogNode</code> aberto no <a href="#step-3-4" style="color:#3B82F6;text-decoration:underline">3.4</a> passando output final, tokens delta (<code>after - before</code>), custo e status (<code>completed | error | cancelled</code>).
+            Fecha o <code>RunLogNode</code> aberto no <span class="ref-link" data-target="step-3-4">3.4</span> passando output final, tokens delta (<code>after - before</code>), custo e status (<code>completed | error | cancelled</code>).
             <br><br>
             <strong>⚠ Duplicação / dead code</strong>: no código atual, <code>endNode()</code> aparece 2× em locais próximos:
             <br>• <code>flux.service.ts:4604-4614</code> — chamada ativa, dentro do path de sucesso
@@ -1621,7 +1641,7 @@
     </div>
   </div>
 
- 
+
 
   <!-- ================================================== -->
   <!-- FASE 4 — FINALIZAÇÃO -->
@@ -1729,7 +1749,7 @@
           <strong>Bloco de 240 linhas</strong> (4981-5220). Ordem real:
           <br><br>
           <strong>1. Extração de outputs (4956-5026)</strong> — <code>getOutputsObjectNodes(myUpdatedNodes)</code> pega todos os <code>outputObjectNode</code>. Para cada um:
-          <br>&nbsp;&nbsp;• <code>persistInputNodeData()</code> grava <code>text</code> e <code>textData</code> definitivos (nasce do <a href="#step-4-6" style="color:#3B82F6;text-decoration:underline">4.6</a> mas concretiza aqui)
+          <br>&nbsp;&nbsp;• <code>persistInputNodeData()</code> grava <code>text</code> e <code>textData</code> definitivos (nasce do <span class="ref-link" data-target="step-4-6">4.6</span> mas concretiza aqui)
           <br>&nbsp;&nbsp;• Extrai textos e URLs de anexos que virarão payload de email/webhook
           <br><br>
           <strong>2. Download de attachments (5041-5070)</strong> — para cada URL identificada como anexo (S3, external), baixa via <code>httpService</code>/AWS SDK e monta buffer para a API do provider.
@@ -1744,7 +1764,7 @@
           <br>&nbsp;&nbsp;• Fallback para <code>SMTP</code> nativo
           <br>&nbsp;&nbsp;• Ou webhook direto se o nó marca <code>useWebhook</code>
           <br><br>
-          <strong>5. Callback HTTP consolidado (5164-5195)</strong> — se o request original veio com <code>callbackUrl</code>, dispara POST com <code>{ processId, outputs, tokens, cost }</code>. Diferente do callback da fila (que é feito pelo processor no <a href="#" onclick="return false" style="color:#3B82F6">1.1</a>).
+          <strong>5. Callback HTTP consolidado (5164-5195)</strong> — se o request original veio com <code>callbackUrl</code>, dispara POST com <code>{ processId, outputs, tokens, cost }</code>. Diferente do callback da fila (que é feito pelo processor no <span class="ref-link" data-target="step-1-1">1.1</span>).
         </div>
         <div class="box-file">flux.service.ts:4956-5026 (extração) · 5041-5070 (attachments) · 5094-5160 (dedup Redis duplo) · 5164-5195 (envio + callback)</div>
         <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (dedup Redis + 3 providers + webhooks)</span><span class="click-hint-arrow">→</span></div>
@@ -1755,7 +1775,7 @@
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title"><span class="badge step">4.8</span> Atualização de chat <span class="badge ess">essencial (modo chat)</span> <span class="badge new">expandido pós-doc</span></div>
         <div class="box-desc">
-          <strong>Só roda se <code>sessionIdForChat</code> foi resolvido no <a href="#step-1-6" style="color:#3B82F6;text-decoration:underline">1.6</a></strong> (havia <code>sessionId</code> explícito OU o flow tem <code>fluxObject</code> com <code>chat: true</code>).
+          <strong>Só roda se <code>sessionIdForChat</code> foi resolvido no <span class="ref-link" data-target="step-1-6">1.6</span></strong> (havia <code>sessionId</code> explícito OU o flow tem <code>fluxObject</code> com <code>chat: true</code>).
           <br><br>
           <strong>1. Coleta de <code>sessionAppends</code> (5223-5266)</strong> — varre <code>myUpdatedNodes</code>, seleciona <code>fluxObject</code>/<code>nodesBox</code> com chat, monta lista <code>[{ scopeId, sessionKey, entries }]</code>.
           <br><br>
@@ -1780,7 +1800,7 @@
     </div>
   </div>
 
- 
+
 
   <!-- ================================================== -->
   <!-- CATCH + CLEANUP -->
@@ -1818,7 +1838,7 @@
     </div>
   </div>
 
- 
+
 
   <!-- ================================================== -->
   <!-- FASE 5 — CROSS-CUTTING -->
@@ -1870,5 +1890,16 @@
   </div>
 
 </div>
+<script>
+  // Inline cross-refs: scroll to target without triggering the parent .box link navigation
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('.ref-link[data-target]');
+    if (!el) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var target = document.getElementById(el.dataset.target);
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, true);
+</script>
 </body>
 </html>
