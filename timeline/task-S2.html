@@ -1,4 +1,5 @@
 <title>S2 — Size the database connections before adding workers</title>
+<link rel="stylesheet" href="../_assets/header.css">
 <style>
 
   * { box-sizing: border-box; }
@@ -848,7 +849,22 @@ body{background:#F1F5F9;color:#0F172A;margin:0;padding:28px 24px 72px;line-heigh
 
 </style>
 <div class="container">
-<div class="top-nav"><a href="index.html" class="back-btn"><span>←</span> <span data-en="Timeline" data-pt="Timeline">Timeline</span></a><div class="lang-sw" role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">EN-US</button><button type="button" data-lang="pt" aria-pressed="false">PT-BR</button></div></div>
+<div class="doc-nav">
+  <nav class="doc-tabs" aria-label="Documentation sections">
+    <a href="../index.html" class="doc-tab"><span data-en="Current architecture" data-pt="Arquitetura atual">Current architecture</span></a>
+    <a href="../arquitetura-v2.html" class="doc-tab"><span data-en="v2 architecture" data-pt="Arquitetura v2">v2 architecture</span></a>
+    <a href="../arquitetura-v2-complemento.html" class="doc-tab"><span data-en="Plan as tasks" data-pt="Plano em tarefas">Plan as tasks</span></a>
+    <a href="../timeline/index.html" class="doc-tab is-active"><span data-en="Timeline" data-pt="Timeline">Timeline</span></a>
+  </nav>
+  <div class="lang-sw" role="group" aria-label="Language">
+    <button type="button" data-lang="en" aria-pressed="true">EN-US</button>
+    <button type="button" data-lang="pt" aria-pressed="false">PT-BR</button>
+  </div>
+</div>
+
+
+
+<div class="top-nav"><a href="index.html" class="back-btn"><span>←</span> <span data-en="Timeline" data-pt="Timeline">Timeline</span></a></div>
 <div class="hero"><div class="kicker"><span class="code">S2</span><span class="wv" data-en="wave 1" data-pt="onda 1">wave 1</span><span class="st st-planned" data-en="Planned" data-pt="Planejada">Planned</span></div><h1 data-en="Size the database connections before adding workers" data-pt="Dimensionar as conexões de banco antes de somar workers">Size the database connections before adding workers</h1><div class="goal" data-en="Know, and enforce, &lt;b&gt;how many Postgres connections the worker fleet can hold&lt;/b&gt; — before anything in this epic adds a replica." data-pt="Saber, e impor, &lt;b&gt;quantas conexões de Postgres a frota de workers pode segurar&lt;/b&gt; — antes que qualquer coisa deste épico some uma réplica.">Know, and enforce, <b>how many Postgres connections the worker fleet can hold</b> — before anything in this epic adds a replica.</div><div class="hero-links"><a href="../complemento/fase-3.html"><span data-en="Where this lands in the flow →" data-pt="Onde isto entra no fluxo →">Where this lands in the flow →</span></a><a href="index.html#w1"><span data-en="Other tasks in wave 1 →" data-pt="Outras tasks da onda 1 →">Other tasks in wave 1 →</span></a><a href="task-S3.html"><span data-en="Next: S3 — A ceiling on what one run can spend →" data-pt="Próxima: S3 — Um teto para o que um run pode gastar →">Next: S3 — A ceiling on what one run can spend →</span></a></div></div>
 <div class="glance"><div class="gl crit"><div class="k" data-en="Severity" data-pt="Severidade">Severity</div><div class="v" data-en="Critical" data-pt="Crítica">Critical</div><div class="n" data-en="The single biggest obstacle to running more workers — and it is one line of config plus a capacity decision. Review §2.1." data-pt="O maior obstáculo isolado para rodar mais workers — e é uma linha de config mais uma decisão de capacidade. Review §2.1.">The single biggest obstacle to running more workers — and it is one line of config plus a capacity decision. Review §2.1.</div></div><div class="gl dep"><div class="k" data-en="Depends on" data-pt="Depende de">Depends on</div><div class="v" data-en="Nothing" data-pt="Nada">Nothing</div><div class="n" data-en="But it &lt;strong&gt;blocks B5&lt;/strong&gt; — and it blocks adding a worker replica today." data-pt="Mas &lt;strong&gt;bloqueia a B5&lt;/strong&gt; — e bloqueia somar uma réplica de worker hoje.">But it <strong>blocks B5</strong> — and it blocks adding a worker replica today.</div></div><div class="gl wave"><div class="k" data-en="Wave" data-pt="Onda">Wave</div><div class="v" data-en="Wave 1" data-pt="Onda 1">Wave 1</div><div class="n" data-en="Wave 1 is where the fleet becomes able to grow. Every wave after it assumes more workers." data-pt="A onda 1 é onde a frota passa a poder crescer. Toda onda depois dela pressupõe mais workers.">Wave 1 is where the fleet becomes able to grow. Every wave after it assumes more workers.</div></div><div class="gl ship"><div class="k" data-en="Deliverable" data-pt="Entrega">Deliverable</div><div class="v" data-en="A sentence" data-pt="Uma frase">A sentence</div><div class="n" data-en="The capacity arithmetic, with real numbers and a supported replica count. The config change is trivial once it exists." data-pt="A conta de capacidade, com números reais e uma contagem de réplicas suportadas. A mudança de config é trivial depois que ela existe.">The capacity arithmetic, with real numbers and a supported replica count. The config change is trivial once it exists.</div></div></div>
 <div class="lede" data-en="&lt;p&gt;&lt;code&gt;database.service.ts:13&lt;/code&gt; constructs &lt;code&gt;new Pool({...})&lt;/code&gt; with &lt;strong&gt;no &lt;code&gt;max&lt;/code&gt;&lt;/strong&gt;. node-postgres then defaults to ten connections per pool, per process — and the worker runs &lt;code&gt;maxConcurrentActivityTaskExecutions: 10&lt;/code&gt; (&lt;code&gt;worker.service.ts:22&lt;/code&gt;), so a replica can hold ten busy connections and the total scales &lt;strong&gt;linearly with replicas&lt;/strong&gt;.&lt;/p&gt;

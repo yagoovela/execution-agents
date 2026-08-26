@@ -1,4 +1,5 @@
 <title>E3 — Make run notifications distributed</title>
+<link rel="stylesheet" href="../_assets/header.css">
 <style>
 
   * { box-sizing: border-box; }
@@ -848,7 +849,22 @@ body{background:#F1F5F9;color:#0F172A;margin:0;padding:28px 24px 72px;line-heigh
 
 </style>
 <div class="container">
-<div class="top-nav"><a href="index.html" class="back-btn"><span>←</span> <span data-en="Timeline" data-pt="Timeline">Timeline</span></a><div class="lang-sw" role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">EN-US</button><button type="button" data-lang="pt" aria-pressed="false">PT-BR</button></div></div>
+<div class="doc-nav">
+  <nav class="doc-tabs" aria-label="Documentation sections">
+    <a href="../index.html" class="doc-tab"><span data-en="Current architecture" data-pt="Arquitetura atual">Current architecture</span></a>
+    <a href="../arquitetura-v2.html" class="doc-tab"><span data-en="v2 architecture" data-pt="Arquitetura v2">v2 architecture</span></a>
+    <a href="../arquitetura-v2-complemento.html" class="doc-tab"><span data-en="Plan as tasks" data-pt="Plano em tarefas">Plan as tasks</span></a>
+    <a href="../timeline/index.html" class="doc-tab is-active"><span data-en="Timeline" data-pt="Timeline">Timeline</span></a>
+  </nav>
+  <div class="lang-sw" role="group" aria-label="Language">
+    <button type="button" data-lang="en" aria-pressed="true">EN-US</button>
+    <button type="button" data-lang="pt" aria-pressed="false">PT-BR</button>
+  </div>
+</div>
+
+
+
+<div class="top-nav"><a href="index.html" class="back-btn"><span>←</span> <span data-en="Timeline" data-pt="Timeline">Timeline</span></a></div>
 <div class="hero"><div class="kicker"><span class="code">E3</span><span class="wv" data-en="wave 1" data-pt="onda 1">wave 1</span><span class="st st-planned" data-en="Planned" data-pt="Planejada">Planned</span></div><h1 data-en="Make run notifications distributed" data-pt="Tornar as notificações de run distribuídas">Make run notifications distributed</h1><div class="goal" data-en="&lt;b&gt;One delivery mechanism&lt;/b&gt; for run events, working across backend replicas." data-pt="&lt;b&gt;Um único mecanismo de entrega&lt;/b&gt; para eventos de run, funcionando entre réplicas de backend."><b>One delivery mechanism</b> for run events, working across backend replicas.</div><div class="hero-links"><a href="../complemento/fase-3.html"><span data-en="Where this lands in the flow →" data-pt="Onde isto entra no fluxo →">Where this lands in the flow →</span></a><a href="index.html#w1"><span data-en="Other tasks in wave 1 →" data-pt="Outras tasks da onda 1 →">Other tasks in wave 1 →</span></a><a href="task-A1.html"><span data-en="Next: A1 — One dispatch registry →" data-pt="Próxima: A1 — Um registro de dispatch →">Next: A1 — One dispatch registry →</span></a></div></div>
 <div class="glance"><div class="gl crit"><div class="k" data-en="Severity" data-pt="Severidade">Severity</div><div class="v" data-en="Medium, already latent" data-pt="Média, já latente">Medium, already latent</div><div class="n" data-en="&lt;code&gt;chatbotSocketByRun&lt;/code&gt; is a process-local &lt;code&gt;Map&lt;/code&gt;. It blocks horizontal scale, and it does not need the migration to bite. PLAN §6 R11." data-pt="O &lt;code&gt;chatbotSocketByRun&lt;/code&gt; é um &lt;code&gt;Map&lt;/code&gt; local ao processo. Ele bloqueia escala horizontal, e não precisa da migração para morder. PLAN §6 R11."><code>chatbotSocketByRun</code> is a process-local <code>Map</code>. It blocks horizontal scale, and it does not need the migration to bite. PLAN §6 R11.</div></div><div class="gl dep"><div class="k" data-en="Depends on" data-pt="Depende de">Depends on</div><div class="v" data-en="Nothing technically" data-pt="Tecnicamente nada">Nothing technically</div><div class="n" data-en="But it &lt;strong&gt;must land before B5&lt;/strong&gt; — parallel execution multiplies the event rate." data-pt="Mas &lt;strong&gt;tem de entrar antes da B5&lt;/strong&gt; — a execução paralela multiplica a taxa de eventos.">But it <strong>must land before B5</strong> — parallel execution multiplies the event rate.</div></div><div class="gl wave"><div class="k" data-en="Wave" data-pt="Onda">Wave</div><div class="v" data-en="Wave 1" data-pt="Onda 1">Wave 1</div><div class="n" data-en="Wave 1 is the one that makes a second backend replica possible. This is one of the reasons it is not, today." data-pt="A onda 1 é a que torna possível uma segunda réplica de backend. Isto é um dos motivos de hoje não ser.">Wave 1 is the one that makes a second backend replica possible. This is one of the reasons it is not, today.</div></div><div class="gl ship"><div class="k" data-en="Rollback" data-pt="Rollback">Rollback</div><div class="v" data-en="Behind a flag" data-pt="Atrás de uma flag">Behind a flag</div><div class="n" data-en="&lt;strong&gt;The riskiest change in the wave&lt;/strong&gt; — a transport change — so the old path stays intact for one cycle." data-pt="&lt;strong&gt;A mudança mais arriscada da onda&lt;/strong&gt; — troca de transporte — então o caminho antigo fica intacto por um ciclo."><strong>The riskiest change in the wave</strong> — a transport change — so the old path stays intact for one cycle.</div></div></div>
 <div class="lede" data-en="&lt;p&gt;&lt;strong&gt;The socket path is process-local.&lt;/strong&gt; &lt;code&gt;chatbotSocketByRun&lt;/code&gt; is a plain &lt;code&gt;Map&lt;/code&gt; in the backend process (&lt;code&gt;flux.service.ts:2288&lt;/code&gt;, registered at &lt;code&gt;:5293–5307&lt;/code&gt;, cleaned up at &lt;code&gt;:5392–5395&lt;/code&gt;). A run whose socket was registered on replica A &lt;strong&gt;cannot be notified from replica B&lt;/strong&gt;.&lt;/p&gt;
