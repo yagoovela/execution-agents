@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Passo 1.5b — Reset de fluxObject com clearOnExecution | Detalhamento</title>
+<title>Step 1.5b — fluxObject reset with clearOnExecution | Detail</title>
+<link rel="stylesheet" href="../_assets/i18n.css">
 <style>
   * { box-sizing: border-box; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F1F5F9; color: #0F172A; margin: 0; padding: 32px 24px 80px; line-height: 1.4; }
@@ -111,51 +112,57 @@
 
   <div class="page-nav">
     <div class="breadcrumb">
-      <a href="../index.html">📋 Execução de Agente</a>
+      <a href="../index.html">📋 <span data-en="Agent execution" data-pt="Execução de Agente">Agent execution</span></a>
       <span class="sep">›</span>
-      <span>Passo 1.5b — Detalhamento</span>
+      <span data-en="Step 1.5b — Detail" data-pt="Passo 1.5b — Detalhamento">Step 1.5b — Detail</span>
     </div>
-    <a href="../index.html#step-1-5b" class="back-btn">← Voltar ao diagrama</a>
+    <div style="display:flex;gap:10px;align-items:center">
+      <a href="../index.html#step-1-5b" class="back-btn"><span data-en="← Back to diagram" data-pt="← Voltar ao diagrama">← Back to diagram</span></a>
+      <div class="lang-sw" role="group" aria-label="Language">
+        <button type="button" data-lang="en" aria-pressed="true">EN-US</button>
+        <button type="button" data-lang="pt" aria-pressed="false">PT-BR</button>
+      </div>
+    </div>
   </div>
 
   <div class="page-header">
     <span class="icon">🗑️</span>
-    <h1>Passo 1.5b — Reset de fluxObject com clearOnExecution</h1>
+    <h1><span data-en="Step 1.5b — fluxObject reset with clearOnExecution" data-pt="Passo 1.5b — Reset de fluxObject com clearOnExecution">Step 1.5b — fluxObject reset with clearOnExecution</span></h1>
   </div>
   <div class="page-sub">
-    Bloco em <code>flux.service.ts:2525-2558</code>. Para todo node <code>fluxObject</code> com <code>data.clearOnExecution</code> truthy, executa 3 ações. Primeiro, limpa session state no Postgres se for chat ou session-enabled. Segundo, persiste o reset na linha live do node. Terceiro, reaplica o reset em memória em <code>updatedFlows</code>.
+    <span data-en="Block in &lt;code&gt;flux.service.ts:2525-2558&lt;/code&gt;. For every &lt;code&gt;fluxObject&lt;/code&gt; node with truthy &lt;code&gt;data.clearOnExecution&lt;/code&gt;, executes 3 actions. First, clears session state in Postgres if it's chat or session-enabled. Second, persists the reset on the node's live row. Third, reapplies the reset in memory in &lt;code&gt;updatedFlows&lt;/code&gt;." data-pt="Bloco em &lt;code&gt;flux.service.ts:2525-2558&lt;/code&gt;. Para todo node &lt;code&gt;fluxObject&lt;/code&gt; com &lt;code&gt;data.clearOnExecution&lt;/code&gt; truthy, executa 3 ações. Primeiro, limpa session state no Postgres se for chat ou session-enabled. Segundo, persiste o reset na linha live do node. Terceiro, reaplica o reset em memória em &lt;code&gt;updatedFlows&lt;/code&gt;.">Block in <code>flux.service.ts:2525-2558</code>. For every <code>fluxObject</code> node with truthy <code>data.clearOnExecution</code>, executes 3 actions. First, clears session state in Postgres if it's chat or session-enabled. Second, persists the reset on the node's live row. Third, reapplies the reset in memory in <code>updatedFlows</code>.</span>
   </div>
 
   <div class="step-friendly">
-    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <div class="step-friendly-title"><span data-en="In short — what this step does" data-pt="Em resumo — o que esse passo faz">In short — what this step does</span></div>
     <ul>
-      <li><strong>Localiza os fluxObject com flag ligada.</strong> <code>updatedFlows.filter(isFluxObjectClearOnExecution)</code>. É um helper puro em <code>node-output-reset.ts:137-143</code> que testa <code>node.type === 'fluxObject' &amp;&amp; Boolean(node.data.clearOnExecution)</code>. Se não há nenhum, o bloco todo é pulado.</li>
-      <li><strong>Loop com 2 side effects por node.</strong> Para cada <code>nodeToClear</code>, testa <code>fluxObjectPersistsEntries(node)</code>. Devolve <code>true</code> se <code>data.chat === true</code> ou <code>data.sessionEnabled === true</code>. Se sim, chama <code>sessionStateService.clear</code>, que faz DELETE das linhas daquele scope no Postgres.</li>
-      <li><strong>Persiste o reset em curso.</strong> Chama <code>persistNodeDataToLiveRow</code> passando <code>buildFluxObjectClearOnExecution(node)</code>. Resolve para <code>{ entries: [] }</code> por default. Ou para estrutura complexa com <code>userSessionsChat</code> quando há sessão selecionada não-default. Grava em <code>flow_version_history</code> (se versionado) ou direto em <code>flow_nodes</code>.</li>
-      <li><strong>Reaplica em memória em updatedFlows.</strong> Depois do loop, <code>updatedFlows.map</code> re-executa <code>buildFluxObjectClearOnExecution</code> em todos os nodes, não só nos "clear". Se o resultado não é vazio (só volta não vazio para fluxObject com flag), faz spread merge. O array em memória fica alinhado com o que foi gravado.</li>
-      <li><strong>Duas fontes de verdade em sync (banco e memória).</strong> O design é complexo (grava e depois reaplica em memória), mas garante que quem lê o node dali para frente vê o estado limpo. Quem consulta o banco também.</li>
+      <li><span data-en="&lt;strong&gt;Locates fluxObjects with the flag on.&lt;/strong&gt; &lt;code&gt;updatedFlows.filter(isFluxObjectClearOnExecution)&lt;/code&gt;. It's a pure helper at &lt;code&gt;node-output-reset.ts:137-143&lt;/code&gt; that tests &lt;code&gt;node.type === 'fluxObject' &amp;amp;&amp;amp; Boolean(node.data.clearOnExecution)&lt;/code&gt;. If there are none, the whole block is skipped." data-pt="&lt;strong&gt;Localiza os fluxObject com flag ligada.&lt;/strong&gt; &lt;code&gt;updatedFlows.filter(isFluxObjectClearOnExecution)&lt;/code&gt;. É um helper puro em &lt;code&gt;node-output-reset.ts:137-143&lt;/code&gt; que testa &lt;code&gt;node.type === 'fluxObject' &amp;amp;&amp;amp; Boolean(node.data.clearOnExecution)&lt;/code&gt;. Se não há nenhum, o bloco todo é pulado."><strong>Locates fluxObjects with the flag on.</strong> <code>updatedFlows.filter(isFluxObjectClearOnExecution)</code>. It's a pure helper at <code>node-output-reset.ts:137-143</code> that tests <code>node.type === 'fluxObject' &amp;&amp; Boolean(node.data.clearOnExecution)</code>. If there are none, the whole block is skipped.</span></li>
+      <li><span data-en="&lt;strong&gt;Loop with 2 side effects per node.&lt;/strong&gt; For each &lt;code&gt;nodeToClear&lt;/code&gt;, tests &lt;code&gt;fluxObjectPersistsEntries(node)&lt;/code&gt;. Returns &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;data.chat === true&lt;/code&gt; or &lt;code&gt;data.sessionEnabled === true&lt;/code&gt;. If yes, calls &lt;code&gt;sessionStateService.clear&lt;/code&gt;, which runs DELETE on rows in that scope on Postgres." data-pt="&lt;strong&gt;Loop com 2 side effects por node.&lt;/strong&gt; Para cada &lt;code&gt;nodeToClear&lt;/code&gt;, testa &lt;code&gt;fluxObjectPersistsEntries(node)&lt;/code&gt;. Devolve &lt;code&gt;true&lt;/code&gt; se &lt;code&gt;data.chat === true&lt;/code&gt; ou &lt;code&gt;data.sessionEnabled === true&lt;/code&gt;. Se sim, chama &lt;code&gt;sessionStateService.clear&lt;/code&gt;, que faz DELETE das linhas daquele scope no Postgres."><strong>Loop with 2 side effects per node.</strong> For each <code>nodeToClear</code>, tests <code>fluxObjectPersistsEntries(node)</code>. Returns <code>true</code> if <code>data.chat === true</code> or <code>data.sessionEnabled === true</code>. If yes, calls <code>sessionStateService.clear</code>, which runs DELETE on rows in that scope on Postgres.</span></li>
+      <li><span data-en="&lt;strong&gt;Persists the reset in progress.&lt;/strong&gt; Calls &lt;code&gt;persistNodeDataToLiveRow&lt;/code&gt; passing &lt;code&gt;buildFluxObjectClearOnExecution(node)&lt;/code&gt;. Resolves to &lt;code&gt;{ entries: [] }&lt;/code&gt; by default. Or to a complex structure with &lt;code&gt;userSessionsChat&lt;/code&gt; when there is a non-default selected session. Writes to &lt;code&gt;flow_version_history&lt;/code&gt; (if versioned) or directly to &lt;code&gt;flow_nodes&lt;/code&gt;." data-pt="&lt;strong&gt;Persiste o reset em curso.&lt;/strong&gt; Chama &lt;code&gt;persistNodeDataToLiveRow&lt;/code&gt; passando &lt;code&gt;buildFluxObjectClearOnExecution(node)&lt;/code&gt;. Resolve para &lt;code&gt;{ entries: [] }&lt;/code&gt; por default. Ou para estrutura complexa com &lt;code&gt;userSessionsChat&lt;/code&gt; quando há sessão selecionada não-default. Grava em &lt;code&gt;flow_version_history&lt;/code&gt; (se versionado) ou direto em &lt;code&gt;flow_nodes&lt;/code&gt;."><strong>Persists the reset in progress.</strong> Calls <code>persistNodeDataToLiveRow</code> passing <code>buildFluxObjectClearOnExecution(node)</code>. Resolves to <code>{ entries: [] }</code> by default. Or to a complex structure with <code>userSessionsChat</code> when there is a non-default selected session. Writes to <code>flow_version_history</code> (if versioned) or directly to <code>flow_nodes</code>.</span></li>
+      <li><span data-en="&lt;strong&gt;Reapplies in memory on updatedFlows.&lt;/strong&gt; After the loop, &lt;code&gt;updatedFlows.map&lt;/code&gt; re-runs &lt;code&gt;buildFluxObjectClearOnExecution&lt;/code&gt; on every node, not just the &quot;clear&quot; ones. If the result is not empty (only returns non-empty for fluxObject with flag), it does a spread merge. The in-memory array ends up aligned with what was written." data-pt="&lt;strong&gt;Reaplica em memória em updatedFlows.&lt;/strong&gt; Depois do loop, &lt;code&gt;updatedFlows.map&lt;/code&gt; re-executa &lt;code&gt;buildFluxObjectClearOnExecution&lt;/code&gt; em todos os nodes, não só nos &quot;clear&quot;. Se o resultado não é vazio (só volta não vazio para fluxObject com flag), faz spread merge. O array em memória fica alinhado com o que foi gravado."><strong>Reapplies in memory on updatedFlows.</strong> After the loop, <code>updatedFlows.map</code> re-runs <code>buildFluxObjectClearOnExecution</code> on every node, not just the "clear" ones. If the result is not empty (only returns non-empty for fluxObject with flag), it does a spread merge. The in-memory array ends up aligned with what was written.</span></li>
+      <li><span data-en="&lt;strong&gt;Two sources of truth in sync (DB and memory).&lt;/strong&gt; The design is complex (writes and then reapplies in memory), but it guarantees that anyone reading the node from that point on sees the clean state. So do those querying the DB." data-pt="&lt;strong&gt;Duas fontes de verdade em sync (banco e memória).&lt;/strong&gt; O design é complexo (grava e depois reaplica em memória), mas garante que quem lê o node dali para frente vê o estado limpo. Quem consulta o banco também."><strong>Two sources of truth in sync (DB and memory).</strong> The design is complex (writes and then reapplies in memory), but it guarantees that anyone reading the node from that point on sees the clean state. So do those querying the DB.</span></li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto.</strong> <code>clearOnExecution</code> é opt-in por node. O usuário liga no editor para dizer que a cada execução o histórico deve ser esquecido. Sem esse mecanismo, chats acumulam indefinidamente entre execuções.
+    <span data-en="&lt;strong&gt;Context.&lt;/strong&gt; &lt;code&gt;clearOnExecution&lt;/code&gt; is opt-in per node. The user toggles it in the editor to say that on every execution the history should be forgotten. Without this mechanism, chats accumulate indefinitely across executions." data-pt="&lt;strong&gt;Contexto.&lt;/strong&gt; &lt;code&gt;clearOnExecution&lt;/code&gt; é opt-in por node. O usuário liga no editor para dizer que a cada execução o histórico deve ser esquecido. Sem esse mecanismo, chats acumulam indefinidamente entre execuções."><strong>Context.</strong> <code>clearOnExecution</code> is opt-in per node. The user toggles it in the editor to say that on every execution the history should be forgotten. Without this mechanism, chats accumulate indefinitely across executions.</span>
   </div>
 
   <div class="overview-mini">
-    <div class="overview-mini-title">Cadeia em 1.5b</div>
+    <div class="overview-mini-title"><span data-en="Chain in 1.5b" data-pt="Cadeia em 1.5b">Chain in 1.5b</span></div>
     <div class="overview-chain">
-      <a href="#fn-a" class="overview-chip"><span class="lbl">A</span>filter isFluxObjectClearOnExecution</a>
+      <a href="#fn-a" class="overview-chip"><span class="lbl">A</span><span data-en="filter isFluxObjectClearOnExecution" data-pt="filter isFluxObjectClearOnExecution">filter isFluxObjectClearOnExecution</span></a>
       <span class="overview-sep">→</span>
-      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>gate fluxObjectPersistsEntries</a>
+      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span><span data-en="gate fluxObjectPersistsEntries" data-pt="gate fluxObjectPersistsEntries">gate fluxObjectPersistsEntries</span></a>
       <span class="overview-sep">→</span>
       <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>sessionStateService.clear</a>
       <span class="overview-sep">→</span>
       <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>persistNodeDataToLiveRow</a>
       <span class="overview-sep">→</span>
-      <a href="#fn-e" class="overview-chip"><span class="lbl">E</span>Reaplica updatedFlows.map</a>
+      <a href="#fn-e" class="overview-chip"><span class="lbl">E</span><span data-en="Reapply updatedFlows.map" data-pt="Reaplica updatedFlows.map">Reapply updatedFlows.map</span></a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado. Nodes <code>fluxObject</code> com <code>clearOnExecution</code> ligado começam a execução com <code>entries: []</code>. Em memória e no banco.
+      <span data-en="Result. &lt;code&gt;fluxObject&lt;/code&gt; nodes with &lt;code&gt;clearOnExecution&lt;/code&gt; on start execution with &lt;code&gt;entries: []&lt;/code&gt;. In memory and in the DB." data-pt="Resultado. Nodes &lt;code&gt;fluxObject&lt;/code&gt; com &lt;code&gt;clearOnExecution&lt;/code&gt; ligado começam a execução com &lt;code&gt;entries: []&lt;/code&gt;. Em memória e no banco.">Result. <code>fluxObject</code> nodes with <code>clearOnExecution</code> on start execution with <code>entries: []</code>. In memory and in the DB.</span>
     </div>
   </div>
 
@@ -166,23 +173,23 @@
         <span class="badge migrated" style="background:#EAB308;color:white">A</span>
         <code>isFluxObjectClearOnExecution(node)</code>
       </div>
-      <div class="fn-loc">node-output-reset.ts:137-143 (impl) + flux.service.ts:2525 (uso)</div>
+      <div class="fn-loc"><span data-en="node-output-reset.ts:137-143 (impl) + flux.service.ts:2525 (use)" data-pt="node-output-reset.ts:137-143 (impl) + flux.service.ts:2525 (uso)">node-output-reset.ts:137-143 (impl) + flux.service.ts:2525 (use)</span></div>
     </div>
     <div class="fn-card-body">
       <div class="fn-signature">
         export function isFluxObjectClearOnExecution&lt;T&gt;(node: T): boolean
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Identificar nodes do tipo <code>fluxObject</code> que têm o flag <code>clearOnExecution</code> ligado. É a porta de entrada desse bloco. Se o filter devolve array vazio, todo o restante é pulado.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Identify nodes of type &lt;code&gt;fluxObject&lt;/code&gt; that have the &lt;code&gt;clearOnExecution&lt;/code&gt; flag on. It's the entry gate for this block. If the filter returns an empty array, everything else is skipped." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Identificar nodes do tipo &lt;code&gt;fluxObject&lt;/code&gt; que têm o flag &lt;code&gt;clearOnExecution&lt;/code&gt; ligado. É a porta de entrada desse bloco. Se o filter devolve array vazio, todo o restante é pulado."><strong>Purpose.</strong> Identify nodes of type <code>fluxObject</code> that have the <code>clearOnExecution</code> flag on. It's the entry gate for this block. If the filter returns an empty array, everything else is skipped.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Uma verificação enxuta. É do tipo <code>fluxObject</code>? Tem <code>clearOnExecution</code> truthy? A verificação usa <code>Boolean()</code> porque <code>clearOnExecution</code> pode chegar como <code>undefined</code> (falso), <code>{}</code> (objeto vazio, truthy) ou <code>{ campo: true }</code> (truthy). Um objeto vazio ainda dispara o clear. Faz sentido no domínio. Se o usuário atribuiu o campo, mesmo vazio, é opt-in explícito. Existem outros types (<code>fluxBox</code>, <code>libraryNode</code>) que também usam <code>clearOnExecution</code>, mas com semântica diferente. São tratados no passo 1.7a. Só o <code>fluxObject</code> tem essa lógica especial de session state mais persist.
+        <span data-en="&lt;strong&gt;In short.&lt;/strong&gt; A lean check. Is it of type &lt;code&gt;fluxObject&lt;/code&gt;? Does it have &lt;code&gt;clearOnExecution&lt;/code&gt; truthy? The check uses &lt;code&gt;Boolean()&lt;/code&gt; because &lt;code&gt;clearOnExecution&lt;/code&gt; can arrive as &lt;code&gt;undefined&lt;/code&gt; (falsy), &lt;code&gt;{}&lt;/code&gt; (empty object, truthy) or &lt;code&gt;{ field: true }&lt;/code&gt; (truthy). An empty object still triggers the clear. It makes sense in the domain. If the user set the field, even empty, it's explicit opt-in. Other types exist (&lt;code&gt;fluxBox&lt;/code&gt;, &lt;code&gt;libraryNode&lt;/code&gt;) that also use &lt;code&gt;clearOnExecution&lt;/code&gt;, but with different semantics. They are handled in step 1.7a. Only &lt;code&gt;fluxObject&lt;/code&gt; has this special session-state-plus-persist logic." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Uma verificação enxuta. É do tipo &lt;code&gt;fluxObject&lt;/code&gt;? Tem &lt;code&gt;clearOnExecution&lt;/code&gt; truthy? A verificação usa &lt;code&gt;Boolean()&lt;/code&gt; porque &lt;code&gt;clearOnExecution&lt;/code&gt; pode chegar como &lt;code&gt;undefined&lt;/code&gt; (falso), &lt;code&gt;{}&lt;/code&gt; (objeto vazio, truthy) ou &lt;code&gt;{ campo: true }&lt;/code&gt; (truthy). Um objeto vazio ainda dispara o clear. Faz sentido no domínio. Se o usuário atribuiu o campo, mesmo vazio, é opt-in explícito. Existem outros types (&lt;code&gt;fluxBox&lt;/code&gt;, &lt;code&gt;libraryNode&lt;/code&gt;) que também usam &lt;code&gt;clearOnExecution&lt;/code&gt;, mas com semântica diferente. São tratados no passo 1.7a. Só o &lt;code&gt;fluxObject&lt;/code&gt; tem essa lógica especial de session state mais persist."><strong>In short.</strong> A lean check. Is it of type <code>fluxObject</code>? Does it have <code>clearOnExecution</code> truthy? The check uses <code>Boolean()</code> because <code>clearOnExecution</code> can arrive as <code>undefined</code> (falsy), <code>{}</code> (empty object, truthy) or <code>{ field: true }</code> (truthy). An empty object still triggers the clear. It makes sense in the domain. If the user set the field, even empty, it's explicit opt-in. Other types exist (<code>fluxBox</code>, <code>libraryNode</code>) that also use <code>clearOnExecution</code>, but with different semantics. They are handled in step 1.7a. Only <code>fluxObject</code> has this special session-state-plus-persist logic.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">A1</span> Implementação é check puro</div>
+            <div class="box-title"><span class="badge step">A1</span> <span data-en="Implementation is a pure check" data-pt="Implementação é check puro">Implementation is a pure check</span></div>
             <div class="code-block">
 <span class="k">const</span> FLUX_OBJECT_TYPE = <span class="s">'fluxObject'</span>;
 
@@ -197,26 +204,26 @@
           </div>
           <div class="arrow">↓</div>
           <div class="box backend">
-            <div class="box-title"><span class="badge step">A2</span> filter em updatedFlows</div>
+            <div class="box-title"><span class="badge step">A2</span> <span data-en="filter on updatedFlows" data-pt="filter em updatedFlows">filter on updatedFlows</span></div>
             <div class="box-desc">
               <code>const fluxObjectsToClear = updatedFlows.filter(isFluxObjectClearOnExecution);</code>.
-              <br><br>Se <code>.length === 0</code>, todo o bloco 1.5b é skip (gate em L2529).
+              <br><br><span data-en="If &lt;code&gt;.length === 0&lt;/code&gt;, the whole 1.5b block is skipped (gate at L2529)." data-pt="Se &lt;code&gt;.length === 0&lt;/code&gt;, todo o bloco 1.5b é skip (gate em L2529).">If <code>.length === 0</code>, the whole 1.5b block is skipped (gate at L2529).</span>
             </div>
             <div class="box-file">flux.service.ts:2525-2527</div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Por que <code>Boolean()</code>?</div>
-            <code>data.clearOnExecution</code> pode ser <code>undefined</code>, um objeto <code>{}</code> ou <code>{ field: true }</code>. <code>Boolean({}) = true</code>. Objeto vazio é truthy em JavaScript. Mesmo config vazia dispara o clear.
+            <div class="aside-title"><span data-en="🎯 Why &lt;code&gt;Boolean()&lt;/code&gt;?" data-pt="🎯 Por que &lt;code&gt;Boolean()&lt;/code&gt;?">🎯 Why <code>Boolean()</code>?</span></div>
+            <span data-en="&lt;code&gt;data.clearOnExecution&lt;/code&gt; can be &lt;code&gt;undefined&lt;/code&gt;, an object &lt;code&gt;{}&lt;/code&gt; or &lt;code&gt;{ field: true }&lt;/code&gt;. &lt;code&gt;Boolean({}) = true&lt;/code&gt;. An empty object is truthy in JavaScript. Even an empty config triggers the clear." data-pt="&lt;code&gt;data.clearOnExecution&lt;/code&gt; pode ser &lt;code&gt;undefined&lt;/code&gt;, um objeto &lt;code&gt;{}&lt;/code&gt; ou &lt;code&gt;{ field: true }&lt;/code&gt;. &lt;code&gt;Boolean({}) = true&lt;/code&gt;. Objeto vazio é truthy em JavaScript. Mesmo config vazia dispara o clear."><code>data.clearOnExecution</code> can be <code>undefined</code>, an object <code>{}</code> or <code>{ field: true }</code>. <code>Boolean({}) = true</code>. An empty object is truthy in JavaScript. Even an empty config triggers the clear.</span>
           </div>
           <div class="aside">
-            <div class="aside-title">📎 fluxObject versus fluxBox e libraryNode</div>
-            Todos podem ter <code>clearOnExecution</code>. Só <code>fluxObject</code> tem session state persistente (chat entries). Os outros têm apenas output fields simples (tratados no passo 1.7a).
+            <div class="aside-title"><span data-en="📎 fluxObject versus fluxBox and libraryNode" data-pt="📎 fluxObject versus fluxBox e libraryNode">📎 fluxObject versus fluxBox and libraryNode</span></div>
+            <span data-en="All can have &lt;code&gt;clearOnExecution&lt;/code&gt;. Only &lt;code&gt;fluxObject&lt;/code&gt; has persistent session state (chat entries). The others have only simple output fields (handled in step 1.7a)." data-pt="Todos podem ter &lt;code&gt;clearOnExecution&lt;/code&gt;. Só &lt;code&gt;fluxObject&lt;/code&gt; tem session state persistente (chat entries). Os outros têm apenas output fields simples (tratados no passo 1.7a).">All can have <code>clearOnExecution</code>. Only <code>fluxObject</code> has persistent session state (chat entries). The others have only simple output fields (handled in step 1.7a).</span>
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 Generic T</div>
-            Signature <code>&lt;T extends { type?: string; data?: Record&lt;string, any&gt; }&gt;</code>. Aceita qualquer objeto que tenha <code>type</code> e <code>data</code>. Não amarra numa entidade específica.
+            <span data-en="Signature &lt;code&gt;&amp;lt;T extends { type?: string; data?: Record&amp;lt;string, any&amp;gt; }&amp;gt;&lt;/code&gt;. Accepts any object with &lt;code&gt;type&lt;/code&gt; and &lt;code&gt;data&lt;/code&gt;. Not tied to a specific entity." data-pt="Signature &lt;code&gt;&amp;lt;T extends { type?: string; data?: Record&amp;lt;string, any&amp;gt; }&amp;gt;&lt;/code&gt;. Aceita qualquer objeto que tenha &lt;code&gt;type&lt;/code&gt; e &lt;code&gt;data&lt;/code&gt;. Não amarra numa entidade específica.">Signature <code>&lt;T extends { type?: string; data?: Record&lt;string, any&gt; }&gt;</code>. Accepts any object with <code>type</code> and <code>data</code>. Not tied to a specific entity.</span>
           </div>
         </div>
       </div>
@@ -230,23 +237,23 @@
         <span class="badge migrated" style="background:#F59E0B;color:white">B</span>
         <code>fluxObjectPersistsEntries(node)</code>
       </div>
-      <div class="fn-loc">node-output-reset.ts:145-149 (impl) + flux.service.ts:2531 (uso)</div>
+      <div class="fn-loc"><span data-en="node-output-reset.ts:145-149 (impl) + flux.service.ts:2531 (use)" data-pt="node-output-reset.ts:145-149 (impl) + flux.service.ts:2531 (uso)">node-output-reset.ts:145-149 (impl) + flux.service.ts:2531 (use)</span></div>
     </div>
     <div class="fn-card-body">
       <div class="fn-signature">
         export function fluxObjectPersistsEntries&lt;T&gt;(node: T): boolean
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Sub-gate dentro do loop. Só chama <code>sessionStateService.clear</code> se o node é chat ou tem sessions. Sem esse gate, o clear executaria para fluxObjects normais (sem session) e faria DELETE inútil no Postgres.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Sub-gate inside the loop. Only calls &lt;code&gt;sessionStateService.clear&lt;/code&gt; if the node is chat or has sessions. Without this gate, the clear would run for normal fluxObjects (no session) and do a useless DELETE on Postgres." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Sub-gate dentro do loop. Só chama &lt;code&gt;sessionStateService.clear&lt;/code&gt; se o node é chat ou tem sessions. Sem esse gate, o clear executaria para fluxObjects normais (sem session) e faria DELETE inútil no Postgres."><strong>Purpose.</strong> Sub-gate inside the loop. Only calls <code>sessionStateService.clear</code> if the node is chat or has sessions. Without this gate, the clear would run for normal fluxObjects (no session) and do a useless DELETE on Postgres.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Nem todo <code>fluxObject</code> guarda dados em session state. Só os que estão em chat mode (<code>data.chat === true</code>) ou com sessions ligadas (<code>data.sessionEnabled === true</code>). Esse gate distingue. Se o node é um armazém estático de chave-valor, o session state está vazio. Não vale a pena executar DELETE. Se é chat ou session, precisa varrer a tabela. É otimização e correção. Evita queries desnecessárias. Não executa código de clear session em nodes que não têm session para limpar.
+        <span data-en="&lt;strong&gt;In short.&lt;/strong&gt; Not every &lt;code&gt;fluxObject&lt;/code&gt; stores data in session state. Only those in chat mode (&lt;code&gt;data.chat === true&lt;/code&gt;) or with sessions enabled (&lt;code&gt;data.sessionEnabled === true&lt;/code&gt;). This gate distinguishes them. If the node is a static key-value store, session state is empty. Not worth running DELETE. If it's chat or session, it needs to scan the table. It's optimization and correctness. Avoids unnecessary queries. Doesn't run session clear code on nodes that have no session to clear." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Nem todo &lt;code&gt;fluxObject&lt;/code&gt; guarda dados em session state. Só os que estão em chat mode (&lt;code&gt;data.chat === true&lt;/code&gt;) ou com sessions ligadas (&lt;code&gt;data.sessionEnabled === true&lt;/code&gt;). Esse gate distingue. Se o node é um armazém estático de chave-valor, o session state está vazio. Não vale a pena executar DELETE. Se é chat ou session, precisa varrer a tabela. É otimização e correção. Evita queries desnecessárias. Não executa código de clear session em nodes que não têm session para limpar."><strong>In short.</strong> Not every <code>fluxObject</code> stores data in session state. Only those in chat mode (<code>data.chat === true</code>) or with sessions enabled (<code>data.sessionEnabled === true</code>). This gate distinguishes them. If the node is a static key-value store, session state is empty. Not worth running DELETE. If it's chat or session, it needs to scan the table. It's optimization and correctness. Avoids unnecessary queries. Doesn't run session clear code on nodes that have no session to clear.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">B1</span> Implementação. União de 2 flags</div>
+            <div class="box-title"><span class="badge step">B1</span> <span data-en="Implementation. Union of 2 flags" data-pt="Implementação. União de 2 flags">Implementation. Union of 2 flags</span></div>
             <div class="code-block">
 <span class="k">export function</span> <span class="t">fluxObjectPersistsEntries</span>(node) {
   <span class="k">return</span> node?.data?.chat === <span class="k">true</span>
@@ -257,26 +264,26 @@
           </div>
           <div class="arrow">↓</div>
           <div class="box decision">
-            <div class="box-title">Gate no loop</div>
+            <div class="box-title"><span data-en="Gate in the loop" data-pt="Gate no loop">Gate in the loop</span></div>
             <div class="box-desc">
               <code>if (fluxObjectPersistsEntries(nodeToClear)) { await sessionStateService.clear(...); }</code>.
-              <br>Se false, pula direto para <code>persistNodeDataToLiveRow</code>.
+              <br><span data-en="If false, skips straight to &lt;code&gt;persistNodeDataToLiveRow&lt;/code&gt;." data-pt="Se false, pula direto para &lt;code&gt;persistNodeDataToLiveRow&lt;/code&gt;.">If false, skips straight to <code>persistNodeDataToLiveRow</code>.</span>
             </div>
             <div class="box-file">flux.service.ts:2531-2542</div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Comparação estrita === true</div>
-            Usa <code>=== true</code>, não <code>!!</code>. <code>data.chat = 'yes'</code> (string) e <code>data.chat = 1</code> (number) não passam. Só <code>true</code> literal booleano.
+            <div class="aside-title"><span data-en="🎯 Strict comparison === true" data-pt="🎯 Comparação estrita === true">🎯 Strict comparison === true</span></div>
+            <span data-en="Uses &lt;code&gt;=== true&lt;/code&gt;, not &lt;code&gt;!!&lt;/code&gt;. &lt;code&gt;data.chat = 'yes'&lt;/code&gt; (string) and &lt;code&gt;data.chat = 1&lt;/code&gt; (number) don't pass. Only literal boolean &lt;code&gt;true&lt;/code&gt;." data-pt="Usa &lt;code&gt;=== true&lt;/code&gt;, não &lt;code&gt;!!&lt;/code&gt;. &lt;code&gt;data.chat = 'yes'&lt;/code&gt; (string) e &lt;code&gt;data.chat = 1&lt;/code&gt; (number) não passam. Só &lt;code&gt;true&lt;/code&gt; literal booleano.">Uses <code>=== true</code>, not <code>!!</code>. <code>data.chat = 'yes'</code> (string) and <code>data.chat = 1</code> (number) don't pass. Only literal boolean <code>true</code>.</span>
           </div>
           <div class="aside">
-            <div class="aside-title">📎 Onde essas flags são atribuídas</div>
-            No editor do frontend. O usuário liga toggle "Chat mode" (atribui <code>data.chat = true</code>) ou "Enable sessions" (atribui <code>data.sessionEnabled = true</code>).
+            <div class="aside-title"><span data-en="📎 Where these flags are set" data-pt="📎 Onde essas flags são atribuídas">📎 Where these flags are set</span></div>
+            <span data-en="In the frontend editor. The user toggles &quot;Chat mode&quot; (assigns &lt;code&gt;data.chat = true&lt;/code&gt;) or &quot;Enable sessions&quot; (assigns &lt;code&gt;data.sessionEnabled = true&lt;/code&gt;)." data-pt="No editor do frontend. O usuário liga toggle &quot;Chat mode&quot; (atribui &lt;code&gt;data.chat = true&lt;/code&gt;) ou &quot;Enable sessions&quot; (atribui &lt;code&gt;data.sessionEnabled = true&lt;/code&gt;).">In the frontend editor. The user toggles "Chat mode" (assigns <code>data.chat = true</code>) or "Enable sessions" (assigns <code>data.sessionEnabled = true</code>).</span>
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 Contrato com o passo 1.6</div>
-            No 1.6, esse mesmo <code>fluxObjectPersistsEntries</code> é reconstruído inline. <code>chatNode?.data?.chat === true || chatNode?.data?.sessionEnabled === true</code>. Decide se lê contents para fluxObject com chat. Mesma lógica. Contrato compartilhado.
+            <div class="aside-title"><span data-en="🔧 Contract with step 1.6" data-pt="🔧 Contrato com o passo 1.6">🔧 Contract with step 1.6</span></div>
+            <span data-en="In 1.6, this same &lt;code&gt;fluxObjectPersistsEntries&lt;/code&gt; is rebuilt inline. &lt;code&gt;chatNode?.data?.chat === true || chatNode?.data?.sessionEnabled === true&lt;/code&gt;. Decides whether to read contents for a fluxObject with chat. Same logic. Shared contract." data-pt="No 1.6, esse mesmo &lt;code&gt;fluxObjectPersistsEntries&lt;/code&gt; é reconstruído inline. &lt;code&gt;chatNode?.data?.chat === true || chatNode?.data?.sessionEnabled === true&lt;/code&gt;. Decide se lê contents para fluxObject com chat. Mesma lógica. Contrato compartilhado.">In 1.6, this same <code>fluxObjectPersistsEntries</code> is rebuilt inline. <code>chatNode?.data?.chat === true || chatNode?.data?.sessionEnabled === true</code>. Decides whether to read contents for a fluxObject with chat. Same logic. Shared contract.</span>
           </div>
         </div>
       </div>
@@ -297,16 +304,16 @@
         async clear(scope: SessionStateScope): Promise&lt;void&gt;
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Deleta todas as linhas da tabela <code>session_state_entry</code> que casam com o scope (<code>chat</code>, <code>scopeId</code>, <code>sessionKey</code> e opcional <code>ownerUserId</code>). O escopo aqui é <code>type='chat', id='{flowId}:{nodeId}', sessionKey=data.selectedChat || 'default'</code>.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Deletes all rows from the &lt;code&gt;session_state_entry&lt;/code&gt; table matching the scope (&lt;code&gt;chat&lt;/code&gt;, &lt;code&gt;scopeId&lt;/code&gt;, &lt;code&gt;sessionKey&lt;/code&gt; and optional &lt;code&gt;ownerUserId&lt;/code&gt;). The scope here is &lt;code&gt;type='chat', id='{flowId}:{nodeId}', sessionKey=data.selectedChat || 'default'&lt;/code&gt;." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Deleta todas as linhas da tabela &lt;code&gt;session_state_entry&lt;/code&gt; que casam com o scope (&lt;code&gt;chat&lt;/code&gt;, &lt;code&gt;scopeId&lt;/code&gt;, &lt;code&gt;sessionKey&lt;/code&gt; e opcional &lt;code&gt;ownerUserId&lt;/code&gt;). O escopo aqui é &lt;code&gt;type='chat', id='{flowId}:{nodeId}', sessionKey=data.selectedChat || 'default'&lt;/code&gt;."><strong>Purpose.</strong> Deletes all rows from the <code>session_state_entry</code> table matching the scope (<code>chat</code>, <code>scopeId</code>, <code>sessionKey</code> and optional <code>ownerUserId</code>). The scope here is <code>type='chat', id='{flowId}:{nodeId}', sessionKey=data.selectedChat || 'default'</code>.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Apaga todo o session state daquele node ou sessão. O scope é composto. <code>scopeType = 'chat'</code> (fixo aqui). <code>scopeId = flowId:nodeId</code> (construído por <code>buildNodeScopeId</code>). <code>sessionKey = data.selectedChat || 'default'</code> (qual sessão do chat limpar). E <code>ownerUserId</code> se veio. O serviço monta um <code>where</code> dinâmico. Se <code>ownerUserId</code> é <code>undefined</code>, não entra no WHERE. Limpa cross-user daquele scope. Na prática, isso não acontece porque sempre passa <code>user?.id</code>. Depois, chama <code>sessionStateRepository.delete(where)</code>. Hard delete, sem soft-delete. É irreversível. Cada chamada aqui deleta de 1 a N linhas no Postgres.
+        <span data-en="&lt;strong&gt;In short.&lt;/strong&gt; Erases all session state for that node or session. The scope is composite. &lt;code&gt;scopeType = 'chat'&lt;/code&gt; (fixed here). &lt;code&gt;scopeId = flowId:nodeId&lt;/code&gt; (built by &lt;code&gt;buildNodeScopeId&lt;/code&gt;). &lt;code&gt;sessionKey = data.selectedChat || 'default'&lt;/code&gt; (which chat session to clear). And &lt;code&gt;ownerUserId&lt;/code&gt; if provided. The service builds a dynamic &lt;code&gt;where&lt;/code&gt;. If &lt;code&gt;ownerUserId&lt;/code&gt; is &lt;code&gt;undefined&lt;/code&gt;, it doesn't go into the WHERE. Clears cross-user in that scope. In practice this doesn't happen because it always passes &lt;code&gt;user?.id&lt;/code&gt;. Then it calls &lt;code&gt;sessionStateRepository.delete(where)&lt;/code&gt;. Hard delete, no soft-delete. It's irreversible. Each call here deletes 1 to N rows in Postgres." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Apaga todo o session state daquele node ou sessão. O scope é composto. &lt;code&gt;scopeType = 'chat'&lt;/code&gt; (fixo aqui). &lt;code&gt;scopeId = flowId:nodeId&lt;/code&gt; (construído por &lt;code&gt;buildNodeScopeId&lt;/code&gt;). &lt;code&gt;sessionKey = data.selectedChat || 'default'&lt;/code&gt; (qual sessão do chat limpar). E &lt;code&gt;ownerUserId&lt;/code&gt; se veio. O serviço monta um &lt;code&gt;where&lt;/code&gt; dinâmico. Se &lt;code&gt;ownerUserId&lt;/code&gt; é &lt;code&gt;undefined&lt;/code&gt;, não entra no WHERE. Limpa cross-user daquele scope. Na prática, isso não acontece porque sempre passa &lt;code&gt;user?.id&lt;/code&gt;. Depois, chama &lt;code&gt;sessionStateRepository.delete(where)&lt;/code&gt;. Hard delete, sem soft-delete. É irreversível. Cada chamada aqui deleta de 1 a N linhas no Postgres."><strong>In short.</strong> Erases all session state for that node or session. The scope is composite. <code>scopeType = 'chat'</code> (fixed here). <code>scopeId = flowId:nodeId</code> (built by <code>buildNodeScopeId</code>). <code>sessionKey = data.selectedChat || 'default'</code> (which chat session to clear). And <code>ownerUserId</code> if provided. The service builds a dynamic <code>where</code>. If <code>ownerUserId</code> is <code>undefined</code>, it doesn't go into the WHERE. Clears cross-user in that scope. In practice this doesn't happen because it always passes <code>user?.id</code>. Then it calls <code>sessionStateRepository.delete(where)</code>. Hard delete, no soft-delete. It's irreversible. Each call here deletes 1 to N rows in Postgres.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">C1</span> Chamada no loop</div>
+            <div class="box-title"><span class="badge step">C1</span> <span data-en="Call in the loop" data-pt="Chamada no loop">Call in the loop</span></div>
             <div class="code-block">
 <span class="k">await</span> <span class="k">this</span>.sessionStateService.clear({
   scopeType: <span class="s">'chat'</span>,
@@ -321,7 +328,7 @@
           </div>
           <div class="arrow">↓</div>
           <div class="nested-flow">
-            <div class="nested-flow-title">↳ Implementação. session-state.service.ts:189-199</div>
+            <div class="nested-flow-title"><span data-en="↳ Implementation. session-state.service.ts:189-199" data-pt="↳ Implementação. session-state.service.ts:189-199">↳ Implementation. session-state.service.ts:189-199</span></div>
             <div class="code-block">
 <span class="k">async</span> clear(scope: <span class="t">SessionStateScope</span>): <span class="t">Promise&lt;void&gt;</span> {
   <span class="k">const</span> where: <span class="t">Record&lt;string, string&gt;</span> = {
@@ -341,27 +348,27 @@
             <div class="box-title"><span class="badge step">C2</span> DELETE FROM session_state_entry</div>
             <div class="box-desc">
               <code>WHERE scope_type='chat' AND scope_id='{flowId}:{nodeId}' AND session_key=... [AND owner_user_id=...]</code>.
-              <br><br>Hard delete. Sem transação. Se falha no meio, algumas linhas ficam apagadas e outras não.
+              <br><br><span data-en="Hard delete. No transaction. If it fails midway, some rows are deleted and others are not." data-pt="Hard delete. Sem transação. Se falha no meio, algumas linhas ficam apagadas e outras não.">Hard delete. No transaction. If it fails midway, some rows are deleted and others are not.</span>
             </div>
             <div class="box-file">session-state.service.ts:198</div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 resolveSessionKey normaliza</div>
-            <code>resolveSessionKey('')</code> retorna <code>'default'</code>. O trim mais fallback é feito dentro do serviço. <code>buildNodeScopeId(flowId, nodeId) = &#96;${flowId}:${nodeId}&#96;</code>. Concatenação simples com <code>:</code>.
+            <div class="aside-title"><span data-en="🎯 resolveSessionKey normalizes" data-pt="🎯 resolveSessionKey normaliza">🎯 resolveSessionKey normalizes</span></div>
+            <span data-en="&lt;code&gt;resolveSessionKey('')&lt;/code&gt; returns &lt;code&gt;'default'&lt;/code&gt;. The trim plus fallback happens inside the service. &lt;code&gt;buildNodeScopeId(flowId, nodeId) = &amp;#96;${flowId}:${nodeId}&amp;#96;&lt;/code&gt;. Simple concatenation with &lt;code&gt;:&lt;/code&gt;." data-pt="&lt;code&gt;resolveSessionKey('')&lt;/code&gt; retorna &lt;code&gt;'default'&lt;/code&gt;. O trim mais fallback é feito dentro do serviço. &lt;code&gt;buildNodeScopeId(flowId, nodeId) = &amp;#96;${flowId}:${nodeId}&amp;#96;&lt;/code&gt;. Concatenação simples com &lt;code&gt;:&lt;/code&gt;."><code>resolveSessionKey('')</code> returns <code>'default'</code>. The trim plus fallback happens inside the service. <code>buildNodeScopeId(flowId, nodeId) = &#96;${flowId}:${nodeId}&#96;</code>. Simple concatenation with <code>:</code>.</span>
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ Falha propaga no fluxo</div>
-            O <code>await</code> aqui está dentro do <code>try</code> principal do apiV2. Se falha, propaga ao <code>catch</code> geral e a execução inteira falha. Não há retry ou soft-fail. O clear é hard-required.
+            <div class="aside-title"><span data-en="⚠️ Failure propagates in the flow" data-pt="⚠️ Falha propaga no fluxo">⚠️ Failure propagates in the flow</span></div>
+            <span data-en="The &lt;code&gt;await&lt;/code&gt; here is inside the main &lt;code&gt;try&lt;/code&gt; of apiV2. If it fails, it propagates to the general &lt;code&gt;catch&lt;/code&gt; and the entire execution fails. There is no retry or soft-fail. The clear is hard-required." data-pt="O &lt;code&gt;await&lt;/code&gt; aqui está dentro do &lt;code&gt;try&lt;/code&gt; principal do apiV2. Se falha, propaga ao &lt;code&gt;catch&lt;/code&gt; geral e a execução inteira falha. Não há retry ou soft-fail. O clear é hard-required.">The <code>await</code> here is inside the main <code>try</code> of apiV2. If it fails, it propagates to the general <code>catch</code> and the entire execution fails. There is no retry or soft-fail. The clear is hard-required.</span>
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ ownerUserId opcional no where</div>
-            Se <code>user?.id</code> vem <code>undefined</code>, o where não filtra por owner. Deleta cross-user. É seguro apenas porque, na prática, <code>user</code> sempre vem preenchido nessa altura (validado antes).
+            <div class="aside-title"><span data-en="⚠️ ownerUserId optional in where" data-pt="⚠️ ownerUserId opcional no where">⚠️ ownerUserId optional in where</span></div>
+            <span data-en="If &lt;code&gt;user?.id&lt;/code&gt; is &lt;code&gt;undefined&lt;/code&gt;, the where doesn't filter by owner. It deletes cross-user. It's only safe because, in practice, &lt;code&gt;user&lt;/code&gt; is always populated at this point (validated earlier)." data-pt="Se &lt;code&gt;user?.id&lt;/code&gt; vem &lt;code&gt;undefined&lt;/code&gt;, o where não filtra por owner. Deleta cross-user. É seguro apenas porque, na prática, &lt;code&gt;user&lt;/code&gt; sempre vem preenchido nessa altura (validado antes).">If <code>user?.id</code> is <code>undefined</code>, the where doesn't filter by owner. It deletes cross-user. It's only safe because, in practice, <code>user</code> is always populated at this point (validated earlier).</span>
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 Tipos de scope</div>
-            <code>SessionScopeType = 'chat' | 'object' | 'memory' | 'counter'</code>. Aqui usa só <code>chat</code>. O <code>object</code> é usado em <code>clearObjects</code> (1.7b). Cada scope tem semântica diferente, mas a mesma tabela.
+            <div class="aside-title"><span data-en="🔧 Scope types" data-pt="🔧 Tipos de scope">🔧 Scope types</span></div>
+            <span data-en="&lt;code&gt;SessionScopeType = 'chat' | 'object' | 'memory' | 'counter'&lt;/code&gt;. Here it uses only &lt;code&gt;chat&lt;/code&gt;. &lt;code&gt;object&lt;/code&gt; is used in &lt;code&gt;clearObjects&lt;/code&gt; (1.7b). Each scope has different semantics, but the same table." data-pt="&lt;code&gt;SessionScopeType = 'chat' | 'object' | 'memory' | 'counter'&lt;/code&gt;. Aqui usa só &lt;code&gt;chat&lt;/code&gt;. O &lt;code&gt;object&lt;/code&gt; é usado em &lt;code&gt;clearObjects&lt;/code&gt; (1.7b). Cada scope tem semântica diferente, mas a mesma tabela."><code>SessionScopeType = 'chat' | 'object' | 'memory' | 'counter'</code>. Here it uses only <code>chat</code>. <code>object</code> is used in <code>clearObjects</code> (1.7b). Each scope has different semantics, but the same table.</span>
           </div>
         </div>
       </div>
@@ -382,16 +389,16 @@
         await this.persistNodeDataToLiveRow(flowId, nodeId, buildFluxObjectClearOnExecution(node), flowVersionHistoryId)
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Grava no Postgres o reset. É um patch parcial do <code>data</code> desse node. O canvas do frontend reflete imediatamente que aquele fluxObject foi zerado. Sem esse write, o banco continuaria com o estado antigo até o <code>persistNodeSuccess</code> do worker regravar.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Writes the reset to Postgres. It's a partial patch of that node's &lt;code&gt;data&lt;/code&gt;. The frontend canvas immediately reflects that fluxObject was zeroed. Without this write, the DB would keep the old state until the worker's &lt;code&gt;persistNodeSuccess&lt;/code&gt; overwrites it." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Grava no Postgres o reset. É um patch parcial do &lt;code&gt;data&lt;/code&gt; desse node. O canvas do frontend reflete imediatamente que aquele fluxObject foi zerado. Sem esse write, o banco continuaria com o estado antigo até o &lt;code&gt;persistNodeSuccess&lt;/code&gt; do worker regravar."><strong>Purpose.</strong> Writes the reset to Postgres. It's a partial patch of that node's <code>data</code>. The frontend canvas immediately reflects that fluxObject was zeroed. Without this write, the DB would keep the old state until the worker's <code>persistNodeSuccess</code> overwrites it.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> O helper <code>buildFluxObjectClearOnExecution</code> monta o patch que vai ao banco. Tem dois modos. Se <code>selectedChat === 'default'</code> ou não há <code>userSessionsChat</code>, o patch é <code>{ entries: [] }</code>. Só zera as entries. Se tem sessão nomeada não-default, o patch é mais complexo. <code>{ entries: [], userSessionsChat: [...map que zera entries da sessão ativa] }</code>. Preserva as outras sessões e limpa a selecionada. Depois, <code>persistNodeDataToLiveRow</code> aplica esse patch. Se a execução é versionada (<code>flowVersionHistoryId</code> presente), atualiza o snapshot do version history. Caso contrário, atualiza a linha live em <code>flow_nodes</code>. Bug em falha. Há catch dentro do próprio persist. Registra o erro, mas não propaga. A execução prossegue mesmo se o write falha. O banco pode ficar dessincronizado com a memória se algo dá errado aqui, mas a execução em si continua.
+        <span data-en="&lt;strong&gt;In short.&lt;/strong&gt; The &lt;code&gt;buildFluxObjectClearOnExecution&lt;/code&gt; helper builds the patch that goes to the DB. It has two modes. If &lt;code&gt;selectedChat === 'default'&lt;/code&gt; or there is no &lt;code&gt;userSessionsChat&lt;/code&gt;, the patch is &lt;code&gt;{ entries: [] }&lt;/code&gt;. Only zeroes entries. If there is a non-default named session, the patch is more complex. &lt;code&gt;{ entries: [], userSessionsChat: [...map that zeroes entries of the active session] }&lt;/code&gt;. Preserves the other sessions and clears the selected one. Then &lt;code&gt;persistNodeDataToLiveRow&lt;/code&gt; applies this patch. If the execution is versioned (&lt;code&gt;flowVersionHistoryId&lt;/code&gt; present), it updates the version history snapshot. Otherwise, it updates the live row in &lt;code&gt;flow_nodes&lt;/code&gt;. Bug on failure. There is a catch inside the persist itself. It logs the error but doesn't propagate. Execution proceeds even if the write fails. The DB can end up out of sync with memory if something goes wrong here, but execution itself continues." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; O helper &lt;code&gt;buildFluxObjectClearOnExecution&lt;/code&gt; monta o patch que vai ao banco. Tem dois modos. Se &lt;code&gt;selectedChat === 'default'&lt;/code&gt; ou não há &lt;code&gt;userSessionsChat&lt;/code&gt;, o patch é &lt;code&gt;{ entries: [] }&lt;/code&gt;. Só zera as entries. Se tem sessão nomeada não-default, o patch é mais complexo. &lt;code&gt;{ entries: [], userSessionsChat: [...map que zera entries da sessão ativa] }&lt;/code&gt;. Preserva as outras sessões e limpa a selecionada. Depois, &lt;code&gt;persistNodeDataToLiveRow&lt;/code&gt; aplica esse patch. Se a execução é versionada (&lt;code&gt;flowVersionHistoryId&lt;/code&gt; presente), atualiza o snapshot do version history. Caso contrário, atualiza a linha live em &lt;code&gt;flow_nodes&lt;/code&gt;. Bug em falha. Há catch dentro do próprio persist. Registra o erro, mas não propaga. A execução prossegue mesmo se o write falha. O banco pode ficar dessincronizado com a memória se algo dá errado aqui, mas a execução em si continua."><strong>In short.</strong> The <code>buildFluxObjectClearOnExecution</code> helper builds the patch that goes to the DB. It has two modes. If <code>selectedChat === 'default'</code> or there is no <code>userSessionsChat</code>, the patch is <code>{ entries: [] }</code>. Only zeroes entries. If there is a non-default named session, the patch is more complex. <code>{ entries: [], userSessionsChat: [...map that zeroes entries of the active session] }</code>. Preserves the other sessions and clears the selected one. Then <code>persistNodeDataToLiveRow</code> applies this patch. If the execution is versioned (<code>flowVersionHistoryId</code> present), it updates the version history snapshot. Otherwise, it updates the live row in <code>flow_nodes</code>. Bug on failure. There is a catch inside the persist itself. It logs the error but doesn't propagate. Execution proceeds even if the write fails. The DB can end up out of sync with memory if something goes wrong here, but execution itself continues.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">D1</span> buildFluxObjectClearOnExecution. Patch resolver</div>
+            <div class="box-title"><span class="badge step">D1</span> <span data-en="buildFluxObjectClearOnExecution. Patch resolver" data-pt="buildFluxObjectClearOnExecution. Patch resolver">buildFluxObjectClearOnExecution. Patch resolver</span></div>
             <div class="code-block">
 <span class="k">export function</span> <span class="t">buildFluxObjectClearOnExecution</span>(node) {
   <span class="k">if</span> (!isFluxObjectClearOnExecution(node)) <span class="k">return</span> {};
@@ -414,7 +421,7 @@
           </div>
           <div class="arrow">↓</div>
           <div class="nested-flow">
-            <div class="nested-flow-title">↳ persistNodeDataToLiveRow. flux.service.ts:2235-2262</div>
+            <div class="nested-flow-title"><span data-en="↳ persistNodeDataToLiveRow. flux.service.ts:2235-2262" data-pt="↳ persistNodeDataToLiveRow. flux.service.ts:2235-2262">↳ persistNodeDataToLiveRow. flux.service.ts:2235-2262</span></div>
             <div class="code-block">
 <span class="k">private async</span> <span class="t">persistNodeDataToLiveRow</span>(flowId, nodeId, data, flowVersionHistoryId) {
   <span class="k">try</span> {
@@ -426,47 +433,47 @@
     }
     <span class="k">await</span> flowNodeService.updateSingleNodeData(flowId, nodeId, data);
   } <span class="k">catch</span> (error) {
-    loggerService.error(...);  <span class="c">// log-only, não propaga</span>
+    loggerService.error(...);  <span class="c">// log-only, does not propagate</span>
   }
 }
             </div>
           </div>
           <div class="arrow">↓</div>
           <div class="cascade">
-            <div class="cascade-title">🚪 Cascade de destino</div>
+            <div class="cascade-title"><span data-en="🚪 Destination cascade" data-pt="🚪 Cascade de destino">🚪 Destination cascade</span></div>
             <div class="cascade-step">
               <span class="cascade-num">1</span>
-              <span class="cond"><code>flowVersionHistoryId</code> presente (run em versão específica)</span>
+              <span class="cond"><span data-en="&lt;code&gt;flowVersionHistoryId&lt;/code&gt; present (run on specific version)" data-pt="&lt;code&gt;flowVersionHistoryId&lt;/code&gt; presente (run em versão específica)"><code>flowVersionHistoryId</code> present (run on specific version)</span></span>
               <span class="result call">updateSingleNodeDataInHistory</span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">2</span>
-              <span class="cond">senão</span>
+              <span class="cond"><span data-en="otherwise" data-pt="senão">otherwise</span></span>
               <span class="result call">updateSingleNodeData (live)</span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">3</span>
-              <span class="cond">erro</span>
-              <span class="result deny">log-only, não propaga</span>
+              <span class="cond"><span data-en="error" data-pt="erro">error</span></span>
+              <span class="result deny"><span data-en="log-only, does not propagate" data-pt="log-only, não propaga">log-only, does not propagate</span></span>
             </div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Por que 2 modos no patch?</div>
-            <code>selectedChat = 'default'</code>. O usuário está no chat padrão. Só limpa <code>entries</code>. Não há <code>userSessionsChat</code> a modificar. Sessão nomeada. Tem várias sessions no array. Só zera as entries da ativa, preservando as outras.
+            <div class="aside-title"><span data-en="🎯 Why 2 modes in the patch?" data-pt="🎯 Por que 2 modos no patch?">🎯 Why 2 modes in the patch?</span></div>
+            <span data-en="&lt;code&gt;selectedChat = 'default'&lt;/code&gt;. The user is on the default chat. Only clears &lt;code&gt;entries&lt;/code&gt;. No &lt;code&gt;userSessionsChat&lt;/code&gt; to modify. Named session. There are several sessions in the array. Only zeroes entries of the active one, preserving the others." data-pt="&lt;code&gt;selectedChat = 'default'&lt;/code&gt;. O usuário está no chat padrão. Só limpa &lt;code&gt;entries&lt;/code&gt;. Não há &lt;code&gt;userSessionsChat&lt;/code&gt; a modificar. Sessão nomeada. Tem várias sessions no array. Só zera as entries da ativa, preservando as outras."><code>selectedChat = 'default'</code>. The user is on the default chat. Only clears <code>entries</code>. No <code>userSessionsChat</code> to modify. Named session. There are several sessions in the array. Only zeroes entries of the active one, preserving the others.</span>
           </div>
           <div class="aside">
-            <div class="aside-title">📎 Docstring do persistNodeDataToLiveRow</div>
+            <div class="aside-title"><span data-en="📎 persistNodeDataToLiveRow docstring" data-pt="📎 Docstring do persistNodeDataToLiveRow">📎 persistNodeDataToLiveRow docstring</span></div>
             "Persist a node's run-time data to the live flow JSON so the canvas reflects it. Used for values the worker never writes back (persistNodeSuccess): a data-input node's resolved value, and the entries a Small Memory node drops at the start of a clear-on-execution run."
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ Log-only catch. Sync silencioso</div>
-            Se o UPDATE falha (deadlock, connection dropped), o log é registrado, mas a execução continua. O banco fica dessincronizado com a memória temporariamente, até o próximo persist regravar.
+            <div class="aside-title"><span data-en="⚠️ Log-only catch. Silent sync" data-pt="⚠️ Log-only catch. Sync silencioso">⚠️ Log-only catch. Silent sync</span></div>
+            <span data-en="If the UPDATE fails (deadlock, connection dropped), the log is recorded, but execution continues. The DB is temporarily out of sync with memory, until the next persist overwrites it." data-pt="Se o UPDATE falha (deadlock, connection dropped), o log é registrado, mas a execução continua. O banco fica dessincronizado com a memória temporariamente, até o próximo persist regravar.">If the UPDATE fails (deadlock, connection dropped), the log is recorded, but execution continues. The DB is temporarily out of sync with memory, until the next persist overwrites it.</span>
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 Métodos do flowNodeService</div>
-            <code>updateSingleNodeData(flowId, nodeId, patch)</code>. Update JSONB merge em <code>flow_nodes.data</code>. <code>updateSingleNodeDataInHistory(historyId, nodeId, patch)</code>. Mesmo, mas no snapshot do version history.
+            <div class="aside-title"><span data-en="🔧 flowNodeService methods" data-pt="🔧 Métodos do flowNodeService">🔧 flowNodeService methods</span></div>
+            <span data-en="&lt;code&gt;updateSingleNodeData(flowId, nodeId, patch)&lt;/code&gt;. JSONB merge update on &lt;code&gt;flow_nodes.data&lt;/code&gt;. &lt;code&gt;updateSingleNodeDataInHistory(historyId, nodeId, patch)&lt;/code&gt;. Same, but on the version history snapshot." data-pt="&lt;code&gt;updateSingleNodeData(flowId, nodeId, patch)&lt;/code&gt;. Update JSONB merge em &lt;code&gt;flow_nodes.data&lt;/code&gt;. &lt;code&gt;updateSingleNodeDataInHistory(historyId, nodeId, patch)&lt;/code&gt;. Mesmo, mas no snapshot do version history."><code>updateSingleNodeData(flowId, nodeId, patch)</code>. JSONB merge update on <code>flow_nodes.data</code>. <code>updateSingleNodeDataInHistory(historyId, nodeId, patch)</code>. Same, but on the version history snapshot.</span>
           </div>
         </div>
       </div>
@@ -478,7 +485,7 @@
     <div class="fn-card-header">
       <div class="fn-title">
         <span class="badge migrated" style="background:#A855F7;color:white">E</span>
-        <code>Reaplica em memória via updatedFlows.map</code>
+        <code><span data-en="Reapplies in memory via updatedFlows.map" data-pt="Reaplica em memória via updatedFlows.map">Reapplies in memory via updatedFlows.map</span></code>
       </div>
       <div class="fn-loc">flux.service.ts:2551-2557</div>
     </div>
@@ -487,21 +494,21 @@
         updatedFlows = updatedFlows.map(nd =&gt; { const reset = buildFluxObjectClearOnExecution(nd); ... });
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Reaplica o reset em memória em todos os nodes de <code>updatedFlows</code>. Só volta patch não vazio para os <code>fluxObject</code> com flag. Os outros retornam sem alteração. Sincroniza memória e banco.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Reapplies the reset in memory to every node in &lt;code&gt;updatedFlows&lt;/code&gt;. Only returns a non-empty patch for &lt;code&gt;fluxObject&lt;/code&gt; with the flag. The others return unchanged. Syncs memory and DB." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Reaplica o reset em memória em todos os nodes de &lt;code&gt;updatedFlows&lt;/code&gt;. Só volta patch não vazio para os &lt;code&gt;fluxObject&lt;/code&gt; com flag. Os outros retornam sem alteração. Sincroniza memória e banco."><strong>Purpose.</strong> Reapplies the reset in memory to every node in <code>updatedFlows</code>. Only returns a non-empty patch for <code>fluxObject</code> with the flag. The others return unchanged. Syncs memory and DB.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Depois de gravar os resets no banco, o array em memória <code>updatedFlows</code> ainda está com o estado antigo. O loop anterior só escreveu no Postgres. Esta segunda passada, um <code>.map</code>, chama <code>buildFluxObjectClearOnExecution</code> para cada node do array. O helper devolve <code>{}</code> se o node não é fluxObject com flag. Devolve o patch caso contrário. Se veio <code>{}</code>, retorna o node inalterado. Se veio patch não vazio, faz <code>{ ...nd, data: { ...nd.data, ...reset } }</code>. Merge shallow. Resultado. O array em memória fica alinhado com o que foi persistido. O padrão é ligeiramente redundante. Chama <code>buildFluxObjectClearOnExecution</code> para todos, quando só os fluxObjects com flag interessam. O custo é baixo. A lógica fica centralizada num helper único.
+        <span data-en="&lt;strong&gt;In short.&lt;/strong&gt; After writing the resets to the DB, the in-memory array &lt;code&gt;updatedFlows&lt;/code&gt; still holds the old state. The previous loop only wrote to Postgres. This second pass, a &lt;code&gt;.map&lt;/code&gt;, calls &lt;code&gt;buildFluxObjectClearOnExecution&lt;/code&gt; for each node in the array. The helper returns &lt;code&gt;{}&lt;/code&gt; if the node is not a fluxObject with the flag. Returns the patch otherwise. If it returned &lt;code&gt;{}&lt;/code&gt;, returns the node unchanged. If it returned a non-empty patch, does &lt;code&gt;{ ...nd, data: { ...nd.data, ...reset } }&lt;/code&gt;. Shallow merge. Result. The in-memory array is aligned with what was persisted. The pattern is slightly redundant. Calls &lt;code&gt;buildFluxObjectClearOnExecution&lt;/code&gt; for all of them, when only the fluxObjects with the flag matter. Cost is low. Logic stays centralized in a single helper." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Depois de gravar os resets no banco, o array em memória &lt;code&gt;updatedFlows&lt;/code&gt; ainda está com o estado antigo. O loop anterior só escreveu no Postgres. Esta segunda passada, um &lt;code&gt;.map&lt;/code&gt;, chama &lt;code&gt;buildFluxObjectClearOnExecution&lt;/code&gt; para cada node do array. O helper devolve &lt;code&gt;{}&lt;/code&gt; se o node não é fluxObject com flag. Devolve o patch caso contrário. Se veio &lt;code&gt;{}&lt;/code&gt;, retorna o node inalterado. Se veio patch não vazio, faz &lt;code&gt;{ ...nd, data: { ...nd.data, ...reset } }&lt;/code&gt;. Merge shallow. Resultado. O array em memória fica alinhado com o que foi persistido. O padrão é ligeiramente redundante. Chama &lt;code&gt;buildFluxObjectClearOnExecution&lt;/code&gt; para todos, quando só os fluxObjects com flag interessam. O custo é baixo. A lógica fica centralizada num helper único."><strong>In short.</strong> After writing the resets to the DB, the in-memory array <code>updatedFlows</code> still holds the old state. The previous loop only wrote to Postgres. This second pass, a <code>.map</code>, calls <code>buildFluxObjectClearOnExecution</code> for each node in the array. The helper returns <code>{}</code> if the node is not a fluxObject with the flag. Returns the patch otherwise. If it returned <code>{}</code>, returns the node unchanged. If it returned a non-empty patch, does <code>{ ...nd, data: { ...nd.data, ...reset } }</code>. Shallow merge. Result. The in-memory array is aligned with what was persisted. The pattern is slightly redundant. Calls <code>buildFluxObjectClearOnExecution</code> for all of them, when only the fluxObjects with the flag matter. Cost is low. Logic stays centralized in a single helper.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">E1</span> Segunda passada. .map cross-array</div>
+            <div class="box-title"><span class="badge step">E1</span> <span data-en="Second pass. Cross-array .map" data-pt="Segunda passada. .map cross-array">Second pass. Cross-array .map</span></div>
             <div class="code-block">
 updatedFlows = updatedFlows.<span class="t">map</span>(nd =&gt; {
   <span class="k">const</span> reset = buildFluxObjectClearOnExecution(nd);
   <span class="k">if</span> (Object.keys(reset).length === 0) {
-    <span class="k">return</span> nd;  <span class="c">// não é fluxObject com flag, deixa como está</span>
+    <span class="k">return</span> nd;  <span class="c">// not a fluxObject with the flag, leave as-is</span>
   }
   <span class="k">return</span> { ...nd, data: { ...nd.data, ...reset } };
 });
@@ -510,50 +517,50 @@ updatedFlows = updatedFlows.<span class="t">map</span>(nd =&gt; {
           </div>
           <div class="arrow">↓</div>
           <div class="box decision">
-            <div class="box-title">Efeito por tipo de node</div>
+            <div class="box-title"><span data-en="Effect per node type" data-pt="Efeito por tipo de node">Effect per node type</span></div>
             <div class="cascade">
               <div class="cascade-step">
                 <span class="cascade-num">1</span>
-                <span class="cond">Node não é fluxObject</span>
-                <span class="result pass">return nd (inalterado)</span>
+                <span class="cond"><span data-en="Node is not fluxObject" data-pt="Node não é fluxObject">Node is not fluxObject</span></span>
+                <span class="result pass"><span data-en="return nd (unchanged)" data-pt="return nd (inalterado)">return nd (unchanged)</span></span>
               </div>
               <div class="cascade-step">
                 <span class="cascade-num">2</span>
-                <span class="cond">fluxObject sem clearOnExecution</span>
-                <span class="result pass">return nd (inalterado)</span>
+                <span class="cond"><span data-en="fluxObject without clearOnExecution" data-pt="fluxObject sem clearOnExecution">fluxObject without clearOnExecution</span></span>
+                <span class="result pass"><span data-en="return nd (unchanged)" data-pt="return nd (inalterado)">return nd (unchanged)</span></span>
               </div>
               <div class="cascade-step">
                 <span class="cascade-num">3</span>
-                <span class="cond">fluxObject com clearOnExecution</span>
-                <span class="result next">merge shallow com reset</span>
+                <span class="cond"><span data-en="fluxObject with clearOnExecution" data-pt="fluxObject com clearOnExecution">fluxObject with clearOnExecution</span></span>
+                <span class="result next"><span data-en="shallow merge with reset" data-pt="merge shallow com reset">shallow merge with reset</span></span>
               </div>
             </div>
           </div>
           <div class="arrow">↓</div>
           <div class="box backend">
-            <div class="box-title">Reatribuição do array (imutável)</div>
+            <div class="box-title"><span data-en="Array reassignment (immutable)" data-pt="Reatribuição do array (imutável)">Array reassignment (immutable)</span></div>
             <div class="box-desc">
-              <code>updatedFlows = ...</code>. Reatribui a variável <code>let</code>. O array antigo é descartado. O novo tem elementos novos onde há mudanças e referências antigas onde não há.
+              <span data-en="&lt;code&gt;updatedFlows = ...&lt;/code&gt;. Reassigns the &lt;code&gt;let&lt;/code&gt; variable. The old array is discarded. The new one has new elements where there are changes and old references where there aren't." data-pt="&lt;code&gt;updatedFlows = ...&lt;/code&gt;. Reatribui a variável &lt;code&gt;let&lt;/code&gt;. O array antigo é descartado. O novo tem elementos novos onde há mudanças e referências antigas onde não há."><code>updatedFlows = ...</code>. Reassigns the <code>let</code> variable. The old array is discarded. The new one has new elements where there are changes and old references where there aren't.</span>
             </div>
             <div class="box-file">flux.service.ts:2551</div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Por que chamar em todos?</div>
-            O helper é puro e barato. Chamar em todos e testar o resultado é mais simples que ter dois passos (filtrar mais aplicar). O custo é uma chamada de função por node.
+            <div class="aside-title"><span data-en="🎯 Why call it on all of them?" data-pt="🎯 Por que chamar em todos?">🎯 Why call it on all of them?</span></div>
+            <span data-en="The helper is pure and cheap. Calling on all and testing the result is simpler than having two steps (filter plus apply). Cost is one function call per node." data-pt="O helper é puro e barato. Chamar em todos e testar o resultado é mais simples que ter dois passos (filtrar mais aplicar). O custo é uma chamada de função por node.">The helper is pure and cheap. Calling on all and testing the result is simpler than having two steps (filter plus apply). Cost is one function call per node.</span>
           </div>
           <div class="aside">
-            <div class="aside-title">📎 Merge shallow</div>
-            <code>data: { ...nd.data, ...reset }</code>. Spread merge. Se <code>reset</code> tem <code>{ entries: [] }</code>, sobrescreve <code>data.entries</code>. Se tem <code>userSessionsChat: [...]</code>, sobrescreve inteiro (não faz deep merge).
+            <div class="aside-title"><span data-en="📎 Shallow merge" data-pt="📎 Merge shallow">📎 Shallow merge</span></div>
+            <span data-en="&lt;code&gt;data: { ...nd.data, ...reset }&lt;/code&gt;. Spread merge. If &lt;code&gt;reset&lt;/code&gt; has &lt;code&gt;{ entries: [] }&lt;/code&gt;, it overrides &lt;code&gt;data.entries&lt;/code&gt;. If it has &lt;code&gt;userSessionsChat: [...]&lt;/code&gt;, it overrides the whole thing (no deep merge)." data-pt="&lt;code&gt;data: { ...nd.data, ...reset }&lt;/code&gt;. Spread merge. Se &lt;code&gt;reset&lt;/code&gt; tem &lt;code&gt;{ entries: [] }&lt;/code&gt;, sobrescreve &lt;code&gt;data.entries&lt;/code&gt;. Se tem &lt;code&gt;userSessionsChat: [...]&lt;/code&gt;, sobrescreve inteiro (não faz deep merge)."><code>data: { ...nd.data, ...reset }</code>. Spread merge. If <code>reset</code> has <code>{ entries: [] }</code>, it overrides <code>data.entries</code>. If it has <code>userSessionsChat: [...]</code>, it overrides the whole thing (no deep merge).</span>
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ Redundância com D3 do worker</div>
-            Quando o worker executar esse fluxObject depois, <code>persistNodeSuccess</code> pode regravar. Se o worker não respeita o reset e regrava entries antigas, o banco volta ao estado sujo. Não há contrato explícito. Só é correto por convenção.
+            <div class="aside-title"><span data-en="⚠️ Redundancy with worker's D3" data-pt="⚠️ Redundância com D3 do worker">⚠️ Redundancy with worker's D3</span></div>
+            <span data-en="When the worker later executes this fluxObject, &lt;code&gt;persistNodeSuccess&lt;/code&gt; may overwrite it. If the worker doesn't respect the reset and overwrites with old entries, the DB reverts to the dirty state. There is no explicit contract. It's correct only by convention." data-pt="Quando o worker executar esse fluxObject depois, &lt;code&gt;persistNodeSuccess&lt;/code&gt; pode regravar. Se o worker não respeita o reset e regrava entries antigas, o banco volta ao estado sujo. Não há contrato explícito. Só é correto por convenção.">When the worker later executes this fluxObject, <code>persistNodeSuccess</code> may overwrite it. If the worker doesn't respect the reset and overwrites with old entries, the DB reverts to the dirty state. There is no explicit contract. It's correct only by convention.</span>
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 buildFluxObjectClearOnExecution é chamado 2x</div>
-            Uma vez em D (para montar o patch do persist). Uma vez aqui em E (para montar o patch do merge). A chamada é idempotente e barata. Helper puro.
+            <div class="aside-title"><span data-en="🔧 buildFluxObjectClearOnExecution is called 2x" data-pt="🔧 buildFluxObjectClearOnExecution é chamado 2x">🔧 buildFluxObjectClearOnExecution is called 2x</span></div>
+            <span data-en="Once in D (to build the persist patch). Once here in E (to build the merge patch). The call is idempotent and cheap. Pure helper." data-pt="Uma vez em D (para montar o patch do persist). Uma vez aqui em E (para montar o patch do merge). A chamada é idempotente e barata. Helper puro.">Once in D (to build the persist patch). Once here in E (to build the merge patch). The call is idempotent and cheap. Pure helper.</span>
           </div>
         </div>
       </div>
@@ -561,25 +568,25 @@ updatedFlows = updatedFlows.<span class="t">map</span>(nd =&gt; {
   </div>
 
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo. O que sai de 1.5b:</strong>
-    <br><code>updatedFlows</code> mutado. <code>fluxObject</code> com <code>clearOnExecution</code> ligado têm <code>data.entries = []</code>. Opcionalmente, <code>data.userSessionsChat</code> re-mapeado.
-    <br>Banco atualizado. Mesmas mudanças persistidas via <code>flow_nodes</code> ou <code>flow_version_history</code>.
-    <br>Session state deletado. Para fluxObjects chat ou session-enabled, linhas relevantes em <code>session_state_entry</code> apagadas.
-    <br>I/O. 1 DELETE (chat ou session) mais 1 UPDATE por node com flag. Em série, sem batch.
+    <span data-en="&lt;strong&gt;Summary. What comes out of 1.5b:&lt;/strong&gt;" data-pt="&lt;strong&gt;Resumo. O que sai de 1.5b:&lt;/strong&gt;"><strong>Summary. What comes out of 1.5b:</strong></span>
+    <br><span data-en="&lt;code&gt;updatedFlows&lt;/code&gt; mutated. &lt;code&gt;fluxObject&lt;/code&gt; with &lt;code&gt;clearOnExecution&lt;/code&gt; on have &lt;code&gt;data.entries = []&lt;/code&gt;. Optionally, &lt;code&gt;data.userSessionsChat&lt;/code&gt; re-mapped." data-pt="&lt;code&gt;updatedFlows&lt;/code&gt; mutado. &lt;code&gt;fluxObject&lt;/code&gt; com &lt;code&gt;clearOnExecution&lt;/code&gt; ligado têm &lt;code&gt;data.entries = []&lt;/code&gt;. Opcionalmente, &lt;code&gt;data.userSessionsChat&lt;/code&gt; re-mapeado."><code>updatedFlows</code> mutated. <code>fluxObject</code> with <code>clearOnExecution</code> on have <code>data.entries = []</code>. Optionally, <code>data.userSessionsChat</code> re-mapped.</span>
+    <br><span data-en="DB updated. Same changes persisted via &lt;code&gt;flow_nodes&lt;/code&gt; or &lt;code&gt;flow_version_history&lt;/code&gt;." data-pt="Banco atualizado. Mesmas mudanças persistidas via &lt;code&gt;flow_nodes&lt;/code&gt; ou &lt;code&gt;flow_version_history&lt;/code&gt;.">DB updated. Same changes persisted via <code>flow_nodes</code> or <code>flow_version_history</code>.</span>
+    <br><span data-en="Session state deleted. For chat or session-enabled fluxObjects, relevant rows in &lt;code&gt;session_state_entry&lt;/code&gt; are erased." data-pt="Session state deletado. Para fluxObjects chat ou session-enabled, linhas relevantes em &lt;code&gt;session_state_entry&lt;/code&gt; apagadas.">Session state deleted. For chat or session-enabled fluxObjects, relevant rows in <code>session_state_entry</code> are erased.</span>
+    <br><span data-en="I/O. 1 DELETE (chat or session) plus 1 UPDATE per node with the flag. Serial, no batching." data-pt="I/O. 1 DELETE (chat ou session) mais 1 UPDATE por node com flag. Em série, sem batch.">I/O. 1 DELETE (chat or session) plus 1 UPDATE per node with the flag. Serial, no batching.</span>
   </div>
 
   <div class="note">
-    <strong>Observações para migração:</strong>
-    <br>Os helpers (<code>isFluxObjectClearOnExecution</code>, <code>fluxObjectPersistsEntries</code>, <code>buildFluxObjectClearOnExecution</code>) são funções puras em <code>node-output-reset.ts</code>. Replicáveis 1 para 1 no worker.
-    <br><code>sessionStateService.clear</code> depende do Postgres. Se o worker precisa limpar, precisa fazer round-trip ao backend ou receber conexão para a tabela <code>session_state_entry</code>.
-    <br><code>persistNodeDataToLiveRow</code> é write-through. Se o worker executa isso, precisa ter as mesmas duas branches (live versus version-history) e o mesmo comportamento log-only-catch.
-    <br>A reaplicação em memória (E) só faz sentido enquanto o loop de execução compartilha memória. No worker, a versão canônica dos nodes viria dos start-args. O backend teria que fazer o reset antes de dar start no workflow.
-    <br>Prioridade média-alta. Chats sem <code>clearOnExecution</code> respeitado ficariam com histórico permanente. Quebra a semântica de vários agentes.
-    <br>Atenção. Os outros types com <code>clearOnExecution</code> (<code>fluxBox</code>, <code>libraryNode</code>) são tratados no 1.7a com lógica diferente. Não misturar.
+    <span data-en="&lt;strong&gt;Migration notes:&lt;/strong&gt;" data-pt="&lt;strong&gt;Observações para migração:&lt;/strong&gt;"><strong>Migration notes:</strong></span>
+    <br><span data-en="The helpers (&lt;code&gt;isFluxObjectClearOnExecution&lt;/code&gt;, &lt;code&gt;fluxObjectPersistsEntries&lt;/code&gt;, &lt;code&gt;buildFluxObjectClearOnExecution&lt;/code&gt;) are pure functions in &lt;code&gt;node-output-reset.ts&lt;/code&gt;. Replicable 1 to 1 in the worker." data-pt="Os helpers (&lt;code&gt;isFluxObjectClearOnExecution&lt;/code&gt;, &lt;code&gt;fluxObjectPersistsEntries&lt;/code&gt;, &lt;code&gt;buildFluxObjectClearOnExecution&lt;/code&gt;) são funções puras em &lt;code&gt;node-output-reset.ts&lt;/code&gt;. Replicáveis 1 para 1 no worker.">The helpers (<code>isFluxObjectClearOnExecution</code>, <code>fluxObjectPersistsEntries</code>, <code>buildFluxObjectClearOnExecution</code>) are pure functions in <code>node-output-reset.ts</code>. Replicable 1 to 1 in the worker.</span>
+    <br><span data-en="&lt;code&gt;sessionStateService.clear&lt;/code&gt; depends on Postgres. If the worker needs to clear, it must round-trip to the backend or receive a connection to the &lt;code&gt;session_state_entry&lt;/code&gt; table." data-pt="&lt;code&gt;sessionStateService.clear&lt;/code&gt; depende do Postgres. Se o worker precisa limpar, precisa fazer round-trip ao backend ou receber conexão para a tabela &lt;code&gt;session_state_entry&lt;/code&gt;."><code>sessionStateService.clear</code> depends on Postgres. If the worker needs to clear, it must round-trip to the backend or receive a connection to the <code>session_state_entry</code> table.</span>
+    <br><span data-en="&lt;code&gt;persistNodeDataToLiveRow&lt;/code&gt; is write-through. If the worker runs it, it must have the same two branches (live vs. version-history) and the same log-only-catch behavior." data-pt="&lt;code&gt;persistNodeDataToLiveRow&lt;/code&gt; é write-through. Se o worker executa isso, precisa ter as mesmas duas branches (live versus version-history) e o mesmo comportamento log-only-catch."><code>persistNodeDataToLiveRow</code> is write-through. If the worker runs it, it must have the same two branches (live vs. version-history) and the same log-only-catch behavior.</span>
+    <br><span data-en="The in-memory reapply (E) only makes sense while the execution loop shares memory. In the worker, the canonical version of nodes would come from start-args. The backend would have to do the reset before starting the workflow." data-pt="A reaplicação em memória (E) só faz sentido enquanto o loop de execução compartilha memória. No worker, a versão canônica dos nodes viria dos start-args. O backend teria que fazer o reset antes de dar start no workflow.">The in-memory reapply (E) only makes sense while the execution loop shares memory. In the worker, the canonical version of nodes would come from start-args. The backend would have to do the reset before starting the workflow.</span>
+    <br><span data-en="Medium-high priority. Chats without &lt;code&gt;clearOnExecution&lt;/code&gt; respected would keep permanent history. Breaks the semantics of several agents." data-pt="Prioridade média-alta. Chats sem &lt;code&gt;clearOnExecution&lt;/code&gt; respeitado ficariam com histórico permanente. Quebra a semântica de vários agentes.">Medium-high priority. Chats without <code>clearOnExecution</code> respected would keep permanent history. Breaks the semantics of several agents.</span>
+    <br><span data-en="Caution. The other types with &lt;code&gt;clearOnExecution&lt;/code&gt; (&lt;code&gt;fluxBox&lt;/code&gt;, &lt;code&gt;libraryNode&lt;/code&gt;) are handled in 1.7a with different logic. Don't mix them up." data-pt="Atenção. Os outros types com &lt;code&gt;clearOnExecution&lt;/code&gt; (&lt;code&gt;fluxBox&lt;/code&gt;, &lt;code&gt;libraryNode&lt;/code&gt;) são tratados no 1.7a com lógica diferente. Não misturar.">Caution. The other types with <code>clearOnExecution</code> (<code>fluxBox</code>, <code>libraryNode</code>) are handled in 1.7a with different logic. Don't mix them up.</span>
   </div>
 
   <div class="page-footer-nav">
-    <a href="../index.html#step-1-5b" class="back-btn">← Voltar ao diagrama principal</a>
+    <a href="../index.html#step-1-5b" class="back-btn"><span data-en="← Back to main diagram" data-pt="← Voltar ao diagrama principal">← Back to main diagram</span></a>
   </div>
 
 </div>
@@ -609,5 +616,6 @@ updatedFlows = updatedFlows.<span class="t">map</span>(nd =&gt; {
   });
 })();
 </script>
+<script src="../_assets/i18n.js" defer></script>
 </body>
 </html>

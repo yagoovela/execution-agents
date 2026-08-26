@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Passo 1.0b — Resolução do runTypeEnum | Detalhamento</title>
+<link rel="stylesheet" href="../_assets/i18n.css">
+<title>Step 1.0b — runTypeEnum resolution | Deep dive</title>
 <style>
   * { box-sizing: border-box; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F1F5F9; color: #0F172A; margin: 0; padding: 32px 24px 80px; line-height: 1.4; }
@@ -111,45 +112,49 @@
 
   <div class="page-nav">
     <div class="breadcrumb">
-      <a href="../index.html">📋 Execução de Agente</a>
+      <a href="../index.html"><span data-en="📋 Agent Execution" data-pt="📋 Execução de Agente">📋 Agent Execution</span></a>
       <span class="sep">›</span>
-      <span>Passo 1.0b — Detalhamento</span>
+      <span><span data-en="Step 1.0b — Deep dive" data-pt="Passo 1.0b — Detalhamento">Step 1.0b — Deep dive</span></span>
     </div>
-    <a href="../index.html#step-1-0b" class="back-btn">← Voltar ao diagrama</a>
+    <div class="lang-sw" role="group" aria-label="Language">
+      <button type="button" data-lang="en" aria-pressed="true">EN-US</button>
+      <button type="button" data-lang="pt" aria-pressed="false">PT-BR</button>
+    </div>
+    <a href="../index.html#step-1-0b" class="back-btn"><span data-en="← Back to diagram" data-pt="← Voltar ao diagrama">← Back to diagram</span></a>
   </div>
 
   <div class="page-header">
     <span class="icon">🏷️</span>
-    <h1>Passo 1.0b — Resolução do runTypeEnum</h1>
+    <h1><span data-en="Step 1.0b — runTypeEnum resolution" data-pt="Passo 1.0b — Resolução do runTypeEnum">Step 1.0b — runTypeEnum resolution</span></h1>
   </div>
   <div class="page-sub">
-    Bloco em <code>flux.service.ts:2339-2374</code>. Traduz a string <code>runType</code> (vinda do controller) no enum <code>FlowLogRunType</code>. O enum tem 12 valores. O switch cobre 8 explícitos, mais 3 via <code>includes()</code> no default, mais 1 fallback <code>WEBHOOK</code>.
+    <span data-en="Block at &lt;code&gt;flux.service.ts:2339-2374&lt;/code&gt;. Translates the &lt;code&gt;runType&lt;/code&gt; string (from the controller) into the &lt;code&gt;FlowLogRunType&lt;/code&gt; enum. The enum has 12 values. The switch covers 8 explicitly, plus 3 via &lt;code&gt;includes()&lt;/code&gt; in the default, plus 1 &lt;code&gt;WEBHOOK&lt;/code&gt; fallback." data-pt="Bloco em &lt;code&gt;flux.service.ts:2339-2374&lt;/code&gt;. Traduz a string &lt;code&gt;runType&lt;/code&gt; (vinda do controller) no enum &lt;code&gt;FlowLogRunType&lt;/code&gt;. O enum tem 12 valores. O switch cobre 8 explícitos, mais 3 via &lt;code&gt;includes()&lt;/code&gt; no default, mais 1 fallback &lt;code&gt;WEBHOOK&lt;/code&gt;.">Block at <code>flux.service.ts:2339-2374</code>. Translates the <code>runType</code> string (from the controller) into the <code>FlowLogRunType</code> enum. The enum has 12 values. The switch covers 8 explicitly, plus 3 via <code>includes()</code> in the default, plus 1 <code>WEBHOOK</code> fallback.</span>
   </div>
 
   <div class="step-friendly">
-    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <div class="step-friendly-title"><span data-en="In short — what this step does" data-pt="Em resumo — o que esse passo faz">In short — what this step does</span></div>
     <ul>
-      <li><strong>Default para 'webhook'.</strong> Se <code>runType</code> chega vazio ou <code>undefined</code>, vira <code>'webhook'</code>. Ver a linha 2339 <code>const runTypeValue = runType || 'webhook'</code>. Ausência de <code>runType</code> equivale a origem em webhook. É a convenção histórica.</li>
-      <li><strong>Switch com 8 casos exatos.</strong> String-match direto para os valores <code>api</code>, <code>batch</code>, <code>chatbot</code>, <code>formapi</code>, <code>public-api</code>, <code>cronjob</code>, <code>email</code> e <code>mcp</code>. Cada um mapeia direto para o membro do enum.</li>
-      <li><strong>Default com 2 sub-branches por substring.</strong> Se cai no default, ainda testa <code>runTypeValue.includes('flow-caller-node')</code> ou <code>.includes('library-node')</code>. É substring, não igualdade. Isso captura variações como <code>flow-caller-node-abc</code>. Se nada bate, cai para <code>WEBHOOK</code>.</li>
-      <li><strong>Enum FlowLogRunType tem 12 valores.</strong> Além dos 11 tratados aqui, existe <code>MANUAL</code>. Nunca é resolvido por esse switch. É atribuído por outros caminhos, como testes ou execuções manuais fora do apiV2.</li>
-      <li><strong>Consumido em 3 lugares depois.</strong> <code>flowLogsService.createLog({ run_type: runTypeEnum })</code> no passo 4.3. <code>runLogDoc.runType = runTypeEnum</code> antes do flushNow do SpaceRunLog em 4.4. E novamente no <code>flushNow</code> do caminho de erro (5.x). É metadata pura. Não muda comportamento de execução, só de billing e relatório.</li>
+      <li><span data-en="&lt;strong&gt;Defaults to 'webhook'.&lt;/strong&gt; If &lt;code&gt;runType&lt;/code&gt; arrives empty or &lt;code&gt;undefined&lt;/code&gt;, it becomes &lt;code&gt;'webhook'&lt;/code&gt;. See line 2339 &lt;code&gt;const runTypeValue = runType || 'webhook'&lt;/code&gt;. Absence of &lt;code&gt;runType&lt;/code&gt; equals webhook origin. It is the historical convention." data-pt="&lt;strong&gt;Default para 'webhook'.&lt;/strong&gt; Se &lt;code&gt;runType&lt;/code&gt; chega vazio ou &lt;code&gt;undefined&lt;/code&gt;, vira &lt;code&gt;'webhook'&lt;/code&gt;. Ver a linha 2339 &lt;code&gt;const runTypeValue = runType || 'webhook'&lt;/code&gt;. Ausência de &lt;code&gt;runType&lt;/code&gt; equivale a origem em webhook. É a convenção histórica."><strong>Defaults to 'webhook'.</strong> If <code>runType</code> arrives empty or <code>undefined</code>, it becomes <code>'webhook'</code>. See line 2339 <code>const runTypeValue = runType || 'webhook'</code>. Absence of <code>runType</code> equals webhook origin. It is the historical convention.</span></li>
+      <li><span data-en="&lt;strong&gt;Switch with 8 exact cases.&lt;/strong&gt; Direct string match for the values &lt;code&gt;api&lt;/code&gt;, &lt;code&gt;batch&lt;/code&gt;, &lt;code&gt;chatbot&lt;/code&gt;, &lt;code&gt;formapi&lt;/code&gt;, &lt;code&gt;public-api&lt;/code&gt;, &lt;code&gt;cronjob&lt;/code&gt;, &lt;code&gt;email&lt;/code&gt;, and &lt;code&gt;mcp&lt;/code&gt;. Each one maps directly to the enum member." data-pt="&lt;strong&gt;Switch com 8 casos exatos.&lt;/strong&gt; String-match direto para os valores &lt;code&gt;api&lt;/code&gt;, &lt;code&gt;batch&lt;/code&gt;, &lt;code&gt;chatbot&lt;/code&gt;, &lt;code&gt;formapi&lt;/code&gt;, &lt;code&gt;public-api&lt;/code&gt;, &lt;code&gt;cronjob&lt;/code&gt;, &lt;code&gt;email&lt;/code&gt; e &lt;code&gt;mcp&lt;/code&gt;. Cada um mapeia direto para o membro do enum."><strong>Switch with 8 exact cases.</strong> Direct string match for the values <code>api</code>, <code>batch</code>, <code>chatbot</code>, <code>formapi</code>, <code>public-api</code>, <code>cronjob</code>, <code>email</code>, and <code>mcp</code>. Each one maps directly to the enum member.</span></li>
+      <li><span data-en="&lt;strong&gt;Default with 2 sub-branches by substring.&lt;/strong&gt; If it lands in the default, it still tests &lt;code&gt;runTypeValue.includes('flow-caller-node')&lt;/code&gt; or &lt;code&gt;.includes('library-node')&lt;/code&gt;. It is substring, not equality. This catches variations like &lt;code&gt;flow-caller-node-abc&lt;/code&gt;. If nothing matches, it falls back to &lt;code&gt;WEBHOOK&lt;/code&gt;." data-pt="&lt;strong&gt;Default com 2 sub-branches por substring.&lt;/strong&gt; Se cai no default, ainda testa &lt;code&gt;runTypeValue.includes('flow-caller-node')&lt;/code&gt; ou &lt;code&gt;.includes('library-node')&lt;/code&gt;. É substring, não igualdade. Isso captura variações como &lt;code&gt;flow-caller-node-abc&lt;/code&gt;. Se nada bate, cai para &lt;code&gt;WEBHOOK&lt;/code&gt;."><strong>Default with 2 sub-branches by substring.</strong> If it lands in the default, it still tests <code>runTypeValue.includes('flow-caller-node')</code> or <code>.includes('library-node')</code>. It is substring, not equality. This catches variations like <code>flow-caller-node-abc</code>. If nothing matches, it falls back to <code>WEBHOOK</code>.</span></li>
+      <li><span data-en="&lt;strong&gt;The FlowLogRunType enum has 12 values.&lt;/strong&gt; Beyond the 11 handled here, there is &lt;code&gt;MANUAL&lt;/code&gt;. It is never resolved by this switch. It is assigned by other paths, such as tests or manual runs outside apiV2." data-pt="&lt;strong&gt;Enum FlowLogRunType tem 12 valores.&lt;/strong&gt; Além dos 11 tratados aqui, existe &lt;code&gt;MANUAL&lt;/code&gt;. Nunca é resolvido por esse switch. É atribuído por outros caminhos, como testes ou execuções manuais fora do apiV2."><strong>The FlowLogRunType enum has 12 values.</strong> Beyond the 11 handled here, there is <code>MANUAL</code>. It is never resolved by this switch. It is assigned by other paths, such as tests or manual runs outside apiV2.</span></li>
+      <li><span data-en="&lt;strong&gt;Consumed in 3 places downstream.&lt;/strong&gt; &lt;code&gt;flowLogsService.createLog({ run_type: runTypeEnum })&lt;/code&gt; in step 4.3. &lt;code&gt;runLogDoc.runType = runTypeEnum&lt;/code&gt; before the SpaceRunLog flushNow in 4.4. And again in the error path &lt;code&gt;flushNow&lt;/code&gt; (5.x). Pure metadata. Does not change execution behavior, only billing and reporting." data-pt="&lt;strong&gt;Consumido em 3 lugares depois.&lt;/strong&gt; &lt;code&gt;flowLogsService.createLog({ run_type: runTypeEnum })&lt;/code&gt; no passo 4.3. &lt;code&gt;runLogDoc.runType = runTypeEnum&lt;/code&gt; antes do flushNow do SpaceRunLog em 4.4. E novamente no &lt;code&gt;flushNow&lt;/code&gt; do caminho de erro (5.x). É metadata pura. Não muda comportamento de execução, só de billing e relatório."><strong>Consumed in 3 places downstream.</strong> <code>flowLogsService.createLog({ run_type: runTypeEnum })</code> in step 4.3. <code>runLogDoc.runType = runTypeEnum</code> before the SpaceRunLog flushNow in 4.4. And again in the error path <code>flushNow</code> (5.x). Pure metadata. Does not change execution behavior, only billing and reporting.</span></li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto.</strong> Essa resolução acontece antes do <code>try</code>. Qualquer erro aqui explodiria fora do error handling da execução. Na prática, é impossível. É um switch de string puro. Zero I/O, zero throw esperado.
+    <span data-en="&lt;strong&gt;Context.&lt;/strong&gt; This resolution happens before the &lt;code&gt;try&lt;/code&gt;. Any error here would explode outside the execution's error handling. In practice, it is impossible. It is a pure string switch. Zero I/O, zero expected throw." data-pt="&lt;strong&gt;Contexto.&lt;/strong&gt; Essa resolução acontece antes do &lt;code&gt;try&lt;/code&gt;. Qualquer erro aqui explodiria fora do error handling da execução. Na prática, é impossível. É um switch de string puro. Zero I/O, zero throw esperado."><strong>Context.</strong> This resolution happens before the <code>try</code>. Any error here would explode outside the execution's error handling. In practice, it is impossible. It is a pure string switch. Zero I/O, zero expected throw.</span>
   </div>
 
   <div class="overview-mini">
-    <div class="overview-mini-title">Cadeia em 1.0b</div>
+    <div class="overview-mini-title"><span data-en="Chain in 1.0b" data-pt="Cadeia em 1.0b">Chain in 1.0b</span></div>
     <div class="overview-chain">
       <a href="#fn-a" class="overview-chip"><span class="lbl">A</span>switch(runTypeValue)</a>
       <span class="overview-sep">→</span>
-      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>Consumo downstream</a>
+      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span><span data-en="Downstream consumption" data-pt="Consumo downstream">Downstream consumption</span></a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado final. Variável <code>runTypeEnum</code> preenchida com um dos 11 valores possíveis. É apenas metadata. Não altera execução, só billing e relatório.
+      <span data-en="Final result. Variable &lt;code&gt;runTypeEnum&lt;/code&gt; filled with one of 11 possible values. Metadata only. Does not change execution, only billing and reporting." data-pt="Resultado final. Variável &lt;code&gt;runTypeEnum&lt;/code&gt; preenchida com um dos 11 valores possíveis. É apenas metadata. Não altera execução, só billing e relatório.">Final result. Variable <code>runTypeEnum</code> filled with one of 11 possible values. Metadata only. Does not change execution, only billing and reporting.</span>
     </div>
   </div>
 
@@ -158,7 +163,7 @@
     <div class="fn-card-header">
       <div class="fn-title">
         <span class="badge migrated" style="background:#EAB308;color:white">A</span>
-        <code>switch(runTypeValue). 8 casos mais default triplo</code>
+        <code><span data-en="switch(runTypeValue). 8 cases plus triple default" data-pt="switch(runTypeValue). 8 casos mais default triplo">switch(runTypeValue). 8 cases plus triple default</span></code>
       </div>
       <div class="fn-loc">flux.service.ts:2339-2374</div>
     </div>
@@ -169,25 +174,25 @@
         switch (runTypeValue) { ... }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Normaliza o parâmetro string <code>runType</code> num valor tipado do enum <code>FlowLogRunType</code>. É um typed lookup com fallback semântico para strings que carregam contexto extra, como <code>flow-caller-node-xyz</code>.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Normalizes the &lt;code&gt;runType&lt;/code&gt; string parameter into a typed value from the &lt;code&gt;FlowLogRunType&lt;/code&gt; enum. It is a typed lookup with a semantic fallback for strings that carry extra context, such as &lt;code&gt;flow-caller-node-xyz&lt;/code&gt;." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Normaliza o parâmetro string &lt;code&gt;runType&lt;/code&gt; num valor tipado do enum &lt;code&gt;FlowLogRunType&lt;/code&gt;. É um typed lookup com fallback semântico para strings que carregam contexto extra, como &lt;code&gt;flow-caller-node-xyz&lt;/code&gt;."><strong>Purpose.</strong> Normalizes the <code>runType</code> string parameter into a typed value from the <code>FlowLogRunType</code> enum. It is a typed lookup with a semantic fallback for strings that carry extra context, such as <code>flow-caller-node-xyz</code>.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> O bloco recebe uma etiqueta em texto (que pode vir com ruído) e devolve uma etiqueta oficial do sistema. Primeiro passa por um mapa exato de 8 casos: <code>api</code>, <code>batch</code>, <code>chatbot</code>, <code>formapi</code>, <code>public-api</code>, <code>cronjob</code>, <code>email</code> e <code>mcp</code>. Cada string vira o enum correspondente. Se não bate, o default aplica lógica adicional. Testa se a string contém <code>flow-caller-node</code> (usado quando um flow chama outro) ou <code>library-node</code> (quando um library node dispara execução). O uso de <code>.includes()</code> aqui é intencional. O chamador pode ter sufixo (<code>flow-caller-node-{parentId}</code>) e ainda precisa ser reconhecido. Se nada bate, o último default é <code>WEBHOOK</code>. Esse é também o default do <code>||</code> no topo. O enum tem 12 valores, mas <code>MANUAL</code> nunca é atingido por esse switch. É aplicado em outros caminhos fora do apiV2.
+        <span data-en="&lt;strong&gt;In short.&lt;/strong&gt; The block takes a text label (which may arrive with noise) and returns an official system label. First it runs through an exact map of 8 cases: &lt;code&gt;api&lt;/code&gt;, &lt;code&gt;batch&lt;/code&gt;, &lt;code&gt;chatbot&lt;/code&gt;, &lt;code&gt;formapi&lt;/code&gt;, &lt;code&gt;public-api&lt;/code&gt;, &lt;code&gt;cronjob&lt;/code&gt;, &lt;code&gt;email&lt;/code&gt;, and &lt;code&gt;mcp&lt;/code&gt;. Each string becomes the matching enum. If nothing matches, the default applies extra logic. It tests whether the string contains &lt;code&gt;flow-caller-node&lt;/code&gt; (used when a flow calls another) or &lt;code&gt;library-node&lt;/code&gt; (when a library node fires an execution). The use of &lt;code&gt;.includes()&lt;/code&gt; here is intentional. The caller may append a suffix (&lt;code&gt;flow-caller-node-{parentId}&lt;/code&gt;) and still needs to be recognized. If nothing matches, the last default is &lt;code&gt;WEBHOOK&lt;/code&gt;. That is also the &lt;code&gt;||&lt;/code&gt; default at the top. The enum has 12 values, but &lt;code&gt;MANUAL&lt;/code&gt; is never reached by this switch. It is applied by other paths outside apiV2." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; O bloco recebe uma etiqueta em texto (que pode vir com ruído) e devolve uma etiqueta oficial do sistema. Primeiro passa por um mapa exato de 8 casos: &lt;code&gt;api&lt;/code&gt;, &lt;code&gt;batch&lt;/code&gt;, &lt;code&gt;chatbot&lt;/code&gt;, &lt;code&gt;formapi&lt;/code&gt;, &lt;code&gt;public-api&lt;/code&gt;, &lt;code&gt;cronjob&lt;/code&gt;, &lt;code&gt;email&lt;/code&gt; e &lt;code&gt;mcp&lt;/code&gt;. Cada string vira o enum correspondente. Se não bate, o default aplica lógica adicional. Testa se a string contém &lt;code&gt;flow-caller-node&lt;/code&gt; (usado quando um flow chama outro) ou &lt;code&gt;library-node&lt;/code&gt; (quando um library node dispara execução). O uso de &lt;code&gt;.includes()&lt;/code&gt; aqui é intencional. O chamador pode ter sufixo (&lt;code&gt;flow-caller-node-{parentId}&lt;/code&gt;) e ainda precisa ser reconhecido. Se nada bate, o último default é &lt;code&gt;WEBHOOK&lt;/code&gt;. Esse é também o default do &lt;code&gt;||&lt;/code&gt; no topo. O enum tem 12 valores, mas &lt;code&gt;MANUAL&lt;/code&gt; nunca é atingido por esse switch. É aplicado em outros caminhos fora do apiV2."><strong>In short.</strong> The block takes a text label (which may arrive with noise) and returns an official system label. First it runs through an exact map of 8 cases: <code>api</code>, <code>batch</code>, <code>chatbot</code>, <code>formapi</code>, <code>public-api</code>, <code>cronjob</code>, <code>email</code>, and <code>mcp</code>. Each string becomes the matching enum. If nothing matches, the default applies extra logic. It tests whether the string contains <code>flow-caller-node</code> (used when a flow calls another) or <code>library-node</code> (when a library node fires an execution). The use of <code>.includes()</code> here is intentional. The caller may append a suffix (<code>flow-caller-node-{parentId}</code>) and still needs to be recognized. If nothing matches, the last default is <code>WEBHOOK</code>. That is also the <code>||</code> default at the top. The enum has 12 values, but <code>MANUAL</code> is never reached by this switch. It is applied by other paths outside apiV2.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">A1</span> Default do || (webhook)</div>
+            <div class="box-title"><span class="badge step">A1</span> <span data-en="|| default (webhook)" data-pt="Default do || (webhook)">|| default (webhook)</span></div>
             <div class="box-desc">
               <code>const runTypeValue = runType || 'webhook';</code>
-              <br><br>Falsy (<code>undefined</code>, <code>null</code>, <code>''</code>) vira <code>'webhook'</code>. O fallback do enum <code>WEBHOOK</code> pode ser atingido por 2 caminhos: string vazia caindo aqui, ou string desconhecida caindo no default do switch.
+              <br><br><span data-en="Falsy (&lt;code&gt;undefined&lt;/code&gt;, &lt;code&gt;null&lt;/code&gt;, &lt;code&gt;''&lt;/code&gt;) becomes &lt;code&gt;'webhook'&lt;/code&gt;. The &lt;code&gt;WEBHOOK&lt;/code&gt; enum fallback can be reached through 2 paths: an empty string landing here, or an unknown string landing in the switch default." data-pt="Falsy (&lt;code&gt;undefined&lt;/code&gt;, &lt;code&gt;null&lt;/code&gt;, &lt;code&gt;''&lt;/code&gt;) vira &lt;code&gt;'webhook'&lt;/code&gt;. O fallback do enum &lt;code&gt;WEBHOOK&lt;/code&gt; pode ser atingido por 2 caminhos: string vazia caindo aqui, ou string desconhecida caindo no default do switch.">Falsy (<code>undefined</code>, <code>null</code>, <code>''</code>) becomes <code>'webhook'</code>. The <code>WEBHOOK</code> enum fallback can be reached through 2 paths: an empty string landing here, or an unknown string landing in the switch default.</span>
             </div>
             <div class="box-file">flux.service.ts:2339</div>
           </div>
           <div class="arrow">↓</div>
           <div class="cascade">
-            <div class="cascade-title">📋 Todos os 10 branches do switch</div>
+            <div class="cascade-title">📋 <span data-en="All 10 switch branches" data-pt="Todos os 10 branches do switch">All 10 switch branches</span></div>
             <div class="cascade-step">
               <span class="cascade-num">1</span>
               <span class="cond"><code>'api'</code></span>
@@ -240,13 +245,13 @@
             </div>
             <div class="cascade-step">
               <span class="cascade-num">10</span>
-              <span class="cond">nada bate</span>
+              <span class="cond"><span data-en="nothing matches" data-pt="nada bate">nothing matches</span></span>
               <span class="result pass"><code>WEBHOOK</code> (fallback)</span>
             </div>
           </div>
           <div class="arrow">↓</div>
           <div class="box decision">
-            <div class="box-title">Enum FlowLogRunType (12 valores)</div>
+            <div class="box-title"><span data-en="FlowLogRunType enum (12 values)" data-pt="Enum FlowLogRunType (12 valores)">FlowLogRunType enum (12 values)</span></div>
             <div class="code-block">
 <span class="k">export enum</span> <span class="t">FlowLogRunType</span> {
   API = <span class="s">'api'</span>,
@@ -259,7 +264,7 @@
   LIBRARY_NODE = <span class="s">'library-node'</span>,
   CRONJOB = <span class="s">'cronjob'</span>,
   EMAIL = <span class="s">'email'</span>,
-  MANUAL = <span class="s">'manual'</span>,  <span class="c">// NUNCA atribuído por este switch</span>
+  MANUAL = <span class="s">'manual'</span>,  <span class="c">// NEVER assigned by this switch</span>
   MCP = <span class="s">'mcp'</span>,
 }
             </div>
@@ -268,21 +273,20 @@
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Por que .includes() no default?</div>
-            <code>flow-caller-node</code> e <code>library-node</code> às vezes chegam com sufixo contextual (por exemplo, o nome do node que disparou). O <code>.includes()</code> deixa isso passar sem quebrar. Os outros 8 casos são strings exatas porque vêm de fontes controladas (controllers específicos).
+            <div class="aside-title">🎯 <span data-en="Why .includes() in the default?" data-pt="Por que .includes() no default?">Why .includes() in the default?</span></div>
+            <span data-en="&lt;code&gt;flow-caller-node&lt;/code&gt; and &lt;code&gt;library-node&lt;/code&gt; sometimes arrive with a contextual suffix (for example, the name of the node that fired). &lt;code&gt;.includes()&lt;/code&gt; lets them through without breaking. The other 8 cases are exact strings because they come from controlled sources (specific controllers)." data-pt="&lt;code&gt;flow-caller-node&lt;/code&gt; e &lt;code&gt;library-node&lt;/code&gt; às vezes chegam com sufixo contextual (por exemplo, o nome do node que disparou). O &lt;code&gt;.includes()&lt;/code&gt; deixa isso passar sem quebrar. Os outros 8 casos são strings exatas porque vêm de fontes controladas (controllers específicos)."><code>flow-caller-node</code> and <code>library-node</code> sometimes arrive with a contextual suffix (for example, the name of the node that fired). <code>.includes()</code> lets them through without breaking. The other 8 cases are exact strings because they come from controlled sources (specific controllers).</span>
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ MANUAL não é atingível aqui</div>
-            O enum tem <code>MANUAL = 'manual'</code>, mas não há case para <code>'manual'</code>. Se alguém passar <code>runType: 'manual'</code>, cai no default sem match e vira <code>WEBHOOK</code>. Bug potencial se um dia um caller começar a usar essa string esperando <code>MANUAL</code>.
-            <br><br><code>MANUAL</code> só aparece no enum. Não há lugar no repo usando essa string via <code>runType</code>. Provavelmente vestigial ou usado em testes e seed.
+            <div class="aside-title">⚠️ <span data-en="MANUAL is not reachable here" data-pt="MANUAL não é atingível aqui">MANUAL is not reachable here</span></div>
+            <span data-en="The enum has &lt;code&gt;MANUAL = 'manual'&lt;/code&gt;, but there is no case for &lt;code&gt;'manual'&lt;/code&gt;. If someone passes &lt;code&gt;runType: 'manual'&lt;/code&gt;, it lands in the default without a match and becomes &lt;code&gt;WEBHOOK&lt;/code&gt;. A potential bug if some caller ever starts using that string expecting &lt;code&gt;MANUAL&lt;/code&gt;.&lt;br&gt;&lt;br&gt;&lt;code&gt;MANUAL&lt;/code&gt; only shows up in the enum. There is no place in the repo using that string via &lt;code&gt;runType&lt;/code&gt;. Probably vestigial or used in tests and seeds." data-pt="O enum tem &lt;code&gt;MANUAL = 'manual'&lt;/code&gt;, mas não há case para &lt;code&gt;'manual'&lt;/code&gt;. Se alguém passar &lt;code&gt;runType: 'manual'&lt;/code&gt;, cai no default sem match e vira &lt;code&gt;WEBHOOK&lt;/code&gt;. Bug potencial se um dia um caller começar a usar essa string esperando &lt;code&gt;MANUAL&lt;/code&gt;.&lt;br&gt;&lt;br&gt;&lt;code&gt;MANUAL&lt;/code&gt; só aparece no enum. Não há lugar no repo usando essa string via &lt;code&gt;runType&lt;/code&gt;. Provavelmente vestigial ou usado em testes e seed.">The enum has <code>MANUAL = 'manual'</code>, but there is no case for <code>'manual'</code>. If someone passes <code>runType: 'manual'</code>, it lands in the default without a match and becomes <code>WEBHOOK</code>. A potential bug if some caller ever starts using that string expecting <code>MANUAL</code>.<br><br><code>MANUAL</code> only shows up in the enum. There is no place in the repo using that string via <code>runType</code>. Probably vestigial or used in tests and seeds.</span>
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ Precedência do .includes()</div>
-            <code>if (v.includes('flow-caller-node'))</code> vem antes de <code>library-node</code>. Se uma string contivesse ambas (não é um caso real, mas é válido em JavaScript), ganha <code>FLOW_CALLER_NODE</code>. A ordem importa se um dia colidirem.
+            <div class="aside-title">⚠️ <span data-en=".includes() precedence" data-pt="Precedência do .includes()">.includes() precedence</span></div>
+            <span data-en="&lt;code&gt;if (v.includes('flow-caller-node'))&lt;/code&gt; comes before &lt;code&gt;library-node&lt;/code&gt;. If a string were to contain both (not a real case, but valid in JavaScript), &lt;code&gt;FLOW_CALLER_NODE&lt;/code&gt; wins. The order matters if they ever collide." data-pt="&lt;code&gt;if (v.includes('flow-caller-node'))&lt;/code&gt; vem antes de &lt;code&gt;library-node&lt;/code&gt;. Se uma string contivesse ambas (não é um caso real, mas é válido em JavaScript), ganha &lt;code&gt;FLOW_CALLER_NODE&lt;/code&gt;. A ordem importa se um dia colidirem."><code>if (v.includes('flow-caller-node'))</code> comes before <code>library-node</code>. If a string were to contain both (not a real case, but valid in JavaScript), <code>FLOW_CALLER_NODE</code> wins. The order matters if they ever collide.</span>
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 Origem de runType</div>
-            Controllers em <code>flux.controller.ts</code> passam strings hardcoded quando chamam <code>apiV2</code>. Por exemplo, o chatbot passa <code>'chatbot'</code>, o cronJobs.service passa <code>'cronjob'</code> e o mcp-call.controller passa <code>'mcp'</code>. Não vem do body do request.
+            <div class="aside-title">🔧 <span data-en="Origin of runType" data-pt="Origem de runType">Origin of runType</span></div>
+            <span data-en="Controllers in &lt;code&gt;flux.controller.ts&lt;/code&gt; pass hardcoded strings when they call &lt;code&gt;apiV2&lt;/code&gt;. For example, the chatbot passes &lt;code&gt;'chatbot'&lt;/code&gt;, cronJobs.service passes &lt;code&gt;'cronjob'&lt;/code&gt;, and mcp-call.controller passes &lt;code&gt;'mcp'&lt;/code&gt;. It does not come from the request body." data-pt="Controllers em &lt;code&gt;flux.controller.ts&lt;/code&gt; passam strings hardcoded quando chamam &lt;code&gt;apiV2&lt;/code&gt;. Por exemplo, o chatbot passa &lt;code&gt;'chatbot'&lt;/code&gt;, o cronJobs.service passa &lt;code&gt;'cronjob'&lt;/code&gt; e o mcp-call.controller passa &lt;code&gt;'mcp'&lt;/code&gt;. Não vem do body do request.">Controllers in <code>flux.controller.ts</code> pass hardcoded strings when they call <code>apiV2</code>. For example, the chatbot passes <code>'chatbot'</code>, cronJobs.service passes <code>'cronjob'</code>, and mcp-call.controller passes <code>'mcp'</code>. It does not come from the request body.</span>
           </div>
         </div>
       </div>
@@ -294,19 +298,19 @@
     <div class="fn-card-header">
       <div class="fn-title">
         <span class="badge migrated" style="background:#3B82F6;color:white">B</span>
-        <code>Onde runTypeEnum é consumido</code>
+        <code><span data-en="Where runTypeEnum is consumed" data-pt="Onde runTypeEnum é consumido">Where runTypeEnum is consumed</span></code>
       </div>
       <div class="fn-loc">flux.service.ts:4875, 4901, 5408</div>
     </div>
     <div class="fn-card-body">
       <div class="fn-signature">
-        // 3 pontos de consumo, todos de metadata (billing e relatório)
+        <span data-en="// 3 consumption points, all metadata (billing and reporting)" data-pt="// 3 pontos de consumo, todos de metadata (billing e relatório)">// 3 consumption points, all metadata (billing and reporting)</span>
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> <code>runTypeEnum</code> é metadata write-only. Nunca controla lógica de execução. É apenas gravado em logs (FlowLog e SpaceRunLog) para analytics e billing filtrarem depois. Zero uso em decisões de fluxo.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; &lt;code&gt;runTypeEnum&lt;/code&gt; is write-only metadata. It never controls execution logic. It is only written to logs (FlowLog and SpaceRunLog) so analytics and billing can filter later. Zero use in flow decisions." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; &lt;code&gt;runTypeEnum&lt;/code&gt; é metadata write-only. Nunca controla lógica de execução. É apenas gravado em logs (FlowLog e SpaceRunLog) para analytics e billing filtrarem depois. Zero uso em decisões de fluxo."><strong>Purpose.</strong> <code>runTypeEnum</code> is write-only metadata. It never controls execution logic. It is only written to logs (FlowLog and SpaceRunLog) so analytics and billing can filter later. Zero use in flow decisions.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Depois de resolvida, essa variável serve apenas para marcar. Funciona como um carimbo no relatório. Vai para três lugares e não influencia mais nada. Primeiro, o FlowLog que registra a execução inteira no Postgres. Segundo, o RunLogDoc que vira registro no Mongo do SpaceRunLog. Terceiro, o mesmo RunLogDoc no caminho de erro (quando a execução falha). Todas as três chamadas passam <code>runTypeEnum</code> como campo puro de metadata. Nunca há um <code>if (runTypeEnum === CHATBOT)</code> no meio do loop. O comportamento em runtime é o mesmo para todos os tipos.
+        <span data-en="&lt;strong&gt;In short.&lt;/strong&gt; Once resolved, this variable only serves as a label. It works like a stamp in the report. It goes to three places and does not influence anything else. First, the FlowLog that records the entire execution in Postgres. Second, the RunLogDoc that becomes a Mongo record in SpaceRunLog. Third, the same RunLogDoc in the error path (when the execution fails). All three calls pass &lt;code&gt;runTypeEnum&lt;/code&gt; as pure metadata field. There is never an &lt;code&gt;if (runTypeEnum === CHATBOT)&lt;/code&gt; in the middle of the loop. The runtime behavior is the same for every type." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Depois de resolvida, essa variável serve apenas para marcar. Funciona como um carimbo no relatório. Vai para três lugares e não influencia mais nada. Primeiro, o FlowLog que registra a execução inteira no Postgres. Segundo, o RunLogDoc que vira registro no Mongo do SpaceRunLog. Terceiro, o mesmo RunLogDoc no caminho de erro (quando a execução falha). Todas as três chamadas passam &lt;code&gt;runTypeEnum&lt;/code&gt; como campo puro de metadata. Nunca há um &lt;code&gt;if (runTypeEnum === CHATBOT)&lt;/code&gt; no meio do loop. O comportamento em runtime é o mesmo para todos os tipos."><strong>In short.</strong> Once resolved, this variable only serves as a label. It works like a stamp in the report. It goes to three places and does not influence anything else. First, the FlowLog that records the entire execution in Postgres. Second, the RunLogDoc that becomes a Mongo record in SpaceRunLog. Third, the same RunLogDoc in the error path (when the execution fails). All three calls pass <code>runTypeEnum</code> as pure metadata field. There is never an <code>if (runTypeEnum === CHATBOT)</code> in the middle of the loop. The runtime behavior is the same for every type.</span>
       </div>
 
       <div class="fn-body-cols">
@@ -314,14 +318,14 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">B1</span> flowLogsService.createLog</div>
             <div class="box-desc">
-              Passo 4.3. Grava uma linha em <code>flow_log</code> no Postgres com <code>run_type: runTypeEnum</code>.
+              <span data-en="Step 4.3. Writes a row in &lt;code&gt;flow_log&lt;/code&gt; in Postgres with &lt;code&gt;run_type: runTypeEnum&lt;/code&gt;." data-pt="Passo 4.3. Grava uma linha em &lt;code&gt;flow_log&lt;/code&gt; no Postgres com &lt;code&gt;run_type: runTypeEnum&lt;/code&gt;.">Step 4.3. Writes a row in <code>flow_log</code> in Postgres with <code>run_type: runTypeEnum</code>.</span>
             </div>
             <div class="code-block">
 <span class="k">await</span> <span class="k">this</span>.flowLogsService.createLog({
   status: logStatus,
   spent_tokens: totalTokensUsed,
   cost: totalCost,
-  <span class="t">run_type</span>: runTypeEnum,  <span class="c">// ← aqui</span>
+  <span class="t">run_type</span>: runTypeEnum,  <span class="c">// ← here</span>
   flowId: getFlow.id,
   mcpTokenId,
   ...
@@ -331,38 +335,37 @@
           </div>
           <div class="arrow">↓</div>
           <div class="box cross">
-            <div class="box-title"><span class="badge step">B2</span> runLogDoc.runType (caminho de sucesso)</div>
+            <div class="box-title"><span class="badge step">B2</span> <span data-en="runLogDoc.runType (success path)" data-pt="runLogDoc.runType (caminho de sucesso)">runLogDoc.runType (success path)</span></div>
             <div class="box-desc">
-              Passo 4.4. <code>runLogDoc.runType = runTypeEnum</code> antes de <code>flushNow</code> para o SpaceRunLog.
-              <br><br>Só entra se a execução tem <code>spaceOwnerId</code>, <code>loggingEnabled = true</code> e não é nested.
+              <span data-en="Step 4.4. &lt;code&gt;runLogDoc.runType = runTypeEnum&lt;/code&gt; before &lt;code&gt;flushNow&lt;/code&gt; to SpaceRunLog.&lt;br&gt;&lt;br&gt;Only entered if the execution has &lt;code&gt;spaceOwnerId&lt;/code&gt;, &lt;code&gt;loggingEnabled = true&lt;/code&gt;, and is not nested." data-pt="Passo 4.4. &lt;code&gt;runLogDoc.runType = runTypeEnum&lt;/code&gt; antes de &lt;code&gt;flushNow&lt;/code&gt; para o SpaceRunLog.&lt;br&gt;&lt;br&gt;Só entra se a execução tem &lt;code&gt;spaceOwnerId&lt;/code&gt;, &lt;code&gt;loggingEnabled = true&lt;/code&gt; e não é nested.">Step 4.4. <code>runLogDoc.runType = runTypeEnum</code> before <code>flushNow</code> to SpaceRunLog.<br><br>Only entered if the execution has <code>spaceOwnerId</code>, <code>loggingEnabled = true</code>, and is not nested.</span>
             </div>
             <div class="box-file">flux.service.ts:4900-4907</div>
           </div>
           <div class="arrow">↓</div>
           <div class="box cross">
-            <div class="box-title"><span class="badge step">B3</span> Caminho de erro. flushNow com runTypeEnum</div>
+            <div class="box-title"><span class="badge step">B3</span> <span data-en="Error path. flushNow with runTypeEnum" data-pt="Caminho de erro. flushNow com runTypeEnum">Error path. flushNow with runTypeEnum</span></div>
             <div class="box-desc">
-              <code>catch { ... flushNow({...}); ... }</code>. Mesma assinatura, mas no catch. A chamada em L5352 não atribui <code>runLogDoc.runType</code> explicitamente. O collector já persistiu na criação.
+              <code>catch { ... flushNow({...}); ... }</code>. <span data-en="Same signature, but in the catch. The L5352 call does not assign &lt;code&gt;runLogDoc.runType&lt;/code&gt; explicitly. The collector already persisted it at creation." data-pt="Mesma assinatura, mas no catch. A chamada em L5352 não atribui &lt;code&gt;runLogDoc.runType&lt;/code&gt; explicitamente. O collector já persistiu na criação.">Same signature, but in the catch. The L5352 call does not assign <code>runLogDoc.runType</code> explicitly. The collector already persisted it at creation.</span>
             </div>
             <div class="box-file">flux.service.ts:5342-5358</div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Só metadata, não execução</div>
-            Buscas no repo confirmam. <code>runTypeEnum</code> aparece apenas nessas 3 linhas de consumo, fora da declaração. Não há <code>if (runTypeEnum === ...)</code> em nenhum lugar. É apenas campo de log.
+            <div class="aside-title">🎯 <span data-en="Metadata only, not execution" data-pt="Só metadata, não execução">Metadata only, not execution</span></div>
+            <span data-en="Repo searches confirm it. &lt;code&gt;runTypeEnum&lt;/code&gt; only appears in these 3 consumption lines outside the declaration. There is no &lt;code&gt;if (runTypeEnum === ...)&lt;/code&gt; anywhere. It is just a log field." data-pt="Buscas no repo confirmam. &lt;code&gt;runTypeEnum&lt;/code&gt; aparece apenas nessas 3 linhas de consumo, fora da declaração. Não há &lt;code&gt;if (runTypeEnum === ...)&lt;/code&gt; em nenhum lugar. É apenas campo de log.">Repo searches confirm it. <code>runTypeEnum</code> only appears in these 3 consumption lines outside the declaration. There is no <code>if (runTypeEnum === ...)</code> anywhere. It is just a log field.</span>
           </div>
           <div class="aside">
-            <div class="aside-title">📎 Nota sobre runTypeValue</div>
-            A string <code>runTypeValue</code> (não o enum) é usada em outros lugares. Por exemplo, <code>shouldWatchCancellation({ runType: runTypeValue })</code> em L3239-3242. <code>runTypeValue</code> tem impacto em execução via cancel watch. <code>runTypeEnum</code> não tem.
+            <div class="aside-title">📎 <span data-en="Note on runTypeValue" data-pt="Nota sobre runTypeValue">Note on runTypeValue</span></div>
+            <span data-en="The &lt;code&gt;runTypeValue&lt;/code&gt; string (not the enum) is used in other places. For example, &lt;code&gt;shouldWatchCancellation({ runType: runTypeValue })&lt;/code&gt; at L3239-3242. &lt;code&gt;runTypeValue&lt;/code&gt; has execution impact via cancel watch. &lt;code&gt;runTypeEnum&lt;/code&gt; does not." data-pt="A string &lt;code&gt;runTypeValue&lt;/code&gt; (não o enum) é usada em outros lugares. Por exemplo, &lt;code&gt;shouldWatchCancellation({ runType: runTypeValue })&lt;/code&gt; em L3239-3242. &lt;code&gt;runTypeValue&lt;/code&gt; tem impacto em execução via cancel watch. &lt;code&gt;runTypeEnum&lt;/code&gt; não tem.">The <code>runTypeValue</code> string (not the enum) is used in other places. For example, <code>shouldWatchCancellation({ runType: runTypeValue })</code> at L3239-3242. <code>runTypeValue</code> has execution impact via cancel watch. <code>runTypeEnum</code> does not.</span>
           </div>
           <div class="aside">
-            <div class="aside-title">📎 Skip do loggingEnabled</div>
-            No log de gate em L2418, se <code>runType</code> for <code>'manual'</code> ou <code>'chatbot'</code> (lowercase da string original), o SpaceRunLog não captura. Isso vale mesmo com <code>spaceLoggingEnabled = true</code>. É outro consumidor da string, não do enum.
+            <div class="aside-title">📎 <span data-en="loggingEnabled skip" data-pt="Skip do loggingEnabled">loggingEnabled skip</span></div>
+            <span data-en="In the gate log at L2418, if &lt;code&gt;runType&lt;/code&gt; is &lt;code&gt;'manual'&lt;/code&gt; or &lt;code&gt;'chatbot'&lt;/code&gt; (lowercase of the original string), SpaceRunLog does not capture. This applies even with &lt;code&gt;spaceLoggingEnabled = true&lt;/code&gt;. It is another string consumer, not the enum." data-pt="No log de gate em L2418, se &lt;code&gt;runType&lt;/code&gt; for &lt;code&gt;'manual'&lt;/code&gt; ou &lt;code&gt;'chatbot'&lt;/code&gt; (lowercase da string original), o SpaceRunLog não captura. Isso vale mesmo com &lt;code&gt;spaceLoggingEnabled = true&lt;/code&gt;. É outro consumidor da string, não do enum.">In the gate log at L2418, if <code>runType</code> is <code>'manual'</code> or <code>'chatbot'</code> (lowercase of the original string), SpaceRunLog does not capture. This applies even with <code>spaceLoggingEnabled = true</code>. It is another string consumer, not the enum.</span>
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 Impacto downstream</div>
-            Filtros de dashboard, exports de billing e analytics. Todos leem o <code>run_type</code> gravado. Se o switch mapear errado, o dashboard classifica a execução no bucket errado (WEBHOOK em vez de CHATBOT, por exemplo).
+            <div class="aside-title">🔧 <span data-en="Downstream impact" data-pt="Impacto downstream">Downstream impact</span></div>
+            <span data-en="Dashboard filters, billing exports, and analytics. All read the recorded &lt;code&gt;run_type&lt;/code&gt;. If the switch maps incorrectly, the dashboard classifies the execution into the wrong bucket (WEBHOOK instead of CHATBOT, for example)." data-pt="Filtros de dashboard, exports de billing e analytics. Todos leem o &lt;code&gt;run_type&lt;/code&gt; gravado. Se o switch mapear errado, o dashboard classifica a execução no bucket errado (WEBHOOK em vez de CHATBOT, por exemplo).">Dashboard filters, billing exports, and analytics. All read the recorded <code>run_type</code>. If the switch maps incorrectly, the dashboard classifies the execution into the wrong bucket (WEBHOOK instead of CHATBOT, for example).</span>
           </div>
         </div>
       </div>
@@ -370,26 +373,27 @@
   </div>
 
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo. O que sai de 1.0b:</strong>
-    <br><code>runTypeValue</code>. String normalizada, com fallback para <code>'webhook'</code>.
-    <br><code>runTypeEnum</code>. Valor de <code>FlowLogRunType</code>. Um dos 11 valores atingíveis via switch.
-    <br>Zero I/O, zero throw. É apenas string para enum lookup.
-    <br>Uso downstream. Só em <code>createLog</code> (passo 4.3), <code>flushNow</code> sucesso (4.4) e caminho de erro (5.x).
+    <span data-en="&lt;strong&gt;Summary. What comes out of 1.0b:&lt;/strong&gt;&lt;br&gt;&lt;code&gt;runTypeValue&lt;/code&gt;. Normalized string with &lt;code&gt;'webhook'&lt;/code&gt; fallback.&lt;br&gt;&lt;code&gt;runTypeEnum&lt;/code&gt;. A &lt;code&gt;FlowLogRunType&lt;/code&gt; value. One of the 11 values reachable via the switch.&lt;br&gt;Zero I/O, zero throw. Just string-to-enum lookup.&lt;br&gt;Downstream use. Only in &lt;code&gt;createLog&lt;/code&gt; (step 4.3), success &lt;code&gt;flushNow&lt;/code&gt; (4.4), and the error path (5.x)." data-pt="&lt;strong&gt;Resumo. O que sai de 1.0b:&lt;/strong&gt;&lt;br&gt;&lt;code&gt;runTypeValue&lt;/code&gt;. String normalizada, com fallback para &lt;code&gt;'webhook'&lt;/code&gt;.&lt;br&gt;&lt;code&gt;runTypeEnum&lt;/code&gt;. Valor de &lt;code&gt;FlowLogRunType&lt;/code&gt;. Um dos 11 valores atingíveis via switch.&lt;br&gt;Zero I/O, zero throw. É apenas string para enum lookup.&lt;br&gt;Uso downstream. Só em &lt;code&gt;createLog&lt;/code&gt; (passo 4.3), &lt;code&gt;flushNow&lt;/code&gt; sucesso (4.4) e caminho de erro (5.x)."><strong>Summary. What comes out of 1.0b:</strong>
+    <br><code>runTypeValue</code>. Normalized string with <code>'webhook'</code> fallback.
+    <br><code>runTypeEnum</code>. A <code>FlowLogRunType</code> value. One of the 11 values reachable via the switch.
+    <br>Zero I/O, zero throw. Just string-to-enum lookup.
+    <br>Downstream use. Only in <code>createLog</code> (step 4.3), success <code>flushNow</code> (4.4), and the error path (5.x).</span>
   </div>
 
   <div class="note">
-    <strong>Observações para migração:</strong>
-    <br>Trivialmente replicável. É um switch. Pode ir para o worker ou ficar no backend antes de start-args, sem diferença.
-    <br>Se o worker gerar o FlowLog diretamente, precisa receber a string <code>runType</code> e replicar o mesmo mapeamento, incluindo os <code>.includes()</code> do default.
-    <br>Atenção. O enum <code>MANUAL</code> não é atingido por esse switch. Se algum caminho novo passar <code>'manual'</code> esperando o enum <code>MANUAL</code>, precisa adicionar <code>case 'manual'</code> aqui. Hoje, cai silenciosamente em <code>WEBHOOK</code>.
-    <br>Uso puramente metadata. Não afeta execução. Prioridade baixa na migração. Pode ficar por último.
+    <span data-en="&lt;strong&gt;Notes for migration:&lt;/strong&gt;&lt;br&gt;Trivially replicable. It is a switch. Can go to the worker or stay on the backend before start-args, no difference.&lt;br&gt;If the worker builds the FlowLog directly, it needs to receive the &lt;code&gt;runType&lt;/code&gt; string and replicate the same mapping, including the default &lt;code&gt;.includes()&lt;/code&gt; branches.&lt;br&gt;Warning. The &lt;code&gt;MANUAL&lt;/code&gt; enum is not reached by this switch. If a new path ever passes &lt;code&gt;'manual'&lt;/code&gt; expecting the &lt;code&gt;MANUAL&lt;/code&gt; enum, you need to add &lt;code&gt;case 'manual'&lt;/code&gt; here. Today it silently falls through to &lt;code&gt;WEBHOOK&lt;/code&gt;.&lt;br&gt;Metadata-only usage. Does not affect execution. Low priority for migration. Can go last." data-pt="&lt;strong&gt;Observações para migração:&lt;/strong&gt;&lt;br&gt;Trivialmente replicável. É um switch. Pode ir para o worker ou ficar no backend antes de start-args, sem diferença.&lt;br&gt;Se o worker gerar o FlowLog diretamente, precisa receber a string &lt;code&gt;runType&lt;/code&gt; e replicar o mesmo mapeamento, incluindo os &lt;code&gt;.includes()&lt;/code&gt; do default.&lt;br&gt;Atenção. O enum &lt;code&gt;MANUAL&lt;/code&gt; não é atingido por esse switch. Se algum caminho novo passar &lt;code&gt;'manual'&lt;/code&gt; esperando o enum &lt;code&gt;MANUAL&lt;/code&gt;, precisa adicionar &lt;code&gt;case 'manual'&lt;/code&gt; aqui. Hoje, cai silenciosamente em &lt;code&gt;WEBHOOK&lt;/code&gt;.&lt;br&gt;Uso puramente metadata. Não afeta execução. Prioridade baixa na migração. Pode ficar por último."><strong>Notes for migration:</strong>
+    <br>Trivially replicable. It is a switch. Can go to the worker or stay on the backend before start-args, no difference.
+    <br>If the worker builds the FlowLog directly, it needs to receive the <code>runType</code> string and replicate the same mapping, including the default <code>.includes()</code> branches.
+    <br>Warning. The <code>MANUAL</code> enum is not reached by this switch. If a new path ever passes <code>'manual'</code> expecting the <code>MANUAL</code> enum, you need to add <code>case 'manual'</code> here. Today it silently falls through to <code>WEBHOOK</code>.
+    <br>Metadata-only usage. Does not affect execution. Low priority for migration. Can go last.</span>
   </div>
 
   <div class="page-footer-nav">
-    <a href="../index.html#step-1-0b" class="back-btn">← Voltar ao diagrama principal</a>
+    <a href="../index.html#step-1-0b" class="back-btn"><span data-en="← Back to main diagram" data-pt="← Voltar ao diagrama principal">← Back to main diagram</span></a>
   </div>
 
 </div>
+<script src="../_assets/i18n.js" defer></script>
 <script>
 (function() {
   function toggle(card) { if (card) card.classList.toggle('collapsed'); }

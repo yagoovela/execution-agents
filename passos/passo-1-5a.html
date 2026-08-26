@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Passo 1.5a — stripStaleErrorState + montagem de edges | Detalhamento</title>
+<link rel="stylesheet" href="../_assets/i18n.css">
+<title>Step 1.5a — stripStaleErrorState + edge assembly | Detail</title>
 <style>
   * { box-sizing: border-box; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F1F5F9; color: #0F172A; margin: 0; padding: 32px 24px 80px; line-height: 1.4; }
@@ -111,47 +112,51 @@
 
   <div class="page-nav">
     <div class="breadcrumb">
-      <a href="../index.html">📋 Execução de Agente</a>
+      <a href="../index.html"><span data-en="📋 Agent execution" data-pt="📋 Execução de Agente">📋 Agent execution</span></a>
       <span class="sep">›</span>
-      <span>Passo 1.5a — Detalhamento</span>
+      <span data-en="Step 1.5a — Detail" data-pt="Passo 1.5a — Detalhamento">Step 1.5a — Detail</span>
     </div>
-    <a href="../index.html#step-1-5a" class="back-btn">← Voltar ao diagrama</a>
+    <a href="../index.html#step-1-5a" class="back-btn"><span data-en="← Back to diagram" data-pt="← Voltar ao diagrama">← Back to diagram</span></a>
+    <div class="lang-sw" role="group" aria-label="Language">
+      <button type="button" data-lang="en" aria-pressed="true">EN-US</button>
+      <button type="button" data-lang="pt" aria-pressed="false">PT-BR</button>
+    </div>
   </div>
 
   <div class="page-header">
     <span class="icon">🧹</span>
-    <h1>Passo 1.5a — stripStaleErrorState + montagem de edges</h1>
+    <h1><span data-en="Step 1.5a — stripStaleErrorState + edge assembly" data-pt="Passo 1.5a — stripStaleErrorState + montagem de edges">Step 1.5a — stripStaleErrorState + edge assembly</span></h1>
   </div>
   <div class="page-sub">
-    Bloco em <code>flux.service.ts:2513-2520</code>. Higieniza os nodes da execução anterior. Remove o error-state acumulado (<code>errorMessage</code>, <code>errorStatusCode</code>, <code>hasExecutionError</code>). Reduz cada edge a apenas os 5 campos que o scheduler realmente lê. A implementação de <code>stripStaleErrorState</code> está em <code>flux.service.ts:444-459</code>.
+    <span data-en="Block in &lt;code&gt;flux.service.ts:2513-2520&lt;/code&gt;. Sanitizes the nodes from the previous execution. Removes accumulated error state (&lt;code&gt;errorMessage&lt;/code&gt;, &lt;code&gt;errorStatusCode&lt;/code&gt;, &lt;code&gt;hasExecutionError&lt;/code&gt;). Reduces each edge to only the 5 fields the scheduler actually reads. The &lt;code&gt;stripStaleErrorState&lt;/code&gt; implementation is at &lt;code&gt;flux.service.ts:444-459&lt;/code&gt;." data-pt="Bloco em &lt;code&gt;flux.service.ts:2513-2520&lt;/code&gt;. Higieniza os nodes da execução anterior. Remove o error-state acumulado (&lt;code&gt;errorMessage&lt;/code&gt;, &lt;code&gt;errorStatusCode&lt;/code&gt;, &lt;code&gt;hasExecutionError&lt;/code&gt;). Reduz cada edge a apenas os 5 campos que o scheduler realmente lê. A implementação de &lt;code&gt;stripStaleErrorState&lt;/code&gt; está em &lt;code&gt;flux.service.ts:444-459&lt;/code&gt;.">Block in <code>flux.service.ts:2513-2520</code>. Sanitizes the nodes from the previous execution. Removes accumulated error state (<code>errorMessage</code>, <code>errorStatusCode</code>, <code>hasExecutionError</code>). Reduces each edge to only the 5 fields the scheduler actually reads. The <code>stripStaleErrorState</code> implementation is at <code>flux.service.ts:444-459</code>.</span>
   </div>
 
   <div class="step-friendly">
-    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <div class="step-friendly-title"><span data-en="In summary — what this step does" data-pt="Em resumo — o que esse passo faz">In summary — what this step does</span></div>
     <ul>
-      <li><strong>Limpa restos de erros anteriores em cada node.</strong> Se a execução anterior falhou e deixou <code>errorMessage</code>, <code>errorStatusCode</code> ou <code>hasExecutionError</code> gravados no <code>node.data</code> (via <code>persistNodeSuccess</code> na fase 4), esta função remove. Evita que o coletor de erros do passo 4.2 confunda erro antigo com erro da execução atual.</li>
-      <li><strong>Cai um nível de profundidade adicional.</strong> Se <code>node.data.text</code> é objeto (não string), também limpa <code>errorMessage</code> e <code>errorStatusCode</code> lá dentro. Cobre o caso do <code>commandContentNode</code>, que grava erros dentro de <code>data.text.errorMessage</code>.</li>
-      <li><strong>Retorna um array novo (imutável).</strong> Nada é mutado in-place. <code>.map(node =&gt; ...)</code> devolve nodes novos com <code>data</code> spread. É crítico. As versões originais no banco não devem ser modificadas até que <code>persistNodeSuccess</code> escreva de novo.</li>
-      <li><strong>Reduz cada edge ao shape mínimo.</strong> Pega só <code>{ id, source, sourceHandle, target, targetHandle }</code>. Descarta <code>data</code>, <code>type</code>, coordenadas e style. Tudo que o frontend usa, mas o scheduler não precisa. Reduz footprint em memória quando o loop principal iterar centenas de vezes lendo edges.</li>
-      <li><strong>Downstream.</strong> O array retornado é atribuído a <code>const nodes = ...</code>. Vira <code>let updatedFlows = [...nodes]</code> na linha 2523. A partir daqui, esse é o array canônico da execução inteira. Os <code>edges</code> viram source of truth para o scheduler encontrar next nodes.</li>
+      <li><span data-en="&lt;strong&gt;Cleans leftovers of previous errors on each node.&lt;/strong&gt; If the previous execution failed and left &lt;code&gt;errorMessage&lt;/code&gt;, &lt;code&gt;errorStatusCode&lt;/code&gt; or &lt;code&gt;hasExecutionError&lt;/code&gt; written to &lt;code&gt;node.data&lt;/code&gt; (via &lt;code&gt;persistNodeSuccess&lt;/code&gt; in phase 4), this function removes them. Prevents the error collector in step 4.2 from confusing old error with current execution error." data-pt="&lt;strong&gt;Limpa restos de erros anteriores em cada node.&lt;/strong&gt; Se a execução anterior falhou e deixou &lt;code&gt;errorMessage&lt;/code&gt;, &lt;code&gt;errorStatusCode&lt;/code&gt; ou &lt;code&gt;hasExecutionError&lt;/code&gt; gravados no &lt;code&gt;node.data&lt;/code&gt; (via &lt;code&gt;persistNodeSuccess&lt;/code&gt; na fase 4), esta função remove. Evita que o coletor de erros do passo 4.2 confunda erro antigo com erro da execução atual."><strong>Cleans leftovers of previous errors on each node.</strong> If the previous execution failed and left <code>errorMessage</code>, <code>errorStatusCode</code> or <code>hasExecutionError</code> written to <code>node.data</code> (via <code>persistNodeSuccess</code> in phase 4), this function removes them. Prevents the error collector in step 4.2 from confusing old error with current execution error.</span></li>
+      <li><span data-en="&lt;strong&gt;Descends one extra level.&lt;/strong&gt; If &lt;code&gt;node.data.text&lt;/code&gt; is an object (not a string), also clears &lt;code&gt;errorMessage&lt;/code&gt; and &lt;code&gt;errorStatusCode&lt;/code&gt; in there. Covers the &lt;code&gt;commandContentNode&lt;/code&gt; case, which writes errors inside &lt;code&gt;data.text.errorMessage&lt;/code&gt;." data-pt="&lt;strong&gt;Cai um nível de profundidade adicional.&lt;/strong&gt; Se &lt;code&gt;node.data.text&lt;/code&gt; é objeto (não string), também limpa &lt;code&gt;errorMessage&lt;/code&gt; e &lt;code&gt;errorStatusCode&lt;/code&gt; lá dentro. Cobre o caso do &lt;code&gt;commandContentNode&lt;/code&gt;, que grava erros dentro de &lt;code&gt;data.text.errorMessage&lt;/code&gt;."><strong>Descends one extra level.</strong> If <code>node.data.text</code> is an object (not a string), also clears <code>errorMessage</code> and <code>errorStatusCode</code> in there. Covers the <code>commandContentNode</code> case, which writes errors inside <code>data.text.errorMessage</code>.</span></li>
+      <li><span data-en="&lt;strong&gt;Returns a fresh array (immutable).&lt;/strong&gt; Nothing is mutated in-place. &lt;code&gt;.map(node =&amp;gt; ...)&lt;/code&gt; returns new nodes with spread &lt;code&gt;data&lt;/code&gt;. Critical. The original versions in the database must not be modified until &lt;code&gt;persistNodeSuccess&lt;/code&gt; writes again." data-pt="&lt;strong&gt;Retorna um array novo (imutável).&lt;/strong&gt; Nada é mutado in-place. &lt;code&gt;.map(node =&amp;gt; ...)&lt;/code&gt; devolve nodes novos com &lt;code&gt;data&lt;/code&gt; spread. É crítico. As versões originais no banco não devem ser modificadas até que &lt;code&gt;persistNodeSuccess&lt;/code&gt; escreva de novo."><strong>Returns a fresh array (immutable).</strong> Nothing is mutated in-place. <code>.map(node =&gt; ...)</code> returns new nodes with spread <code>data</code>. Critical. The original versions in the database must not be modified until <code>persistNodeSuccess</code> writes again.</span></li>
+      <li><span data-en="&lt;strong&gt;Reduces each edge to the minimal shape.&lt;/strong&gt; Keeps only &lt;code&gt;{ id, source, sourceHandle, target, targetHandle }&lt;/code&gt;. Drops &lt;code&gt;data&lt;/code&gt;, &lt;code&gt;type&lt;/code&gt;, coordinates and style. Everything the frontend uses, but the scheduler doesn't need. Reduces memory footprint when the main loop iterates hundreds of times reading edges." data-pt="&lt;strong&gt;Reduz cada edge ao shape mínimo.&lt;/strong&gt; Pega só &lt;code&gt;{ id, source, sourceHandle, target, targetHandle }&lt;/code&gt;. Descarta &lt;code&gt;data&lt;/code&gt;, &lt;code&gt;type&lt;/code&gt;, coordenadas e style. Tudo que o frontend usa, mas o scheduler não precisa. Reduz footprint em memória quando o loop principal iterar centenas de vezes lendo edges."><strong>Reduces each edge to the minimal shape.</strong> Keeps only <code>{ id, source, sourceHandle, target, targetHandle }</code>. Drops <code>data</code>, <code>type</code>, coordinates and style. Everything the frontend uses, but the scheduler doesn't need. Reduces memory footprint when the main loop iterates hundreds of times reading edges.</span></li>
+      <li><span data-en="&lt;strong&gt;Downstream.&lt;/strong&gt; The returned array is assigned to &lt;code&gt;const nodes = ...&lt;/code&gt;. Becomes &lt;code&gt;let updatedFlows = [...nodes]&lt;/code&gt; on line 2523. From here on, this is the canonical array for the entire execution. The &lt;code&gt;edges&lt;/code&gt; become source of truth for the scheduler to find next nodes." data-pt="&lt;strong&gt;Downstream.&lt;/strong&gt; O array retornado é atribuído a &lt;code&gt;const nodes = ...&lt;/code&gt;. Vira &lt;code&gt;let updatedFlows = [...nodes]&lt;/code&gt; na linha 2523. A partir daqui, esse é o array canônico da execução inteira. Os &lt;code&gt;edges&lt;/code&gt; viram source of truth para o scheduler encontrar next nodes."><strong>Downstream.</strong> The returned array is assigned to <code>const nodes = ...</code>. Becomes <code>let updatedFlows = [...nodes]</code> on line 2523. From here on, this is the canonical array for the entire execution. The <code>edges</code> become source of truth for the scheduler to find next nodes.</span></li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto.</strong> Essa higienização evita um bug clássico. Sem o strip, o coletor de erros da fase 4 (filtro <code>nodesWithError</code>) pegaria também nodes que falharam numa execução passada mas executaram OK agora. Marcaria a execução atual como falha por erro.
+    <span data-en="&lt;strong&gt;Context.&lt;/strong&gt; This sanitization prevents a classic bug. Without the strip, the phase 4 error collector (the &lt;code&gt;nodesWithError&lt;/code&gt; filter) would also pick nodes that failed in a past execution but ran OK now. It would mark the current execution as a failure." data-pt="&lt;strong&gt;Contexto.&lt;/strong&gt; Essa higienização evita um bug clássico. Sem o strip, o coletor de erros da fase 4 (filtro &lt;code&gt;nodesWithError&lt;/code&gt;) pegaria também nodes que falharam numa execução passada mas executaram OK agora. Marcaria a execução atual como falha por erro."><strong>Context.</strong> This sanitization prevents a classic bug. Without the strip, the phase 4 error collector (the <code>nodesWithError</code> filter) would also pick nodes that failed in a past execution but ran OK now. It would mark the current execution as a failure.</span>
   </div>
 
   <div class="overview-mini">
-    <div class="overview-mini-title">Cadeia em 1.5a</div>
+    <div class="overview-mini-title"><span data-en="Chain in 1.5a" data-pt="Cadeia em 1.5a">Chain in 1.5a</span></div>
     <div class="overview-chain">
       <a href="#fn-a" class="overview-chip"><span class="lbl">A</span>stripStaleErrorState(nodes)</a>
       <span class="overview-sep">→</span>
-      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>Montagem enxuta de edges</a>
+      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span><span data-en="Lean edge assembly" data-pt="Montagem enxuta de edges">Lean edge assembly</span></a>
       <span class="overview-sep">→</span>
-      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>Uso downstream (fase 4)</a>
+      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span><span data-en="Downstream use (phase 4)" data-pt="Uso downstream (fase 4)">Downstream use (phase 4)</span></a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado final. <code>const nodes</code> higienizado e <code>const edges</code> enxuto. Base do <code>updatedFlows</code> que atravessa o loop inteiro.
+      <span data-en="Final result. Sanitized &lt;code&gt;const nodes&lt;/code&gt; and lean &lt;code&gt;const edges&lt;/code&gt;. Foundation of &lt;code&gt;updatedFlows&lt;/code&gt; that carries through the entire loop." data-pt="Resultado final. &lt;code&gt;const nodes&lt;/code&gt; higienizado e &lt;code&gt;const edges&lt;/code&gt; enxuto. Base do &lt;code&gt;updatedFlows&lt;/code&gt; que atravessa o loop inteiro.">Final result. Sanitized <code>const nodes</code> and lean <code>const edges</code>. Foundation of <code>updatedFlows</code> that carries through the entire loop.</span>
     </div>
   </div>
 
@@ -169,25 +174,25 @@
         private stripStaleErrorState(nodes: any[]): any[]
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Remove o error state acumulado gravado no <code>data</code> de cada node em execuções anteriores. Se a execução passada gravou <code>errorMessage</code>, <code>errorStatusCode</code> ou <code>hasExecutionError</code> via <code>persistNodeSuccess</code>, esta função limpa antes da execução nova começar.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Removes accumulated error state written to each node's &lt;code&gt;data&lt;/code&gt; in previous executions. If the past execution wrote &lt;code&gt;errorMessage&lt;/code&gt;, &lt;code&gt;errorStatusCode&lt;/code&gt; or &lt;code&gt;hasExecutionError&lt;/code&gt; via &lt;code&gt;persistNodeSuccess&lt;/code&gt;, this function cleans them before the new execution starts." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Remove o error state acumulado gravado no &lt;code&gt;data&lt;/code&gt; de cada node em execuções anteriores. Se a execução passada gravou &lt;code&gt;errorMessage&lt;/code&gt;, &lt;code&gt;errorStatusCode&lt;/code&gt; ou &lt;code&gt;hasExecutionError&lt;/code&gt; via &lt;code&gt;persistNodeSuccess&lt;/code&gt;, esta função limpa antes da execução nova começar."><strong>Purpose.</strong> Removes accumulated error state written to each node's <code>data</code> in previous executions. If the past execution wrote <code>errorMessage</code>, <code>errorStatusCode</code> or <code>hasExecutionError</code> via <code>persistNodeSuccess</code>, this function cleans them before the new execution starts.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Cada node no banco pode ter herdado sujeira de execuções passadas. Se um <code>apiCaller</code> falhou ontem, o error message ficou salvo em <code>data.errorMessage</code>. A função percorre a lista, tira uma cópia de cada <code>data</code>, apaga as chaves <code>errorMessage</code>, <code>errorStatusCode</code> e <code>hasExecutionError</code>. Ainda desce um nível. Se <code>data.text</code> é objeto (não string), limpa lá dentro também. O <code>commandContentNode</code> historicamente aninhava erros em <code>data.text.errorMessage</code>. Retorna sempre um array novo. Nunca muta o original. Preserva o que veio do banco. Sem essa passada, o filtro <code>nodesWithError</code> na fase 4 sinalizaria falso positivo. Nodes que executaram OK, mas tinham erro de execução passada marcado, seriam contados como erros desta execução.
+        <span data-en="&lt;strong&gt;In summary.&lt;/strong&gt; Each node in the database may have inherited dirt from past executions. If an &lt;code&gt;apiCaller&lt;/code&gt; failed yesterday, the error message stayed in &lt;code&gt;data.errorMessage&lt;/code&gt;. The function walks the list, takes a copy of each &lt;code&gt;data&lt;/code&gt;, deletes the &lt;code&gt;errorMessage&lt;/code&gt;, &lt;code&gt;errorStatusCode&lt;/code&gt; and &lt;code&gt;hasExecutionError&lt;/code&gt; keys. Descends one more level. If &lt;code&gt;data.text&lt;/code&gt; is an object, cleans in there too. &lt;code&gt;commandContentNode&lt;/code&gt; historically nested errors under &lt;code&gt;data.text.errorMessage&lt;/code&gt;. Always returns a new array. Never mutates the original. Preserves what came from the database. Without this pass, the &lt;code&gt;nodesWithError&lt;/code&gt; filter in phase 4 would raise a false positive. Nodes that executed OK, but had a past error marked, would be counted as errors of this execution." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Cada node no banco pode ter herdado sujeira de execuções passadas. Se um &lt;code&gt;apiCaller&lt;/code&gt; falhou ontem, o error message ficou salvo em &lt;code&gt;data.errorMessage&lt;/code&gt;. A função percorre a lista, tira uma cópia de cada &lt;code&gt;data&lt;/code&gt;, apaga as chaves &lt;code&gt;errorMessage&lt;/code&gt;, &lt;code&gt;errorStatusCode&lt;/code&gt; e &lt;code&gt;hasExecutionError&lt;/code&gt;. Ainda desce um nível. Se &lt;code&gt;data.text&lt;/code&gt; é objeto (não string), limpa lá dentro também. O &lt;code&gt;commandContentNode&lt;/code&gt; historicamente aninhava erros em &lt;code&gt;data.text.errorMessage&lt;/code&gt;. Retorna sempre um array novo. Nunca muta o original. Preserva o que veio do banco. Sem essa passada, o filtro &lt;code&gt;nodesWithError&lt;/code&gt; na fase 4 sinalizaria falso positivo. Nodes que executaram OK, mas tinham erro de execução passada marcado, seriam contados como erros desta execução."><strong>In summary.</strong> Each node in the database may have inherited dirt from past executions. If an <code>apiCaller</code> failed yesterday, the error message stayed in <code>data.errorMessage</code>. The function walks the list, takes a copy of each <code>data</code>, deletes the <code>errorMessage</code>, <code>errorStatusCode</code> and <code>hasExecutionError</code> keys. Descends one more level. If <code>data.text</code> is an object, cleans in there too. <code>commandContentNode</code> historically nested errors under <code>data.text.errorMessage</code>. Always returns a new array. Never mutates the original. Preserves what came from the database. Without this pass, the <code>nodesWithError</code> filter in phase 4 would raise a false positive. Nodes that executed OK, but had a past error marked, would be counted as errors of this execution.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">A1</span> Chamada no apiV2</div>
+            <div class="box-title"><span class="badge step">A1</span> <span data-en="Call site in apiV2" data-pt="Chamada no apiV2">Call site in apiV2</span></div>
             <div class="box-desc">
               <code>const nodes = this.stripStaleErrorState(getFlow.nodes);</code>.
-              <br><br><code>getFlow.nodes</code> vem do banco via <code>flowService.getFlowWithNodesAndEdges</code> (passo 1.2). O array retornado é o input canônico do loop de execução. Vira <code>updatedFlows</code> na próxima linha.
+              <br><br><span data-en="&lt;code&gt;getFlow.nodes&lt;/code&gt; comes from the database via &lt;code&gt;flowService.getFlowWithNodesAndEdges&lt;/code&gt; (step 1.2). The returned array is the canonical input for the execution loop. Becomes &lt;code&gt;updatedFlows&lt;/code&gt; on the next line." data-pt="&lt;code&gt;getFlow.nodes&lt;/code&gt; vem do banco via &lt;code&gt;flowService.getFlowWithNodesAndEdges&lt;/code&gt; (passo 1.2). O array retornado é o input canônico do loop de execução. Vira &lt;code&gt;updatedFlows&lt;/code&gt; na próxima linha."><code>getFlow.nodes</code> comes from the database via <code>flowService.getFlowWithNodesAndEdges</code> (step 1.2). The returned array is the canonical input for the execution loop. Becomes <code>updatedFlows</code> on the next line.</span>
             </div>
             <div class="box-file">flux.service.ts:2513</div>
           </div>
           <div class="arrow">↓</div>
           <div class="nested-flow">
-            <div class="nested-flow-title">↳ Implementação. flux.service.ts:444-459</div>
+            <div class="nested-flow-title"><span data-en="↳ Implementation. flux.service.ts:444-459" data-pt="↳ Implementação. flux.service.ts:444-459">↳ Implementation. flux.service.ts:444-459</span></div>
             <div class="code-block">
 <span class="k">private</span> stripStaleErrorState(nodes: <span class="t">any</span>[]): <span class="t">any</span>[] {
   <span class="k">return</span> nodes.<span class="t">map</span>(node =&gt; {
@@ -209,7 +214,7 @@
           </div>
           <div class="arrow">↓</div>
           <div class="cascade">
-            <div class="cascade-title">🧹 Chaves removidas</div>
+            <div class="cascade-title"><span data-en="🧹 Keys removed" data-pt="🧹 Chaves removidas">🧹 Keys removed</span></div>
             <div class="cascade-step">
               <span class="cascade-num">1</span>
               <span class="cond"><code>data.errorMessage</code></span>
@@ -227,32 +232,32 @@
             </div>
             <div class="cascade-step">
               <span class="cascade-num">4a</span>
-              <span class="cond"><code>data.text.errorMessage</code> (se text é objeto)</span>
+              <span class="cond"><code>data.text.errorMessage</code> <span data-en="(if text is object)" data-pt="(se text é objeto)">(if text is object)</span></span>
               <span class="result deny">delete</span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">4b</span>
-              <span class="cond"><code>data.text.errorStatusCode</code> (se text é objeto)</span>
+              <span class="cond"><code>data.text.errorStatusCode</code> <span data-en="(if text is object)" data-pt="(se text é objeto)">(if text is object)</span></span>
               <span class="result deny">delete</span>
             </div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Por que 2 níveis?</div>
-            <code>commandContentNode</code> guarda todo o resultado em <code>data.text</code> como objeto (<code>{ result, errorMessage, ... }</code>). Outros nodes usam <code>data.text</code> como string. O <code>typeof === 'object'</code> distingue os dois. Só desce quando é objeto.
+            <div class="aside-title"><span data-en="🎯 Why 2 levels?" data-pt="🎯 Por que 2 níveis?">🎯 Why 2 levels?</span></div>
+            <span data-en="&lt;code&gt;commandContentNode&lt;/code&gt; stores the whole result in &lt;code&gt;data.text&lt;/code&gt; as an object (&lt;code&gt;{ result, errorMessage, ... }&lt;/code&gt;). Other nodes use &lt;code&gt;data.text&lt;/code&gt; as a string. The &lt;code&gt;typeof === 'object'&lt;/code&gt; distinguishes the two. Only descends when it's an object." data-pt="&lt;code&gt;commandContentNode&lt;/code&gt; guarda todo o resultado em &lt;code&gt;data.text&lt;/code&gt; como objeto (&lt;code&gt;{ result, errorMessage, ... }&lt;/code&gt;). Outros nodes usam &lt;code&gt;data.text&lt;/code&gt; como string. O &lt;code&gt;typeof === 'object'&lt;/code&gt; distingue os dois. Só desce quando é objeto."><code>commandContentNode</code> stores the whole result in <code>data.text</code> as an object (<code>{ result, errorMessage, ... }</code>). Other nodes use <code>data.text</code> as a string. The <code>typeof === 'object'</code> distinguishes the two. Only descends when it's an object.</span>
           </div>
           <div class="aside">
-            <div class="aside-title">📎 Onde esses campos são gravados</div>
-            <code>persistNodeSuccess</code> (worker e backend) grava esses 3 campos no <code>data</code> do node quando o node falha durante execução. Ficam persistidos no Postgres até a próxima execução, quando esta função limpa.
+            <div class="aside-title"><span data-en="📎 Where these fields are written" data-pt="📎 Onde esses campos são gravados">📎 Where these fields are written</span></div>
+            <span data-en="&lt;code&gt;persistNodeSuccess&lt;/code&gt; (worker and backend) writes these 3 fields to the node's &lt;code&gt;data&lt;/code&gt; when the node fails during execution. They stay persisted in Postgres until the next execution, when this function cleans them." data-pt="&lt;code&gt;persistNodeSuccess&lt;/code&gt; (worker e backend) grava esses 3 campos no &lt;code&gt;data&lt;/code&gt; do node quando o node falha durante execução. Ficam persistidos no Postgres até a próxima execução, quando esta função limpa."><code>persistNodeSuccess</code> (worker and backend) writes these 3 fields to the node's <code>data</code> when the node fails during execution. They stay persisted in Postgres until the next execution, when this function cleans them.</span>
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ Só 3 chaves. Não é exhaustive</div>
-            Se algum node type grava erro em outra chave (por exemplo, <code>data.errorCode</code> ou <code>data.stackTrace</code>), esta função não pega. Precisa ser mantida sincronizada com o que o <code>persistNodeSuccess</code> grava.
+            <div class="aside-title"><span data-en="⚠️ Only 3 keys. Not exhaustive" data-pt="⚠️ Só 3 chaves. Não é exhaustive">⚠️ Only 3 keys. Not exhaustive</span></div>
+            <span data-en="If some node type writes error to another key (e.g. &lt;code&gt;data.errorCode&lt;/code&gt; or &lt;code&gt;data.stackTrace&lt;/code&gt;), this function won't catch it. Needs to stay in sync with what &lt;code&gt;persistNodeSuccess&lt;/code&gt; writes." data-pt="Se algum node type grava erro em outra chave (por exemplo, &lt;code&gt;data.errorCode&lt;/code&gt; ou &lt;code&gt;data.stackTrace&lt;/code&gt;), esta função não pega. Precisa ser mantida sincronizada com o que o &lt;code&gt;persistNodeSuccess&lt;/code&gt; grava.">If some node type writes error to another key (e.g. <code>data.errorCode</code> or <code>data.stackTrace</code>), this function won't catch it. Needs to stay in sync with what <code>persistNodeSuccess</code> writes.</span>
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 Imutabilidade via spread</div>
-            <code>{ ...node, data: cleanData }</code>. O spread cria referências novas em ambos os níveis. O original em <code>getFlow.nodes</code> continua intacto. É importante se algo mais adiante quiser inspecionar o pré-strip.
+            <div class="aside-title"><span data-en="🔧 Immutability via spread" data-pt="🔧 Imutabilidade via spread">🔧 Immutability via spread</span></div>
+            <code>{ ...node, data: cleanData }</code>. <span data-en="The spread creates new references at both levels. The original in &lt;code&gt;getFlow.nodes&lt;/code&gt; stays intact. Important if something downstream wants to inspect the pre-strip." data-pt="O spread cria referências novas em ambos os níveis. O original em &lt;code&gt;getFlow.nodes&lt;/code&gt; continua intacto. É importante se algo mais adiante quiser inspecionar o pré-strip.">The spread creates new references at both levels. The original in <code>getFlow.nodes</code> stays intact. Important if something downstream wants to inspect the pre-strip.</span>
           </div>
         </div>
       </div>
@@ -264,7 +269,7 @@
     <div class="fn-card-header">
       <div class="fn-title">
         <span class="badge migrated" style="background:#F59E0B;color:white">B</span>
-        <code>Montagem enxuta de edges</code>
+        <code><span data-en="Lean edge assembly" data-pt="Montagem enxuta de edges">Lean edge assembly</span></code>
       </div>
       <div class="fn-loc">flux.service.ts:2514-2520</div>
     </div>
@@ -273,16 +278,16 @@
         const edges = getFlow.edges.map(edge =&gt; ({ id, source, sourceHandle, target, targetHandle }))
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Reduz cada edge do banco a apenas os 5 campos que o scheduler realmente lê ao decidir a rota entre nós. Descarta metadata visual (<code>type</code>, <code>data</code>, animações, style, position). Só o frontend usa esses campos.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Reduces each database edge to just the 5 fields the scheduler actually reads when deciding the route between nodes. Drops visual metadata (&lt;code&gt;type&lt;/code&gt;, &lt;code&gt;data&lt;/code&gt;, animations, style, position). Only the frontend uses these fields." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Reduz cada edge do banco a apenas os 5 campos que o scheduler realmente lê ao decidir a rota entre nós. Descarta metadata visual (&lt;code&gt;type&lt;/code&gt;, &lt;code&gt;data&lt;/code&gt;, animações, style, position). Só o frontend usa esses campos."><strong>Purpose.</strong> Reduces each database edge to just the 5 fields the scheduler actually reads when deciding the route between nodes. Drops visual metadata (<code>type</code>, <code>data</code>, animations, style, position). Only the frontend uses these fields.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> As edges no banco carregam campos que só interessam para desenhar o grafo. <code>type</code>, <code>data</code>, animações, estilo, cor de handle. É toda bagagem visual. O scheduler precisa apenas de <code>source</code>, <code>target</code> e o handle de cada lado para decidir o próximo node. A linha faz um <code>.map()</code> que pega só as 5 chaves relevantes. Efeitos. Menos memória. Se um flow tem 500 edges com <code>data</code> pesado, corta significativamente. Menos superfície de atenção. Quem lê o loop principal não pergunta se <code>edge.data</code> é usada. Imutabilidade forte. Quem quiser mutar o edge cria um novo com apenas esses 5 campos. Trade-off. Se algum dia o scheduler precisar de outro campo do edge (por exemplo, <code>edge.type</code> para diferenciar edges condicionais), precisa ser adicionado aqui explicitamente.
+        <span data-en="&lt;strong&gt;In summary.&lt;/strong&gt; Edges in the database carry fields that only matter for drawing the graph. &lt;code&gt;type&lt;/code&gt;, &lt;code&gt;data&lt;/code&gt;, animations, style, handle color. It's all visual baggage. The scheduler only needs &lt;code&gt;source&lt;/code&gt;, &lt;code&gt;target&lt;/code&gt; and the handle on each side to decide the next node. The line does a &lt;code&gt;.map()&lt;/code&gt; that keeps only the 5 relevant keys. Effects. Less memory. If a flow has 500 edges with heavy &lt;code&gt;data&lt;/code&gt;, it cuts significantly. Less attention surface. Whoever reads the main loop doesn't ask if &lt;code&gt;edge.data&lt;/code&gt; is used. Strong immutability. Whoever wants to mutate an edge creates a new one with only these 5 fields. Trade-off. If the scheduler ever needs another edge field (e.g. &lt;code&gt;edge.type&lt;/code&gt; to distinguish conditional edges), it must be added here explicitly." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; As edges no banco carregam campos que só interessam para desenhar o grafo. &lt;code&gt;type&lt;/code&gt;, &lt;code&gt;data&lt;/code&gt;, animações, estilo, cor de handle. É toda bagagem visual. O scheduler precisa apenas de &lt;code&gt;source&lt;/code&gt;, &lt;code&gt;target&lt;/code&gt; e o handle de cada lado para decidir o próximo node. A linha faz um &lt;code&gt;.map()&lt;/code&gt; que pega só as 5 chaves relevantes. Efeitos. Menos memória. Se um flow tem 500 edges com &lt;code&gt;data&lt;/code&gt; pesado, corta significativamente. Menos superfície de atenção. Quem lê o loop principal não pergunta se &lt;code&gt;edge.data&lt;/code&gt; é usada. Imutabilidade forte. Quem quiser mutar o edge cria um novo com apenas esses 5 campos. Trade-off. Se algum dia o scheduler precisar de outro campo do edge (por exemplo, &lt;code&gt;edge.type&lt;/code&gt; para diferenciar edges condicionais), precisa ser adicionado aqui explicitamente."><strong>In summary.</strong> Edges in the database carry fields that only matter for drawing the graph. <code>type</code>, <code>data</code>, animations, style, handle color. It's all visual baggage. The scheduler only needs <code>source</code>, <code>target</code> and the handle on each side to decide the next node. The line does a <code>.map()</code> that keeps only the 5 relevant keys. Effects. Less memory. If a flow has 500 edges with heavy <code>data</code>, it cuts significantly. Less attention surface. Whoever reads the main loop doesn't ask if <code>edge.data</code> is used. Strong immutability. Whoever wants to mutate an edge creates a new one with only these 5 fields. Trade-off. If the scheduler ever needs another edge field (e.g. <code>edge.type</code> to distinguish conditional edges), it must be added here explicitly.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">B1</span> Projeção via .map({ ...5 campos })</div>
+            <div class="box-title"><span class="badge step">B1</span> <span data-en="Projection via .map({ ...5 fields })" data-pt="Projeção via .map({ ...5 campos })">Projection via .map({ ...5 fields })</span></div>
             <div class="code-block">
 <span class="k">const</span> edges = getFlow.edges.<span class="t">map</span>(edge =&gt; ({
   id: edge.id,
@@ -296,38 +301,38 @@
           </div>
           <div class="arrow">↓</div>
           <div class="box decision">
-            <div class="box-title">Shape final versus shape do banco</div>
+            <div class="box-title"><span data-en="Final shape vs DB shape" data-pt="Shape final versus shape do banco">Final shape vs DB shape</span></div>
             <table class="field-table">
-              <tr><th>Campo</th><th>No banco?</th><th>No enxuto?</th></tr>
-              <tr><td>id</td><td>sim</td><td>sim ✓</td></tr>
-              <tr><td>source</td><td>sim</td><td>sim ✓</td></tr>
-              <tr><td>sourceHandle</td><td>sim</td><td>sim ✓</td></tr>
-              <tr><td>target</td><td>sim</td><td>sim ✓</td></tr>
-              <tr><td>targetHandle</td><td>sim</td><td>sim ✓</td></tr>
-              <tr><td>type</td><td>sim</td><td>não ✗</td></tr>
-              <tr><td>data</td><td>sim (JSONB)</td><td>não ✗</td></tr>
-              <tr><td>animated / style</td><td>sim</td><td>não ✗</td></tr>
+              <tr><th><span data-en="Field" data-pt="Campo">Field</span></th><th><span data-en="In DB?" data-pt="No banco?">In DB?</span></th><th><span data-en="In lean?" data-pt="No enxuto?">In lean?</span></th></tr>
+              <tr><td>id</td><td><span data-en="yes" data-pt="sim">yes</span></td><td><span data-en="yes ✓" data-pt="sim ✓">yes ✓</span></td></tr>
+              <tr><td>source</td><td><span data-en="yes" data-pt="sim">yes</span></td><td><span data-en="yes ✓" data-pt="sim ✓">yes ✓</span></td></tr>
+              <tr><td>sourceHandle</td><td><span data-en="yes" data-pt="sim">yes</span></td><td><span data-en="yes ✓" data-pt="sim ✓">yes ✓</span></td></tr>
+              <tr><td>target</td><td><span data-en="yes" data-pt="sim">yes</span></td><td><span data-en="yes ✓" data-pt="sim ✓">yes ✓</span></td></tr>
+              <tr><td>targetHandle</td><td><span data-en="yes" data-pt="sim">yes</span></td><td><span data-en="yes ✓" data-pt="sim ✓">yes ✓</span></td></tr>
+              <tr><td>type</td><td><span data-en="yes" data-pt="sim">yes</span></td><td><span data-en="no ✗" data-pt="não ✗">no ✗</span></td></tr>
+              <tr><td>data</td><td><span data-en="yes (JSONB)" data-pt="sim (JSONB)">yes (JSONB)</span></td><td><span data-en="no ✗" data-pt="não ✗">no ✗</span></td></tr>
+              <tr><td>animated / style</td><td><span data-en="yes" data-pt="sim">yes</span></td><td><span data-en="no ✗" data-pt="não ✗">no ✗</span></td></tr>
             </table>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Onde edges é lido depois</div>
-            <code>edges.find(e =&gt; e.source.includes('flow-global-starter'))</code>. L2560 (localiza o starter).
-            <br>Scheduler e prefetch. Decidem next node por match de <code>source</code>, <code>target</code> e handles.
-            <br>Nada em runtime lê <code>data</code>, <code>type</code> ou <code>style</code> do edge.
+            <div class="aside-title"><span data-en="🎯 Where edges is read later" data-pt="🎯 Onde edges é lido depois">🎯 Where edges is read later</span></div>
+            <code>edges.find(e =&gt; e.source.includes('flow-global-starter'))</code>. <span data-en="L2560 (locates the starter)." data-pt="L2560 (localiza o starter).">L2560 (locates the starter).</span>
+            <br><span data-en="Scheduler and prefetch. Decide next node by matching &lt;code&gt;source&lt;/code&gt;, &lt;code&gt;target&lt;/code&gt; and handles." data-pt="Scheduler e prefetch. Decidem next node por match de &lt;code&gt;source&lt;/code&gt;, &lt;code&gt;target&lt;/code&gt; e handles.">Scheduler and prefetch. Decide next node by matching <code>source</code>, <code>target</code> and handles.</span>
+            <br><span data-en="Nothing at runtime reads &lt;code&gt;data&lt;/code&gt;, &lt;code&gt;type&lt;/code&gt; or &lt;code&gt;style&lt;/code&gt; from the edge." data-pt="Nada em runtime lê &lt;code&gt;data&lt;/code&gt;, &lt;code&gt;type&lt;/code&gt; ou &lt;code&gt;style&lt;/code&gt; do edge.">Nothing at runtime reads <code>data</code>, <code>type</code> or <code>style</code> from the edge.</span>
           </div>
           <div class="aside">
-            <div class="aside-title">📎 Ordem no map</div>
-            A ordem no literal <code>{...}</code> é <code>id</code>, <code>source</code>, <code>sourceHandle</code>, <code>target</code>, <code>targetHandle</code>. Reflete o que aparece na visualização (aresta indo de source a target).
+            <div class="aside-title"><span data-en="📎 Order in the map" data-pt="📎 Ordem no map">📎 Order in the map</span></div>
+            <span data-en="Order in the &lt;code&gt;{...}&lt;/code&gt; literal is &lt;code&gt;id&lt;/code&gt;, &lt;code&gt;source&lt;/code&gt;, &lt;code&gt;sourceHandle&lt;/code&gt;, &lt;code&gt;target&lt;/code&gt;, &lt;code&gt;targetHandle&lt;/code&gt;. Reflects what shows up on the diagram (edge going from source to target)." data-pt="A ordem no literal &lt;code&gt;{...}&lt;/code&gt; é &lt;code&gt;id&lt;/code&gt;, &lt;code&gt;source&lt;/code&gt;, &lt;code&gt;sourceHandle&lt;/code&gt;, &lt;code&gt;target&lt;/code&gt;, &lt;code&gt;targetHandle&lt;/code&gt;. Reflete o que aparece na visualização (aresta indo de source a target).">Order in the <code>{...}</code> literal is <code>id</code>, <code>source</code>, <code>sourceHandle</code>, <code>target</code>, <code>targetHandle</code>. Reflects what shows up on the diagram (edge going from source to target).</span>
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ Perda silenciosa de campos</div>
-            Se o schema de edges ganhar um campo novo (por exemplo, <code>edge.condition</code> para branch semantics), esse map não vai propagar. É um bug fácil de esconder.
+            <div class="aside-title"><span data-en="⚠️ Silent field loss" data-pt="⚠️ Perda silenciosa de campos">⚠️ Silent field loss</span></div>
+            <span data-en="If the edges schema gains a new field (e.g. &lt;code&gt;edge.condition&lt;/code&gt; for branch semantics), this map won't propagate it. It's an easy bug to hide." data-pt="Se o schema de edges ganhar um campo novo (por exemplo, &lt;code&gt;edge.condition&lt;/code&gt; para branch semantics), esse map não vai propagar. É um bug fácil de esconder.">If the edges schema gains a new field (e.g. <code>edge.condition</code> for branch semantics), this map won't propagate it. It's an easy bug to hide.</span>
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 Não é deep-clone</div>
-            Cada string é copiada por valor (primitivas JavaScript). Se um campo virar objeto, o spread aqui pegaria por referência. Nesse caso, mutar <code>edge.X</code> mutaria o banco também.
+            <div class="aside-title"><span data-en="🔧 Not a deep-clone" data-pt="🔧 Não é deep-clone">🔧 Not a deep-clone</span></div>
+            <span data-en="Each string is copied by value (JavaScript primitives). If a field turns into an object, the spread here would take it by reference. In that case, mutating &lt;code&gt;edge.X&lt;/code&gt; would mutate the DB too." data-pt="Cada string é copiada por valor (primitivas JavaScript). Se um campo virar objeto, o spread aqui pegaria por referência. Nesse caso, mutar &lt;code&gt;edge.X&lt;/code&gt; mutaria o banco também.">Each string is copied by value (JavaScript primitives). If a field turns into an object, the spread here would take it by reference. In that case, mutating <code>edge.X</code> would mutate the DB too.</span>
           </div>
         </div>
       </div>
@@ -339,65 +344,65 @@
     <div class="fn-card-header">
       <div class="fn-title">
         <span class="badge migrated" style="background:#3B82F6;color:white">C</span>
-        <code>Uso downstream. Como isso previne bugs na fase 4</code>
+        <code><span data-en="Downstream use. How this prevents bugs in phase 4" data-pt="Uso downstream. Como isso previne bugs na fase 4">Downstream use. How this prevents bugs in phase 4</span></code>
       </div>
       <div class="fn-loc">flux.service.ts:4854 (nodesWithError filter)</div>
     </div>
     <div class="fn-card-body">
       <div class="fn-signature">
-        // Coletor de erros da fase 4: nodesWithError = myUpdatedNodes.filter(n =&gt; n.data.errorMessage)
+        // <span data-en="Phase 4 error collector: nodesWithError = myUpdatedNodes.filter(n =&gt; n.data.errorMessage)" data-pt="Coletor de erros da fase 4: nodesWithError = myUpdatedNodes.filter(n =&gt; n.data.errorMessage)">Phase 4 error collector: nodesWithError = myUpdatedNodes.filter(n =&gt; n.data.errorMessage)</span>
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Deixar claro por que o strip é necessário. Na fase 4, o coletor de erros lê <code>node.data.errorMessage</code> para montar <code>nodesWithError</code>. Se o erro antigo estivesse acumulado no <code>data</code>, marcaria falso positivo.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Makes clear why the strip is needed. In phase 4, the error collector reads &lt;code&gt;node.data.errorMessage&lt;/code&gt; to build &lt;code&gt;nodesWithError&lt;/code&gt;. If the old error remained in &lt;code&gt;data&lt;/code&gt;, it would trigger a false positive." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Deixar claro por que o strip é necessário. Na fase 4, o coletor de erros lê &lt;code&gt;node.data.errorMessage&lt;/code&gt; para montar &lt;code&gt;nodesWithError&lt;/code&gt;. Se o erro antigo estivesse acumulado no &lt;code&gt;data&lt;/code&gt;, marcaria falso positivo."><strong>Purpose.</strong> Makes clear why the strip is needed. In phase 4, the error collector reads <code>node.data.errorMessage</code> to build <code>nodesWithError</code>. If the old error remained in <code>data</code>, it would trigger a false positive.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> A fase 4 do apiV2 (encerramento) faz um filtro simples. Quais nodes têm <code>errorMessage</code>? Usa a resposta para decidir se a execução inteira foi sucesso ou erro. Se <code>stripStaleErrorState</code> não executasse, o cenário seria o seguinte. Execução 1 falha num <code>apiCaller</code> e grava <code>errorMessage</code>. Execução 2 começa. Esse mesmo <code>apiCaller</code> nem é executado (talvez porque o flow tomou uma branch diferente). Na fase 4, o coletor vê a mensagem de erro antiga ainda presente e conclui que a execução falhou. Resultado. Métricas erradas, notificação errada, flow log com status errado. O strip prévio garante que os nodes começam limpos. O único jeito de aparecer <code>errorMessage</code> ali é a execução atual ter falhado nele.
+        <span data-en="&lt;strong&gt;In summary.&lt;/strong&gt; Phase 4 of apiV2 (finalization) runs a simple filter. Which nodes have &lt;code&gt;errorMessage&lt;/code&gt;? Uses the answer to decide whether the whole execution was success or error. If &lt;code&gt;stripStaleErrorState&lt;/code&gt; didn't run, the scenario would be as follows. Execution 1 fails on an &lt;code&gt;apiCaller&lt;/code&gt; and writes &lt;code&gt;errorMessage&lt;/code&gt;. Execution 2 begins. That same &lt;code&gt;apiCaller&lt;/code&gt; isn't even executed (maybe because the flow took a different branch). At phase 4, the collector sees the old error still present and concludes the execution failed. Result. Wrong metrics, wrong notification, flow log with wrong status. The prior strip ensures nodes start clean. The only way &lt;code&gt;errorMessage&lt;/code&gt; can appear there is the current execution having failed on it." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; A fase 4 do apiV2 (encerramento) faz um filtro simples. Quais nodes têm &lt;code&gt;errorMessage&lt;/code&gt;? Usa a resposta para decidir se a execução inteira foi sucesso ou erro. Se &lt;code&gt;stripStaleErrorState&lt;/code&gt; não executasse, o cenário seria o seguinte. Execução 1 falha num &lt;code&gt;apiCaller&lt;/code&gt; e grava &lt;code&gt;errorMessage&lt;/code&gt;. Execução 2 começa. Esse mesmo &lt;code&gt;apiCaller&lt;/code&gt; nem é executado (talvez porque o flow tomou uma branch diferente). Na fase 4, o coletor vê a mensagem de erro antiga ainda presente e conclui que a execução falhou. Resultado. Métricas erradas, notificação errada, flow log com status errado. O strip prévio garante que os nodes começam limpos. O único jeito de aparecer &lt;code&gt;errorMessage&lt;/code&gt; ali é a execução atual ter falhado nele."><strong>In summary.</strong> Phase 4 of apiV2 (finalization) runs a simple filter. Which nodes have <code>errorMessage</code>? Uses the answer to decide whether the whole execution was success or error. If <code>stripStaleErrorState</code> didn't run, the scenario would be as follows. Execution 1 fails on an <code>apiCaller</code> and writes <code>errorMessage</code>. Execution 2 begins. That same <code>apiCaller</code> isn't even executed (maybe because the flow took a different branch). At phase 4, the collector sees the old error still present and concludes the execution failed. Result. Wrong metrics, wrong notification, flow log with wrong status. The prior strip ensures nodes start clean. The only way <code>errorMessage</code> can appear there is the current execution having failed on it.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box cross">
-            <div class="box-title"><span class="badge step">C1</span> Filtro nodesWithError (fase 4)</div>
+            <div class="box-title"><span class="badge step">C1</span> <span data-en="nodesWithError filter (phase 4)" data-pt="Filtro nodesWithError (fase 4)">nodesWithError filter (phase 4)</span></div>
             <div class="box-desc">
               <code>const nodesWithError = myUpdatedNodes.filter(n =&gt; n.data?.errorMessage);</code>.
-              <br><br>Sem o strip, esse filtro pegaria erros de execuções passadas.
+              <br><br><span data-en="Without the strip, this filter would pick errors from past executions." data-pt="Sem o strip, esse filtro pegaria erros de execuções passadas.">Without the strip, this filter would pick errors from past executions.</span>
             </div>
-            <div class="box-file">flux.service.ts:4854 (fase 4)</div>
+            <div class="box-file">flux.service.ts:4854 <span data-en="(phase 4)" data-pt="(fase 4)">(phase 4)</span></div>
           </div>
           <div class="arrow">↓</div>
           <div class="box cross">
-            <div class="box-title"><span class="badge step">C2</span> logStatus e logErrorMessage</div>
+            <div class="box-title"><span class="badge step">C2</span> logStatus <span data-en="and" data-pt="e">and</span> logErrorMessage</div>
             <div class="box-desc">
               <code>logStatus = nodesWithError.length &gt; 0 ? 'error' : 'success'</code>.
               <br><code>logErrorMessage = nodesWithError.length &gt; 0 ? nodesWithError[0].data.errorMessage : null</code>.
-              <br><br>Alimenta <code>flowLogsService.createLog</code> em L4869 e <code>SpaceRunLog.status</code> em L4897.
+              <br><br><span data-en="Feeds &lt;code&gt;flowLogsService.createLog&lt;/code&gt; at L4869 and &lt;code&gt;SpaceRunLog.status&lt;/code&gt; at L4897." data-pt="Alimenta &lt;code&gt;flowLogsService.createLog&lt;/code&gt; em L4869 e &lt;code&gt;SpaceRunLog.status&lt;/code&gt; em L4897.">Feeds <code>flowLogsService.createLog</code> at L4869 and <code>SpaceRunLog.status</code> at L4897.</span>
             </div>
             <div class="box-file">flux.service.ts:4856-4866</div>
           </div>
           <div class="arrow">↓</div>
           <div class="box backend">
-            <div class="box-title">Efeito cumulativo do strip</div>
+            <div class="box-title"><span data-en="Cumulative effect of the strip" data-pt="Efeito cumulativo do strip">Cumulative effect of the strip</span></div>
             <div class="box-desc">
-              Com <code>stripStaleErrorState</code>. O único <code>errorMessage</code> que sobrevive até a fase 4 é o que esta execução gravou. Sem ele. Falsos positivos e logs corrompidos por execuções passadas.
+              <span data-en="With &lt;code&gt;stripStaleErrorState&lt;/code&gt;. The only &lt;code&gt;errorMessage&lt;/code&gt; that survives to phase 4 is what this execution wrote. Without it. False positives and logs corrupted by past executions." data-pt="Com &lt;code&gt;stripStaleErrorState&lt;/code&gt;. O único &lt;code&gt;errorMessage&lt;/code&gt; que sobrevive até a fase 4 é o que esta execução gravou. Sem ele. Falsos positivos e logs corrompidos por execuções passadas.">With <code>stripStaleErrorState</code>. The only <code>errorMessage</code> that survives to phase 4 is what this execution wrote. Without it. False positives and logs corrupted by past executions.</span>
             </div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 O contrato implícito</div>
-            Se um node tem <code>errorMessage</code> depois do loop, é porque falhou nesta execução. Esse contrato só vale se algum <code>strip</code> executou antes. Se em algum refactor esse strip sumir, o contrato quebra silenciosamente.
+            <div class="aside-title"><span data-en="🎯 The implicit contract" data-pt="🎯 O contrato implícito">🎯 The implicit contract</span></div>
+            <span data-en="If a node has &lt;code&gt;errorMessage&lt;/code&gt; after the loop, it's because it failed in this execution. This contract only holds if some &lt;code&gt;strip&lt;/code&gt; ran before. If a refactor removes this strip, the contract breaks silently." data-pt="Se um node tem &lt;code&gt;errorMessage&lt;/code&gt; depois do loop, é porque falhou nesta execução. Esse contrato só vale se algum &lt;code&gt;strip&lt;/code&gt; executou antes. Se em algum refactor esse strip sumir, o contrato quebra silenciosamente.">If a node has <code>errorMessage</code> after the loop, it's because it failed in this execution. This contract only holds if some <code>strip</code> ran before. If a refactor removes this strip, the contract breaks silently.</span>
           </div>
           <div class="aside">
-            <div class="aside-title">📎 Passo 1.5b versus 1.5a</div>
-            1.5a limpa erros de execuções passadas. 1.5b (mesmo bloco, linhas 2525-2558) limpa output de execuções passadas para nodes com <code>clearOnExecution</code> ligado. São higienizações distintas com propósitos distintos.
+            <div class="aside-title"><span data-en="📎 Step 1.5b vs 1.5a" data-pt="📎 Passo 1.5b versus 1.5a">📎 Step 1.5b vs 1.5a</span></div>
+            <span data-en="1.5a cleans past-execution errors. 1.5b (same block, lines 2525-2558) cleans past-execution output for nodes with &lt;code&gt;clearOnExecution&lt;/code&gt; on. They are distinct sanitizations with distinct purposes." data-pt="1.5a limpa erros de execuções passadas. 1.5b (mesmo bloco, linhas 2525-2558) limpa output de execuções passadas para nodes com &lt;code&gt;clearOnExecution&lt;/code&gt; ligado. São higienizações distintas com propósitos distintos.">1.5a cleans past-execution errors. 1.5b (same block, lines 2525-2558) cleans past-execution output for nodes with <code>clearOnExecution</code> on. They are distinct sanitizations with distinct purposes.</span>
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ getFlow.nodes ainda com error state</div>
-            <code>getFlow.nodes</code> (o original do banco) continua com o error state. Se algum código futuro ler direto de <code>getFlow.nodes</code> em vez de <code>nodes</code>, pega o valor sujo.
+            <div class="aside-title"><span data-en="⚠️ getFlow.nodes still with error state" data-pt="⚠️ getFlow.nodes ainda com error state">⚠️ getFlow.nodes still with error state</span></div>
+            <span data-en="&lt;code&gt;getFlow.nodes&lt;/code&gt; (the DB original) still carries the error state. If any future code reads directly from &lt;code&gt;getFlow.nodes&lt;/code&gt; instead of &lt;code&gt;nodes&lt;/code&gt;, it gets the dirty value." data-pt="&lt;code&gt;getFlow.nodes&lt;/code&gt; (o original do banco) continua com o error state. Se algum código futuro ler direto de &lt;code&gt;getFlow.nodes&lt;/code&gt; em vez de &lt;code&gt;nodes&lt;/code&gt;, pega o valor sujo."><code>getFlow.nodes</code> (the DB original) still carries the error state. If any future code reads directly from <code>getFlow.nodes</code> instead of <code>nodes</code>, it gets the dirty value.</span>
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 Alternativa não usada</div>
-            Poderia ser feito UPDATE no banco antes da execução começar (limpar via SQL). Não é feito. Em vez disso, mantém o estado no banco (útil para debug post-mortem) e limpa em memória para esta execução.
+            <div class="aside-title"><span data-en="🔧 Alternative not used" data-pt="🔧 Alternativa não usada">🔧 Alternative not used</span></div>
+            <span data-en="Could be done via UPDATE in the DB before execution starts (clean via SQL). Not done. Instead, keeps the state in the database (useful for post-mortem debug) and cleans in memory for this execution." data-pt="Poderia ser feito UPDATE no banco antes da execução começar (limpar via SQL). Não é feito. Em vez disso, mantém o estado no banco (útil para debug post-mortem) e limpa em memória para esta execução.">Could be done via UPDATE in the DB before execution starts (clean via SQL). Not done. Instead, keeps the state in the database (useful for post-mortem debug) and cleans in memory for this execution.</span>
           </div>
         </div>
       </div>

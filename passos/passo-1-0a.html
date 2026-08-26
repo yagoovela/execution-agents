@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Passo 1.0a — Setup inicial pré-tudo | Detalhamento</title>
+<link rel="stylesheet" href="../_assets/i18n.css">
+<title>Step 1.0a — Pre-everything initial setup | Deep dive</title>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -264,51 +265,55 @@
 
   <div class="page-nav">
     <div class="breadcrumb">
-      <a href="../index.html">📋 Execução de Agente</a>
+      <a href="../index.html"><span data-en="📋 Agent Execution" data-pt="📋 Execução de Agente">📋 Agent Execution</span></a>
       <span class="sep">›</span>
-      <span>Passo 1.0a — Detalhamento</span>
+      <span><span data-en="Step 1.0a — Deep dive" data-pt="Passo 1.0a — Detalhamento">Step 1.0a — Deep dive</span></span>
     </div>
-    <a href="../index.html#step-1-0a" class="back-btn">← Voltar ao diagrama</a>
+    <div class="lang-sw" role="group" aria-label="Language">
+      <button type="button" data-lang="en" aria-pressed="true">EN-US</button>
+      <button type="button" data-lang="pt" aria-pressed="false">PT-BR</button>
+    </div>
+    <a href="../index.html#step-1-0a" class="back-btn"><span data-en="← Back to diagram" data-pt="← Voltar ao diagrama">← Back to diagram</span></a>
   </div>
 
   <div class="page-header">
     <span class="icon">🔧</span>
-    <h1>Passo 1.0a — Setup inicial pré-tudo</h1>
+    <h1><span data-en="Step 1.0a — Pre-everything initial setup" data-pt="Passo 1.0a — Setup inicial pré-tudo">Step 1.0a — Pre-everything initial setup</span></h1>
   </div>
   <div class="page-sub">
-    Bloco em <code>flux.service.ts:2319-2337</code>. As primeiras 19 linhas do <code>apiV2()</code>. Executadas <strong>antes</strong> de qualquer query, guard ou try/catch. Estabiliza <code>sessionId</code>. Cria os contadores de billing. Resolve o <code>runLogProcessId</code> canônico. Conecta o lookup socket→execução para o chatbot.
+    <span data-en="Block at &lt;code&gt;flux.service.ts:2319-2337&lt;/code&gt;. The first 19 lines of &lt;code&gt;apiV2()&lt;/code&gt;. They run &lt;strong&gt;before&lt;/strong&gt; any query, guard, or try/catch. Stabilizes &lt;code&gt;sessionId&lt;/code&gt;. Creates the billing counters. Resolves the canonical &lt;code&gt;runLogProcessId&lt;/code&gt;. Wires the socket→execution lookup for the chatbot." data-pt="Bloco em &lt;code&gt;flux.service.ts:2319-2337&lt;/code&gt;. As primeiras 19 linhas do &lt;code&gt;apiV2()&lt;/code&gt;. Executadas &lt;strong&gt;antes&lt;/strong&gt; de qualquer query, guard ou try/catch. Estabiliza &lt;code&gt;sessionId&lt;/code&gt;. Cria os contadores de billing. Resolve o &lt;code&gt;runLogProcessId&lt;/code&gt; canônico. Conecta o lookup socket→execução para o chatbot.">Block at <code>flux.service.ts:2319-2337</code>. The first 19 lines of <code>apiV2()</code>. They run <strong>before</strong> any query, guard, or try/catch. Stabilizes <code>sessionId</code>. Creates the billing counters. Resolves the canonical <code>runLogProcessId</code>. Wires the socket→execution lookup for the chatbot.</span>
   </div>
 
   <div class="step-friendly">
-    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <div class="step-friendly-title"><span data-en="In short — what this step does" data-pt="Em resumo — o que esse passo faz">In short — what this step does</span></div>
     <ul>
-      <li><strong>Normaliza o sessionId.</strong> Um <code>?.trim()</code> defensivo. String com espaços, <code>undefined</code> ou <code>null</code> viram <em>string vazia</em>. Isso importa depois. A condição <code>sessionId === ''</code> tem semântica especial. O passo 1.5 usa <code>'default'</code> quando o flow tem <code>fluxObject.chat</code>.</li>
-      <li><strong>Inicializa os contadores.</strong> Declara <code>totalTokensUsed</code> e <code>totalCost</code> como zero. Cria o closure <code>onUpdateTokens(t, c)</code> que soma nesses contadores. Esse callback é passado adiante. É a única forma de o billing encontrar os contadores dessa execução.</li>
-      <li><strong>Decide o ID da execução.</strong> Cascata em 4 fontes na ordem <code>execId → injectedRunLogCollector.processId → parentProcessId → uuid()</code>. É o número de processo usado como chave em todos os serviços. Aparece em WebSocket, run logs de space e feature flags de cancelamento.</li>
-      <li><strong>Registra o socket do chatbot.</strong> Se veio <code>socketId</code>, executa <code>chatbotSocketByRun.set(runLogProcessId, socketId)</code> num Map da classe. Isso permite que o worker devolva eventos ao browser correto mesmo quando o handoff é assíncrono. A limpeza ocorre apenas no passo 5.3, no bloco finally.</li>
-      <li><strong>Define isNestedRunLog.</strong> Flag booleana derivada de <code>!!injectedRunLogCollector</code>. Diferencia uma execução raiz, que grava o próprio SpaceRunLog, de uma execução aninhada chamada por outro flow. A execução aninhada deve <em>anexar</em> ao coletor do pai em vez de gravar sozinha.</li>
+      <li><span data-en="&lt;strong&gt;Normalizes the sessionId.&lt;/strong&gt; A defensive &lt;code&gt;?.trim()&lt;/code&gt;. Strings with spaces, &lt;code&gt;undefined&lt;/code&gt;, or &lt;code&gt;null&lt;/code&gt; become an &lt;em&gt;empty string&lt;/em&gt;. This matters later. The condition &lt;code&gt;sessionId === ''&lt;/code&gt; carries special semantics. Step 1.5 uses &lt;code&gt;'default'&lt;/code&gt; when the flow has &lt;code&gt;fluxObject.chat&lt;/code&gt;." data-pt="&lt;strong&gt;Normaliza o sessionId.&lt;/strong&gt; Um &lt;code&gt;?.trim()&lt;/code&gt; defensivo. String com espaços, &lt;code&gt;undefined&lt;/code&gt; ou &lt;code&gt;null&lt;/code&gt; viram &lt;em&gt;string vazia&lt;/em&gt;. Isso importa depois. A condição &lt;code&gt;sessionId === ''&lt;/code&gt; tem semântica especial. O passo 1.5 usa &lt;code&gt;'default'&lt;/code&gt; quando o flow tem &lt;code&gt;fluxObject.chat&lt;/code&gt;."><strong>Normalizes the sessionId.</strong> A defensive <code>?.trim()</code>. Strings with spaces, <code>undefined</code>, or <code>null</code> become an <em>empty string</em>. This matters later. The condition <code>sessionId === ''</code> carries special semantics. Step 1.5 uses <code>'default'</code> when the flow has <code>fluxObject.chat</code>.</span></li>
+      <li><span data-en="&lt;strong&gt;Initializes the counters.&lt;/strong&gt; Declares &lt;code&gt;totalTokensUsed&lt;/code&gt; and &lt;code&gt;totalCost&lt;/code&gt; as zero. Creates the closure &lt;code&gt;onUpdateTokens(t, c)&lt;/code&gt; that adds to those counters. That callback is passed downstream. It is the only way billing can find this execution's counters." data-pt="&lt;strong&gt;Inicializa os contadores.&lt;/strong&gt; Declara &lt;code&gt;totalTokensUsed&lt;/code&gt; e &lt;code&gt;totalCost&lt;/code&gt; como zero. Cria o closure &lt;code&gt;onUpdateTokens(t, c)&lt;/code&gt; que soma nesses contadores. Esse callback é passado adiante. É a única forma de o billing encontrar os contadores dessa execução."><strong>Initializes the counters.</strong> Declares <code>totalTokensUsed</code> and <code>totalCost</code> as zero. Creates the closure <code>onUpdateTokens(t, c)</code> that adds to those counters. That callback is passed downstream. It is the only way billing can find this execution's counters.</span></li>
+      <li><span data-en="&lt;strong&gt;Decides the execution ID.&lt;/strong&gt; A cascade over 4 sources in the order &lt;code&gt;execId → injectedRunLogCollector.processId → parentProcessId → uuid()&lt;/code&gt;. It is the process number used as key across every service. It shows up in WebSocket, space run logs, and cancellation feature flags." data-pt="&lt;strong&gt;Decide o ID da execução.&lt;/strong&gt; Cascata em 4 fontes na ordem &lt;code&gt;execId → injectedRunLogCollector.processId → parentProcessId → uuid()&lt;/code&gt;. É o número de processo usado como chave em todos os serviços. Aparece em WebSocket, run logs de space e feature flags de cancelamento."><strong>Decides the execution ID.</strong> A cascade over 4 sources in the order <code>execId → injectedRunLogCollector.processId → parentProcessId → uuid()</code>. It is the process number used as key across every service. It shows up in WebSocket, space run logs, and cancellation feature flags.</span></li>
+      <li><span data-en="&lt;strong&gt;Registers the chatbot socket.&lt;/strong&gt; If &lt;code&gt;socketId&lt;/code&gt; came in, runs &lt;code&gt;chatbotSocketByRun.set(runLogProcessId, socketId)&lt;/code&gt; on a class-level Map. This lets the worker return events to the correct browser even when the handoff is async. Cleanup only happens in step 5.3, inside the finally block." data-pt="&lt;strong&gt;Registra o socket do chatbot.&lt;/strong&gt; Se veio &lt;code&gt;socketId&lt;/code&gt;, executa &lt;code&gt;chatbotSocketByRun.set(runLogProcessId, socketId)&lt;/code&gt; num Map da classe. Isso permite que o worker devolva eventos ao browser correto mesmo quando o handoff é assíncrono. A limpeza ocorre apenas no passo 5.3, no bloco finally."><strong>Registers the chatbot socket.</strong> If <code>socketId</code> came in, runs <code>chatbotSocketByRun.set(runLogProcessId, socketId)</code> on a class-level Map. This lets the worker return events to the correct browser even when the handoff is async. Cleanup only happens in step 5.3, inside the finally block.</span></li>
+      <li><span data-en="&lt;strong&gt;Sets isNestedRunLog.&lt;/strong&gt; Boolean flag derived from &lt;code&gt;!!injectedRunLogCollector&lt;/code&gt;. Distinguishes a root execution, which writes its own SpaceRunLog, from a nested execution called by another flow. The nested execution must &lt;em&gt;append&lt;/em&gt; to the parent's collector instead of writing on its own." data-pt="&lt;strong&gt;Define isNestedRunLog.&lt;/strong&gt; Flag booleana derivada de &lt;code&gt;!!injectedRunLogCollector&lt;/code&gt;. Diferencia uma execução raiz, que grava o próprio SpaceRunLog, de uma execução aninhada chamada por outro flow. A execução aninhada deve &lt;em&gt;anexar&lt;/em&gt; ao coletor do pai em vez de gravar sozinha."><strong>Sets isNestedRunLog.</strong> Boolean flag derived from <code>!!injectedRunLogCollector</code>. Distinguishes a root execution, which writes its own SpaceRunLog, from a nested execution called by another flow. The nested execution must <em>append</em> to the parent's collector instead of writing on its own.</span></li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto.</strong> Essas 19 linhas não fazem I/O. Não lançam exceção. Não têm try/catch. É puro setup em memória. O objetivo é dar às fases seguintes um contexto estável e imutável (contadores, IDs, refs) antes de qualquer operação que possa falhar.
+    <span data-en="&lt;strong&gt;Context.&lt;/strong&gt; These 19 lines do no I/O. They throw no exceptions. They have no try/catch. It is pure in-memory setup. The goal is to hand the following phases a stable, immutable context (counters, IDs, refs) before any operation that can fail." data-pt="&lt;strong&gt;Contexto.&lt;/strong&gt; Essas 19 linhas não fazem I/O. Não lançam exceção. Não têm try/catch. É puro setup em memória. O objetivo é dar às fases seguintes um contexto estável e imutável (contadores, IDs, refs) antes de qualquer operação que possa falhar."><strong>Context.</strong> These 19 lines do no I/O. They throw no exceptions. They have no try/catch. It is pure in-memory setup. The goal is to hand the following phases a stable, immutable context (counters, IDs, refs) before any operation that can fail.</span>
   </div>
 
   <div class="overview-mini">
-    <div class="overview-mini-title">Cadeia de setup em 1.0a</div>
+    <div class="overview-mini-title"><span data-en="Setup chain in 1.0a" data-pt="Cadeia de setup em 1.0a">Setup chain in 1.0a</span></div>
     <div class="overview-chain">
       <a href="#fn-a" class="overview-chip"><span class="lbl">A</span>sessionId.trim()</a>
       <span class="overview-sep">→</span>
-      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>contadores + onUpdateTokens</a>
+      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span><span data-en="counters + onUpdateTokens" data-pt="contadores + onUpdateTokens">counters + onUpdateTokens</span></a>
       <span class="overview-sep">→</span>
-      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>runLogProcessId (4 fontes)</a>
+      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span><span data-en="runLogProcessId (4 sources)" data-pt="runLogProcessId (4 fontes)">runLogProcessId (4 sources)</span></a>
       <span class="overview-sep">→</span>
       <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>chatbotSocketByRun.set</a>
       <span class="overview-sep">→</span>
       <a href="#fn-e" class="overview-chip"><span class="lbl">E</span>isNestedRunLog</a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado final. Estado inicial imutável. Inclui <code>sessionId</code>, contadores mais o closure, <code>runLogProcessId</code>, o lookup de socket e a flag <code>isNestedRunLog</code>.
+      <span data-en="Final result. Immutable initial state. Includes &lt;code&gt;sessionId&lt;/code&gt;, counters plus the closure, &lt;code&gt;runLogProcessId&lt;/code&gt;, the socket lookup, and the &lt;code&gt;isNestedRunLog&lt;/code&gt; flag." data-pt="Resultado final. Estado inicial imutável. Inclui &lt;code&gt;sessionId&lt;/code&gt;, contadores mais o closure, &lt;code&gt;runLogProcessId&lt;/code&gt;, o lookup de socket e a flag &lt;code&gt;isNestedRunLog&lt;/code&gt;.">Final result. Immutable initial state. Includes <code>sessionId</code>, counters plus the closure, <code>runLogProcessId</code>, the socket lookup, and the <code>isNestedRunLog</code> flag.</span>
     </div>
   </div>
 
@@ -317,7 +322,7 @@
     <div class="fn-card-header">
       <div class="fn-title">
         <span class="badge migrated" style="background:#EAB308;color:white">A</span>
-        <code>Trim defensivo do sessionId</code>
+        <code><span data-en="Defensive sessionId trim" data-pt="Trim defensivo do sessionId">Defensive sessionId trim</span></code>
       </div>
       <div class="fn-loc">flux.service.ts:2319</div>
     </div>
@@ -326,24 +331,24 @@
         const sessionId = untrimmedSessionId?.trim() || '';
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Normaliza o <code>sessionId</code> recebido do controller. Espaços em branco, <code>undefined</code>, <code>null</code> e string vazia. Todos viram <code>''</code>. A convenção define que <code>sessionId</code> vazio equivale a sem sessão. Essa linha garante que todos os passos leem o mesmo valor.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Normalizes the &lt;code&gt;sessionId&lt;/code&gt; received from the controller. Whitespace, &lt;code&gt;undefined&lt;/code&gt;, &lt;code&gt;null&lt;/code&gt;, and the empty string. All become &lt;code&gt;''&lt;/code&gt;. The convention defines empty &lt;code&gt;sessionId&lt;/code&gt; as no session. This line ensures every step reads the same value." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Normaliza o &lt;code&gt;sessionId&lt;/code&gt; recebido do controller. Espaços em branco, &lt;code&gt;undefined&lt;/code&gt;, &lt;code&gt;null&lt;/code&gt; e string vazia. Todos viram &lt;code&gt;''&lt;/code&gt;. A convenção define que &lt;code&gt;sessionId&lt;/code&gt; vazio equivale a sem sessão. Essa linha garante que todos os passos leem o mesmo valor."><strong>Purpose.</strong> Normalizes the <code>sessionId</code> received from the controller. Whitespace, <code>undefined</code>, <code>null</code>, and the empty string. All become <code>''</code>. The convention defines empty <code>sessionId</code> as no session. This line ensures every step reads the same value.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Este bloco funciona como um filtro de entrada. O parâmetro cru chega com nome longo (<code>untrimmedSessionId</code>). O nome deixa claro que o valor ainda não está pronto para uso. A linha faz o encaixe seguro. Se veio texto, remove as bordas. Se veio <code>null</code> ou <code>undefined</code>, o optional chaining pula e o <code>|| ''</code> aplica o default. A partir desta linha, o restante do código lê <code>sessionId</code> sem se preocupar com whitespace, null-check ou tipo. O valor é sempre string. O caso <code>' '.trim() === ''</code> também vira vazio. Whitespace-only é tratado como "sem sessão", não como sessão nomeada " ".
+        <span data-en="&lt;strong&gt;In short.&lt;/strong&gt; This block works as an input filter. The raw parameter arrives with a long name (&lt;code&gt;untrimmedSessionId&lt;/code&gt;). The name makes it clear the value is not ready to use yet. The line does the safe conversion. If a string came in, it trims the edges. If &lt;code&gt;null&lt;/code&gt; or &lt;code&gt;undefined&lt;/code&gt; came in, the optional chaining skips and &lt;code&gt;|| ''&lt;/code&gt; applies the default. From this line onward, the rest of the code reads &lt;code&gt;sessionId&lt;/code&gt; without worrying about whitespace, null-checking, or type. The value is always a string. The case &lt;code&gt;' '.trim() === ''&lt;/code&gt; also becomes empty. Whitespace-only is treated as &quot;no session&quot;, not as a session literally named &quot; &quot;." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Este bloco funciona como um filtro de entrada. O parâmetro cru chega com nome longo (&lt;code&gt;untrimmedSessionId&lt;/code&gt;). O nome deixa claro que o valor ainda não está pronto para uso. A linha faz o encaixe seguro. Se veio texto, remove as bordas. Se veio &lt;code&gt;null&lt;/code&gt; ou &lt;code&gt;undefined&lt;/code&gt;, o optional chaining pula e o &lt;code&gt;|| ''&lt;/code&gt; aplica o default. A partir desta linha, o restante do código lê &lt;code&gt;sessionId&lt;/code&gt; sem se preocupar com whitespace, null-check ou tipo. O valor é sempre string. O caso &lt;code&gt;' '.trim() === ''&lt;/code&gt; também vira vazio. Whitespace-only é tratado como &quot;sem sessão&quot;, não como sessão nomeada &quot; &quot;."><strong>In short.</strong> This block works as an input filter. The raw parameter arrives with a long name (<code>untrimmedSessionId</code>). The name makes it clear the value is not ready to use yet. The line does the safe conversion. If a string came in, it trims the edges. If <code>null</code> or <code>undefined</code> came in, the optional chaining skips and <code>|| ''</code> applies the default. From this line onward, the rest of the code reads <code>sessionId</code> without worrying about whitespace, null-checking, or type. The value is always a string. The case <code>' '.trim() === ''</code> also becomes empty. Whitespace-only is treated as "no session", not as a session literally named " ".</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">A1</span> Optional chaining com fallback vazio</div>
+            <div class="box-title"><span class="badge step">A1</span> <span data-en="Optional chaining with empty fallback" data-pt="Optional chaining com fallback vazio">Optional chaining with empty fallback</span></div>
             <div class="box-desc">
-              O parâmetro entra desestruturado como <code>sessionId: untrimmedSessionId</code>. A operação é síncrona, sem I/O.
+              <span data-en="The parameter comes in destructured as &lt;code&gt;sessionId: untrimmedSessionId&lt;/code&gt;. The operation is synchronous, no I/O." data-pt="O parâmetro entra desestruturado como &lt;code&gt;sessionId: untrimmedSessionId&lt;/code&gt;. A operação é síncrona, sem I/O.">The parameter comes in destructured as <code>sessionId: untrimmedSessionId</code>. The operation is synchronous, no I/O.</span>
             </div>
             <div class="box-file">flux.service.ts:2285 (destructuring), 2319 (trim)</div>
           </div>
           <div class="arrow">↓</div>
           <div class="box decision">
-            <div class="box-title">Consequências do valor</div>
+            <div class="box-title"><span data-en="Consequences of the value" data-pt="Consequências do valor">Consequences of the value</span></div>
             <div class="cascade">
               <div class="cascade-step">
                 <span class="cascade-num">1</span>
@@ -357,7 +362,7 @@
               </div>
               <div class="cascade-step">
                 <span class="cascade-num">3</span>
-                <span class="cond"><code>'   '</code> (só espaços)</span>
+                <span class="cond"><code>'   '</code> <span data-en="(spaces only)" data-pt="(só espaços)">(spaces only)</span></span>
                 <span class="result pass"><code>''</code></span>
               </div>
             </div>
@@ -365,18 +370,16 @@
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Por que renomear inline?</div>
-            O nome <code>untrimmedSessionId</code> só existe no escopo do destructuring. Uma linha depois, some e vira <code>sessionId</code>. É um recurso de legibilidade. Força qualquer leitor a passar pelo trim antes de usar.
+            <div class="aside-title">🎯 <span data-en="Why the inline rename?" data-pt="Por que renomear inline?">Why the inline rename?</span></div>
+            <span data-en="The name &lt;code&gt;untrimmedSessionId&lt;/code&gt; only exists inside the destructuring scope. One line later, it disappears and becomes &lt;code&gt;sessionId&lt;/code&gt;. It is a readability device. It forces any reader to go through the trim before using the value." data-pt="O nome &lt;code&gt;untrimmedSessionId&lt;/code&gt; só existe no escopo do destructuring. Uma linha depois, some e vira &lt;code&gt;sessionId&lt;/code&gt;. É um recurso de legibilidade. Força qualquer leitor a passar pelo trim antes de usar.">The name <code>untrimmedSessionId</code> only exists inside the destructuring scope. One line later, it disappears and becomes <code>sessionId</code>. It is a readability device. It forces any reader to go through the trim before using the value.</span>
           </div>
           <div class="aside">
-            <div class="aside-title">📎 Onde sessionId é usado depois</div>
-            Passo 1.5b (clear session state). Usa <code>ownerUserId</code> mais <code>sessionKey</code>.
-            <br>Passo 1.6 (fluxObject.chat). Aplica <code>sessionIdForChat = sessionId || (hasFluxObjectChat ? 'default' : '')</code>.
-            <br>clearObjects. Usa <code>selectedSession = sessionId || 'default'</code>.
+            <div class="aside-title">📎 <span data-en="Where sessionId is used later" data-pt="Onde sessionId é usado depois">Where sessionId is used later</span></div>
+            <span data-en="Step 1.5b (clear session state). Uses &lt;code&gt;ownerUserId&lt;/code&gt; plus &lt;code&gt;sessionKey&lt;/code&gt;.&lt;br&gt;Step 1.6 (fluxObject.chat). Applies &lt;code&gt;sessionIdForChat = sessionId || (hasFluxObjectChat ? 'default' : '')&lt;/code&gt;.&lt;br&gt;clearObjects. Uses &lt;code&gt;selectedSession = sessionId || 'default'&lt;/code&gt;." data-pt="Passo 1.5b (clear session state). Usa &lt;code&gt;ownerUserId&lt;/code&gt; mais &lt;code&gt;sessionKey&lt;/code&gt;.&lt;br&gt;Passo 1.6 (fluxObject.chat). Aplica &lt;code&gt;sessionIdForChat = sessionId || (hasFluxObjectChat ? 'default' : '')&lt;/code&gt;.&lt;br&gt;clearObjects. Usa &lt;code&gt;selectedSession = sessionId || 'default'&lt;/code&gt;.">Step 1.5b (clear session state). Uses <code>ownerUserId</code> plus <code>sessionKey</code>.<br>Step 1.6 (fluxObject.chat). Applies <code>sessionIdForChat = sessionId || (hasFluxObjectChat ? 'default' : '')</code>.<br>clearObjects. Uses <code>selectedSession = sessionId || 'default'</code>.</span>
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 Convenção de sessão vazia</div>
-            <code>''</code> significa que não há sessão nomeada. Alguns caminhos (fluxObject.chat) sobem para <code>'default'</code>. Outros permanecem vazios para indicar que nada deve ser persistido.
+            <div class="aside-title">🔧 <span data-en="Empty-session convention" data-pt="Convenção de sessão vazia">Empty-session convention</span></div>
+            <span data-en="&lt;code&gt;''&lt;/code&gt; means there is no named session. Some paths (fluxObject.chat) upgrade to &lt;code&gt;'default'&lt;/code&gt;. Others stay empty to signal nothing should be persisted." data-pt="&lt;code&gt;''&lt;/code&gt; significa que não há sessão nomeada. Alguns caminhos (fluxObject.chat) sobem para &lt;code&gt;'default'&lt;/code&gt;. Outros permanecem vazios para indicar que nada deve ser persistido."><code>''</code> means there is no named session. Some paths (fluxObject.chat) upgrade to <code>'default'</code>. Others stay empty to signal nothing should be persisted.</span>
           </div>
         </div>
       </div>
@@ -388,7 +391,7 @@
     <div class="fn-card-header">
       <div class="fn-title">
         <span class="badge migrated" style="background:#F59E0B;color:white">B</span>
-        <code>Contadores + closure onUpdateTokens</code>
+        <code><span data-en="Counters + onUpdateTokens closure" data-pt="Contadores + closure onUpdateTokens">Counters + onUpdateTokens closure</span></code>
       </div>
       <div class="fn-loc">flux.service.ts:2321-2327</div>
     </div>
@@ -399,26 +402,26 @@
         const onUpdateTokens = (tokensUsed, cost) =&gt; { totalTokensUsed += tokensUsed; totalCost += cost; };
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Cria os acumuladores de billing da execução. Contadores mutáveis (<code>let</code>) e um closure que os incrementa. É o único mecanismo pelo qual provedores de AI, execuções de node no worker e sub-flows conseguem acumular tokens e custos no total da execução.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Creates the execution's billing accumulators. Mutable counters (&lt;code&gt;let&lt;/code&gt;) and a closure that increments them. It is the only mechanism through which AI providers, worker node executions, and sub-flows can add tokens and cost to the execution's totals." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Cria os acumuladores de billing da execução. Contadores mutáveis (&lt;code&gt;let&lt;/code&gt;) e um closure que os incrementa. É o único mecanismo pelo qual provedores de AI, execuções de node no worker e sub-flows conseguem acumular tokens e custos no total da execução."><strong>Purpose.</strong> Creates the execution's billing accumulators. Mutable counters (<code>let</code>) and a closure that increments them. It is the only mechanism through which AI providers, worker node executions, and sub-flows can add tokens and cost to the execution's totals.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Dois contadores começam em zero. Somam conforme os nós executam e consomem AI. Quem precisa somar não recebe referência aos números. JavaScript não passa <code>number</code> por referência. Recebe o closure <code>onUpdateTokens</code>. É uma função pequena que sabe onde os contadores moram e faz o incremento. Esse padrão viabiliza o billing distribuído. O worker executa um LLM, chama <code>onUpdateTokens(t, c)</code> e os totais no backend crescem sem round-trip. No final, os totais alimentam <code>flowLogsService.createLog</code> (passo 4.3) e <code>SpaceRunLog.finalize</code> (passo 4.4).
+        <span data-en="&lt;strong&gt;In short.&lt;/strong&gt; Two counters start at zero. They grow as nodes run and consume AI. Anyone who needs to add does not get a reference to the numbers. JavaScript does not pass &lt;code&gt;number&lt;/code&gt; by reference. They get the &lt;code&gt;onUpdateTokens&lt;/code&gt; closure. It is a tiny function that knows where the counters live and does the increment. That pattern enables distributed billing. The worker runs an LLM, calls &lt;code&gt;onUpdateTokens(t, c)&lt;/code&gt;, and the totals on the backend grow with no round-trip. At the end, the totals feed &lt;code&gt;flowLogsService.createLog&lt;/code&gt; (step 4.3) and &lt;code&gt;SpaceRunLog.finalize&lt;/code&gt; (step 4.4)." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Dois contadores começam em zero. Somam conforme os nós executam e consomem AI. Quem precisa somar não recebe referência aos números. JavaScript não passa &lt;code&gt;number&lt;/code&gt; por referência. Recebe o closure &lt;code&gt;onUpdateTokens&lt;/code&gt;. É uma função pequena que sabe onde os contadores moram e faz o incremento. Esse padrão viabiliza o billing distribuído. O worker executa um LLM, chama &lt;code&gt;onUpdateTokens(t, c)&lt;/code&gt; e os totais no backend crescem sem round-trip. No final, os totais alimentam &lt;code&gt;flowLogsService.createLog&lt;/code&gt; (passo 4.3) e &lt;code&gt;SpaceRunLog.finalize&lt;/code&gt; (passo 4.4)."><strong>In short.</strong> Two counters start at zero. They grow as nodes run and consume AI. Anyone who needs to add does not get a reference to the numbers. JavaScript does not pass <code>number</code> by reference. They get the <code>onUpdateTokens</code> closure. It is a tiny function that knows where the counters live and does the increment. That pattern enables distributed billing. The worker runs an LLM, calls <code>onUpdateTokens(t, c)</code>, and the totals on the backend grow with no round-trip. At the end, the totals feed <code>flowLogsService.createLog</code> (step 4.3) and <code>SpaceRunLog.finalize</code> (step 4.4).</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">B1</span> Declarações mutáveis</div>
+            <div class="box-title"><span class="badge step">B1</span> <span data-en="Mutable declarations" data-pt="Declarações mutáveis">Mutable declarations</span></div>
             <div class="box-desc">
-              Ambos <code>let</code>. Ambos zero. O closure captura por referência de escopo. Cada <code>+=</code> muta a variável do escopo pai.
+              <span data-en="Both are &lt;code&gt;let&lt;/code&gt;. Both zero. The closure captures by scope reference. Every &lt;code&gt;+=&lt;/code&gt; mutates the parent-scope variable." data-pt="Ambos &lt;code&gt;let&lt;/code&gt;. Ambos zero. O closure captura por referência de escopo. Cada &lt;code&gt;+=&lt;/code&gt; muta a variável do escopo pai.">Both are <code>let</code>. Both zero. The closure captures by scope reference. Every <code>+=</code> mutates the parent-scope variable.</span>
             </div>
             <div class="box-file">flux.service.ts:2321-2322</div>
           </div>
           <div class="arrow">↓</div>
           <div class="box backend">
-            <div class="box-title"><span class="badge step">B2</span> Closure onUpdateTokens</div>
+            <div class="box-title"><span class="badge step">B2</span> <span data-en="onUpdateTokens closure" data-pt="Closure onUpdateTokens">onUpdateTokens closure</span></div>
             <div class="box-desc">
-              Fecha sobre <code>totalTokensUsed</code> e <code>totalCost</code>. Recebe dois argumentos numéricos e soma in place.
+              <span data-en="Closes over &lt;code&gt;totalTokensUsed&lt;/code&gt; and &lt;code&gt;totalCost&lt;/code&gt;. Takes two numeric arguments and adds in place." data-pt="Fecha sobre &lt;code&gt;totalTokensUsed&lt;/code&gt; e &lt;code&gt;totalCost&lt;/code&gt;. Recebe dois argumentos numéricos e soma in place.">Closes over <code>totalTokensUsed</code> and <code>totalCost</code>. Takes two numeric arguments and adds in place.</span>
             </div>
             <div class="code-block">
 <span class="k">const</span> onUpdateTokens = (tokensUsed: <span class="t">number</span>, cost: <span class="t">number</span>) =&gt; {
@@ -430,31 +433,28 @@
           </div>
           <div class="arrow">↓</div>
           <div class="box cross">
-            <div class="box-title"><span class="badge step">B3</span> Consumidores do callback</div>
+            <div class="box-title"><span class="badge step">B3</span> <span data-en="Callback consumers" data-pt="Consumidores do callback">Callback consumers</span></div>
             <div class="box-desc">
-              O callback é passado para:
-              <br><code>executeNodeViaTemporal</code>. O worker devolve tokens após executar o node via <code>tokenTransactionService.sumChargesByExecution</code> (flux.service.ts:695-703).
-              <br>Provedores legacy (Anthropic, OpenAI, etc.). Somam direto quando geram texto no backend.
-              <br>Sub-flows chamados por <code>flowCallerNode</code>. Cobram na execução pai.
+              <span data-en="The callback is passed to:&lt;br&gt;&lt;code&gt;executeNodeViaTemporal&lt;/code&gt;. The worker returns tokens after running the node via &lt;code&gt;tokenTransactionService.sumChargesByExecution&lt;/code&gt; (flux.service.ts:695-703).&lt;br&gt;Legacy providers (Anthropic, OpenAI, etc.). They add directly when they generate text on the backend.&lt;br&gt;Sub-flows called by &lt;code&gt;flowCallerNode&lt;/code&gt;. They bill against the parent execution." data-pt="O callback é passado para:&lt;br&gt;&lt;code&gt;executeNodeViaTemporal&lt;/code&gt;. O worker devolve tokens após executar o node via &lt;code&gt;tokenTransactionService.sumChargesByExecution&lt;/code&gt; (flux.service.ts:695-703).&lt;br&gt;Provedores legacy (Anthropic, OpenAI, etc.). Somam direto quando geram texto no backend.&lt;br&gt;Sub-flows chamados por &lt;code&gt;flowCallerNode&lt;/code&gt;. Cobram na execução pai.">The callback is passed to:<br><code>executeNodeViaTemporal</code>. The worker returns tokens after running the node via <code>tokenTransactionService.sumChargesByExecution</code> (flux.service.ts:695-703).<br>Legacy providers (Anthropic, OpenAI, etc.). They add directly when they generate text on the backend.<br>Sub-flows called by <code>flowCallerNode</code>. They bill against the parent execution.</span>
             </div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Por que closure e não objeto?</div>
-            Um <code>{ tokens, cost }</code> passado por referência teria o mesmo efeito. O callback esconde a estrutura. O consumidor só sabe chamar a função com <code>(t, c)</code>. É isolamento simples que não vaza detalhes internos.
+            <div class="aside-title">🎯 <span data-en="Why a closure and not an object?" data-pt="Por que closure e não objeto?">Why a closure and not an object?</span></div>
+            <span data-en="A &lt;code&gt;{ tokens, cost }&lt;/code&gt; passed by reference would have the same effect. The callback hides the structure. The consumer only knows how to call the function with &lt;code&gt;(t, c)&lt;/code&gt;. It is simple isolation that does not leak internal details." data-pt="Um &lt;code&gt;{ tokens, cost }&lt;/code&gt; passado por referência teria o mesmo efeito. O callback esconde a estrutura. O consumidor só sabe chamar a função com &lt;code&gt;(t, c)&lt;/code&gt;. É isolamento simples que não vaza detalhes internos.">A <code>{ tokens, cost }</code> passed by reference would have the same effect. The callback hides the structure. The consumer only knows how to call the function with <code>(t, c)</code>. It is simple isolation that does not leak internal details.</span>
           </div>
           <div class="aside">
-            <div class="aside-title">📎 Destino final dos totais</div>
-            <code>totalTokensUsed</code> e <code>totalCost</code> viram <code>spent_tokens</code> e <code>cost</code> no FlowLog (flux.service.ts:4873-4874). E viram <code>totalTokens</code> e <code>totalCost</code> no SpaceRunLog (flux.service.ts:4895-4896).
+            <div class="aside-title">📎 <span data-en="Final destination of the totals" data-pt="Destino final dos totais">Final destination of the totals</span></div>
+            <span data-en="&lt;code&gt;totalTokensUsed&lt;/code&gt; and &lt;code&gt;totalCost&lt;/code&gt; become &lt;code&gt;spent_tokens&lt;/code&gt; and &lt;code&gt;cost&lt;/code&gt; on the FlowLog (flux.service.ts:4873-4874). And become &lt;code&gt;totalTokens&lt;/code&gt; and &lt;code&gt;totalCost&lt;/code&gt; on the SpaceRunLog (flux.service.ts:4895-4896)." data-pt="&lt;code&gt;totalTokensUsed&lt;/code&gt; e &lt;code&gt;totalCost&lt;/code&gt; viram &lt;code&gt;spent_tokens&lt;/code&gt; e &lt;code&gt;cost&lt;/code&gt; no FlowLog (flux.service.ts:4873-4874). E viram &lt;code&gt;totalTokens&lt;/code&gt; e &lt;code&gt;totalCost&lt;/code&gt; no SpaceRunLog (flux.service.ts:4895-4896)."><code>totalTokensUsed</code> and <code>totalCost</code> become <code>spent_tokens</code> and <code>cost</code> on the FlowLog (flux.service.ts:4873-4874). And become <code>totalTokens</code> and <code>totalCost</code> on the SpaceRunLog (flux.service.ts:4895-4896).</span>
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ Sem lock, mas sequencial na prática</div>
-            O loop principal executa nós sequencialmente. Não há race. Se um dia executar nós em paralelo (branches concorrentes), <code>+=</code> não é atômico. Dois callbacks quase simultâneos podem perder um write.
+            <div class="aside-title">⚠️ <span data-en="No lock, but sequential in practice" data-pt="Sem lock, mas sequencial na prática">No lock, but sequential in practice</span></div>
+            <span data-en="The main loop runs nodes sequentially. No race. If nodes were ever run in parallel (concurrent branches), &lt;code&gt;+=&lt;/code&gt; is not atomic. Two nearly-simultaneous callbacks could lose a write." data-pt="O loop principal executa nós sequencialmente. Não há race. Se um dia executar nós em paralelo (branches concorrentes), &lt;code&gt;+=&lt;/code&gt; não é atômico. Dois callbacks quase simultâneos podem perder um write.">The main loop runs nodes sequentially. No race. If nodes were ever run in parallel (concurrent branches), <code>+=</code> is not atomic. Two nearly-simultaneous callbacks could lose a write.</span>
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 Padrão idêntico em 1.5</div>
-            Mesma técnica de <code>onMutateObjectCallerData</code> (passo 1.5-E) e <code>onMutateSchema</code>. O closure captura variável <code>let</code> e permite mutação de fora sem passar referência de objeto.
+            <div class="aside-title">🔧 <span data-en="Identical pattern in 1.5" data-pt="Padrão idêntico em 1.5">Identical pattern in 1.5</span></div>
+            <span data-en="Same technique as &lt;code&gt;onMutateObjectCallerData&lt;/code&gt; (step 1.5-E) and &lt;code&gt;onMutateSchema&lt;/code&gt;. The closure captures a &lt;code&gt;let&lt;/code&gt; variable and allows outside mutation without passing an object reference." data-pt="Mesma técnica de &lt;code&gt;onMutateObjectCallerData&lt;/code&gt; (passo 1.5-E) e &lt;code&gt;onMutateSchema&lt;/code&gt;. O closure captura variável &lt;code&gt;let&lt;/code&gt; e permite mutação de fora sem passar referência de objeto.">Same technique as <code>onMutateObjectCallerData</code> (step 1.5-E) and <code>onMutateSchema</code>. The closure captures a <code>let</code> variable and allows outside mutation without passing an object reference.</span>
           </div>
         </div>
       </div>
@@ -466,7 +466,7 @@
     <div class="fn-card-header">
       <div class="fn-title">
         <span class="badge migrated" style="background:#3B82F6;color:white">C</span>
-        <code>Cascata do runLogProcessId (4 fontes)</code>
+        <code><span data-en="runLogProcessId cascade (4 sources)" data-pt="Cascata do runLogProcessId (4 fontes)">runLogProcessId cascade (4 sources)</span></code>
       </div>
       <div class="fn-loc">flux.service.ts:2329-2330</div>
     </div>
@@ -475,70 +475,62 @@
         const runLogProcessId = execId ?? injectedRunLogCollector?.processId ?? parentProcessId ?? uuid();
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Elege o ID canônico da execução. Esse ID aparece em WebSocket, SpaceRunLog, FeatureFlags de cancel, prefetch e cross-run cache. A cascata tem 4 níveis. Quem já tem ID (execId externo, coletor injetado, parent) reutiliza. Caso contrário, gera UUID novo.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Picks the canonical execution ID. This ID shows up in WebSocket, SpaceRunLog, cancel FeatureFlags, prefetch, and cross-run cache. The cascade has 4 levels. Whoever already has an ID (external execId, injected collector, parent) reuses it. Otherwise, generates a new UUID." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Elege o ID canônico da execução. Esse ID aparece em WebSocket, SpaceRunLog, FeatureFlags de cancel, prefetch e cross-run cache. A cascata tem 4 níveis. Quem já tem ID (execId externo, coletor injetado, parent) reutiliza. Caso contrário, gera UUID novo."><strong>Purpose.</strong> Picks the canonical execution ID. This ID shows up in WebSocket, SpaceRunLog, cancel FeatureFlags, prefetch, and cross-run cache. The cascade has 4 levels. Whoever already has an ID (external execId, injected collector, parent) reuses it. Otherwise, generates a new UUID.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Toda execução precisa de um número de protocolo. A ordem importa muito. Primeiro, se veio <code>execId</code> de fora (uma execução programada ou um Temporal workflow que já batizou a execução), respeita esse valor. Segundo, se a execução é aninhada com um <code>injectedRunLogCollector</code> já em uso, herda o <code>processId</code> dele. Assim o SpaceRunLog do pai coleta tudo junto. Terceiro, se veio <code>parentProcessId</code> (flow-caller-node encadeando execuções), reusa esse valor. Quarto e último, se nada veio, o backend gera um <code>uuid()</code> novo. O ID resultante é a chave de todos os componentes seguintes: <code>chatbotSocketByRun</code>, <code>runCancellationService</code>, o run log no Mongo e o dashboard. Trocar a ordem quebra correlação entre pai e filho em flow-caller.
+        <span data-en="&lt;strong&gt;In short.&lt;/strong&gt; Every execution needs a protocol number. The order matters a lot. First, if &lt;code&gt;execId&lt;/code&gt; came from outside (a scheduled execution or a Temporal workflow that already named the run), that value wins. Second, if the execution is nested with an &lt;code&gt;injectedRunLogCollector&lt;/code&gt; already in use, it inherits the collector's &lt;code&gt;processId&lt;/code&gt;. That way the parent's SpaceRunLog gathers everything together. Third, if &lt;code&gt;parentProcessId&lt;/code&gt; came in (flow-caller-node chaining executions), it reuses that value. Fourth and last, if nothing came in, the backend generates a new &lt;code&gt;uuid()&lt;/code&gt;. The resulting ID is the key across every downstream component: &lt;code&gt;chatbotSocketByRun&lt;/code&gt;, &lt;code&gt;runCancellationService&lt;/code&gt;, the Mongo run log, and the dashboard. Swapping the order breaks parent-child correlation for flow-caller." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Toda execução precisa de um número de protocolo. A ordem importa muito. Primeiro, se veio &lt;code&gt;execId&lt;/code&gt; de fora (uma execução programada ou um Temporal workflow que já batizou a execução), respeita esse valor. Segundo, se a execução é aninhada com um &lt;code&gt;injectedRunLogCollector&lt;/code&gt; já em uso, herda o &lt;code&gt;processId&lt;/code&gt; dele. Assim o SpaceRunLog do pai coleta tudo junto. Terceiro, se veio &lt;code&gt;parentProcessId&lt;/code&gt; (flow-caller-node encadeando execuções), reusa esse valor. Quarto e último, se nada veio, o backend gera um &lt;code&gt;uuid()&lt;/code&gt; novo. O ID resultante é a chave de todos os componentes seguintes: &lt;code&gt;chatbotSocketByRun&lt;/code&gt;, &lt;code&gt;runCancellationService&lt;/code&gt;, o run log no Mongo e o dashboard. Trocar a ordem quebra correlação entre pai e filho em flow-caller."><strong>In short.</strong> Every execution needs a protocol number. The order matters a lot. First, if <code>execId</code> came from outside (a scheduled execution or a Temporal workflow that already named the run), that value wins. Second, if the execution is nested with an <code>injectedRunLogCollector</code> already in use, it inherits the collector's <code>processId</code>. That way the parent's SpaceRunLog gathers everything together. Third, if <code>parentProcessId</code> came in (flow-caller-node chaining executions), it reuses that value. Fourth and last, if nothing came in, the backend generates a new <code>uuid()</code>. The resulting ID is the key across every downstream component: <code>chatbotSocketByRun</code>, <code>runCancellationService</code>, the Mongo run log, and the dashboard. Swapping the order breaks parent-child correlation for flow-caller.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="cascade">
-            <div class="cascade-title">🪜 Cascata de resolução (primeiro não nulo ganha)</div>
+            <div class="cascade-title">🪜 <span data-en="Resolution cascade (first non-null wins)" data-pt="Cascata de resolução (primeiro não nulo ganha)">Resolution cascade (first non-null wins)</span></div>
             <div class="cascade-step">
               <span class="cascade-num">1</span>
-              <span class="cond"><code>execId</code> presente (Temporal ou execução programada)</span>
-              <span class="result pass">usa <code>execId</code></span>
+              <span class="cond"><code>execId</code> <span data-en="present (Temporal or scheduled execution)" data-pt="presente (Temporal ou execução programada)">present (Temporal or scheduled execution)</span></span>
+              <span class="result pass"><span data-en="use" data-pt="usa">use</span> <code>execId</code></span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">2</span>
-              <span class="cond"><code>injectedRunLogCollector?.processId</code> presente (execução aninhada com collector do pai)</span>
-              <span class="result pass">usa <code>collector.processId</code></span>
+              <span class="cond"><code>injectedRunLogCollector?.processId</code> <span data-en="present (nested execution with parent collector)" data-pt="presente (execução aninhada com collector do pai)">present (nested execution with parent collector)</span></span>
+              <span class="result pass"><span data-en="use" data-pt="usa">use</span> <code>collector.processId</code></span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">3</span>
-              <span class="cond"><code>parentProcessId</code> presente (flow-caller-node)</span>
-              <span class="result pass">usa <code>parentProcessId</code></span>
+              <span class="cond"><code>parentProcessId</code> <span data-en="present (flow-caller-node)" data-pt="presente (flow-caller-node)">present (flow-caller-node)</span></span>
+              <span class="result pass"><span data-en="use" data-pt="usa">use</span> <code>parentProcessId</code></span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">4</span>
-              <span class="cond">nenhum dos anteriores</span>
-              <span class="result pass"><code>uuid()</code> novo</span>
+              <span class="cond"><span data-en="none of the above" data-pt="nenhum dos anteriores">none of the above</span></span>
+              <span class="result pass"><span data-en="new" data-pt="novo">new</span> <code>uuid()</code></span>
             </div>
           </div>
           <div class="arrow">↓</div>
           <div class="box decision">
-            <div class="box-title">Consumidores diretos do runLogProcessId</div>
+            <div class="box-title"><span data-en="Direct consumers of runLogProcessId" data-pt="Consumidores diretos do runLogProcessId">Direct consumers of runLogProcessId</span></div>
             <div class="box-desc">
-              <code>chatbotSocketByRun.set(runLogProcessId, socketId)</code>. Em flux.service.ts:2332.
-              <br>Log de gate do SpaceRunLog. Em flux.service.ts:2428.
-              <br><code>resolveCancelRunKey({ runLogProcessId, ... })</code>. Em flux.service.ts:3243.
-              <br><code>spaceRunLogsService.flushNow({ processId: runLogProcessId, ... })</code>. Em flux.service.ts:4903.
-              <br><code>runCancellationService.forgetRun(runLogProcessId)</code>. Em flux.service.ts:5430.
+              <span data-en="&lt;code&gt;chatbotSocketByRun.set(runLogProcessId, socketId)&lt;/code&gt;. In flux.service.ts:2332.&lt;br&gt;SpaceRunLog gate log. In flux.service.ts:2428.&lt;br&gt;&lt;code&gt;resolveCancelRunKey({ runLogProcessId, ... })&lt;/code&gt;. In flux.service.ts:3243.&lt;br&gt;&lt;code&gt;spaceRunLogsService.flushNow({ processId: runLogProcessId, ... })&lt;/code&gt;. In flux.service.ts:4903.&lt;br&gt;&lt;code&gt;runCancellationService.forgetRun(runLogProcessId)&lt;/code&gt;. In flux.service.ts:5430." data-pt="&lt;code&gt;chatbotSocketByRun.set(runLogProcessId, socketId)&lt;/code&gt;. Em flux.service.ts:2332.&lt;br&gt;Log de gate do SpaceRunLog. Em flux.service.ts:2428.&lt;br&gt;&lt;code&gt;resolveCancelRunKey({ runLogProcessId, ... })&lt;/code&gt;. Em flux.service.ts:3243.&lt;br&gt;&lt;code&gt;spaceRunLogsService.flushNow({ processId: runLogProcessId, ... })&lt;/code&gt;. Em flux.service.ts:4903.&lt;br&gt;&lt;code&gt;runCancellationService.forgetRun(runLogProcessId)&lt;/code&gt;. Em flux.service.ts:5430."><code>chatbotSocketByRun.set(runLogProcessId, socketId)</code>. In flux.service.ts:2332.<br>SpaceRunLog gate log. In flux.service.ts:2428.<br><code>resolveCancelRunKey({ runLogProcessId, ... })</code>. In flux.service.ts:3243.<br><code>spaceRunLogsService.flushNow({ processId: runLogProcessId, ... })</code>. In flux.service.ts:4903.<br><code>runCancellationService.forgetRun(runLogProcessId)</code>. In flux.service.ts:5430.</span>
             </div>
             <div class="box-file">flux.service.ts:2329-2330</div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Por que 4 fontes?</div>
-            Cada fonte cobre um cenário diferente.
-            <br><code>execId</code>. Quem chamou já tem ID (Temporal replay-safe).
-            <br><code>injectedRunLogCollector.processId</code>. Execução aninhada deve virar entrada dentro do log do pai.
-            <br><code>parentProcessId</code>. Caminho legacy pré-collector. Ainda usa flow-caller.
-            <br><code>uuid()</code>. Execução top-level sem valor pré-definido.
+            <div class="aside-title">🎯 <span data-en="Why 4 sources?" data-pt="Por que 4 fontes?">Why 4 sources?</span></div>
+            <span data-en="Each source covers a different scenario.&lt;br&gt;&lt;code&gt;execId&lt;/code&gt;. The caller already has an ID (Temporal replay-safe).&lt;br&gt;&lt;code&gt;injectedRunLogCollector.processId&lt;/code&gt;. A nested execution should become an entry inside the parent's log.&lt;br&gt;&lt;code&gt;parentProcessId&lt;/code&gt;. Legacy pre-collector path. Still used by flow-caller.&lt;br&gt;&lt;code&gt;uuid()&lt;/code&gt;. Top-level execution with no pre-defined value." data-pt="Cada fonte cobre um cenário diferente.&lt;br&gt;&lt;code&gt;execId&lt;/code&gt;. Quem chamou já tem ID (Temporal replay-safe).&lt;br&gt;&lt;code&gt;injectedRunLogCollector.processId&lt;/code&gt;. Execução aninhada deve virar entrada dentro do log do pai.&lt;br&gt;&lt;code&gt;parentProcessId&lt;/code&gt;. Caminho legacy pré-collector. Ainda usa flow-caller.&lt;br&gt;&lt;code&gt;uuid()&lt;/code&gt;. Execução top-level sem valor pré-definido.">Each source covers a different scenario.<br><code>execId</code>. The caller already has an ID (Temporal replay-safe).<br><code>injectedRunLogCollector.processId</code>. A nested execution should become an entry inside the parent's log.<br><code>parentProcessId</code>. Legacy pre-collector path. Still used by flow-caller.<br><code>uuid()</code>. Top-level execution with no pre-defined value.</span>
           </div>
           <div class="aside">
-            <div class="aside-title">📎 execId versus runLogProcessId</div>
-            Quando <code>execId</code> vem preenchido, <code>runLogProcessId === execId</code>. Nos outros casos, são desiguais. Vários locais downstream tratam <code>runLogProcessId</code> como o execId de fato.
+            <div class="aside-title">📎 <span data-en="execId versus runLogProcessId" data-pt="execId versus runLogProcessId">execId versus runLogProcessId</span></div>
+            <span data-en="When &lt;code&gt;execId&lt;/code&gt; is filled in, &lt;code&gt;runLogProcessId === execId&lt;/code&gt;. In every other case, they differ. Many downstream places treat &lt;code&gt;runLogProcessId&lt;/code&gt; as the effective execId." data-pt="Quando &lt;code&gt;execId&lt;/code&gt; vem preenchido, &lt;code&gt;runLogProcessId === execId&lt;/code&gt;. Nos outros casos, são desiguais. Vários locais downstream tratam &lt;code&gt;runLogProcessId&lt;/code&gt; como o execId de fato.">When <code>execId</code> is filled in, <code>runLogProcessId === execId</code>. In every other case, they differ. Many downstream places treat <code>runLogProcessId</code> as the effective execId.</span>
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ Nullish coalescing (??), não falsy</div>
-            Usa <code>??</code>, não <code>||</code>. String vazia <code>''</code> passaria como presente pelo <code>??</code>, mas seria descartada por <code>||</code>. Como todos os valores aqui são UUIDs quando presentes, a diferença não importa na prática.
+            <div class="aside-title">⚠️ <span data-en="Nullish coalescing (??), not falsy" data-pt="Nullish coalescing (??), não falsy">Nullish coalescing (??), not falsy</span></div>
+            <span data-en="Uses &lt;code&gt;??&lt;/code&gt;, not &lt;code&gt;||&lt;/code&gt;. An empty string &lt;code&gt;''&lt;/code&gt; would pass as present through &lt;code&gt;??&lt;/code&gt;, but would be discarded by &lt;code&gt;||&lt;/code&gt;. Since every value here is a UUID when present, the difference does not matter in practice." data-pt="Usa &lt;code&gt;??&lt;/code&gt;, não &lt;code&gt;||&lt;/code&gt;. String vazia &lt;code&gt;''&lt;/code&gt; passaria como presente pelo &lt;code&gt;??&lt;/code&gt;, mas seria descartada por &lt;code&gt;||&lt;/code&gt;. Como todos os valores aqui são UUIDs quando presentes, a diferença não importa na prática.">Uses <code>??</code>, not <code>||</code>. An empty string <code>''</code> would pass as present through <code>??</code>, but would be discarded by <code>||</code>. Since every value here is a UUID when present, the difference does not matter in practice.</span>
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 uuid() a partir do módulo 'uuid'</div>
-            <code>import { v4 as uuid } from 'uuid'</code> (v4 random). Retorna string do tipo <code>'a1b2c3d4-...'</code>. Colisão prática é zero.
+            <div class="aside-title">🔧 <span data-en="uuid() from the 'uuid' module" data-pt="uuid() a partir do módulo 'uuid'">uuid() from the 'uuid' module</span></div>
+            <span data-en="&lt;code&gt;import { v4 as uuid } from 'uuid'&lt;/code&gt; (v4 random). Returns a string like &lt;code&gt;'a1b2c3d4-...'&lt;/code&gt;. Practical collision is zero." data-pt="&lt;code&gt;import { v4 as uuid } from 'uuid'&lt;/code&gt; (v4 random). Retorna string do tipo &lt;code&gt;'a1b2c3d4-...'&lt;/code&gt;. Colisão prática é zero."><code>import { v4 as uuid } from 'uuid'</code> (v4 random). Returns a string like <code>'a1b2c3d4-...'</code>. Practical collision is zero.</span>
           </div>
         </div>
       </div>
@@ -550,7 +542,7 @@
     <div class="fn-card-header">
       <div class="fn-title">
         <span class="badge migrated" style="background:#8B5CF6;color:white">D</span>
-        <code>chatbotSocketByRun.set (com gate)</code>
+        <code><span data-en="chatbotSocketByRun.set (gated)" data-pt="chatbotSocketByRun.set (com gate)">chatbotSocketByRun.set (gated)</span></code>
       </div>
       <div class="fn-loc">flux.service.ts:2331-2333</div>
     </div>
@@ -559,24 +551,24 @@
         if (socketId) { this.chatbotSocketByRun.set(runLogProcessId, socketId); }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Registra a associação <code>runLogProcessId → socketId</code> num Map de instância. Isso permite que qualquer código que sabe o <code>runId</code> (por exemplo <code>executeNodeViaTemporal</code>) descubra o socket do browser. O socket recebe eventos progressivos (streaming, node-started, cancel).
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Registers the &lt;code&gt;runLogProcessId → socketId&lt;/code&gt; mapping on an instance Map. This lets any code that knows the &lt;code&gt;runId&lt;/code&gt; (for example &lt;code&gt;executeNodeViaTemporal&lt;/code&gt;) find the browser socket. The socket receives progressive events (streaming, node-started, cancel)." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Registra a associação &lt;code&gt;runLogProcessId → socketId&lt;/code&gt; num Map de instância. Isso permite que qualquer código que sabe o &lt;code&gt;runId&lt;/code&gt; (por exemplo &lt;code&gt;executeNodeViaTemporal&lt;/code&gt;) descubra o socket do browser. O socket recebe eventos progressivos (streaming, node-started, cancel)."><strong>Purpose.</strong> Registers the <code>runLogProcessId → socketId</code> mapping on an instance Map. This lets any code that knows the <code>runId</code> (for example <code>executeNodeViaTemporal</code>) find the browser socket. The socket receives progressive events (streaming, node-started, cancel).</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Funciona como o livro de endereços do chatbot. Antes de qualquer node executar, o backend anota que aquele <code>runId</code> está sendo acompanhado por aquele socket. Sem essa anotação, os handlers do Temporal rodam em contexto assíncrono sem saber quem originou a chamada. Não conseguiriam enviar eventos de volta à tela do usuário. O gate <code>if (socketId)</code> importa. Só o chatbot manda <code>socketId</code>. Execuções via API, webhook ou cronjob passam <code>undefined</code> e nada é registrado. A limpeza não acontece aqui. Ocorre no bloco <code>finally</code> do apiV2 (passo 5.3, linha 5427-5429). Se uma execução falhar antes de chegar no finally, a entrada vaza no Map. É um leak lento acumulado ao longo de dias.
+        <span data-en="&lt;strong&gt;In short.&lt;/strong&gt; It works as the chatbot's address book. Before any node runs, the backend notes that that &lt;code&gt;runId&lt;/code&gt; is being followed by that socket. Without this note, Temporal handlers run in async context without knowing who originated the call. They would not be able to send events back to the user's screen. The &lt;code&gt;if (socketId)&lt;/code&gt; gate matters. Only the chatbot sends &lt;code&gt;socketId&lt;/code&gt;. API, webhook, or cronjob executions pass &lt;code&gt;undefined&lt;/code&gt; and nothing is registered. Cleanup does not happen here. It happens in apiV2's &lt;code&gt;finally&lt;/code&gt; block (step 5.3, lines 5427-5429). If an execution fails before reaching finally, the entry leaks into the Map. It is a slow leak that piles up over days." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Funciona como o livro de endereços do chatbot. Antes de qualquer node executar, o backend anota que aquele &lt;code&gt;runId&lt;/code&gt; está sendo acompanhado por aquele socket. Sem essa anotação, os handlers do Temporal rodam em contexto assíncrono sem saber quem originou a chamada. Não conseguiriam enviar eventos de volta à tela do usuário. O gate &lt;code&gt;if (socketId)&lt;/code&gt; importa. Só o chatbot manda &lt;code&gt;socketId&lt;/code&gt;. Execuções via API, webhook ou cronjob passam &lt;code&gt;undefined&lt;/code&gt; e nada é registrado. A limpeza não acontece aqui. Ocorre no bloco &lt;code&gt;finally&lt;/code&gt; do apiV2 (passo 5.3, linha 5427-5429). Se uma execução falhar antes de chegar no finally, a entrada vaza no Map. É um leak lento acumulado ao longo de dias."><strong>In short.</strong> It works as the chatbot's address book. Before any node runs, the backend notes that that <code>runId</code> is being followed by that socket. Without this note, Temporal handlers run in async context without knowing who originated the call. They would not be able to send events back to the user's screen. The <code>if (socketId)</code> gate matters. Only the chatbot sends <code>socketId</code>. API, webhook, or cronjob executions pass <code>undefined</code> and nothing is registered. Cleanup does not happen here. It happens in apiV2's <code>finally</code> block (step 5.3, lines 5427-5429). If an execution fails before reaching finally, the entry leaks into the Map. It is a slow leak that piles up over days.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">D1</span> Map<string, string> na instância</div>
+            <div class="box-title"><span class="badge step">D1</span> <span data-en="Map&amp;lt;string, string&amp;gt; on the instance" data-pt="Map&amp;lt;string, string&amp;gt; na instância">Map&lt;string, string&gt; on the instance</span></div>
             <div class="box-desc">
-              Declarado em <code>flux.service.ts:360</code> como <code>private readonly chatbotSocketByRun = new Map()</code>. É estado por processo NestJS. Em cluster, cada worker tem o próprio Map isolado.
+              <span data-en="Declared at &lt;code&gt;flux.service.ts:360&lt;/code&gt; as &lt;code&gt;private readonly chatbotSocketByRun = new Map()&lt;/code&gt;. It is per-process NestJS state. In a cluster, each worker has its own isolated Map." data-pt="Declarado em &lt;code&gt;flux.service.ts:360&lt;/code&gt; como &lt;code&gt;private readonly chatbotSocketByRun = new Map()&lt;/code&gt;. É estado por processo NestJS. Em cluster, cada worker tem o próprio Map isolado.">Declared at <code>flux.service.ts:360</code> as <code>private readonly chatbotSocketByRun = new Map()</code>. It is per-process NestJS state. In a cluster, each worker has its own isolated Map.</span>
             </div>
             <div class="box-file">flux.service.ts:360</div>
           </div>
           <div class="arrow">↓</div>
           <div class="cascade">
-            <div class="cascade-title">🚪 Gate. Só chatbot registra</div>
+            <div class="cascade-title">🚪 <span data-en="Gate. Only chatbot registers" data-pt="Gate. Só chatbot registra">Gate. Only chatbot registers</span></div>
             <div class="cascade-step">
               <span class="cascade-num">1</span>
               <span class="cond"><code>socketId</code> truthy</span>
@@ -584,37 +576,36 @@
             </div>
             <div class="cascade-step">
               <span class="cascade-num">2</span>
-              <span class="cond">falsy (API, webhook ou cronjob)</span>
+              <span class="cond"><span data-en="falsy (API, webhook, or cronjob)" data-pt="falsy (API, webhook ou cronjob)">falsy (API, webhook, or cronjob)</span></span>
               <span class="result deny">skip</span>
             </div>
           </div>
           <div class="arrow">↓</div>
           <div class="box cross">
-            <div class="box-title"><span class="badge step">D2</span> Limpeza no finally (passo 5.3)</div>
+            <div class="box-title"><span class="badge step">D2</span> <span data-en="Cleanup in the finally (step 5.3)" data-pt="Limpeza no finally (passo 5.3)">Cleanup in the finally (step 5.3)</span></div>
             <div class="box-desc">
               <code>if (socketId) { this.chatbotSocketByRun.delete(runLogProcessId); }</code>
-              <br>Ver flux.service.ts:5427-5429. Gate de limpeza usa a mesma condição do set. Se registrou, remove.
+              <br><span data-en="See flux.service.ts:5427-5429. The cleanup gate uses the same condition as the set. If it was registered, it is removed." data-pt="Ver flux.service.ts:5427-5429. Gate de limpeza usa a mesma condição do set. Se registrou, remove.">See flux.service.ts:5427-5429. The cleanup gate uses the same condition as the set. If it was registered, it is removed.</span>
             </div>
             <div class="box-file">flux.service.ts:5427-5429</div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Onde é lido</div>
-            <code>this.chatbotSocketByRun.get(runId) ?? null</code> em flux.service.ts:689. Passado para <code>executeNodeViaTemporal(...)</code> como último argumento. O worker abre um handler de socket com esse ID para transmitir tokens de LLM ao vivo.
+            <div class="aside-title">🎯 <span data-en="Where it is read" data-pt="Onde é lido">Where it is read</span></div>
+            <span data-en="&lt;code&gt;this.chatbotSocketByRun.get(runId) ?? null&lt;/code&gt; at flux.service.ts:689. Passed to &lt;code&gt;executeNodeViaTemporal(...)&lt;/code&gt; as the last argument. The worker opens a socket handler with that ID to stream LLM tokens live." data-pt="&lt;code&gt;this.chatbotSocketByRun.get(runId) ?? null&lt;/code&gt; em flux.service.ts:689. Passado para &lt;code&gt;executeNodeViaTemporal(...)&lt;/code&gt; como último argumento. O worker abre um handler de socket com esse ID para transmitir tokens de LLM ao vivo."><code>this.chatbotSocketByRun.get(runId) ?? null</code> at flux.service.ts:689. Passed to <code>executeNodeViaTemporal(...)</code> as the last argument. The worker opens a socket handler with that ID to stream LLM tokens live.</span>
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ Leak em falha antes do finally</div>
-            Se algo entre a linha 2333 e o finally lançar uma exceção que escape do try/catch principal (raro mas possível), o Map fica com entrada órfã. Um exemplo é um throw antes do try.
-            <br><br>Na prática nunca aconteceu. Tudo relevante fica dentro do try. É um risco se algum refactor mover o setup para antes do try.
+            <div class="aside-title">⚠️ <span data-en="Leak on failure before finally" data-pt="Leak em falha antes do finally">Leak on failure before finally</span></div>
+            <span data-en="If anything between line 2333 and the finally throws an exception that escapes the main try/catch (rare but possible), the Map ends up with an orphan entry. An example is a throw before the try.&lt;br&gt;&lt;br&gt;In practice it has never happened. Everything relevant sits inside the try. It is a risk if some refactor moves the setup before the try." data-pt="Se algo entre a linha 2333 e o finally lançar uma exceção que escape do try/catch principal (raro mas possível), o Map fica com entrada órfã. Um exemplo é um throw antes do try.&lt;br&gt;&lt;br&gt;Na prática nunca aconteceu. Tudo relevante fica dentro do try. É um risco se algum refactor mover o setup para antes do try.">If anything between line 2333 and the finally throws an exception that escapes the main try/catch (rare but possible), the Map ends up with an orphan entry. An example is a throw before the try.<br><br>In practice it has never happened. Everything relevant sits inside the try. It is a risk if some refactor moves the setup before the try.</span>
           </div>
           <div class="aside">
-            <div class="aside-title">📎 Por que Map e não Redis?</div>
-            O socket handshake é local. O cliente conversa com esse pod específico via WebSocket. Sockets não migram entre pods. O Map local basta e evita round-trip.
+            <div class="aside-title">📎 <span data-en="Why a Map and not Redis?" data-pt="Por que Map e não Redis?">Why a Map and not Redis?</span></div>
+            <span data-en="The socket handshake is local. The client talks to that specific pod via WebSocket. Sockets do not migrate between pods. The local Map is enough and avoids a round-trip." data-pt="O socket handshake é local. O cliente conversa com esse pod específico via WebSocket. Sockets não migram entre pods. O Map local basta e evita round-trip.">The socket handshake is local. The client talks to that specific pod via WebSocket. Sockets do not migrate between pods. The local Map is enough and avoids a round-trip.</span>
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 Formato do socketId</div>
-            String opaca vinda do gateway (Socket.io). É o formato interno do Socket.io. O backend só faz proxy dela para localizar o cliente conectado.
+            <div class="aside-title">🔧 <span data-en="socketId format" data-pt="Formato do socketId">socketId format</span></div>
+            <span data-en="Opaque string from the gateway (Socket.io). It is Socket.io's internal format. The backend only proxies it to locate the connected client." data-pt="String opaca vinda do gateway (Socket.io). É o formato interno do Socket.io. O backend só faz proxy dela para localizar o cliente conectado.">Opaque string from the gateway (Socket.io). It is Socket.io's internal format. The backend only proxies it to locate the connected client.</span>
           </div>
         </div>
       </div>
@@ -626,7 +617,7 @@
     <div class="fn-card-header">
       <div class="fn-title">
         <span class="badge migrated" style="background:#EF4444;color:white">E</span>
-        <code>isNestedRunLog flag</code>
+        <code><span data-en="isNestedRunLog flag" data-pt="isNestedRunLog flag">isNestedRunLog flag</span></code>
       </div>
       <div class="fn-loc">flux.service.ts:2337</div>
     </div>
@@ -635,24 +626,24 @@
         const isNestedRunLog = !!injectedRunLogCollector;
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Marca se esta execução é uma sub-execução chamada por outro flow (flow-caller-node) que já veio com um <code>RunLogCollector</code> ativo do pai. Em vez de fazer flush do próprio SpaceRunLog, a execução aninhada deve anexar nós no coletor injetado. O pai fará o flush.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Marks whether this execution is a sub-execution called by another flow (flow-caller-node) that arrived with an active parent &lt;code&gt;RunLogCollector&lt;/code&gt;. Instead of flushing its own SpaceRunLog, the nested execution should append nodes to the injected collector. The parent will do the flush." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Marca se esta execução é uma sub-execução chamada por outro flow (flow-caller-node) que já veio com um &lt;code&gt;RunLogCollector&lt;/code&gt; ativo do pai. Em vez de fazer flush do próprio SpaceRunLog, a execução aninhada deve anexar nós no coletor injetado. O pai fará o flush."><strong>Purpose.</strong> Marks whether this execution is a sub-execution called by another flow (flow-caller-node) that arrived with an active parent <code>RunLogCollector</code>. Instead of flushing its own SpaceRunLog, the nested execution should append nodes to the injected collector. The parent will do the flush.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Quando uma execução é filha de outra (flow-caller-node dispara um sub-flow), o pai passa seu <code>RunLogCollector</code> em <code>injectedRunLogCollector</code>. Essa flag simplifica a decisão em vários pontos. Se <code>isNestedRunLog</code> for <code>true</code>, a execução filha deve pular várias operações que só fazem sentido para uma execução raiz. Deve pular <code>assertOwnerCanRunFlow</code> (o billing gate já foi checado pelo pai), o log de gate do SpaceRunLog (pai já registrou) e o <code>flushNow</code> do documento no Mongo (o pai fará o flush no final). A flag é usada em 5 lugares. 2409 (gate assertOwner). 2415 (gate log). 3241 (feed para cancel-watch). 4900 (skip flushNow success). 5351 (skip flushNow error). É um boolean derivativo clássico. Computa uma vez, usa muito.
+        <span data-en="&lt;strong&gt;In short.&lt;/strong&gt; When an execution is the child of another (flow-caller-node fires a sub-flow), the parent passes its &lt;code&gt;RunLogCollector&lt;/code&gt; in &lt;code&gt;injectedRunLogCollector&lt;/code&gt;. This flag simplifies the decision at several points. If &lt;code&gt;isNestedRunLog&lt;/code&gt; is &lt;code&gt;true&lt;/code&gt;, the child execution should skip several operations that only make sense for a root execution. It should skip &lt;code&gt;assertOwnerCanRunFlow&lt;/code&gt; (the parent already checked the billing gate), the SpaceRunLog gate log (the parent already recorded it), and the &lt;code&gt;flushNow&lt;/code&gt; of the Mongo document (the parent will flush at the end). The flag is used in 5 places. 2409 (assertOwner gate). 2415 (log gate). 3241 (feed for cancel-watch). 4900 (skip flushNow success). 5351 (skip flushNow error). It is a classic derived boolean. Compute once, use often." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Quando uma execução é filha de outra (flow-caller-node dispara um sub-flow), o pai passa seu &lt;code&gt;RunLogCollector&lt;/code&gt; em &lt;code&gt;injectedRunLogCollector&lt;/code&gt;. Essa flag simplifica a decisão em vários pontos. Se &lt;code&gt;isNestedRunLog&lt;/code&gt; for &lt;code&gt;true&lt;/code&gt;, a execução filha deve pular várias operações que só fazem sentido para uma execução raiz. Deve pular &lt;code&gt;assertOwnerCanRunFlow&lt;/code&gt; (o billing gate já foi checado pelo pai), o log de gate do SpaceRunLog (pai já registrou) e o &lt;code&gt;flushNow&lt;/code&gt; do documento no Mongo (o pai fará o flush no final). A flag é usada em 5 lugares. 2409 (gate assertOwner). 2415 (gate log). 3241 (feed para cancel-watch). 4900 (skip flushNow success). 5351 (skip flushNow error). É um boolean derivativo clássico. Computa uma vez, usa muito."><strong>In short.</strong> When an execution is the child of another (flow-caller-node fires a sub-flow), the parent passes its <code>RunLogCollector</code> in <code>injectedRunLogCollector</code>. This flag simplifies the decision at several points. If <code>isNestedRunLog</code> is <code>true</code>, the child execution should skip several operations that only make sense for a root execution. It should skip <code>assertOwnerCanRunFlow</code> (the parent already checked the billing gate), the SpaceRunLog gate log (the parent already recorded it), and the <code>flushNow</code> of the Mongo document (the parent will flush at the end). The flag is used in 5 places. 2409 (assertOwner gate). 2415 (log gate). 3241 (feed for cancel-watch). 4900 (skip flushNow success). 5351 (skip flushNow error). It is a classic derived boolean. Compute once, use often.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">E1</span> Derivação booleana</div>
+            <div class="box-title"><span class="badge step">E1</span> <span data-en="Boolean derivation" data-pt="Derivação booleana">Boolean derivation</span></div>
             <div class="box-desc">
-              <code>!!</code> é coerção para boolean puro. <code>null</code> e <code>undefined</code> viram <code>false</code>. Qualquer objeto vira <code>true</code>.
+              <span data-en="&lt;code&gt;!!&lt;/code&gt; is a coercion to pure boolean. &lt;code&gt;null&lt;/code&gt; and &lt;code&gt;undefined&lt;/code&gt; become &lt;code&gt;false&lt;/code&gt;. Any object becomes &lt;code&gt;true&lt;/code&gt;." data-pt="&lt;code&gt;!!&lt;/code&gt; é coerção para boolean puro. &lt;code&gt;null&lt;/code&gt; e &lt;code&gt;undefined&lt;/code&gt; viram &lt;code&gt;false&lt;/code&gt;. Qualquer objeto vira &lt;code&gt;true&lt;/code&gt;."><code>!!</code> is a coercion to pure boolean. <code>null</code> and <code>undefined</code> become <code>false</code>. Any object becomes <code>true</code>.</span>
             </div>
             <div class="box-file">flux.service.ts:2337</div>
           </div>
           <div class="arrow">↓</div>
           <div class="cascade">
-            <div class="cascade-title">🔎 Todos os gates controlados pela flag</div>
+            <div class="cascade-title">🔎 <span data-en="All gates controlled by the flag" data-pt="Todos os gates controlados pela flag">All gates controlled by the flag</span></div>
             <div class="cascade-step">
               <span class="cascade-num">1</span>
               <span class="cond">L2409. <code>if (!isNestedRunLog) assertOwnerCanRunFlow(getFlow)</code></span>
@@ -661,7 +652,7 @@
             <div class="cascade-step">
               <span class="cascade-num">2</span>
               <span class="cond">L2415. <code>if (!isNestedRunLog) { ...console.log [SpaceRunLog gate]... }</code></span>
-              <span class="result deny">skip log de gate</span>
+              <span class="result deny"><span data-en="skip gate log" data-pt="skip log de gate">skip gate log</span></span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">3</span>
@@ -671,7 +662,7 @@
             <div class="cascade-step">
               <span class="cascade-num">4</span>
               <span class="cond">L4900. <code>if (runLogDoc &amp;&amp; !isNestedRunLog) flushNow(...)</code></span>
-              <span class="result deny">skip flush sucesso</span>
+              <span class="result deny"><span data-en="skip flush success" data-pt="skip flush sucesso">skip flush success</span></span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">5</span>
@@ -682,20 +673,20 @@
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Semântica de "nested"</div>
-            "Nested" aqui significa chamado com um coletor pré-existente. Não é o mesmo que ter parent. Um flow pode ter <code>parentProcessId</code> sem coletor injetado (caminho legacy). O gate de flush usa essa flag específica.
+            <div class="aside-title">🎯 <span data-en="Semantics of &quot;nested&quot;" data-pt="Semântica de &quot;nested&quot;">Semantics of "nested"</span></div>
+            <span data-en="&quot;Nested&quot; here means called with a pre-existing collector. It is not the same as having a parent. A flow can have &lt;code&gt;parentProcessId&lt;/code&gt; without an injected collector (legacy path). The flush gate uses this specific flag." data-pt="&quot;Nested&quot; aqui significa chamado com um coletor pré-existente. Não é o mesmo que ter parent. Um flow pode ter &lt;code&gt;parentProcessId&lt;/code&gt; sem coletor injetado (caminho legacy). O gate de flush usa essa flag específica.">"Nested" here means called with a pre-existing collector. It is not the same as having a parent. A flow can have <code>parentProcessId</code> without an injected collector (legacy path). The flush gate uses this specific flag.</span>
           </div>
           <div class="aside">
-            <div class="aside-title">📎 Combinado com parentProcessId</div>
-            Em L3241, o cancel-watch usa a união <code>isNestedRunLog || Boolean(parentProcessId)</code>. O cancel-watch trata os dois cenários como sub-run. A sub-run não instala o próprio watcher. Herda do pai.
+            <div class="aside-title">📎 <span data-en="Combined with parentProcessId" data-pt="Combinado com parentProcessId">Combined with parentProcessId</span></div>
+            <span data-en="At L3241, cancel-watch uses the union &lt;code&gt;isNestedRunLog || Boolean(parentProcessId)&lt;/code&gt;. cancel-watch treats both scenarios as sub-run. A sub-run does not install its own watcher. It inherits from the parent." data-pt="Em L3241, o cancel-watch usa a união &lt;code&gt;isNestedRunLog || Boolean(parentProcessId)&lt;/code&gt;. O cancel-watch trata os dois cenários como sub-run. A sub-run não instala o próprio watcher. Herda do pai.">At L3241, cancel-watch uses the union <code>isNestedRunLog || Boolean(parentProcessId)</code>. cancel-watch treats both scenarios as sub-run. A sub-run does not install its own watcher. It inherits from the parent.</span>
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ Skip do assertOwnerCanRunFlow</div>
-            Se um sub-flow escapar do billing check do pai (por bug em quem injeta o collector), a flag deixa passar direto sem checar. Depende de o pai já ter checado. Testes de integração devem cobrir esse contrato implícito.
+            <div class="aside-title">⚠️ <span data-en="Skipping assertOwnerCanRunFlow" data-pt="Skip do assertOwnerCanRunFlow">Skipping assertOwnerCanRunFlow</span></div>
+            <span data-en="If a sub-flow escapes the parent's billing check (due to a bug in whoever injects the collector), the flag lets it through unchecked. It relies on the parent having already checked. Integration tests should cover this implicit contract." data-pt="Se um sub-flow escapar do billing check do pai (por bug em quem injeta o collector), a flag deixa passar direto sem checar. Depende de o pai já ter checado. Testes de integração devem cobrir esse contrato implícito.">If a sub-flow escapes the parent's billing check (due to a bug in whoever injects the collector), the flag lets it through unchecked. It relies on the parent having already checked. Integration tests should cover this implicit contract.</span>
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 Classe RunLogCollector</div>
-            Definida em <code>src/app-api/space_run_logs/run-log-collector.ts</code>. Tem <code>processId</code> readonly e métodos <code>appendNode</code>, <code>finalize</code>, entre outros. É o buffer que junta nós ao longo da execução.
+            <div class="aside-title">🔧 <span data-en="RunLogCollector class" data-pt="Classe RunLogCollector">RunLogCollector class</span></div>
+            <span data-en="Defined in &lt;code&gt;src/app-api/space_run_logs/run-log-collector.ts&lt;/code&gt;. Has a readonly &lt;code&gt;processId&lt;/code&gt; and methods &lt;code&gt;appendNode&lt;/code&gt;, &lt;code&gt;finalize&lt;/code&gt;, among others. It is the buffer that gathers nodes throughout the execution." data-pt="Definida em &lt;code&gt;src/app-api/space_run_logs/run-log-collector.ts&lt;/code&gt;. Tem &lt;code&gt;processId&lt;/code&gt; readonly e métodos &lt;code&gt;appendNode&lt;/code&gt;, &lt;code&gt;finalize&lt;/code&gt;, entre outros. É o buffer que junta nós ao longo da execução.">Defined in <code>src/app-api/space_run_logs/run-log-collector.ts</code>. Has a readonly <code>processId</code> and methods <code>appendNode</code>, <code>finalize</code>, among others. It is the buffer that gathers nodes throughout the execution.</span>
           </div>
         </div>
       </div>
@@ -703,31 +694,32 @@
   </div>
 
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo. O que sai de 1.0a:</strong>
-    <br><code>sessionId</code>. String com trim aplicado. Pode ser <code>''</code>.
-    <br><code>totalTokensUsed</code> e <code>totalCost</code>. Contadores mutáveis inicializados em 0.
-    <br><code>onUpdateTokens(t, c)</code>. Closure de billing.
-    <br><code>runLogProcessId</code>. ID canônico da execução, obtido pela cascata de 4 fontes.
-    <br><code>chatbotSocketByRun</code> Map. Atualizado se socketId veio.
-    <br><code>isNestedRunLog</code>. Flag booleana derivada do collector injetado.
-    <br>Nenhum I/O. Nenhum throw. Tudo dentro do <code>try</code> ainda por vir.
+    <span data-en="&lt;strong&gt;Summary. What comes out of 1.0a:&lt;/strong&gt;&lt;br&gt;&lt;code&gt;sessionId&lt;/code&gt;. Trimmed string. Can be &lt;code&gt;''&lt;/code&gt;.&lt;br&gt;&lt;code&gt;totalTokensUsed&lt;/code&gt; and &lt;code&gt;totalCost&lt;/code&gt;. Mutable counters initialized to 0.&lt;br&gt;&lt;code&gt;onUpdateTokens(t, c)&lt;/code&gt;. Billing closure.&lt;br&gt;&lt;code&gt;runLogProcessId&lt;/code&gt;. Canonical execution ID, resolved via the 4-source cascade.&lt;br&gt;&lt;code&gt;chatbotSocketByRun&lt;/code&gt; Map. Updated if socketId came in.&lt;br&gt;&lt;code&gt;isNestedRunLog&lt;/code&gt;. Boolean flag derived from the injected collector.&lt;br&gt;No I/O. No throw. Everything inside the &lt;code&gt;try&lt;/code&gt; is still ahead." data-pt="&lt;strong&gt;Resumo. O que sai de 1.0a:&lt;/strong&gt;&lt;br&gt;&lt;code&gt;sessionId&lt;/code&gt;. String com trim aplicado. Pode ser &lt;code&gt;''&lt;/code&gt;.&lt;br&gt;&lt;code&gt;totalTokensUsed&lt;/code&gt; e &lt;code&gt;totalCost&lt;/code&gt;. Contadores mutáveis inicializados em 0.&lt;br&gt;&lt;code&gt;onUpdateTokens(t, c)&lt;/code&gt;. Closure de billing.&lt;br&gt;&lt;code&gt;runLogProcessId&lt;/code&gt;. ID canônico da execução, obtido pela cascata de 4 fontes.&lt;br&gt;&lt;code&gt;chatbotSocketByRun&lt;/code&gt; Map. Atualizado se socketId veio.&lt;br&gt;&lt;code&gt;isNestedRunLog&lt;/code&gt;. Flag booleana derivada do collector injetado.&lt;br&gt;Nenhum I/O. Nenhum throw. Tudo dentro do &lt;code&gt;try&lt;/code&gt; ainda por vir."><strong>Summary. What comes out of 1.0a:</strong>
+    <br><code>sessionId</code>. Trimmed string. Can be <code>''</code>.
+    <br><code>totalTokensUsed</code> and <code>totalCost</code>. Mutable counters initialized to 0.
+    <br><code>onUpdateTokens(t, c)</code>. Billing closure.
+    <br><code>runLogProcessId</code>. Canonical execution ID, resolved via the 4-source cascade.
+    <br><code>chatbotSocketByRun</code> Map. Updated if socketId came in.
+    <br><code>isNestedRunLog</code>. Boolean flag derived from the injected collector.
+    <br>No I/O. No throw. Everything inside the <code>try</code> is still ahead.</span>
   </div>
 
   <div class="note">
-    <strong>Observações para migração:</strong>
-    <br>Todo o passo é puro setup. É trivialmente replicável no worker.
-    <br>A cascata do <code>runLogProcessId</code> é business-critical. Qualquer worker precisa preservar exatamente essa ordem. Caso contrário, sub-execuções perdem correlação com o pai.
-    <br>O <code>chatbotSocketByRun</code> Map não vai para o worker. Sockets são locais ao pod do backend. No worker, o streaming teria que sair via callback ou API para o backend. O backend faria o proxy para o socket.
-    <br><code>onUpdateTokens</code> é o padrão de closure mais crítico do apiV2. Não migra 1 para 1 para o worker. No worker, cada activity teria que gravar tokens numa tabela. O backend lê no final. Esse já é o padrão de <code>tokenTransactionService.sumChargesByExecution</code> (ver flux.service.ts:696).
-    <br><code>isNestedRunLog</code> depende de o collector ser injetado. No worker, isso vira parâmetro de start-args.
-    <br>É essencial e trivial. É o menor risco da migração. Requer apenas disciplina para manter a mesma cascata.
+    <span data-en="&lt;strong&gt;Notes for migration:&lt;/strong&gt;&lt;br&gt;The whole step is pure setup. It is trivially replicable on the worker.&lt;br&gt;The &lt;code&gt;runLogProcessId&lt;/code&gt; cascade is business-critical. Any worker must preserve exactly this order. Otherwise sub-executions lose correlation with the parent.&lt;br&gt;The &lt;code&gt;chatbotSocketByRun&lt;/code&gt; Map does not go to the worker. Sockets are local to the backend pod. On the worker, streaming would have to leave via callback or API to the backend. The backend would proxy to the socket.&lt;br&gt;&lt;code&gt;onUpdateTokens&lt;/code&gt; is apiV2's most critical closure pattern. It does not migrate 1-to-1 to the worker. On the worker, each activity would need to write tokens into a table. The backend reads at the end. That is already the pattern of &lt;code&gt;tokenTransactionService.sumChargesByExecution&lt;/code&gt; (see flux.service.ts:696).&lt;br&gt;&lt;code&gt;isNestedRunLog&lt;/code&gt; depends on the collector being injected. On the worker, that becomes a start-args parameter.&lt;br&gt;It is essential and trivial. It is the migration's lowest risk. It only requires the discipline to keep the same cascade." data-pt="&lt;strong&gt;Observações para migração:&lt;/strong&gt;&lt;br&gt;Todo o passo é puro setup. É trivialmente replicável no worker.&lt;br&gt;A cascata do &lt;code&gt;runLogProcessId&lt;/code&gt; é business-critical. Qualquer worker precisa preservar exatamente essa ordem. Caso contrário, sub-execuções perdem correlação com o pai.&lt;br&gt;O &lt;code&gt;chatbotSocketByRun&lt;/code&gt; Map não vai para o worker. Sockets são locais ao pod do backend. No worker, o streaming teria que sair via callback ou API para o backend. O backend faria o proxy para o socket.&lt;br&gt;&lt;code&gt;onUpdateTokens&lt;/code&gt; é o padrão de closure mais crítico do apiV2. Não migra 1 para 1 para o worker. No worker, cada activity teria que gravar tokens numa tabela. O backend lê no final. Esse já é o padrão de &lt;code&gt;tokenTransactionService.sumChargesByExecution&lt;/code&gt; (ver flux.service.ts:696).&lt;br&gt;&lt;code&gt;isNestedRunLog&lt;/code&gt; depende de o collector ser injetado. No worker, isso vira parâmetro de start-args.&lt;br&gt;É essencial e trivial. É o menor risco da migração. Requer apenas disciplina para manter a mesma cascata."><strong>Notes for migration:</strong>
+    <br>The whole step is pure setup. It is trivially replicable on the worker.
+    <br>The <code>runLogProcessId</code> cascade is business-critical. Any worker must preserve exactly this order. Otherwise sub-executions lose correlation with the parent.
+    <br>The <code>chatbotSocketByRun</code> Map does not go to the worker. Sockets are local to the backend pod. On the worker, streaming would have to leave via callback or API to the backend. The backend would proxy to the socket.
+    <br><code>onUpdateTokens</code> is apiV2's most critical closure pattern. It does not migrate 1-to-1 to the worker. On the worker, each activity would need to write tokens into a table. The backend reads at the end. That is already the pattern of <code>tokenTransactionService.sumChargesByExecution</code> (see flux.service.ts:696).
+    <br><code>isNestedRunLog</code> depends on the collector being injected. On the worker, that becomes a start-args parameter.
+    <br>It is essential and trivial. It is the migration's lowest risk. It only requires the discipline to keep the same cascade.</span>
   </div>
 
   <div class="page-footer-nav">
-    <a href="../index.html#step-1-0a" class="back-btn">← Voltar ao diagrama principal</a>
+    <a href="../index.html#step-1-0a" class="back-btn"><span data-en="← Back to main diagram" data-pt="← Voltar ao diagrama principal">← Back to main diagram</span></a>
   </div>
 
 </div>
+<script src="../_assets/i18n.js" defer></script>
 <script>
 (function() {
   function toggle(card) { if (card) card.classList.toggle('collapsed'); }

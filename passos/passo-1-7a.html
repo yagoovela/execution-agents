@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Passo 1.7a — Reset de nós com clearOnExecution por tipo | Detalhamento</title>
+<link rel="stylesheet" href="../_assets/i18n.css">
+<title>Step 1.7a — Reset of nodes with clearOnExecution by type | Detail</title>
 <style>
   * { box-sizing: border-box; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F1F5F9; color: #0F172A; margin: 0; padding: 32px 24px 80px; line-height: 1.4; }
@@ -111,51 +112,55 @@
 
   <div class="page-nav">
     <div class="breadcrumb">
-      <a href="../index.html">📋 Execução de Agente</a>
+      <a href="../index.html"><span data-en="📋 Agent execution" data-pt="📋 Execução de Agente">📋 Agent execution</span></a>
       <span class="sep">›</span>
-      <span>Passo 1.7a — Detalhamento</span>
+      <span><span data-en="Step 1.7a — Detail" data-pt="Passo 1.7a — Detalhamento">Step 1.7a — Detail</span></span>
     </div>
-    <a href="../index.html#step-1-7a" class="back-btn">← Voltar ao diagrama</a>
+    <a href="../index.html#step-1-7a" class="back-btn"><span data-en="← Back to diagram" data-pt="← Voltar ao diagrama">← Back to diagram</span></a>
+    <div class="lang-sw" role="group" aria-label="Language">
+      <button type="button" data-lang="en" aria-pressed="true">EN-US</button>
+      <button type="button" data-lang="pt" aria-pressed="false">PT-BR</button>
+    </div>
   </div>
 
   <div class="page-header">
     <span class="icon">🔄</span>
-    <h1>Passo 1.7a — Reset de nós com clearOnExecution por tipo</h1>
+    <h1><span data-en="Step 1.7a — Reset of nodes with clearOnExecution by type" data-pt="Passo 1.7a — Reset de nós com clearOnExecution por tipo">Step 1.7a — Reset of nodes with clearOnExecution by type</span></h1>
   </div>
   <div class="page-sub">
-    Bloco em <code>flux.service.ts:2724-2812</code>. Um <code>.map</code> extenso em <code>updatedFlows</code>. Trata duas hierarquias distintas de reset. Primeira. O <code>outputObjectNode</code> sempre limpa, fora do gate. Segunda. Todo o resto testa <code>clearOnExecution</code> truthy e cai em uma árvore de sub-branches por tipo. No final, <code>conditionNode</code> zera o loop counter, também fora do gate.
+    <span data-en="Block in &lt;code&gt;flux.service.ts:2724-2812&lt;/code&gt;. A large &lt;code&gt;.map&lt;/code&gt; over &lt;code&gt;updatedFlows&lt;/code&gt;. Handles two distinct reset hierarchies. First. &lt;code&gt;outputObjectNode&lt;/code&gt; always clears, outside the gate. Second. Everything else tests &lt;code&gt;clearOnExecution&lt;/code&gt; truthy and falls into a tree of sub-branches by type. At the end, &lt;code&gt;conditionNode&lt;/code&gt; zeroes the loop counter, also outside the gate." data-pt="Bloco em &lt;code&gt;flux.service.ts:2724-2812&lt;/code&gt;. Um &lt;code&gt;.map&lt;/code&gt; extenso em &lt;code&gt;updatedFlows&lt;/code&gt;. Trata duas hierarquias distintas de reset. Primeira. O &lt;code&gt;outputObjectNode&lt;/code&gt; sempre limpa, fora do gate. Segunda. Todo o resto testa &lt;code&gt;clearOnExecution&lt;/code&gt; truthy e cai em uma árvore de sub-branches por tipo. No final, &lt;code&gt;conditionNode&lt;/code&gt; zera o loop counter, também fora do gate.">Block in <code>flux.service.ts:2724-2812</code>. A large <code>.map</code> over <code>updatedFlows</code>. Handles two distinct reset hierarchies. First. <code>outputObjectNode</code> always clears, outside the gate. Second. Everything else tests <code>clearOnExecution</code> truthy and falls into a tree of sub-branches by type. At the end, <code>conditionNode</code> zeroes the loop counter, also outside the gate.</span>
   </div>
 
   <div class="step-friendly">
-    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <div class="step-friendly-title"><span data-en="In short — what this step does" data-pt="Em resumo — o que esse passo faz">In short — what this step does</span></div>
     <ul>
-      <li><strong>Um único .map com três fatiamentos distintos.</strong> Para cada nó em <code>updatedFlows</code>, primeiro testa se é <code>outputObjectNode</code> (limpeza incondicional). Depois testa se <code>clearOnExecution</code> é truthy (cai em uma árvore por tipo). Por último, testa se é <code>conditionNode</code> (zera <code>currentLoopCounter</code>). Os dois "sempre limpa" (<code>outputObjectNode</code> e <code>conditionNode</code>) ignoram o gate do <code>clearOnExecution</code>.</li>
-      <li><strong>outputObjectNode com reset incondicional.</strong> Todo o conteúdo é output derivado. Sempre limpa <code>text: ''</code> e <code>textData: []</code>. Não faz sentido preservar entre execuções. O output é sempre regerado.</li>
-      <li><strong>fluxBox e libraryNode com clearOnExecution.</strong> Aqui <code>clearOnExecution</code> é um objeto <code>{ campo1: true, campo2: false }</code>. Executa <code>Object.entries</code> e zera cada campo cuja flag é <code>true</code>. O reset é por campo. Não é wholesale.</li>
-      <li><strong>Types que resetam por default.</strong> <code>commandTextNode</code>, <code>voiceBoxNode</code>, <code>imageGenerator</code>, <code>commandContentNode</code>, <code>audioReaderNode</code>, <code>apiCaller</code>, <code>mcpNode</code>. Se <code>clearOnExecution</code> é truthy, zeram <code>text: ''</code> e <code>canceled: false</code>. Sub-branches. <code>voiceBoxNode</code> retorna cedo com <code>{ canceled: false, audioUrl: '' }</code>. <code>commandContentNode</code> adiciona <code>text.result = ''</code>. <code>apiCaller</code> e <code>mcpNode</code> adicionam <code>{ response: null, errorMessage: null, errorStatusCode: null }</code>.</li>
-      <li><strong>conditionNode.currentLoopCounter sempre 0.</strong> Zerado fora do gate. Necessário porque loop counters seriam eternos entre execuções. É mutação in-place. Não retorna nó novo. Muta a referência. Footgun sutil.</li>
+      <li><span data-en="&lt;strong&gt;A single .map with three distinct slices.&lt;/strong&gt; For each node in &lt;code&gt;updatedFlows&lt;/code&gt;, first tests whether it is &lt;code&gt;outputObjectNode&lt;/code&gt; (unconditional clear). Then tests whether &lt;code&gt;clearOnExecution&lt;/code&gt; is truthy (falls into a tree by type). Lastly, tests whether it is &lt;code&gt;conditionNode&lt;/code&gt; (zeroes &lt;code&gt;currentLoopCounter&lt;/code&gt;). The two &quot;always clear&quot; (&lt;code&gt;outputObjectNode&lt;/code&gt; and &lt;code&gt;conditionNode&lt;/code&gt;) ignore the &lt;code&gt;clearOnExecution&lt;/code&gt; gate." data-pt="&lt;strong&gt;Um único .map com três fatiamentos distintos.&lt;/strong&gt; Para cada nó em &lt;code&gt;updatedFlows&lt;/code&gt;, primeiro testa se é &lt;code&gt;outputObjectNode&lt;/code&gt; (limpeza incondicional). Depois testa se &lt;code&gt;clearOnExecution&lt;/code&gt; é truthy (cai em uma árvore por tipo). Por último, testa se é &lt;code&gt;conditionNode&lt;/code&gt; (zera &lt;code&gt;currentLoopCounter&lt;/code&gt;). Os dois &quot;sempre limpa&quot; (&lt;code&gt;outputObjectNode&lt;/code&gt; e &lt;code&gt;conditionNode&lt;/code&gt;) ignoram o gate do &lt;code&gt;clearOnExecution&lt;/code&gt;."><strong>A single .map with three distinct slices.</strong> For each node in <code>updatedFlows</code>, first tests whether it is <code>outputObjectNode</code> (unconditional clear). Then tests whether <code>clearOnExecution</code> is truthy (falls into a tree by type). Lastly, tests whether it is <code>conditionNode</code> (zeroes <code>currentLoopCounter</code>). The two "always clear" (<code>outputObjectNode</code> and <code>conditionNode</code>) ignore the <code>clearOnExecution</code> gate.</span></li>
+      <li><span data-en="&lt;strong&gt;outputObjectNode with unconditional reset.&lt;/strong&gt; All its content is derived output. Always clears &lt;code&gt;text: ''&lt;/code&gt; and &lt;code&gt;textData: []&lt;/code&gt;. It makes no sense to preserve it across executions. The output is always regenerated." data-pt="&lt;strong&gt;outputObjectNode com reset incondicional.&lt;/strong&gt; Todo o conteúdo é output derivado. Sempre limpa &lt;code&gt;text: ''&lt;/code&gt; e &lt;code&gt;textData: []&lt;/code&gt;. Não faz sentido preservar entre execuções. O output é sempre regerado."><strong>outputObjectNode with unconditional reset.</strong> All its content is derived output. Always clears <code>text: ''</code> and <code>textData: []</code>. It makes no sense to preserve it across executions. The output is always regenerated.</span></li>
+      <li><span data-en="&lt;strong&gt;fluxBox and libraryNode with clearOnExecution.&lt;/strong&gt; Here &lt;code&gt;clearOnExecution&lt;/code&gt; is an object &lt;code&gt;{ field1: true, field2: false }&lt;/code&gt;. Runs &lt;code&gt;Object.entries&lt;/code&gt; and zeroes each field whose flag is &lt;code&gt;true&lt;/code&gt;. The reset is per-field. Not wholesale." data-pt="&lt;strong&gt;fluxBox e libraryNode com clearOnExecution.&lt;/strong&gt; Aqui &lt;code&gt;clearOnExecution&lt;/code&gt; é um objeto &lt;code&gt;{ campo1: true, campo2: false }&lt;/code&gt;. Executa &lt;code&gt;Object.entries&lt;/code&gt; e zera cada campo cuja flag é &lt;code&gt;true&lt;/code&gt;. O reset é por campo. Não é wholesale."><strong>fluxBox and libraryNode with clearOnExecution.</strong> Here <code>clearOnExecution</code> is an object <code>{ field1: true, field2: false }</code>. Runs <code>Object.entries</code> and zeroes each field whose flag is <code>true</code>. The reset is per-field. Not wholesale.</span></li>
+      <li><span data-en="&lt;strong&gt;Types that reset by default.&lt;/strong&gt; &lt;code&gt;commandTextNode&lt;/code&gt;, &lt;code&gt;voiceBoxNode&lt;/code&gt;, &lt;code&gt;imageGenerator&lt;/code&gt;, &lt;code&gt;commandContentNode&lt;/code&gt;, &lt;code&gt;audioReaderNode&lt;/code&gt;, &lt;code&gt;apiCaller&lt;/code&gt;, &lt;code&gt;mcpNode&lt;/code&gt;. If &lt;code&gt;clearOnExecution&lt;/code&gt; is truthy, they zero &lt;code&gt;text: ''&lt;/code&gt; and &lt;code&gt;canceled: false&lt;/code&gt;. Sub-branches. &lt;code&gt;voiceBoxNode&lt;/code&gt; returns early with &lt;code&gt;{ canceled: false, audioUrl: '' }&lt;/code&gt;. &lt;code&gt;commandContentNode&lt;/code&gt; adds &lt;code&gt;text.result = ''&lt;/code&gt;. &lt;code&gt;apiCaller&lt;/code&gt; and &lt;code&gt;mcpNode&lt;/code&gt; add &lt;code&gt;{ response: null, errorMessage: null, errorStatusCode: null }&lt;/code&gt;." data-pt="&lt;strong&gt;Types que resetam por default.&lt;/strong&gt; &lt;code&gt;commandTextNode&lt;/code&gt;, &lt;code&gt;voiceBoxNode&lt;/code&gt;, &lt;code&gt;imageGenerator&lt;/code&gt;, &lt;code&gt;commandContentNode&lt;/code&gt;, &lt;code&gt;audioReaderNode&lt;/code&gt;, &lt;code&gt;apiCaller&lt;/code&gt;, &lt;code&gt;mcpNode&lt;/code&gt;. Se &lt;code&gt;clearOnExecution&lt;/code&gt; é truthy, zeram &lt;code&gt;text: ''&lt;/code&gt; e &lt;code&gt;canceled: false&lt;/code&gt;. Sub-branches. &lt;code&gt;voiceBoxNode&lt;/code&gt; retorna cedo com &lt;code&gt;{ canceled: false, audioUrl: '' }&lt;/code&gt;. &lt;code&gt;commandContentNode&lt;/code&gt; adiciona &lt;code&gt;text.result = ''&lt;/code&gt;. &lt;code&gt;apiCaller&lt;/code&gt; e &lt;code&gt;mcpNode&lt;/code&gt; adicionam &lt;code&gt;{ response: null, errorMessage: null, errorStatusCode: null }&lt;/code&gt;."><strong>Types that reset by default.</strong> <code>commandTextNode</code>, <code>voiceBoxNode</code>, <code>imageGenerator</code>, <code>commandContentNode</code>, <code>audioReaderNode</code>, <code>apiCaller</code>, <code>mcpNode</code>. If <code>clearOnExecution</code> is truthy, they zero <code>text: ''</code> and <code>canceled: false</code>. Sub-branches. <code>voiceBoxNode</code> returns early with <code>{ canceled: false, audioUrl: '' }</code>. <code>commandContentNode</code> adds <code>text.result = ''</code>. <code>apiCaller</code> and <code>mcpNode</code> add <code>{ response: null, errorMessage: null, errorStatusCode: null }</code>.</span></li>
+      <li><span data-en="&lt;strong&gt;conditionNode.currentLoopCounter always 0.&lt;/strong&gt; Zeroed outside the gate. Necessary because loop counters would be eternal across executions. It is an in-place mutation. Does not return a new node. Mutates the reference. Subtle footgun." data-pt="&lt;strong&gt;conditionNode.currentLoopCounter sempre 0.&lt;/strong&gt; Zerado fora do gate. Necessário porque loop counters seriam eternos entre execuções. É mutação in-place. Não retorna nó novo. Muta a referência. Footgun sutil."><strong>conditionNode.currentLoopCounter always 0.</strong> Zeroed outside the gate. Necessary because loop counters would be eternal across executions. It is an in-place mutation. Does not return a new node. Mutates the reference. Subtle footgun.</span></li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto.</strong> Esta é a segunda passada de reset. O passo 1.5b tratou <code>fluxObjects</code>. O 1.7a trata todos os outros types que têm output ou state runtime. Existe uma versão consolidada dessa lógica em <code>node-output-reset.ts</code> (<code>clearStaleNodeOutput</code>, <code>buildClearOnExecutionReset</code>). O <code>apiV2</code> ainda usa o if/else inline aqui. Discrepância ativa.
+    <span data-en="&lt;strong&gt;Context.&lt;/strong&gt; This is the second reset pass. Step 1.5b handled &lt;code&gt;fluxObjects&lt;/code&gt;. Step 1.7a handles all other types that have output or runtime state. There is a consolidated version of this logic in &lt;code&gt;node-output-reset.ts&lt;/code&gt; (&lt;code&gt;clearStaleNodeOutput&lt;/code&gt;, &lt;code&gt;buildClearOnExecutionReset&lt;/code&gt;). &lt;code&gt;apiV2&lt;/code&gt; still uses the inline if/else here. Active discrepancy." data-pt="&lt;strong&gt;Contexto.&lt;/strong&gt; Esta é a segunda passada de reset. O passo 1.5b tratou &lt;code&gt;fluxObjects&lt;/code&gt;. O 1.7a trata todos os outros types que têm output ou state runtime. Existe uma versão consolidada dessa lógica em &lt;code&gt;node-output-reset.ts&lt;/code&gt; (&lt;code&gt;clearStaleNodeOutput&lt;/code&gt;, &lt;code&gt;buildClearOnExecutionReset&lt;/code&gt;). O &lt;code&gt;apiV2&lt;/code&gt; ainda usa o if/else inline aqui. Discrepância ativa."><strong>Context.</strong> This is the second reset pass. Step 1.5b handled <code>fluxObjects</code>. Step 1.7a handles all other types that have output or runtime state. There is a consolidated version of this logic in <code>node-output-reset.ts</code> (<code>clearStaleNodeOutput</code>, <code>buildClearOnExecutionReset</code>). <code>apiV2</code> still uses the inline if/else here. Active discrepancy.</span>
   </div>
 
   <div class="overview-mini">
-    <div class="overview-mini-title">Cadeia em 1.7a</div>
+    <div class="overview-mini-title"><span data-en="Chain in 1.7a" data-pt="Cadeia em 1.7a">Chain in 1.7a</span></div>
     <div class="overview-chain">
-      <a href="#fn-a" class="overview-chip"><span class="lbl">A</span>outputObjectNode (sempre)</a>
+      <a href="#fn-a" class="overview-chip"><span class="lbl">A</span><span data-en="outputObjectNode (always)" data-pt="outputObjectNode (sempre)">outputObjectNode (always)</span></a>
       <span class="overview-sep">→</span>
-      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>Gate clearOnExecution</a>
+      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span><span data-en="clearOnExecution gate" data-pt="Gate clearOnExecution">clearOnExecution gate</span></a>
       <span class="overview-sep">→</span>
-      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>fluxBox/libraryNode (por campo)</a>
+      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span><span data-en="fluxBox/libraryNode (per-field)" data-pt="fluxBox/libraryNode (por campo)">fluxBox/libraryNode (per-field)</span></a>
       <span class="overview-sep">→</span>
-      <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>7 types com fallback (voice/apiCaller/commandContent/...)</a>
+      <a href="#fn-d" class="overview-chip"><span class="lbl">D</span><span data-en="7 types with fallback (voice/apiCaller/commandContent/...)" data-pt="7 types com fallback (voice/apiCaller/commandContent/...)">7 types with fallback (voice/apiCaller/commandContent/...)</span></a>
       <span class="overview-sep">→</span>
       <a href="#fn-e" class="overview-chip"><span class="lbl">E</span>conditionNode.currentLoopCounter = 0</a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado. <code>updatedFlows</code> tem output limpo nos types listados. Todos os <code>conditionNodes</code> ficam com <code>currentLoopCounter = 0</code>.
+      <span data-en="Result. &lt;code&gt;updatedFlows&lt;/code&gt; has clean output on the listed types. All &lt;code&gt;conditionNodes&lt;/code&gt; end with &lt;code&gt;currentLoopCounter = 0&lt;/code&gt;." data-pt="Resultado. &lt;code&gt;updatedFlows&lt;/code&gt; tem output limpo nos types listados. Todos os &lt;code&gt;conditionNodes&lt;/code&gt; ficam com &lt;code&gt;currentLoopCounter = 0&lt;/code&gt;.">Result. <code>updatedFlows</code> has clean output on the listed types. All <code>conditionNodes</code> end with <code>currentLoopCounter = 0</code>.</span>
     </div>
   </div>
 
@@ -164,7 +169,7 @@
     <div class="fn-card-header">
       <div class="fn-title">
         <span class="badge migrated" style="background:#EAB308;color:white">A</span>
-        <code>outputObjectNode — reset incondicional</code>
+        <code><span data-en="outputObjectNode — unconditional reset" data-pt="outputObjectNode — reset incondicional">outputObjectNode — unconditional reset</span></code>
       </div>
       <div class="fn-loc">flux.service.ts:2725-2734</div>
     </div>
@@ -173,16 +178,16 @@
         if (nd.type === 'outputObjectNode') { return { ...nd, data: { ...nd.data, text: '', textData: [] } }; }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Zera o output do <code>outputObjectNode</code> em todas as execuções, sem gate. É o único type que faz reset incondicional dentro deste <code>.map</code>. O resto depende do <code>clearOnExecution</code>.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Zeroes &lt;code&gt;outputObjectNode&lt;/code&gt; output on every execution, no gate. It is the only type that does an unconditional reset inside this &lt;code&gt;.map&lt;/code&gt;. The rest depend on &lt;code&gt;clearOnExecution&lt;/code&gt;." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Zera o output do &lt;code&gt;outputObjectNode&lt;/code&gt; em todas as execuções, sem gate. É o único type que faz reset incondicional dentro deste &lt;code&gt;.map&lt;/code&gt;. O resto depende do &lt;code&gt;clearOnExecution&lt;/code&gt;."><strong>Purpose.</strong> Zeroes <code>outputObjectNode</code> output on every execution, no gate. It is the only type that does an unconditional reset inside this <code>.map</code>. The rest depend on <code>clearOnExecution</code>.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> O <code>outputObjectNode</code> é o endpoint do agente. É o que a execução devolve como resposta. Seu output é sempre regerado a partir dos nós upstream. Não faz sentido preservar entre execuções. Por isso o reset é hardcoded. Não depende de flag. Duas chaves são zeradas. <code>text</code> vira string vazia. <code>textData</code> vira array vazio. É o formato do output do agente (texto puro e array de itens estruturados). O <code>return</code> corta o resto do <code>.map</code> para este nó. Não passa pelo gate do <code>clearOnExecution</code> nem pelo bloco do <code>conditionNode</code>. Bug latente. Um <code>outputObjectNode</code> que também tivesse <code>data.currentLoopCounter</code> (impossível na prática, mas em teoria) não seria zerado. O return atalha.
+        <span data-en="&lt;strong&gt;In short.&lt;/strong&gt; &lt;code&gt;outputObjectNode&lt;/code&gt; is the agent's endpoint. It is what the execution returns as the response. Its output is always regenerated from upstream nodes. It does not make sense to preserve it across executions. That's why the reset is hardcoded. Does not depend on a flag. Two keys are zeroed. &lt;code&gt;text&lt;/code&gt; becomes empty string. &lt;code&gt;textData&lt;/code&gt; becomes empty array. It is the agent output format (plain text and array of structured items). The &lt;code&gt;return&lt;/code&gt; cuts the rest of the &lt;code&gt;.map&lt;/code&gt; for this node. It does not go through the &lt;code&gt;clearOnExecution&lt;/code&gt; gate nor the &lt;code&gt;conditionNode&lt;/code&gt; block. Latent bug. An &lt;code&gt;outputObjectNode&lt;/code&gt; that also had &lt;code&gt;data.currentLoopCounter&lt;/code&gt; (impossible in practice, but in theory) would not be zeroed. The return short-circuits." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; O &lt;code&gt;outputObjectNode&lt;/code&gt; é o endpoint do agente. É o que a execução devolve como resposta. Seu output é sempre regerado a partir dos nós upstream. Não faz sentido preservar entre execuções. Por isso o reset é hardcoded. Não depende de flag. Duas chaves são zeradas. &lt;code&gt;text&lt;/code&gt; vira string vazia. &lt;code&gt;textData&lt;/code&gt; vira array vazio. É o formato do output do agente (texto puro e array de itens estruturados). O &lt;code&gt;return&lt;/code&gt; corta o resto do &lt;code&gt;.map&lt;/code&gt; para este nó. Não passa pelo gate do &lt;code&gt;clearOnExecution&lt;/code&gt; nem pelo bloco do &lt;code&gt;conditionNode&lt;/code&gt;. Bug latente. Um &lt;code&gt;outputObjectNode&lt;/code&gt; que também tivesse &lt;code&gt;data.currentLoopCounter&lt;/code&gt; (impossível na prática, mas em teoria) não seria zerado. O return atalha."><strong>In short.</strong> <code>outputObjectNode</code> is the agent's endpoint. It is what the execution returns as the response. Its output is always regenerated from upstream nodes. It does not make sense to preserve it across executions. That's why the reset is hardcoded. Does not depend on a flag. Two keys are zeroed. <code>text</code> becomes empty string. <code>textData</code> becomes empty array. It is the agent output format (plain text and array of structured items). The <code>return</code> cuts the rest of the <code>.map</code> for this node. It does not go through the <code>clearOnExecution</code> gate nor the <code>conditionNode</code> block. Latent bug. An <code>outputObjectNode</code> that also had <code>data.currentLoopCounter</code> (impossible in practice, but in theory) would not be zeroed. The return short-circuits.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">A1</span> Branch incondicional</div>
+            <div class="box-title"><span class="badge step">A1</span> <span data-en="Unconditional branch" data-pt="Branch incondicional">Unconditional branch</span></div>
             <div class="code-block">
 <span class="k">if</span> (nd.type === <span class="s">'outputObjectNode'</span>) {
   <span class="k">return</span> {
@@ -199,24 +204,24 @@
           </div>
           <div class="arrow">↓</div>
           <div class="box decision">
-            <div class="box-title">Return curto no .map</div>
+            <div class="box-title"><span data-en="Short-circuit return in .map" data-pt="Return curto no .map">Short-circuit return in .map</span></div>
             <div class="box-desc">
-              O <code>return</code> corta o resto do map para este nó. Nenhum outro branch (<code>clearOnExecution</code>, <code>conditionNode</code>) é testado.
+              <span data-en="The &lt;code&gt;return&lt;/code&gt; cuts the rest of the map for this node. No other branch (&lt;code&gt;clearOnExecution&lt;/code&gt;, &lt;code&gt;conditionNode&lt;/code&gt;) is tested." data-pt="O &lt;code&gt;return&lt;/code&gt; corta o resto do map para este nó. Nenhum outro branch (&lt;code&gt;clearOnExecution&lt;/code&gt;, &lt;code&gt;conditionNode&lt;/code&gt;) é testado.">The <code>return</code> cuts the rest of the map for this node. No other branch (<code>clearOnExecution</code>, <code>conditionNode</code>) is tested.</span>
             </div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Por que sem gate?</div>
-            O output do agente é sempre regerado. Preservar <code>text</code> entre execuções enganaria a próxima execução mostrando a resposta antiga se algo falhar no meio.
+            <div class="aside-title">🎯 <span data-en="Why no gate?" data-pt="Por que sem gate?">Why no gate?</span></div>
+            <span data-en="The agent's output is always regenerated. Preserving &lt;code&gt;text&lt;/code&gt; across executions would trick the next execution into showing the old response if something failed midway." data-pt="O output do agente é sempre regerado. Preservar &lt;code&gt;text&lt;/code&gt; entre execuções enganaria a próxima execução mostrando a resposta antiga se algo falhar no meio.">The agent's output is always regenerated. Preserving <code>text</code> across executions would trick the next execution into showing the old response if something failed midway.</span>
           </div>
           <div class="aside">
-            <div class="aside-title">📎 Duplicação com clearRunOutputForSeed</div>
-            <code>clearRunOutputForSeed</code> (passo 1.7b) também zera <code>outputObjectNode.text = ''</code>. É redundância intencional. Passa de novo para garantir.
+            <div class="aside-title">📎 <span data-en="Duplication with clearRunOutputForSeed" data-pt="Duplicação com clearRunOutputForSeed">Duplication with clearRunOutputForSeed</span></div>
+            <span data-en="&lt;code&gt;clearRunOutputForSeed&lt;/code&gt; (step 1.7b) also zeroes &lt;code&gt;outputObjectNode.text = ''&lt;/code&gt;. It is intentional redundancy. Runs again to make sure." data-pt="&lt;code&gt;clearRunOutputForSeed&lt;/code&gt; (passo 1.7b) também zera &lt;code&gt;outputObjectNode.text = ''&lt;/code&gt;. É redundância intencional. Passa de novo para garantir."><code>clearRunOutputForSeed</code> (step 1.7b) also zeroes <code>outputObjectNode.text = ''</code>. It is intentional redundancy. Runs again to make sure.</span>
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ Return corta os branches seguintes</div>
-            Se um <code>outputObjectNode</code> tivesse <code>currentLoopCounter</code> (não tem na prática), o reset do loop counter não roda. Feature. <code>outputObjectNode</code> nunca tem loop counter.
+            <div class="aside-title">⚠️ <span data-en="Return cuts subsequent branches" data-pt="Return corta os branches seguintes">Return cuts subsequent branches</span></div>
+            <span data-en="If an &lt;code&gt;outputObjectNode&lt;/code&gt; had &lt;code&gt;currentLoopCounter&lt;/code&gt; (it does not in practice), the loop counter reset would not run. Feature. &lt;code&gt;outputObjectNode&lt;/code&gt; never has a loop counter." data-pt="Se um &lt;code&gt;outputObjectNode&lt;/code&gt; tivesse &lt;code&gt;currentLoopCounter&lt;/code&gt; (não tem na prática), o reset do loop counter não roda. Feature. &lt;code&gt;outputObjectNode&lt;/code&gt; nunca tem loop counter.">If an <code>outputObjectNode</code> had <code>currentLoopCounter</code> (it does not in practice), the loop counter reset would not run. Feature. <code>outputObjectNode</code> never has a loop counter.</span>
           </div>
         </div>
       </div>
@@ -228,7 +233,7 @@
     <div class="fn-card-header">
       <div class="fn-title">
         <span class="badge migrated" style="background:#F59E0B;color:white">B</span>
-        <code>Gate clearOnExecution (truthy)</code>
+        <code><span data-en="clearOnExecution gate (truthy)" data-pt="Gate clearOnExecution (truthy)">clearOnExecution gate (truthy)</span></code>
       </div>
       <div class="fn-loc">flux.service.ts:2736-2738</div>
     </div>
@@ -238,56 +243,56 @@
         if (clearOnExecution) { ... }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Porta única de entrada para os branches por tipo. Só entra quando <code>clearOnExecution</code> é truthy. Undefined vira false pelo <code>|| false</code>. Todo o conteúdo depende dessa condição. Quem não tem a flag atravessa o gate sem reset.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Single entry point for the branches by type. Only enters when &lt;code&gt;clearOnExecution&lt;/code&gt; is truthy. Undefined becomes false via &lt;code&gt;|| false&lt;/code&gt;. All of the content depends on this condition. Nodes without the flag pass the gate without reset." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Porta única de entrada para os branches por tipo. Só entra quando &lt;code&gt;clearOnExecution&lt;/code&gt; é truthy. Undefined vira false pelo &lt;code&gt;|| false&lt;/code&gt;. Todo o conteúdo depende dessa condição. Quem não tem a flag atravessa o gate sem reset."><strong>Purpose.</strong> Single entry point for the branches by type. Only enters when <code>clearOnExecution</code> is truthy. Undefined becomes false via <code>|| false</code>. All of the content depends on this condition. Nodes without the flag pass the gate without reset.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Mesma lógica de <code>Boolean(clearOnExecution)</code> do 1.5b. Em vez de <code>Boolean()</code>, usa <code>|| false</code>. Diferença sutil. <code>Boolean({})</code> é <code>true</code>. <code>({}) || false</code> resulta em <code>{}</code> (truthy, então o <code>if</code> passa). Efeito prático idêntico. O gate separa quem tem opt-in de clearing (entra no bloco) de quem não tem (nada acontece). Nota importante. Os <code>fluxObjects</code> também têm <code>clearOnExecution</code>, mas foram tratados no 1.5b. Se um <code>fluxObject</code> caísse aqui (impossível na prática, mas se o filter do 1.5b falhasse), o bloco não saberia lidar. Não tem branch para <code>fluxObject</code>.
+        <span data-en="&lt;strong&gt;In short.&lt;/strong&gt; Same logic as &lt;code&gt;Boolean(clearOnExecution)&lt;/code&gt; from 1.5b. Instead of &lt;code&gt;Boolean()&lt;/code&gt;, uses &lt;code&gt;|| false&lt;/code&gt;. Subtle difference. &lt;code&gt;Boolean({})&lt;/code&gt; is &lt;code&gt;true&lt;/code&gt;. &lt;code&gt;({}) || false&lt;/code&gt; yields &lt;code&gt;{}&lt;/code&gt; (truthy, so the &lt;code&gt;if&lt;/code&gt; passes). Practical effect identical. The gate separates who opts in to clearing (enters the block) from who does not (nothing happens). Important note. &lt;code&gt;fluxObjects&lt;/code&gt; also have &lt;code&gt;clearOnExecution&lt;/code&gt;, but were handled in 1.5b. If a &lt;code&gt;fluxObject&lt;/code&gt; fell here (impossible in practice, but if the 1.5b filter failed), the block would not know how to handle it. There is no branch for &lt;code&gt;fluxObject&lt;/code&gt;." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Mesma lógica de &lt;code&gt;Boolean(clearOnExecution)&lt;/code&gt; do 1.5b. Em vez de &lt;code&gt;Boolean()&lt;/code&gt;, usa &lt;code&gt;|| false&lt;/code&gt;. Diferença sutil. &lt;code&gt;Boolean({})&lt;/code&gt; é &lt;code&gt;true&lt;/code&gt;. &lt;code&gt;({}) || false&lt;/code&gt; resulta em &lt;code&gt;{}&lt;/code&gt; (truthy, então o &lt;code&gt;if&lt;/code&gt; passa). Efeito prático idêntico. O gate separa quem tem opt-in de clearing (entra no bloco) de quem não tem (nada acontece). Nota importante. Os &lt;code&gt;fluxObjects&lt;/code&gt; também têm &lt;code&gt;clearOnExecution&lt;/code&gt;, mas foram tratados no 1.5b. Se um &lt;code&gt;fluxObject&lt;/code&gt; caísse aqui (impossível na prática, mas se o filter do 1.5b falhasse), o bloco não saberia lidar. Não tem branch para &lt;code&gt;fluxObject&lt;/code&gt;."><strong>In short.</strong> Same logic as <code>Boolean(clearOnExecution)</code> from 1.5b. Instead of <code>Boolean()</code>, uses <code>|| false</code>. Subtle difference. <code>Boolean({})</code> is <code>true</code>. <code>({}) || false</code> yields <code>{}</code> (truthy, so the <code>if</code> passes). Practical effect identical. The gate separates who opts in to clearing (enters the block) from who does not (nothing happens). Important note. <code>fluxObjects</code> also have <code>clearOnExecution</code>, but were handled in 1.5b. If a <code>fluxObject</code> fell here (impossible in practice, but if the 1.5b filter failed), the block would not know how to handle it. There is no branch for <code>fluxObject</code>.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">B1</span> Extract + gate</div>
+            <div class="box-title"><span class="badge step">B1</span> <span data-en="Extract + gate" data-pt="Extract + gate">Extract + gate</span></div>
             <div class="code-block">
 <span class="k">const</span> clearOnExecution = nd?.data?.clearOnExecution || <span class="k">false</span>;
 <span class="k">if</span> (clearOnExecution) {
-  <span class="c">// ... branches por tipo</span>
+  <span class="c">// ... branches by type</span>
 }
             </div>
             <div class="box-file">flux.service.ts:2736-2738</div>
           </div>
           <div class="arrow">↓</div>
           <div class="cascade">
-            <div class="cascade-title">🚪 Que types entram no bloco?</div>
+            <div class="cascade-title">🚪 <span data-en="Which types enter the block?" data-pt="Que types entram no bloco?">Which types enter the block?</span></div>
             <div class="cascade-step">
               <span class="cascade-num">1</span>
               <span class="cond">fluxBox / libraryNode</span>
-              <span class="result next">branch por-campo (FN C)</span>
+              <span class="result next"><span data-en="per-field branch (FN C)" data-pt="branch por-campo (FN C)">per-field branch (FN C)</span></span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">2</span>
               <span class="cond">commandTextNode, voiceBoxNode, imageGenerator, commandContentNode, audioReaderNode, apiCaller, mcpNode</span>
-              <span class="result next">branch por-type (FN D)</span>
+              <span class="result next"><span data-en="per-type branch (FN D)" data-pt="branch por-type (FN D)">per-type branch (FN D)</span></span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">3</span>
-              <span class="cond">outros types com clearOnExecution truthy</span>
-              <span class="result deny">nada acontece</span>
+              <span class="cond"><span data-en="other types with clearOnExecution truthy" data-pt="outros types com clearOnExecution truthy">other types with clearOnExecution truthy</span></span>
+              <span class="result deny"><span data-en="nothing happens" data-pt="nada acontece">nothing happens</span></span>
             </div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Diferença semântica</div>
-            Em <code>fluxBox</code> e <code>libraryNode</code>, <code>clearOnExecution</code> é objeto ({key: bool}). Nos outros, é boolean. O branch acomoda os dois shapes sem verificar o formato explicitamente.
+            <div class="aside-title">🎯 <span data-en="Semantic difference" data-pt="Diferença semântica">Semantic difference</span></div>
+            <span data-en="In &lt;code&gt;fluxBox&lt;/code&gt; and &lt;code&gt;libraryNode&lt;/code&gt;, &lt;code&gt;clearOnExecution&lt;/code&gt; is an object ({key: bool}). In the others, it is a boolean. The branch accommodates both shapes without explicitly checking the format." data-pt="Em &lt;code&gt;fluxBox&lt;/code&gt; e &lt;code&gt;libraryNode&lt;/code&gt;, &lt;code&gt;clearOnExecution&lt;/code&gt; é objeto ({key: bool}). Nos outros, é boolean. O branch acomoda os dois shapes sem verificar o formato explicitamente.">In <code>fluxBox</code> and <code>libraryNode</code>, <code>clearOnExecution</code> is an object ({key: bool}). In the others, it is a boolean. The branch accommodates both shapes without explicitly checking the format.</span>
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ fluxObject cai no gate mas sem branch</div>
-            Um <code>fluxObject</code> com <code>clearOnExecution</code> truthy passaria o gate, mas não tem branch aqui. Ficaria inalterado. Só funciona porque o 1.5b já cuidou dele em memória.
+            <div class="aside-title">⚠️ <span data-en="fluxObject falls into the gate but no branch" data-pt="fluxObject cai no gate mas sem branch">fluxObject falls into the gate but no branch</span></div>
+            <span data-en="A &lt;code&gt;fluxObject&lt;/code&gt; with &lt;code&gt;clearOnExecution&lt;/code&gt; truthy would pass the gate, but there is no branch here. It would remain unchanged. This only works because 1.5b already took care of it in memory." data-pt="Um &lt;code&gt;fluxObject&lt;/code&gt; com &lt;code&gt;clearOnExecution&lt;/code&gt; truthy passaria o gate, mas não tem branch aqui. Ficaria inalterado. Só funciona porque o 1.5b já cuidou dele em memória.">A <code>fluxObject</code> with <code>clearOnExecution</code> truthy would pass the gate, but there is no branch here. It would remain unchanged. This only works because 1.5b already took care of it in memory.</span>
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 || false vs Boolean()</div>
-            <code>x || false</code> devolve <code>x</code> quando truthy, senão <code>false</code>. <code>Boolean(x)</code> devolve <code>true</code> ou <code>false</code>. Aqui o <code>if</code> trata igual. Mas <code>clearOnExecution</code> na variável fica com o valor original. Importante para o FN C, que precisa iterar as chaves.
+            <span data-en="&lt;code&gt;x || false&lt;/code&gt; returns &lt;code&gt;x&lt;/code&gt; when truthy, otherwise &lt;code&gt;false&lt;/code&gt;. &lt;code&gt;Boolean(x)&lt;/code&gt; returns &lt;code&gt;true&lt;/code&gt; or &lt;code&gt;false&lt;/code&gt;. Here the &lt;code&gt;if&lt;/code&gt; treats them the same. But &lt;code&gt;clearOnExecution&lt;/code&gt; in the variable keeps its original value. Important for FN C, which needs to iterate the keys." data-pt="&lt;code&gt;x || false&lt;/code&gt; devolve &lt;code&gt;x&lt;/code&gt; quando truthy, senão &lt;code&gt;false&lt;/code&gt;. &lt;code&gt;Boolean(x)&lt;/code&gt; devolve &lt;code&gt;true&lt;/code&gt; ou &lt;code&gt;false&lt;/code&gt;. Aqui o &lt;code&gt;if&lt;/code&gt; trata igual. Mas &lt;code&gt;clearOnExecution&lt;/code&gt; na variável fica com o valor original. Importante para o FN C, que precisa iterar as chaves."><code>x || false</code> returns <code>x</code> when truthy, otherwise <code>false</code>. <code>Boolean(x)</code> returns <code>true</code> or <code>false</code>. Here the <code>if</code> treats them the same. But <code>clearOnExecution</code> in the variable keeps its original value. Important for FN C, which needs to iterate the keys.</span>
           </div>
         </div>
       </div>
@@ -299,7 +304,7 @@
     <div class="fn-card-header">
       <div class="fn-title">
         <span class="badge migrated" style="background:#3B82F6;color:white">C</span>
-        <code>fluxBox / libraryNode — clear por campo</code>
+        <code><span data-en="fluxBox / libraryNode — per-field clear" data-pt="fluxBox / libraryNode — clear por campo">fluxBox / libraryNode — per-field clear</span></code>
       </div>
       <div class="fn-loc">flux.service.ts:2739-2752</div>
     </div>
@@ -308,16 +313,16 @@
         if (nd.type === 'fluxBox' || nd.type === 'libraryNode') { Object.entries(clearOnExecution).forEach(...) }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Itera as chaves de <code>clearOnExecution</code> (objeto <code>{key: bool}</code>). Zera cada campo do <code>data</code> cuja flag é <code>true</code>. A condição é que a chave já exista no <code>data</code>.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Iterates the keys of &lt;code&gt;clearOnExecution&lt;/code&gt; (object &lt;code&gt;{key: bool}&lt;/code&gt;). Zeroes each field in &lt;code&gt;data&lt;/code&gt; whose flag is &lt;code&gt;true&lt;/code&gt;. The condition is that the key must already exist in &lt;code&gt;data&lt;/code&gt;." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Itera as chaves de &lt;code&gt;clearOnExecution&lt;/code&gt; (objeto &lt;code&gt;{key: bool}&lt;/code&gt;). Zera cada campo do &lt;code&gt;data&lt;/code&gt; cuja flag é &lt;code&gt;true&lt;/code&gt;. A condição é que a chave já exista no &lt;code&gt;data&lt;/code&gt;."><strong>Purpose.</strong> Iterates the keys of <code>clearOnExecution</code> (object <code>{key: bool}</code>). Zeroes each field in <code>data</code> whose flag is <code>true</code>. The condition is that the key must already exist in <code>data</code>.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Para <code>fluxBox</code> e <code>libraryNode</code>, o usuário no editor pode escolher por campo qual output resetar. O <code>clearOnExecution</code> não é boolean. É um dicionário como <code>{ output1: true, output2: false, output3: true }</code>. Este branch itera o dicionário. Para cada par (<code>key</code>, <code>shouldClear</code>), se <code>shouldClear === true</code> e a chave existe em <code>newData</code>, zera para string vazia. Detalhe. Se <code>output1</code> for um array ou objeto no schema, ainda vira <code>''</code>. O clear é sempre string vazia. Não respeita o shape. Pode causar bugs downstream se algum handler esperar array e receber string. A helper equivalente em <code>node-output-reset.ts:94-114</code> (<code>buildClearOnExecutionReset</code>) é mais defensiva. Usa <code>&amp;&amp; data[key] !== ''</code> para não regravar quando já vazio. A versão inline do <code>apiV2</code> não faz isso.
+        <span data-en="&lt;strong&gt;In short.&lt;/strong&gt; For &lt;code&gt;fluxBox&lt;/code&gt; and &lt;code&gt;libraryNode&lt;/code&gt;, the user in the editor can pick which output to reset per field. &lt;code&gt;clearOnExecution&lt;/code&gt; is not a boolean. It is a dictionary such as &lt;code&gt;{ output1: true, output2: false, output3: true }&lt;/code&gt;. This branch iterates the dictionary. For each pair (&lt;code&gt;key&lt;/code&gt;, &lt;code&gt;shouldClear&lt;/code&gt;), if &lt;code&gt;shouldClear === true&lt;/code&gt; and the key exists in &lt;code&gt;newData&lt;/code&gt;, sets it to empty string. Detail. If &lt;code&gt;output1&lt;/code&gt; is an array or object in the schema, it still becomes &lt;code&gt;''&lt;/code&gt;. The clear is always an empty string. Does not respect the shape. May cause downstream bugs if a handler expects an array and receives a string. The equivalent helper in &lt;code&gt;node-output-reset.ts:94-114&lt;/code&gt; (&lt;code&gt;buildClearOnExecutionReset&lt;/code&gt;) is more defensive. Uses &lt;code&gt;&amp;&amp; data[key] !== ''&lt;/code&gt; to avoid rewriting when already empty. The &lt;code&gt;apiV2&lt;/code&gt; inline version does not." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Para &lt;code&gt;fluxBox&lt;/code&gt; e &lt;code&gt;libraryNode&lt;/code&gt;, o usuário no editor pode escolher por campo qual output resetar. O &lt;code&gt;clearOnExecution&lt;/code&gt; não é boolean. É um dicionário como &lt;code&gt;{ output1: true, output2: false, output3: true }&lt;/code&gt;. Este branch itera o dicionário. Para cada par (&lt;code&gt;key&lt;/code&gt;, &lt;code&gt;shouldClear&lt;/code&gt;), se &lt;code&gt;shouldClear === true&lt;/code&gt; e a chave existe em &lt;code&gt;newData&lt;/code&gt;, zera para string vazia. Detalhe. Se &lt;code&gt;output1&lt;/code&gt; for um array ou objeto no schema, ainda vira &lt;code&gt;''&lt;/code&gt;. O clear é sempre string vazia. Não respeita o shape. Pode causar bugs downstream se algum handler esperar array e receber string. A helper equivalente em &lt;code&gt;node-output-reset.ts:94-114&lt;/code&gt; (&lt;code&gt;buildClearOnExecutionReset&lt;/code&gt;) é mais defensiva. Usa &lt;code&gt;&amp;&amp; data[key] !== ''&lt;/code&gt; para não regravar quando já vazio. A versão inline do &lt;code&gt;apiV2&lt;/code&gt; não faz isso."><strong>In short.</strong> For <code>fluxBox</code> and <code>libraryNode</code>, the user in the editor can pick which output to reset per field. <code>clearOnExecution</code> is not a boolean. It is a dictionary such as <code>{ output1: true, output2: false, output3: true }</code>. This branch iterates the dictionary. For each pair (<code>key</code>, <code>shouldClear</code>), if <code>shouldClear === true</code> and the key exists in <code>newData</code>, sets it to empty string. Detail. If <code>output1</code> is an array or object in the schema, it still becomes <code>''</code>. The clear is always an empty string. Does not respect the shape. May cause downstream bugs if a handler expects an array and receives a string. The equivalent helper in <code>node-output-reset.ts:94-114</code> (<code>buildClearOnExecutionReset</code>) is more defensive. Uses <code>&amp;&amp; data[key] !== ''</code> to avoid rewriting when already empty. The <code>apiV2</code> inline version does not.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">C1</span> Object.entries + forEach com gate</div>
+            <div class="box-title"><span class="badge step">C1</span> <span data-en="Object.entries + forEach with gate" data-pt="Object.entries + forEach com gate">Object.entries + forEach with gate</span></div>
             <div class="code-block">
 <span class="k">if</span> (nd.type === <span class="s">'fluxBox'</span> || nd.type === <span class="s">'libraryNode'</span>) {
   <span class="k">const</span> newData = { ...nd.data };
@@ -333,21 +338,21 @@
           </div>
           <div class="arrow">↓</div>
           <div class="box decision">
-            <div class="box-title">Guardas dentro do forEach</div>
+            <div class="box-title"><span data-en="Guards inside the forEach" data-pt="Guardas dentro do forEach">Guards inside the forEach</span></div>
             <div class="cascade">
               <div class="cascade-step">
                 <span class="cascade-num">1</span>
-                <span class="cond"><code>shouldClear === true</code> (estrito)</span>
-                <span class="result next">continua</span>
+                <span class="cond"><code>shouldClear === true</code> <span data-en="(strict)" data-pt="(estrito)">(strict)</span></span>
+                <span class="result next"><span data-en="continues" data-pt="continua">continues</span></span>
               </div>
               <div class="cascade-step">
                 <span class="cascade-num">2</span>
                 <span class="cond"><code>key in newData</code></span>
-                <span class="result next">continua</span>
+                <span class="result next"><span data-en="continues" data-pt="continua">continues</span></span>
               </div>
               <div class="cascade-step">
                 <span class="cascade-num">3</span>
-                <span class="cond">ambos true</span>
+                <span class="cond"><span data-en="both true" data-pt="ambos true">both true</span></span>
                 <span class="result pass"><code>newData[key] = ''</code></span>
               </div>
             </div>
@@ -355,17 +360,16 @@
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Sempre string vazia</div>
-            Não importa se o campo original é array, objeto ou number. O clear é sempre <code>''</code>. É a convenção do sistema. Output limpo equivale a string vazia.
+            <div class="aside-title">🎯 <span data-en="Always empty string" data-pt="Sempre string vazia">Always empty string</span></div>
+            <span data-en="Regardless of whether the original field is an array, object or number. The clear is always &lt;code&gt;''&lt;/code&gt;. It is the system's convention. Clean output equals empty string." data-pt="Não importa se o campo original é array, objeto ou number. O clear é sempre &lt;code&gt;''&lt;/code&gt;. É a convenção do sistema. Output limpo equivale a string vazia.">Regardless of whether the original field is an array, object or number. The clear is always <code>''</code>. It is the system's convention. Clean output equals empty string.</span>
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ Discrepância com node-output-reset.ts</div>
-            A helper <code>buildClearOnExecutionReset</code> (<code>node-output-reset.ts:94-114</code>) é mais correta. Usa <code>data[key] !== ''</code> para evitar regravar quando já vazio. Retorna só o patch, não o data todo. A versão inline aqui é legacy. Ainda não migrada para usar a helper.
-            <br><br>Bug latente. Se algum handler regravar output entre execuções, esta versão inline pode zerar dados novos que acabaram de ser gravados.
+            <div class="aside-title">⚠️ <span data-en="Discrepancy with node-output-reset.ts" data-pt="Discrepância com node-output-reset.ts">Discrepancy with node-output-reset.ts</span></div>
+            <span data-en="The &lt;code&gt;buildClearOnExecutionReset&lt;/code&gt; helper (&lt;code&gt;node-output-reset.ts:94-114&lt;/code&gt;) is more correct. Uses &lt;code&gt;data[key] !== ''&lt;/code&gt; to avoid rewriting when already empty. Returns only the patch, not the full data. The inline version here is legacy. Not yet migrated to use the helper.&lt;br&gt;&lt;br&gt;Latent bug. If some handler rewrites output between executions, this inline version may zero fresh data that has just been written." data-pt="A helper &lt;code&gt;buildClearOnExecutionReset&lt;/code&gt; (&lt;code&gt;node-output-reset.ts:94-114&lt;/code&gt;) é mais correta. Usa &lt;code&gt;data[key] !== ''&lt;/code&gt; para evitar regravar quando já vazio. Retorna só o patch, não o data todo. A versão inline aqui é legacy. Ainda não migrada para usar a helper.&lt;br&gt;&lt;br&gt;Bug latente. Se algum handler regravar output entre execuções, esta versão inline pode zerar dados novos que acabaram de ser gravados.">The <code>buildClearOnExecutionReset</code> helper (<code>node-output-reset.ts:94-114</code>) is more correct. Uses <code>data[key] !== ''</code> to avoid rewriting when already empty. Returns only the patch, not the full data. The inline version here is legacy. Not yet migrated to use the helper.<br><br>Latent bug. If some handler rewrites output between executions, this inline version may zero fresh data that has just been written.</span>
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 shouldClear === true strict</div>
-            <code>=== true</code>. Comparação estrita. Strings como <code>'true'</code> ou <code>1</code> não passam. Só literal boolean.
+            <span data-en="&lt;code&gt;=== true&lt;/code&gt;. Strict comparison. Strings like &lt;code&gt;'true'&lt;/code&gt; or &lt;code&gt;1&lt;/code&gt; do not pass. Only literal boolean." data-pt="&lt;code&gt;=== true&lt;/code&gt;. Comparação estrita. Strings como &lt;code&gt;'true'&lt;/code&gt; ou &lt;code&gt;1&lt;/code&gt; não passam. Só literal boolean."><code>=== true</code>. Strict comparison. Strings like <code>'true'</code> or <code>1</code> do not pass. Only literal boolean.</span>
           </div>
         </div>
       </div>
@@ -377,7 +381,7 @@
     <div class="fn-card-header">
       <div class="fn-title">
         <span class="badge migrated" style="background:#8B5CF6;color:white">D</span>
-        <code>7 types com fallback (voice/apiCaller/commandContent/...)</code>
+        <code><span data-en="7 types with fallback (voice/apiCaller/commandContent/...)" data-pt="7 types com fallback (voice/apiCaller/commandContent/...)">7 types with fallback (voice/apiCaller/commandContent/...)</span></code>
       </div>
       <div class="fn-loc">flux.service.ts:2754-2804</div>
     </div>
@@ -386,16 +390,16 @@
         if (nd.type === 'commandTextNode' || 'voiceBoxNode' || 'imageGenerator' || 'commandContentNode' || 'audioReaderNode' || 'apiCaller' || 'mcpNode') { ... }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Reset genérico para os 7 types que têm output plano (não por campo como <code>fluxBox</code>). Sub-branches especiais. <code>voiceBoxNode</code> tem return cedo com <code>audioUrl</code>. <code>commandContentNode</code> aplica <code>text.result: ''</code>. <code>apiCaller</code> e <code>mcpNode</code> aplicam <code>response: null</code> e os campos de erro.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Generic reset for the 7 types that have flat output (not per-field like &lt;code&gt;fluxBox&lt;/code&gt;). Special sub-branches. &lt;code&gt;voiceBoxNode&lt;/code&gt; has an early return with &lt;code&gt;audioUrl&lt;/code&gt;. &lt;code&gt;commandContentNode&lt;/code&gt; applies &lt;code&gt;text.result: ''&lt;/code&gt;. &lt;code&gt;apiCaller&lt;/code&gt; and &lt;code&gt;mcpNode&lt;/code&gt; apply &lt;code&gt;response: null&lt;/code&gt; and the error fields." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Reset genérico para os 7 types que têm output plano (não por campo como &lt;code&gt;fluxBox&lt;/code&gt;). Sub-branches especiais. &lt;code&gt;voiceBoxNode&lt;/code&gt; tem return cedo com &lt;code&gt;audioUrl&lt;/code&gt;. &lt;code&gt;commandContentNode&lt;/code&gt; aplica &lt;code&gt;text.result: ''&lt;/code&gt;. &lt;code&gt;apiCaller&lt;/code&gt; e &lt;code&gt;mcpNode&lt;/code&gt; aplicam &lt;code&gt;response: null&lt;/code&gt; e os campos de erro."><strong>Purpose.</strong> Generic reset for the 7 types that have flat output (not per-field like <code>fluxBox</code>). Special sub-branches. <code>voiceBoxNode</code> has an early return with <code>audioUrl</code>. <code>commandContentNode</code> applies <code>text.result: ''</code>. <code>apiCaller</code> and <code>mcpNode</code> apply <code>response: null</code> and the error fields.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Após o gate <code>clearOnExecution</code>, se o nó cai na lista dos 7 types, entra em um sub-if inline extenso. Estrutura da árvore. Primeiro, <code>voiceBoxNode</code> tem um <code>return</code> cedo. É especial porque usa <code>audioUrl</code> em vez de <code>text</code>. Retorna direto com <code>{ canceled: false, audioUrl: '' }</code>. Depois define <code>newData</code> inicialmente como <code>{}</code> e adiciona campos. <code>text: { ...nd.data.text, result: '' }</code> quando é <code>commandContentNode</code> (este type usa <code>text</code> como objeto aninhado com <code>result</code>). Ou <code>{ response: null, errorMessage: null, errorStatusCode: null }</code> quando é <code>apiCaller</code> ou <code>mcpNode</code>. Por fim, retorna <code>{ ...nd, data: { ...nd.data, text: '', canceled: false, ...newData } }</code>. Todos os 7 types recebem <code>text: ''</code> e <code>canceled: false</code> como base, mais o <code>newData</code> específico. Observação. <code>audioReaderNode</code>, <code>commandTextNode</code> e <code>imageGenerator</code> não têm <code>newData</code> especial. Só recebem o reset base. Existe uma versão refatorada em <code>clearStaleNodeOutput</code> em <code>node-output-reset.ts:20-55</code>. Mais limpa. Inclui <code>jsonRequestBody: ''</code> em <code>apiCaller</code>/<code>mcpNode</code>, que a versão inline não tem.
+        <span data-en="&lt;strong&gt;In short.&lt;/strong&gt; After the &lt;code&gt;clearOnExecution&lt;/code&gt; gate, if the node falls into the list of 7 types, it enters an extensive inline sub-if. Tree structure. First, &lt;code&gt;voiceBoxNode&lt;/code&gt; has an early &lt;code&gt;return&lt;/code&gt;. It is special because it uses &lt;code&gt;audioUrl&lt;/code&gt; instead of &lt;code&gt;text&lt;/code&gt;. Returns directly with &lt;code&gt;{ canceled: false, audioUrl: '' }&lt;/code&gt;. Then it defines &lt;code&gt;newData&lt;/code&gt; initially as &lt;code&gt;{}&lt;/code&gt; and adds fields. &lt;code&gt;text: { ...nd.data.text, result: '' }&lt;/code&gt; when it is &lt;code&gt;commandContentNode&lt;/code&gt; (this type uses &lt;code&gt;text&lt;/code&gt; as a nested object with &lt;code&gt;result&lt;/code&gt;). Or &lt;code&gt;{ response: null, errorMessage: null, errorStatusCode: null }&lt;/code&gt; when it is &lt;code&gt;apiCaller&lt;/code&gt; or &lt;code&gt;mcpNode&lt;/code&gt;. Finally, returns &lt;code&gt;{ ...nd, data: { ...nd.data, text: '', canceled: false, ...newData } }&lt;/code&gt;. All 7 types receive &lt;code&gt;text: ''&lt;/code&gt; and &lt;code&gt;canceled: false&lt;/code&gt; as base, plus the specific &lt;code&gt;newData&lt;/code&gt;. Observation. &lt;code&gt;audioReaderNode&lt;/code&gt;, &lt;code&gt;commandTextNode&lt;/code&gt; and &lt;code&gt;imageGenerator&lt;/code&gt; have no special &lt;code&gt;newData&lt;/code&gt;. They only get the base reset. There is a refactored version in &lt;code&gt;clearStaleNodeOutput&lt;/code&gt; at &lt;code&gt;node-output-reset.ts:20-55&lt;/code&gt;. Cleaner. Includes &lt;code&gt;jsonRequestBody: ''&lt;/code&gt; in &lt;code&gt;apiCaller&lt;/code&gt;/&lt;code&gt;mcpNode&lt;/code&gt;, which the inline version lacks." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Após o gate &lt;code&gt;clearOnExecution&lt;/code&gt;, se o nó cai na lista dos 7 types, entra em um sub-if inline extenso. Estrutura da árvore. Primeiro, &lt;code&gt;voiceBoxNode&lt;/code&gt; tem um &lt;code&gt;return&lt;/code&gt; cedo. É especial porque usa &lt;code&gt;audioUrl&lt;/code&gt; em vez de &lt;code&gt;text&lt;/code&gt;. Retorna direto com &lt;code&gt;{ canceled: false, audioUrl: '' }&lt;/code&gt;. Depois define &lt;code&gt;newData&lt;/code&gt; inicialmente como &lt;code&gt;{}&lt;/code&gt; e adiciona campos. &lt;code&gt;text: { ...nd.data.text, result: '' }&lt;/code&gt; quando é &lt;code&gt;commandContentNode&lt;/code&gt; (este type usa &lt;code&gt;text&lt;/code&gt; como objeto aninhado com &lt;code&gt;result&lt;/code&gt;). Ou &lt;code&gt;{ response: null, errorMessage: null, errorStatusCode: null }&lt;/code&gt; quando é &lt;code&gt;apiCaller&lt;/code&gt; ou &lt;code&gt;mcpNode&lt;/code&gt;. Por fim, retorna &lt;code&gt;{ ...nd, data: { ...nd.data, text: '', canceled: false, ...newData } }&lt;/code&gt;. Todos os 7 types recebem &lt;code&gt;text: ''&lt;/code&gt; e &lt;code&gt;canceled: false&lt;/code&gt; como base, mais o &lt;code&gt;newData&lt;/code&gt; específico. Observação. &lt;code&gt;audioReaderNode&lt;/code&gt;, &lt;code&gt;commandTextNode&lt;/code&gt; e &lt;code&gt;imageGenerator&lt;/code&gt; não têm &lt;code&gt;newData&lt;/code&gt; especial. Só recebem o reset base. Existe uma versão refatorada em &lt;code&gt;clearStaleNodeOutput&lt;/code&gt; em &lt;code&gt;node-output-reset.ts:20-55&lt;/code&gt;. Mais limpa. Inclui &lt;code&gt;jsonRequestBody: ''&lt;/code&gt; em &lt;code&gt;apiCaller&lt;/code&gt;/&lt;code&gt;mcpNode&lt;/code&gt;, que a versão inline não tem."><strong>In short.</strong> After the <code>clearOnExecution</code> gate, if the node falls into the list of 7 types, it enters an extensive inline sub-if. Tree structure. First, <code>voiceBoxNode</code> has an early <code>return</code>. It is special because it uses <code>audioUrl</code> instead of <code>text</code>. Returns directly with <code>{ canceled: false, audioUrl: '' }</code>. Then it defines <code>newData</code> initially as <code>{}</code> and adds fields. <code>text: { ...nd.data.text, result: '' }</code> when it is <code>commandContentNode</code> (this type uses <code>text</code> as a nested object with <code>result</code>). Or <code>{ response: null, errorMessage: null, errorStatusCode: null }</code> when it is <code>apiCaller</code> or <code>mcpNode</code>. Finally, returns <code>{ ...nd, data: { ...nd.data, text: '', canceled: false, ...newData } }</code>. All 7 types receive <code>text: ''</code> and <code>canceled: false</code> as base, plus the specific <code>newData</code>. Observation. <code>audioReaderNode</code>, <code>commandTextNode</code> and <code>imageGenerator</code> have no special <code>newData</code>. They only get the base reset. There is a refactored version in <code>clearStaleNodeOutput</code> at <code>node-output-reset.ts:20-55</code>. Cleaner. Includes <code>jsonRequestBody: ''</code> in <code>apiCaller</code>/<code>mcpNode</code>, which the inline version lacks.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">D1</span> Early return: voiceBoxNode</div>
+            <div class="box-title"><span class="badge step">D1</span> <span data-en="Early return: voiceBoxNode" data-pt="Early return: voiceBoxNode">Early return: voiceBoxNode</span></div>
             <div class="code-block">
 <span class="k">if</span> (nd.type === <span class="s">'voiceBoxNode'</span>) {
   <span class="k">return</span> {
@@ -437,7 +441,7 @@
           </div>
           <div class="arrow">↓</div>
           <div class="box backend">
-            <div class="box-title"><span class="badge step">D4</span> Merge final — todos os 7 types</div>
+            <div class="box-title"><span class="badge step">D4</span> <span data-en="Final merge — all 7 types" data-pt="Merge final — todos os 7 types">Final merge — all 7 types</span></div>
             <div class="code-block">
 <span class="k">return</span> {
   ...nd,
@@ -445,7 +449,7 @@
     ...nd.data,
     text: <span class="s">''</span>,
     canceled: <span class="k">false</span>,
-    ...newData,  <span class="c">// pode ter text: {...} sobrescrevendo o text: ''</span>
+    ...newData,  <span class="c">// may have text: {...} overriding text: ''</span>
   },
 };
             </div>
@@ -454,20 +458,20 @@
         </div>
         <div class="fn-asides">
           <div class="aside warn">
-            <div class="aside-title">⚠️ Discrepância com clearStaleNodeOutput</div>
-            A versão refatorada em <code>node-output-reset.ts:20-55</code> inclui <code>jsonRequestBody: ''</code> no reset de <code>apiCaller</code>/<code>mcpNode</code>. A versão inline não tem. Bug latente. Request body antigo pode vazar para a nova execução em <code>apiCaller</code>.
+            <div class="aside-title">⚠️ <span data-en="Discrepancy with clearStaleNodeOutput" data-pt="Discrepância com clearStaleNodeOutput">Discrepancy with clearStaleNodeOutput</span></div>
+            <span data-en="The refactored version in &lt;code&gt;node-output-reset.ts:20-55&lt;/code&gt; includes &lt;code&gt;jsonRequestBody: ''&lt;/code&gt; in the &lt;code&gt;apiCaller&lt;/code&gt;/&lt;code&gt;mcpNode&lt;/code&gt; reset. The inline version does not. Latent bug. Old request body may leak into the new execution in &lt;code&gt;apiCaller&lt;/code&gt;." data-pt="A versão refatorada em &lt;code&gt;node-output-reset.ts:20-55&lt;/code&gt; inclui &lt;code&gt;jsonRequestBody: ''&lt;/code&gt; no reset de &lt;code&gt;apiCaller&lt;/code&gt;/&lt;code&gt;mcpNode&lt;/code&gt;. A versão inline não tem. Bug latente. Request body antigo pode vazar para a nova execução em &lt;code&gt;apiCaller&lt;/code&gt;.">The refactored version in <code>node-output-reset.ts:20-55</code> includes <code>jsonRequestBody: ''</code> in the <code>apiCaller</code>/<code>mcpNode</code> reset. The inline version does not. Latent bug. Old request body may leak into the new execution in <code>apiCaller</code>.</span>
           </div>
           <div class="aside info">
-            <div class="aside-title">🎯 Precedência do spread</div>
-            <code>{ text: '', canceled: false, ...newData }</code>. Se <code>newData.text</code> existir (<code>commandContentNode</code>), sobrescreve o <code>text: ''</code>. A ordem é intencional.
+            <div class="aside-title">🎯 <span data-en="Spread precedence" data-pt="Precedência do spread">Spread precedence</span></div>
+            <span data-en="&lt;code&gt;{ text: '', canceled: false, ...newData }&lt;/code&gt;. If &lt;code&gt;newData.text&lt;/code&gt; exists (&lt;code&gt;commandContentNode&lt;/code&gt;), it overrides &lt;code&gt;text: ''&lt;/code&gt;. The order is intentional." data-pt="&lt;code&gt;{ text: '', canceled: false, ...newData }&lt;/code&gt;. Se &lt;code&gt;newData.text&lt;/code&gt; existir (&lt;code&gt;commandContentNode&lt;/code&gt;), sobrescreve o &lt;code&gt;text: ''&lt;/code&gt;. A ordem é intencional."><code>{ text: '', canceled: false, ...newData }</code>. If <code>newData.text</code> exists (<code>commandContentNode</code>), it overrides <code>text: ''</code>. The order is intentional.</span>
           </div>
           <div class="aside">
-            <div class="aside-title">📎 audioReaderNode / imageGenerator sem newData</div>
-            Estão na lista de types, mas nenhum sub-branch os trata especificamente. Recebem só <code>text: ''</code> e <code>canceled: false</code>.
+            <div class="aside-title">📎 <span data-en="audioReaderNode / imageGenerator without newData" data-pt="audioReaderNode / imageGenerator sem newData">audioReaderNode / imageGenerator without newData</span></div>
+            <span data-en="They are in the type list, but no sub-branch handles them specifically. They only receive &lt;code&gt;text: ''&lt;/code&gt; and &lt;code&gt;canceled: false&lt;/code&gt;." data-pt="Estão na lista de types, mas nenhum sub-branch os trata especificamente. Recebem só &lt;code&gt;text: ''&lt;/code&gt; e &lt;code&gt;canceled: false&lt;/code&gt;.">They are in the type list, but no sub-branch handles them specifically. They only receive <code>text: ''</code> and <code>canceled: false</code>.</span>
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 Onde clearStaleNodeOutput é usado?</div>
-            O <code>clearRunOutputForSeed</code> (passo 1.7b) chama <code>clearStaleNodeOutput</code>. Existe caminho duplicado. Este <code>.map</code> inline mais o <code>clearRunOutputForSeed</code> logo depois. Legacy sobreposto com a versão nova.
+            <div class="aside-title">🔧 <span data-en="Where is clearStaleNodeOutput used?" data-pt="Onde clearStaleNodeOutput é usado?">Where is clearStaleNodeOutput used?</span></div>
+            <span data-en="&lt;code&gt;clearRunOutputForSeed&lt;/code&gt; (step 1.7b) calls &lt;code&gt;clearStaleNodeOutput&lt;/code&gt;. There is a duplicated path. This inline &lt;code&gt;.map&lt;/code&gt; plus &lt;code&gt;clearRunOutputForSeed&lt;/code&gt; right after. Legacy overlaid with the new version." data-pt="O &lt;code&gt;clearRunOutputForSeed&lt;/code&gt; (passo 1.7b) chama &lt;code&gt;clearStaleNodeOutput&lt;/code&gt;. Existe caminho duplicado. Este &lt;code&gt;.map&lt;/code&gt; inline mais o &lt;code&gt;clearRunOutputForSeed&lt;/code&gt; logo depois. Legacy sobreposto com a versão nova."><code>clearRunOutputForSeed</code> (step 1.7b) calls <code>clearStaleNodeOutput</code>. There is a duplicated path. This inline <code>.map</code> plus <code>clearRunOutputForSeed</code> right after. Legacy overlaid with the new version.</span>
           </div>
         </div>
       </div>
@@ -488,50 +492,50 @@
         if (nd.type === 'conditionNode') { nd.data.currentLoopCounter = 0; }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Zerar o contador de loops fora do gate de <code>clearOnExecution</code>. É a única mutação in-place no <code>.map</code>. Muta <code>nd.data.currentLoopCounter</code> diretamente sem retornar nó novo.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Zero the loop counter outside the &lt;code&gt;clearOnExecution&lt;/code&gt; gate. It is the only in-place mutation in the &lt;code&gt;.map&lt;/code&gt;. Mutates &lt;code&gt;nd.data.currentLoopCounter&lt;/code&gt; directly without returning a new node." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Zerar o contador de loops fora do gate de &lt;code&gt;clearOnExecution&lt;/code&gt;. É a única mutação in-place no &lt;code&gt;.map&lt;/code&gt;. Muta &lt;code&gt;nd.data.currentLoopCounter&lt;/code&gt; diretamente sem retornar nó novo."><strong>Purpose.</strong> Zero the loop counter outside the <code>clearOnExecution</code> gate. It is the only in-place mutation in the <code>.map</code>. Mutates <code>nd.data.currentLoopCounter</code> directly without returning a new node.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> O <code>conditionNode</code> tem um contador de iterações usado para terminar loops (semelhante a "for count &lt; 10"). O contador deve começar em zero para cada execução. Se ficasse com o valor da execução anterior, o loop terminaria imediatamente ou não sairia. Observação. O reset é mutação in-place. <code>nd.data.currentLoopCounter = 0</code> muta o objeto original. Não retorna novo. É diferente do resto do <code>.map</code>, que sempre cria novos via spread. É um footgun sutil. Se algum código externo tiver referência para o nó original, essa mutação aparece lá também. Na prática, funciona porque o <code>getFlow.nodes</code> foi processado pelo <code>stripStaleErrorState</code> (passo 1.5a), que já criou cópias. A referência original do banco não é mais compartilhada. Mas fica como convenção sem contract.
+        <span data-en="&lt;strong&gt;In short.&lt;/strong&gt; &lt;code&gt;conditionNode&lt;/code&gt; has an iteration counter used to end loops (similar to &quot;for count &amp;lt; 10&quot;). The counter must start at zero for each execution. If it kept the previous execution's value, the loop would end immediately or never leave. Observation. The reset is an in-place mutation. &lt;code&gt;nd.data.currentLoopCounter = 0&lt;/code&gt; mutates the original object. Does not return a new one. Different from the rest of the &lt;code&gt;.map&lt;/code&gt;, which always creates new ones via spread. Subtle footgun. If some external code holds a reference to the original node, this mutation shows up there too. In practice, it works because &lt;code&gt;getFlow.nodes&lt;/code&gt; was processed by &lt;code&gt;stripStaleErrorState&lt;/code&gt; (step 1.5a), which already created copies. The original DB reference is no longer shared. But it stands as a convention without a contract." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; O &lt;code&gt;conditionNode&lt;/code&gt; tem um contador de iterações usado para terminar loops (semelhante a &quot;for count &amp;lt; 10&quot;). O contador deve começar em zero para cada execução. Se ficasse com o valor da execução anterior, o loop terminaria imediatamente ou não sairia. Observação. O reset é mutação in-place. &lt;code&gt;nd.data.currentLoopCounter = 0&lt;/code&gt; muta o objeto original. Não retorna novo. É diferente do resto do &lt;code&gt;.map&lt;/code&gt;, que sempre cria novos via spread. É um footgun sutil. Se algum código externo tiver referência para o nó original, essa mutação aparece lá também. Na prática, funciona porque o &lt;code&gt;getFlow.nodes&lt;/code&gt; foi processado pelo &lt;code&gt;stripStaleErrorState&lt;/code&gt; (passo 1.5a), que já criou cópias. A referência original do banco não é mais compartilhada. Mas fica como convenção sem contract."><strong>In short.</strong> <code>conditionNode</code> has an iteration counter used to end loops (similar to "for count &lt; 10"). The counter must start at zero for each execution. If it kept the previous execution's value, the loop would end immediately or never leave. Observation. The reset is an in-place mutation. <code>nd.data.currentLoopCounter = 0</code> mutates the original object. Does not return a new one. Different from the rest of the <code>.map</code>, which always creates new ones via spread. Subtle footgun. If some external code holds a reference to the original node, this mutation shows up there too. In practice, it works because <code>getFlow.nodes</code> was processed by <code>stripStaleErrorState</code> (step 1.5a), which already created copies. The original DB reference is no longer shared. But it stands as a convention without a contract.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">E1</span> Mutação in-place</div>
+            <div class="box-title"><span class="badge step">E1</span> <span data-en="In-place mutation" data-pt="Mutação in-place">In-place mutation</span></div>
             <div class="code-block">
 <span class="k">if</span> (nd.type === <span class="s">'conditionNode'</span>) {
   nd.data.currentLoopCounter = <span class="k">0</span>;
-  <span class="c">// nota: sem return — cai no return nd default lá embaixo</span>
+  <span class="c">// note: no return — falls into the default return nd below</span>
 }
 
-<span class="k">return</span> nd;  <span class="c">// default do .map</span>
+<span class="k">return</span> nd;  <span class="c">// .map default</span>
             </div>
             <div class="box-file">flux.service.ts:2807-2811</div>
           </div>
           <div class="arrow">↓</div>
           <div class="box decision">
-            <div class="box-title">Efeito no updatedFlows</div>
+            <div class="box-title"><span data-en="Effect on updatedFlows" data-pt="Efeito no updatedFlows">Effect on updatedFlows</span></div>
             <div class="box-desc">
-              O nó retornado é o mesmo objeto, mutado in-place, não uma cópia. Se algum código já leu <code>nd.data.currentLoopCounter</code> antes deste map, viu o valor antigo. A mutação só afeta leituras posteriores.
+              <span data-en="The returned node is the same object, mutated in-place, not a copy. If some code already read &lt;code&gt;nd.data.currentLoopCounter&lt;/code&gt; before this map, it saw the old value. The mutation only affects subsequent reads." data-pt="O nó retornado é o mesmo objeto, mutado in-place, não uma cópia. Se algum código já leu &lt;code&gt;nd.data.currentLoopCounter&lt;/code&gt; antes deste map, viu o valor antigo. A mutação só afeta leituras posteriores.">The returned node is the same object, mutated in-place, not a copy. If some code already read <code>nd.data.currentLoopCounter</code> before this map, it saw the old value. The mutation only affects subsequent reads.</span>
             </div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside warn">
-            <div class="aside-title">⚠️ Única mutação in-place do .map</div>
-            Todos os outros branches criam objetos novos via spread. Só o <code>conditionNode</code> muta a referência original. Inconsistência de estilo. Pode ser refactor accident ou intenção obscura.
+            <div class="aside-title">⚠️ <span data-en="Only in-place mutation in the .map" data-pt="Única mutação in-place do .map">Only in-place mutation in the .map</span></div>
+            <span data-en="All other branches create new objects via spread. Only &lt;code&gt;conditionNode&lt;/code&gt; mutates the original reference. Style inconsistency. Could be a refactor accident or obscure intent." data-pt="Todos os outros branches criam objetos novos via spread. Só o &lt;code&gt;conditionNode&lt;/code&gt; muta a referência original. Inconsistência de estilo. Pode ser refactor accident ou intenção obscura.">All other branches create new objects via spread. Only <code>conditionNode</code> mutates the original reference. Style inconsistency. Could be a refactor accident or obscure intent.</span>
           </div>
           <div class="aside info">
-            <div class="aside-title">🎯 Fora do gate clearOnExecution</div>
-            O loop counter sempre reseta, independente de flag. Faz sentido. Um loop counter antigo quebra a semântica de loop.
+            <div class="aside-title">🎯 <span data-en="Outside the clearOnExecution gate" data-pt="Fora do gate clearOnExecution">Outside the clearOnExecution gate</span></div>
+            <span data-en="The loop counter always resets, regardless of any flag. Makes sense. An old loop counter breaks loop semantics." data-pt="O loop counter sempre reseta, independente de flag. Faz sentido. Um loop counter antigo quebra a semântica de loop.">The loop counter always resets, regardless of any flag. Makes sense. An old loop counter breaks loop semantics.</span>
           </div>
           <div class="aside">
-            <div class="aside-title">📎 Onde currentLoopCounter é usado</div>
-            No handler do <code>conditionNode</code> na Fase 3 do <code>apiV2</code>. Incrementa a cada iteração do loop. Testa contra <code>data.maxLoop</code> para decidir se continua.
+            <div class="aside-title">📎 <span data-en="Where currentLoopCounter is used" data-pt="Onde currentLoopCounter é usado">Where currentLoopCounter is used</span></div>
+            <span data-en="In the &lt;code&gt;conditionNode&lt;/code&gt; handler in Phase 3 of &lt;code&gt;apiV2&lt;/code&gt;. Increments on every loop iteration. Tests against &lt;code&gt;data.maxLoop&lt;/code&gt; to decide whether to continue." data-pt="No handler do &lt;code&gt;conditionNode&lt;/code&gt; na Fase 3 do &lt;code&gt;apiV2&lt;/code&gt;. Incrementa a cada iteração do loop. Testa contra &lt;code&gt;data.maxLoop&lt;/code&gt; para decidir se continua.">In the <code>conditionNode</code> handler in Phase 3 of <code>apiV2</code>. Increments on every loop iteration. Tests against <code>data.maxLoop</code> to decide whether to continue.</span>
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 Como isso combina com outputObjectNode</div>
-            Se um nó fosse <code>outputObjectNode</code> e <code>conditionNode</code> ao mesmo tempo (impossível no schema), o <code>return</code> do A cortaria antes do E. Na prática, os types são exclusivos.
+            <div class="aside-title">🔧 <span data-en="How this combines with outputObjectNode" data-pt="Como isso combina com outputObjectNode">How this combines with outputObjectNode</span></div>
+            <span data-en="If a node were &lt;code&gt;outputObjectNode&lt;/code&gt; and &lt;code&gt;conditionNode&lt;/code&gt; at the same time (impossible in the schema), the &lt;code&gt;return&lt;/code&gt; in A would cut before E. In practice, types are exclusive." data-pt="Se um nó fosse &lt;code&gt;outputObjectNode&lt;/code&gt; e &lt;code&gt;conditionNode&lt;/code&gt; ao mesmo tempo (impossível no schema), o &lt;code&gt;return&lt;/code&gt; do A cortaria antes do E. Na prática, os types são exclusivos.">If a node were <code>outputObjectNode</code> and <code>conditionNode</code> at the same time (impossible in the schema), the <code>return</code> in A would cut before E. In practice, types are exclusive.</span>
           </div>
         </div>
       </div>
@@ -539,27 +543,19 @@
   </div>
 
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo — o que sai de 1.7a.</strong>
-    <br>• <code>updatedFlows</code> mutado. <code>outputObjectNode</code> zerado sempre. Nós com <code>clearOnExecution</code> truthy resetados por type.
-    <br>• <code>conditionNode.currentLoopCounter = 0</code> em todos os <code>conditionNodes</code>.
-    <br>• Alocações. N nós novos (spread) e uma mutação in-place (<code>conditionNode</code>).
-    <br>• Zero I/O. Puro compute em memória.
+    <span data-en="&lt;strong&gt;Summary — what leaves 1.7a.&lt;/strong&gt;&lt;br&gt;• &lt;code&gt;updatedFlows&lt;/code&gt; mutated. &lt;code&gt;outputObjectNode&lt;/code&gt; always zeroed. Nodes with &lt;code&gt;clearOnExecution&lt;/code&gt; truthy reset by type.&lt;br&gt;• &lt;code&gt;conditionNode.currentLoopCounter = 0&lt;/code&gt; on every &lt;code&gt;conditionNode&lt;/code&gt;.&lt;br&gt;• Allocations. N new nodes (spread) and one in-place mutation (&lt;code&gt;conditionNode&lt;/code&gt;).&lt;br&gt;• Zero I/O. Pure in-memory compute." data-pt="&lt;strong&gt;Resumo — o que sai de 1.7a.&lt;/strong&gt;&lt;br&gt;• &lt;code&gt;updatedFlows&lt;/code&gt; mutado. &lt;code&gt;outputObjectNode&lt;/code&gt; zerado sempre. Nós com &lt;code&gt;clearOnExecution&lt;/code&gt; truthy resetados por type.&lt;br&gt;• &lt;code&gt;conditionNode.currentLoopCounter = 0&lt;/code&gt; em todos os &lt;code&gt;conditionNodes&lt;/code&gt;.&lt;br&gt;• Alocações. N nós novos (spread) e uma mutação in-place (&lt;code&gt;conditionNode&lt;/code&gt;).&lt;br&gt;• Zero I/O. Puro compute em memória."><strong>Summary — what leaves 1.7a.</strong><br>• <code>updatedFlows</code> mutated. <code>outputObjectNode</code> always zeroed. Nodes with <code>clearOnExecution</code> truthy reset by type.<br>• <code>conditionNode.currentLoopCounter = 0</code> on every <code>conditionNode</code>.<br>• Allocations. N new nodes (spread) and one in-place mutation (<code>conditionNode</code>).<br>• Zero I/O. Pure in-memory compute.</span>
   </div>
 
   <div class="note">
-    <strong>Observações para migração.</strong>
-    <br>• Discrepância crítica com <code>node-output-reset.ts</code>. Este <code>.map</code> inline é uma versão legacy das helpers em <code>node-output-reset.ts</code>. As helpers têm <code>jsonRequestBody: ''</code> para <code>apiCaller</code> e são mais defensivas. A migração deve usar as helpers e apagar o inline. Teste rigorosamente por causa da assimetria.
-    <br>• A mutação in-place de <code>currentLoopCounter</code> quebra o pattern de imutabilidade. No worker, precisa retornar nó novo ou explicitar o contract.
-    <br>• A árvore de branches por type dificulta a manutenção. Adicionar um novo node type que precisa de reset exige tocar aqui, em <code>clearStaleNodeOutput</code>, <code>buildFluxObjectClearOnExecution</code> e <code>clearRunOutputForSeed</code>. Fácil esquecer.
-    <br>• Prioridade média-alta. Se o worker rodar sem esse reset, a resposta da execução anterior vaza para a nova. Bug visível para o usuário.
-    <br>• Atenção. Se qualquer parte migrar antes das outras, os dois caminhos podem divergir silenciosamente. O backend legacy resetaria de um jeito. O worker de outro. Consolide tudo em <code>node-output-reset.ts</code> antes de migrar.
+    <span data-en="&lt;strong&gt;Migration notes.&lt;/strong&gt;&lt;br&gt;• Critical discrepancy with &lt;code&gt;node-output-reset.ts&lt;/code&gt;. This inline &lt;code&gt;.map&lt;/code&gt; is a legacy version of the helpers in &lt;code&gt;node-output-reset.ts&lt;/code&gt;. The helpers have &lt;code&gt;jsonRequestBody: ''&lt;/code&gt; for &lt;code&gt;apiCaller&lt;/code&gt; and are more defensive. The migration should use the helpers and delete the inline. Test rigorously due to the asymmetry.&lt;br&gt;• The in-place mutation of &lt;code&gt;currentLoopCounter&lt;/code&gt; breaks the immutability pattern. In the worker, it must return a new node or make the contract explicit.&lt;br&gt;• The tree of branches by type makes maintenance hard. Adding a new node type that requires reset requires touching here, &lt;code&gt;clearStaleNodeOutput&lt;/code&gt;, &lt;code&gt;buildFluxObjectClearOnExecution&lt;/code&gt; and &lt;code&gt;clearRunOutputForSeed&lt;/code&gt;. Easy to forget.&lt;br&gt;• Medium-to-high priority. If the worker runs without this reset, the previous execution's response leaks into the new one. Bug visible to the user.&lt;br&gt;• Attention. If any part migrates before the others, the two paths may silently diverge. Legacy backend resets one way. Worker another. Consolidate everything in &lt;code&gt;node-output-reset.ts&lt;/code&gt; before migrating." data-pt="&lt;strong&gt;Observações para migração.&lt;/strong&gt;&lt;br&gt;• Discrepância crítica com &lt;code&gt;node-output-reset.ts&lt;/code&gt;. Este &lt;code&gt;.map&lt;/code&gt; inline é uma versão legacy das helpers em &lt;code&gt;node-output-reset.ts&lt;/code&gt;. As helpers têm &lt;code&gt;jsonRequestBody: ''&lt;/code&gt; para &lt;code&gt;apiCaller&lt;/code&gt; e são mais defensivas. A migração deve usar as helpers e apagar o inline. Teste rigorosamente por causa da assimetria.&lt;br&gt;• A mutação in-place de &lt;code&gt;currentLoopCounter&lt;/code&gt; quebra o pattern de imutabilidade. No worker, precisa retornar nó novo ou explicitar o contract.&lt;br&gt;• A árvore de branches por type dificulta a manutenção. Adicionar um novo node type que precisa de reset exige tocar aqui, em &lt;code&gt;clearStaleNodeOutput&lt;/code&gt;, &lt;code&gt;buildFluxObjectClearOnExecution&lt;/code&gt; e &lt;code&gt;clearRunOutputForSeed&lt;/code&gt;. Fácil esquecer.&lt;br&gt;• Prioridade média-alta. Se o worker rodar sem esse reset, a resposta da execução anterior vaza para a nova. Bug visível para o usuário.&lt;br&gt;• Atenção. Se qualquer parte migrar antes das outras, os dois caminhos podem divergir silenciosamente. O backend legacy resetaria de um jeito. O worker de outro. Consolide tudo em &lt;code&gt;node-output-reset.ts&lt;/code&gt; antes de migrar."><strong>Migration notes.</strong><br>• Critical discrepancy with <code>node-output-reset.ts</code>. This inline <code>.map</code> is a legacy version of the helpers in <code>node-output-reset.ts</code>. The helpers have <code>jsonRequestBody: ''</code> for <code>apiCaller</code> and are more defensive. The migration should use the helpers and delete the inline. Test rigorously due to the asymmetry.<br>• The in-place mutation of <code>currentLoopCounter</code> breaks the immutability pattern. In the worker, it must return a new node or make the contract explicit.<br>• The tree of branches by type makes maintenance hard. Adding a new node type that requires reset requires touching here, <code>clearStaleNodeOutput</code>, <code>buildFluxObjectClearOnExecution</code> and <code>clearRunOutputForSeed</code>. Easy to forget.<br>• Medium-to-high priority. If the worker runs without this reset, the previous execution's response leaks into the new one. Bug visible to the user.<br>• Attention. If any part migrates before the others, the two paths may silently diverge. Legacy backend resets one way. Worker another. Consolidate everything in <code>node-output-reset.ts</code> before migrating.</span>
   </div>
 
   <div class="page-footer-nav">
-    <a href="../index.html#step-1-7a" class="back-btn">← Voltar ao diagrama principal</a>
+    <a href="../index.html#step-1-7a" class="back-btn"><span data-en="← Back to main diagram" data-pt="← Voltar ao diagrama principal">← Back to main diagram</span></a>
   </div>
 
 </div>
+<script src="../_assets/i18n.js" defer></script>
 <script>
 (function() {
   function toggle(card) { if (card) card.classList.toggle('collapsed'); }

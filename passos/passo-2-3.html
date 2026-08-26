@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Passo 2.3 — generateSchemaFromNodes | Detalhamento</title>
+<link rel="stylesheet" href="../_assets/i18n.css">
+<title>Step 2.3 — generateSchemaFromNodes | Detail</title>
 <style>
   * { box-sizing: border-box; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F1F5F9; color: #0F172A; margin: 0; padding: 32px 24px 80px; line-height: 1.4; }
@@ -170,53 +171,57 @@
 
   <div class="page-nav">
     <div class="breadcrumb">
-      <a href="../index.html">📋 Execução de Agente</a>
+      <a href="../index.html"><span data-en="📋 Agent execution" data-pt="📋 Execução de Agente">📋 Agent execution</span></a>
       <span class="sep">›</span>
-      <span>Passo 2.3 — Detalhamento</span>
+      <span data-en="Step 2.3 — Detail" data-pt="Passo 2.3 — Detalhamento">Step 2.3 — Detail</span>
     </div>
-    <a href="../index.html#step-2-3" class="back-btn">← Voltar ao diagrama</a>
+    <a href="../index.html#step-2-3" class="back-btn"><span data-en="← Back to diagram" data-pt="← Voltar ao diagrama">← Back to diagram</span></a>
+    <div class="lang-sw" role="group" aria-label="Language">
+      <button type="button" data-lang="en" aria-pressed="true">EN-US</button>
+      <button type="button" data-lang="pt" aria-pressed="false">PT-BR</button>
+    </div>
   </div>
 
   <div class="page-header">
     <span class="icon">🏷️</span>
-    <h1>Passo 2.3 — generateSchemaFromNodes (schema de substituição)</h1>
+    <h1><span data-en="Step 2.3 — generateSchemaFromNodes (substitution schema)" data-pt="Passo 2.3 — generateSchemaFromNodes (schema de substituição)">Step 2.3 — generateSchemaFromNodes (substitution schema)</span></h1>
   </div>
   <div class="page-sub">
-    Bloco em <code>node-reference-substitution.service.ts:82-143</code>. Constrói o mapa de substituição in-memory que resolve placeholders <code>{{...}}</code> em tempo de execução. Cada nó vira até três chaves no mapa. UUID puro. UUID normalizado (pontos viram underscores). Label lowercase. Todas apontam para a mesma <code>entry</code>, compartilhada por referência.
+    <span data-en="Block at &lt;code&gt;node-reference-substitution.service.ts:82-143&lt;/code&gt;. Builds the in-memory substitution map that resolves &lt;code&gt;{{...}}&lt;/code&gt; placeholders at execution time. Each node becomes up to three keys in the map. Raw UUID. Normalized UUID (dots become underscores). Lowercase label. All point to the same &lt;code&gt;entry&lt;/code&gt;, shared by reference." data-pt="Bloco em &lt;code&gt;node-reference-substitution.service.ts:82-143&lt;/code&gt;. Constrói o mapa de substituição in-memory que resolve placeholders &lt;code&gt;{{...}}&lt;/code&gt; em tempo de execução. Cada nó vira até três chaves no mapa. UUID puro. UUID normalizado (pontos viram underscores). Label lowercase. Todas apontam para a mesma &lt;code&gt;entry&lt;/code&gt;, compartilhada por referência.">Block at <code>node-reference-substitution.service.ts:82-143</code>. Builds the in-memory substitution map that resolves <code>{{...}}</code> placeholders at execution time. Each node becomes up to three keys in the map. Raw UUID. Normalized UUID (dots become underscores). Lowercase label. All point to the same <code>entry</code>, shared by reference.</span>
   </div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
-    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <div class="step-friendly-title"><span data-en="In summary — what this step does" data-pt="Em resumo — o que esse passo faz">In summary — what this step does</span></div>
     <ul>
-      <li><strong>Monta a agenda de referências do agente.</strong> Constrói um único mapa in-memory que responde a "quando o prompt escreve <code>{{persona}}</code>, o que significa?". Sem esse mapa, nenhum placeholder resolve.</li>
-      <li><strong>Filtra por whitelist hand-maintained.</strong> Só publica campos listados em <code>basedOnType</code>. Um tipo de nó novo com campo referenciável precisa ser adicionado manualmente à lista. Sem isso, o placeholder falha silenciosamente.</li>
-      <li><strong>Normaliza tudo para string.</strong> Se o campo é objeto, tenta <code>value.text ?? value.content ?? value.result</code> em ordem. Cai em <code>JSON.stringify</code> como fallback. É onde a RAM cresce se um <code>result</code> é grande (2MB fica inteiro no schema).</li>
-      <li><strong>Indexa cada nó sob 3 chaves apontando para a mesma <code>entry</code>.</strong> UUID puro, UUID com <code>.</code> trocado por <code>_</code>, e label lowercase sem espaço. O usuário pode escrever <code>{{Persona Model}}</code>, <code>{{a1b2_c3d4}}</code> ou o UUID cru. Todos resolvem para o mesmo valor. Colisão de label sobrescreve silenciosamente.</li>
-      <li><strong>Roda uma vez no início da execução.</strong> Depois disso o schema é mutado in-place por <code>updateSchemaWithNodeOutput</code> a cada nó completado. Nunca regenerado. A memória <code>[[project_substitution_engine]]</code> avisa que existem 57 sync sites tocando esse schema no <code>FluxService</code>.</li>
-      <li><strong>Saída.</strong> <code>nodeSubstitutionSchema: { [key]: { [field]: string } }</code>. Pronto para ser consumido por <code>applySubstitutionToObject</code> em cada iteração do loop. Zero I/O. Puro CPU. Complexidade <code>O(N × F)</code>.</li>
+      <li><span data-en="&lt;strong&gt;Builds the agent's reference directory.&lt;/strong&gt; Builds a single in-memory map that answers &quot;when the prompt writes &lt;code&gt;{{persona}}&lt;/code&gt;, what does it mean?&quot;. Without this map, no placeholder resolves." data-pt="&lt;strong&gt;Monta a agenda de referências do agente.&lt;/strong&gt; Constrói um único mapa in-memory que responde a &quot;quando o prompt escreve &lt;code&gt;{{persona}}&lt;/code&gt;, o que significa?&quot;. Sem esse mapa, nenhum placeholder resolve."><strong>Builds the agent's reference directory.</strong> Builds a single in-memory map that answers "when the prompt writes <code>{{persona}}</code>, what does it mean?". Without this map, no placeholder resolves.</span></li>
+      <li><span data-en="&lt;strong&gt;Filters by hand-maintained whitelist.&lt;/strong&gt; Only publishes fields listed in &lt;code&gt;basedOnType&lt;/code&gt;. A new node type with a referenceable field must be added manually to the list. Without that, the placeholder fails silently." data-pt="&lt;strong&gt;Filtra por whitelist hand-maintained.&lt;/strong&gt; Só publica campos listados em &lt;code&gt;basedOnType&lt;/code&gt;. Um tipo de nó novo com campo referenciável precisa ser adicionado manualmente à lista. Sem isso, o placeholder falha silenciosamente."><strong>Filters by hand-maintained whitelist.</strong> Only publishes fields listed in <code>basedOnType</code>. A new node type with a referenceable field must be added manually to the list. Without that, the placeholder fails silently.</span></li>
+      <li><span data-en="&lt;strong&gt;Normalizes everything to string.&lt;/strong&gt; If the field is an object, tries &lt;code&gt;value.text ?? value.content ?? value.result&lt;/code&gt; in order. Falls back to &lt;code&gt;JSON.stringify&lt;/code&gt;. This is where RAM grows if a &lt;code&gt;result&lt;/code&gt; is big (2MB lands whole in the schema)." data-pt="&lt;strong&gt;Normaliza tudo para string.&lt;/strong&gt; Se o campo é objeto, tenta &lt;code&gt;value.text ?? value.content ?? value.result&lt;/code&gt; em ordem. Cai em &lt;code&gt;JSON.stringify&lt;/code&gt; como fallback. É onde a RAM cresce se um &lt;code&gt;result&lt;/code&gt; é grande (2MB fica inteiro no schema)."><strong>Normalizes everything to string.</strong> If the field is an object, tries <code>value.text ?? value.content ?? value.result</code> in order. Falls back to <code>JSON.stringify</code>. This is where RAM grows if a <code>result</code> is big (2MB lands whole in the schema).</span></li>
+      <li><span data-en="&lt;strong&gt;Indexes each node under 3 keys pointing to the same &lt;code&gt;entry&lt;/code&gt;.&lt;/strong&gt; Raw UUID, UUID with &lt;code&gt;.&lt;/code&gt; swapped by &lt;code&gt;_&lt;/code&gt;, and lowercase label with no spaces. The user can write &lt;code&gt;{{Persona Model}}&lt;/code&gt;, &lt;code&gt;{{a1b2_c3d4}}&lt;/code&gt; or the raw UUID. All resolve to the same value. Label collision silently overwrites." data-pt="&lt;strong&gt;Indexa cada nó sob 3 chaves apontando para a mesma &lt;code&gt;entry&lt;/code&gt;.&lt;/strong&gt; UUID puro, UUID com &lt;code&gt;.&lt;/code&gt; trocado por &lt;code&gt;_&lt;/code&gt;, e label lowercase sem espaço. O usuário pode escrever &lt;code&gt;{{Persona Model}}&lt;/code&gt;, &lt;code&gt;{{a1b2_c3d4}}&lt;/code&gt; ou o UUID cru. Todos resolvem para o mesmo valor. Colisão de label sobrescreve silenciosamente."><strong>Indexes each node under 3 keys pointing to the same <code>entry</code>.</strong> Raw UUID, UUID with <code>.</code> swapped by <code>_</code>, and lowercase label with no spaces. The user can write <code>{{Persona Model}}</code>, <code>{{a1b2_c3d4}}</code> or the raw UUID. All resolve to the same value. Label collision silently overwrites.</span></li>
+      <li><span data-en="&lt;strong&gt;Runs once at the start of the execution.&lt;/strong&gt; After that the schema is mutated in-place by &lt;code&gt;updateSchemaWithNodeOutput&lt;/code&gt; on every completed node. Never regenerated. Memory &lt;code&gt;[[project_substitution_engine]]&lt;/code&gt; warns that there are 57 sync sites touching this schema in &lt;code&gt;FluxService&lt;/code&gt;." data-pt="&lt;strong&gt;Roda uma vez no início da execução.&lt;/strong&gt; Depois disso o schema é mutado in-place por &lt;code&gt;updateSchemaWithNodeOutput&lt;/code&gt; a cada nó completado. Nunca regenerado. A memória &lt;code&gt;[[project_substitution_engine]]&lt;/code&gt; avisa que existem 57 sync sites tocando esse schema no &lt;code&gt;FluxService&lt;/code&gt;."><strong>Runs once at the start of the execution.</strong> After that the schema is mutated in-place by <code>updateSchemaWithNodeOutput</code> on every completed node. Never regenerated. Memory <code>[[project_substitution_engine]]</code> warns that there are 57 sync sites touching this schema in <code>FluxService</code>.</span></li>
+      <li><span data-en="&lt;strong&gt;Output.&lt;/strong&gt; &lt;code&gt;nodeSubstitutionSchema: { [key]: { [field]: string } }&lt;/code&gt;. Ready to be consumed by &lt;code&gt;applySubstitutionToObject&lt;/code&gt; on every loop iteration. Zero I/O. Pure CPU. Complexity &lt;code&gt;O(N × F)&lt;/code&gt;." data-pt="&lt;strong&gt;Saída.&lt;/strong&gt; &lt;code&gt;nodeSubstitutionSchema: { [key]: { [field]: string } }&lt;/code&gt;. Pronto para ser consumido por &lt;code&gt;applySubstitutionToObject&lt;/code&gt; em cada iteração do loop. Zero I/O. Puro CPU. Complexidade &lt;code&gt;O(N × F)&lt;/code&gt;."><strong>Output.</strong> <code>nodeSubstitutionSchema: { [key]: { [field]: string } }</code>. Ready to be consumed by <code>applySubstitutionToObject</code> on every loop iteration. Zero I/O. Pure CPU. Complexity <code>O(N × F)</code>.</span></li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto.</strong> Este é o motor de referência. Permite que um nó escreva <code>{{model_1}}</code> ou <code>{{Persona Model}}</code> no prompt e receba o output do nó upstream substituído. A memória <code>[[project_substitution_engine]]</code> avisa que o engine tem 57 sync sites em <code>FluxService</code> lendo e mutando o schema. Não é regex simples. Envolve resolução de field-paths e aliases humanos.
+    <span data-en="&lt;strong&gt;Context.&lt;/strong&gt; This is the reference engine. Lets a node write &lt;code&gt;{{model_1}}&lt;/code&gt; or &lt;code&gt;{{Persona Model}}&lt;/code&gt; in the prompt and receive the upstream node's output substituted in. Memory &lt;code&gt;[[project_substitution_engine]]&lt;/code&gt; warns that the engine has 57 sync sites in &lt;code&gt;FluxService&lt;/code&gt; reading and mutating the schema. It is not a simple regex. It involves field-path resolution and human aliases." data-pt="&lt;strong&gt;Contexto.&lt;/strong&gt; Este é o motor de referência. Permite que um nó escreva &lt;code&gt;{{model_1}}&lt;/code&gt; ou &lt;code&gt;{{Persona Model}}&lt;/code&gt; no prompt e receba o output do nó upstream substituído. A memória &lt;code&gt;[[project_substitution_engine]]&lt;/code&gt; avisa que o engine tem 57 sync sites em &lt;code&gt;FluxService&lt;/code&gt; lendo e mutando o schema. Não é regex simples. Envolve resolução de field-paths e aliases humanos."><strong>Context.</strong> This is the reference engine. Lets a node write <code>{{model_1}}</code> or <code>{{Persona Model}}</code> in the prompt and receive the upstream node's output substituted in. Memory <code>[[project_substitution_engine]]</code> warns that the engine has 57 sync sites in <code>FluxService</code> reading and mutating the schema. It is not a simple regex. It involves field-path resolution and human aliases.</span>
   </div>
 
   <div class="overview-mini">
-    <div class="overview-mini-title">Cadeia de operações em 2.3</div>
+    <div class="overview-mini-title"><span data-en="Operation chain in 2.3" data-pt="Cadeia de operações em 2.3">Operation chain in 2.3</span></div>
     <div class="overview-chain">
       <a href="#fn-a" class="overview-chip"><span class="lbl">A</span>basedOnType (whitelist)</a>
       <span class="overview-sep">→</span>
-      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>Loop por node</a>
+      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span><span data-en="Per-node loop" data-pt="Loop por node">Per-node loop</span></a>
       <span class="overview-sep">→</span>
-      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>Extração de value</a>
+      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span><span data-en="Value extraction" data-pt="Extração de value">Value extraction</span></a>
       <span class="overview-sep">→</span>
       <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>3-key indexing</a>
       <span class="overview-sep">→</span>
-      <a href="#fn-e" class="overview-chip"><span class="lbl">E</span>Ciclo de vida no run</a>
+      <a href="#fn-e" class="overview-chip"><span class="lbl">E</span><span data-en="Lifecycle in the run" data-pt="Ciclo de vida no run">Lifecycle in the run</span></a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado final. <code>nodeSubstitutionSchema: { [key]: { [field]: value } }</code>. Pronto para ser consumido por <code>applySubstitutionToObject</code> em cada iteração.
+      <span data-en="Final result. &lt;code&gt;nodeSubstitutionSchema: { [key]: { [field]: value } }&lt;/code&gt;. Ready to be consumed by &lt;code&gt;applySubstitutionToObject&lt;/code&gt; on every iteration." data-pt="Resultado final. &lt;code&gt;nodeSubstitutionSchema: { [key]: { [field]: value } }&lt;/code&gt;. Pronto para ser consumido por &lt;code&gt;applySubstitutionToObject&lt;/code&gt; em cada iteração.">Final result. <code>nodeSubstitutionSchema: { [key]: { [field]: value } }</code>. Ready to be consumed by <code>applySubstitutionToObject</code> on every iteration.</span>
     </div>
   </div>
 
@@ -225,7 +230,7 @@
     <div class="fn-card-header">
       <div class="fn-title">
         <span class="badge migrated" style="background:#EAB308;color:white">A</span>
-        <code>basedOnType (whitelist estática)</code>
+        <code><span data-en="basedOnType (static whitelist)" data-pt="basedOnType (whitelist estática)">basedOnType (static whitelist)</span></code>
       </div>
       <div class="fn-loc">node-reference-substitution.service.ts:25-80</div>
     </div>
@@ -234,15 +239,15 @@
         private readonly basedOnType: Record&lt;nodeType, string[]&gt;
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Define quais campos de <code>node.data</code> valem a pena publicar no schema, por tipo de nó. Nó não listado é ignorado. Campo não listado (mesmo existindo em <code>data</code>) não vira substituível.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Defines which &lt;code&gt;node.data&lt;/code&gt; fields are worth publishing to the schema, by node type. An unlisted node is ignored. An unlisted field (even if it exists in &lt;code&gt;data&lt;/code&gt;) does not become substitutable." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Define quais campos de &lt;code&gt;node.data&lt;/code&gt; valem a pena publicar no schema, por tipo de nó. Nó não listado é ignorado. Campo não listado (mesmo existindo em &lt;code&gt;data&lt;/code&gt;) não vira substituível."><strong>Purpose.</strong> Defines which <code>node.data</code> fields are worth publishing to the schema, by node type. An unlisted node is ignored. An unlisted field (even if it exists in <code>data</code>) does not become substitutable.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Esta whitelist é o cadastro do sistema de referência. É uma lista escrita à mão indicando "para cada tipo de nó, estes são os campos que podem ser referenciados via <code>{{placeholder}}</code>". Um <code>commandTextNode</code>, por exemplo, expõe <code>prompt</code>, <code>persona</code>, <code>content</code>, <code>text</code>. Um <code>sqlQuerier</code> expõe <code>host</code>, <code>query</code>, etc. Se o tipo do nó não aparece no cadastro, é ignorado sem log. Se o campo não está listado, existe em memória mas ninguém consegue referenciar. Por isso, criar um novo tipo de nó e esquecer de atualizar esta lista gera bug silencioso. O placeholder não resolve. Sem alerta.
+        <span data-en="&lt;strong&gt;In summary.&lt;/strong&gt; This whitelist is the registry of the reference system. A hand-written list saying &quot;for each node type, these are the fields that can be referenced via &lt;code&gt;{{placeholder}}&lt;/code&gt;&quot;. A &lt;code&gt;commandTextNode&lt;/code&gt;, for example, exposes &lt;code&gt;prompt&lt;/code&gt;, &lt;code&gt;persona&lt;/code&gt;, &lt;code&gt;content&lt;/code&gt;, &lt;code&gt;text&lt;/code&gt;. A &lt;code&gt;sqlQuerier&lt;/code&gt; exposes &lt;code&gt;host&lt;/code&gt;, &lt;code&gt;query&lt;/code&gt;, etc. If the node type does not appear in the registry, it is ignored without a log. If the field is not listed, it exists in memory but no one can reference it. Because of this, creating a new node type and forgetting to update this list produces a silent bug. The placeholder does not resolve. No warning." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Esta whitelist é o cadastro do sistema de referência. É uma lista escrita à mão indicando &quot;para cada tipo de nó, estes são os campos que podem ser referenciados via &lt;code&gt;{{placeholder}}&lt;/code&gt;&quot;. Um &lt;code&gt;commandTextNode&lt;/code&gt;, por exemplo, expõe &lt;code&gt;prompt&lt;/code&gt;, &lt;code&gt;persona&lt;/code&gt;, &lt;code&gt;content&lt;/code&gt;, &lt;code&gt;text&lt;/code&gt;. Um &lt;code&gt;sqlQuerier&lt;/code&gt; expõe &lt;code&gt;host&lt;/code&gt;, &lt;code&gt;query&lt;/code&gt;, etc. Se o tipo do nó não aparece no cadastro, é ignorado sem log. Se o campo não está listado, existe em memória mas ninguém consegue referenciar. Por isso, criar um novo tipo de nó e esquecer de atualizar esta lista gera bug silencioso. O placeholder não resolve. Sem alerta."><strong>In summary.</strong> This whitelist is the registry of the reference system. A hand-written list saying "for each node type, these are the fields that can be referenced via <code>{{placeholder}}</code>". A <code>commandTextNode</code>, for example, exposes <code>prompt</code>, <code>persona</code>, <code>content</code>, <code>text</code>. A <code>sqlQuerier</code> exposes <code>host</code>, <code>query</code>, etc. If the node type does not appear in the registry, it is ignored without a log. If the field is not listed, it exists in memory but no one can reference it. Because of this, creating a new node type and forgetting to update this list produces a silent bug. The placeholder does not resolve. No warning.</span>
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title">Whitelist parcial (~30 tipos, ~8 campos comuns)</div>
+            <div class="box-title"><span data-en="Partial whitelist (~30 types, ~8 common fields)" data-pt="Whitelist parcial (~30 tipos, ~8 campos comuns)">Partial whitelist (~30 types, ~8 common fields)</span></div>
             <div class="code-block">
 {
   <span class="k">commandTextNode</span>: [<span class="s">'prompt'</span>, <span class="s">'persona'</span>, <span class="s">'instruction'</span>, <span class="s">'content'</span>, <span class="s">'text'</span>, <span class="s">'modelSettings'</span>],
@@ -251,33 +256,33 @@
   <span class="k">imageGenerator</span>: [<span class="s">'subject'</span>, <span class="s">'environment'</span>, <span class="s">'tone'</span>, <span class="s">'view'</span>],
   <span class="k">apiCaller</span>: [<span class="s">'url'</span>, <span class="s">'jsonRequestBody'</span>, <span class="s">'jsonAuth'</span>, <span class="s">'username'</span>, <span class="s">'password'</span>],
   <span class="k">sqlQuerier</span>: [<span class="s">'host'</span>, <span class="s">'port'</span>, <span class="s">'database'</span>, ..., <span class="s">'query'</span>],
-  <span class="c">// ... ~25 mais</span>
+  <span class="c">// ... ~25 more</span>
 }
             </div>
             <div class="box-file">node-reference-substitution.service.ts:25-80</div>
           </div>
           <div class="arrow">↓</div>
           <div class="box decision">
-            <div class="box-title">Nó não listado gera skip silencioso</div>
+            <div class="box-title"><span data-en="Unlisted node produces silent skip" data-pt="Nó não listado gera skip silencioso">Unlisted node produces silent skip</span></div>
             <div class="box-desc">
-              <code>if (!relevantFields) continue;</code>. Sem log, sem erro. Se algum tipo de nó novo tem campo textual que deveria ser substituível, alguém precisa atualizar essa lista manualmente.
+              <span data-en="&lt;code&gt;if (!relevantFields) continue;&lt;/code&gt;. No log, no error. If some new node type has a textual field that should be substitutable, someone has to update this list manually." data-pt="&lt;code&gt;if (!relevantFields) continue;&lt;/code&gt;. Sem log, sem erro. Se algum tipo de nó novo tem campo textual que deveria ser substituível, alguém precisa atualizar essa lista manualmente."><code>if (!relevantFields) continue;</code>. No log, no error. If some new node type has a textual field that should be substitutable, someone has to update this list manually.</span>
             </div>
             <div class="box-file">node-reference-substitution.service.ts:89-91</div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside warn">
-            <div class="aside-title">⚠️ Manutenção manual</div>
-            Esta é uma das listas hand-maintained do projeto. Igual ao MCP schema catalog (ver CLAUDE.md). Adicionar tipo novo de nó com campo referenciável sem atualizar aqui faz com que o placeholder <code>{{new_field}}</code> nunca resolva. Bug silencioso.
+            <div class="aside-title">⚠️ <span data-en="Manual maintenance" data-pt="Manutenção manual">Manual maintenance</span></div>
+            <span data-en="This is one of the project's hand-maintained lists. Same as the MCP schema catalog (see CLAUDE.md). Adding a new node type with a referenceable field without updating here makes the &lt;code&gt;{{new_field}}&lt;/code&gt; placeholder never resolve. Silent bug." data-pt="Esta é uma das listas hand-maintained do projeto. Igual ao MCP schema catalog (ver CLAUDE.md). Adicionar tipo novo de nó com campo referenciável sem atualizar aqui faz com que o placeholder &lt;code&gt;{{new_field}}&lt;/code&gt; nunca resolva. Bug silencioso.">This is one of the project's hand-maintained lists. Same as the MCP schema catalog (see CLAUDE.md). Adding a new node type with a referenceable field without updating here makes the <code>{{new_field}}</code> placeholder never resolve. Silent bug.</span>
           </div>
           <div class="aside info">
-            <div class="aside-title">🎯 Por que só campos textuais?</div>
-            O placeholder <code>{{x}}</code> só faz sentido substituir por string. Campos como <code>modelId</code>, <code>temperature</code>, <code>fluxId</code> não entram. Não são conteúdo referenciável.
-            <br><br>Exceção. <code>modelSettings</code> em <code>commandTextNode</code>. É objeto e vira JSON string pelo fallback do (C).
+            <div class="aside-title">🎯 <span data-en="Why only textual fields?" data-pt="Por que só campos textuais?">Why only textual fields?</span></div>
+            <span data-en="The &lt;code&gt;{{x}}&lt;/code&gt; placeholder only makes sense to be substituted by a string. Fields like &lt;code&gt;modelId&lt;/code&gt;, &lt;code&gt;temperature&lt;/code&gt;, &lt;code&gt;fluxId&lt;/code&gt; do not enter. They are not referenceable content." data-pt="O placeholder &lt;code&gt;{{x}}&lt;/code&gt; só faz sentido substituir por string. Campos como &lt;code&gt;modelId&lt;/code&gt;, &lt;code&gt;temperature&lt;/code&gt;, &lt;code&gt;fluxId&lt;/code&gt; não entram. Não são conteúdo referenciável.">The <code>{{x}}</code> placeholder only makes sense to be substituted by a string. Fields like <code>modelId</code>, <code>temperature</code>, <code>fluxId</code> do not enter. They are not referenceable content.</span>
+            <br><br><span data-en="Exception. &lt;code&gt;modelSettings&lt;/code&gt; in &lt;code&gt;commandTextNode&lt;/code&gt;. It is an object and becomes a JSON string via the (C) fallback." data-pt="Exceção. &lt;code&gt;modelSettings&lt;/code&gt; em &lt;code&gt;commandTextNode&lt;/code&gt;. É objeto e vira JSON string pelo fallback do (C).">Exception. <code>modelSettings</code> in <code>commandTextNode</code>. It is an object and becomes a JSON string via the (C) fallback.</span>
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 Tipos que não estão na lista</div>
-            <code>varInputNode</code>, <code>fluxObject</code>, <code>nodesBox</code>, <code>arrayNode</code> (só <code>content</code>, não outputs internos), <code>conditionNode</code>, <code>fluxBox</code>, <code>libraryNode</code>. Nós de fluxo e storage não expõem output substituível.
+            <div class="aside-title">🔧 <span data-en="Types that are not on the list" data-pt="Tipos que não estão na lista">Types that are not on the list</span></div>
+            <span data-en="&lt;code&gt;varInputNode&lt;/code&gt;, &lt;code&gt;fluxObject&lt;/code&gt;, &lt;code&gt;nodesBox&lt;/code&gt;, &lt;code&gt;arrayNode&lt;/code&gt; (only &lt;code&gt;content&lt;/code&gt;, not internal outputs), &lt;code&gt;conditionNode&lt;/code&gt;, &lt;code&gt;fluxBox&lt;/code&gt;, &lt;code&gt;libraryNode&lt;/code&gt;. Flow and storage nodes do not expose substitutable output." data-pt="&lt;code&gt;varInputNode&lt;/code&gt;, &lt;code&gt;fluxObject&lt;/code&gt;, &lt;code&gt;nodesBox&lt;/code&gt;, &lt;code&gt;arrayNode&lt;/code&gt; (só &lt;code&gt;content&lt;/code&gt;, não outputs internos), &lt;code&gt;conditionNode&lt;/code&gt;, &lt;code&gt;fluxBox&lt;/code&gt;, &lt;code&gt;libraryNode&lt;/code&gt;. Nós de fluxo e storage não expõem output substituível."><code>varInputNode</code>, <code>fluxObject</code>, <code>nodesBox</code>, <code>arrayNode</code> (only <code>content</code>, not internal outputs), <code>conditionNode</code>, <code>fluxBox</code>, <code>libraryNode</code>. Flow and storage nodes do not expose substitutable output.</span>
           </div>
         </div>
       </div>
@@ -289,7 +294,7 @@
     <div class="fn-card-header">
       <div class="fn-title">
         <span class="badge migrated" style="background:#3B82F6;color:white">B</span>
-        <code>Loop principal · build entry por node</code>
+        <code><span data-en="Main loop · build entry per node" data-pt="Loop principal · build entry por node">Main loop · build entry per node</span></code>
       </div>
       <div class="fn-loc">node-reference-substitution.service.ts:82-140</div>
     </div>
@@ -298,63 +303,63 @@
         generateSchemaFromNodes(nodes: any[]): { [key]: { [field]: value } }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Itera sobre todos os nós, ignora os não mapeados e, para cada mapeado, monta uma <code>entry</code> extraindo os campos da whitelist. Retorna o schema final.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Iterates over all nodes, ignores unmapped ones and, for each mapped one, builds an &lt;code&gt;entry&lt;/code&gt; extracting the whitelist fields. Returns the final schema." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Itera sobre todos os nós, ignora os não mapeados e, para cada mapeado, monta uma &lt;code&gt;entry&lt;/code&gt; extraindo os campos da whitelist. Retorna o schema final."><strong>Purpose.</strong> Iterates over all nodes, ignores unmapped ones and, for each mapped one, builds an <code>entry</code> extracting the whitelist fields. Returns the final schema.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Se a whitelist do Card A é o cadastro, esta função é o montador. Pega o cadastro e visita um nó por vez para construir a agenda de referências do agente. Para cada nó. Verifica se o tipo está na lista. Calcula um apelido baseado no label ("Persona Model" vira <code>personamodel</code>). Abre uma <code>entry</code> vazia. Copia para dentro dela apenas os campos que o cadastro permite. Passa para o Card D para ser arquivado sob 3 chaves. Roda uma única vez no início da execução. Depois disso, o schema é mutado in-place a cada nó executado. Nunca regenerado. Zero I/O. Puro processamento em memória.
+        <span data-en="&lt;strong&gt;In summary.&lt;/strong&gt; If the Card A whitelist is the registry, this function is the assembler. It takes the registry and visits one node at a time to build the agent's reference directory. For each node. Checks whether the type is on the list. Computes a nickname based on the label (&quot;Persona Model&quot; becomes &lt;code&gt;personamodel&lt;/code&gt;). Opens an empty &lt;code&gt;entry&lt;/code&gt;. Copies into it only the fields the registry allows. Hands off to Card D to be filed under 3 keys. Runs once at the start of the execution. After that, the schema is mutated in-place on every executed node. Never regenerated. Zero I/O. Pure in-memory processing." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Se a whitelist do Card A é o cadastro, esta função é o montador. Pega o cadastro e visita um nó por vez para construir a agenda de referências do agente. Para cada nó. Verifica se o tipo está na lista. Calcula um apelido baseado no label (&quot;Persona Model&quot; vira &lt;code&gt;personamodel&lt;/code&gt;). Abre uma &lt;code&gt;entry&lt;/code&gt; vazia. Copia para dentro dela apenas os campos que o cadastro permite. Passa para o Card D para ser arquivado sob 3 chaves. Roda uma única vez no início da execução. Depois disso, o schema é mutado in-place a cada nó executado. Nunca regenerado. Zero I/O. Puro processamento em memória."><strong>In summary.</strong> If the Card A whitelist is the registry, this function is the assembler. It takes the registry and visits one node at a time to build the agent's reference directory. For each node. Checks whether the type is on the list. Computes a nickname based on the label ("Persona Model" becomes <code>personamodel</code>). Opens an empty <code>entry</code>. Copies into it only the fields the registry allows. Hands off to Card D to be filed under 3 keys. Runs once at the start of the execution. After that, the schema is mutated in-place on every executed node. Never regenerated. Zero I/O. Pure in-memory processing.</span>
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
             <div class="box-title"><span class="badge step">B1</span> <code>const schema = {}</code></div>
             <div class="box-desc">
-              Objeto vanilla. Não é Map. Chaves podem colidir se <code>nodeId</code> contiver caracteres inesperados. UUIDs são seguros.
+              <span data-en="Vanilla object. Not a Map. Keys can collide if &lt;code&gt;nodeId&lt;/code&gt; contains unexpected characters. UUIDs are safe." data-pt="Objeto vanilla. Não é Map. Chaves podem colidir se &lt;code&gt;nodeId&lt;/code&gt; contiver caracteres inesperados. UUIDs são seguros.">Vanilla object. Not a Map. Keys can collide if <code>nodeId</code> contains unexpected characters. UUIDs are safe.</span>
             </div>
             <div class="box-file">node-reference-substitution.service.ts:83</div>
           </div>
           <div class="arrow">↓</div>
           <div class="box backend">
-            <div class="box-title"><span class="badge step">B2</span> Loop <code>for (const node of nodes)</code></div>
+            <div class="box-title"><span class="badge step">B2</span> <span data-en="Loop &lt;code&gt;for (const node of nodes)&lt;/code&gt;" data-pt="Loop &lt;code&gt;for (const node of nodes)&lt;/code&gt;">Loop <code>for (const node of nodes)</code></span></div>
             <div class="box-desc">
-              Passa uma vez por cada nó. Skips. Sem <code>type</code> mapeado. Sem <code>id</code> (<code>stableKey</code>).
+              <span data-en="One pass per node. Skips. No mapped &lt;code&gt;type&lt;/code&gt;. No &lt;code&gt;id&lt;/code&gt; (&lt;code&gt;stableKey&lt;/code&gt;)." data-pt="Passa uma vez por cada nó. Skips. Sem &lt;code&gt;type&lt;/code&gt; mapeado. Sem &lt;code&gt;id&lt;/code&gt; (&lt;code&gt;stableKey&lt;/code&gt;).">One pass per node. Skips. No mapped <code>type</code>. No <code>id</code> (<code>stableKey</code>).</span>
             </div>
             <div class="box-file">node-reference-substitution.service.ts:85-97</div>
           </div>
           <div class="arrow">↓</div>
           <div class="box backend">
-            <div class="box-title"><span class="badge step">B3</span> Constrói <code>labelKey</code></div>
+            <div class="box-title"><span class="badge step">B3</span> <span data-en="Builds &lt;code&gt;labelKey&lt;/code&gt;" data-pt="Constrói &lt;code&gt;labelKey&lt;/code&gt;">Builds <code>labelKey</code></span></div>
             <div class="code-block">
 <span class="k">const</span> labelKey = (node.data?.label || <span class="s">''</span>)
   .<span class="t">toLowerCase</span>()
   .<span class="t">replace</span>(/\s/g, <span class="s">''</span>);
             </div>
             <div class="box-desc">
-              Exemplo. Label <code>"Persona Model"</code> vira <code>labelKey "personamodel"</code>. Sem espaços, tudo minúsculo. Usado para permitir que <code>{{Persona Model}}</code> no template resolva para <code>{{personamodel}}</code>.
+              <span data-en="Example. Label &lt;code&gt;&quot;Persona Model&quot;&lt;/code&gt; becomes &lt;code&gt;labelKey &quot;personamodel&quot;&lt;/code&gt;. No spaces, all lowercase. Used to let &lt;code&gt;{{Persona Model}}&lt;/code&gt; in the template resolve to &lt;code&gt;{{personamodel}}&lt;/code&gt;." data-pt="Exemplo. Label &lt;code&gt;&quot;Persona Model&quot;&lt;/code&gt; vira &lt;code&gt;labelKey &quot;personamodel&quot;&lt;/code&gt;. Sem espaços, tudo minúsculo. Usado para permitir que &lt;code&gt;{{Persona Model}}&lt;/code&gt; no template resolva para &lt;code&gt;{{personamodel}}&lt;/code&gt;.">Example. Label <code>"Persona Model"</code> becomes <code>labelKey "personamodel"</code>. No spaces, all lowercase. Used to let <code>{{Persona Model}}</code> in the template resolve to <code>{{personamodel}}</code>.</span>
             </div>
             <div class="box-file">node-reference-substitution.service.ts:99-101</div>
           </div>
           <div class="arrow">↓</div>
           <div class="box backend">
-            <div class="box-title"><span class="badge step">B4</span> Extrai fields (loop interno)</div>
+            <div class="box-title"><span class="badge step">B4</span> <span data-en="Extracts fields (inner loop)" data-pt="Extrai fields (loop interno)">Extracts fields (inner loop)</span></div>
             <div class="box-desc">
-              <code>for (const field of relevantFields) { ... }</code>. Ver Card C para o tratamento de valor.
-              <br><br>Após popular a <code>entry</code>, chama o Card D para indexar sob as três chaves.
+              <code>for (const field of relevantFields) { ... }</code>. <span data-en="See Card C for value handling." data-pt="Ver Card C para o tratamento de valor.">See Card C for value handling.</span>
+              <br><br><span data-en="After populating the &lt;code&gt;entry&lt;/code&gt;, calls Card D to index under the three keys." data-pt="Após popular a &lt;code&gt;entry&lt;/code&gt;, chama o Card D para indexar sob as três chaves.">After populating the <code>entry</code>, calls Card D to index under the three keys.</span>
             </div>
             <div class="box-file">node-reference-substitution.service.ts:105-140</div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Complexidade O(N × F)</div>
-            N é o número de nós. F é o número médio de campos por tipo (~4). Puro CPU. Sem I/O. Trivial em qualquer flow real.
+            <div class="aside-title">🎯 <span data-en="Complexity O(N × F)" data-pt="Complexidade O(N × F)">Complexity O(N × F)</span></div>
+            <span data-en="N is the number of nodes. F is the average number of fields per type (~4). Pure CPU. No I/O. Trivial in any real flow." data-pt="N é o número de nós. F é o número médio de campos por tipo (~4). Puro CPU. Sem I/O. Trivial em qualquer flow real.">N is the number of nodes. F is the average number of fields per type (~4). Pure CPU. No I/O. Trivial in any real flow.</span>
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ Chamado uma vez por execução</div>
-            Só no início do loop (linha 3149-3152 do <code>flux.service</code>). O schema é depois mutado in-place pelo <code>updateSchemaWithNodeOutput</code> em cada iteração. Não é regerado. Se algum handler zera o schema por acidente, os handlers seguintes rodam sem substituição.
+            <div class="aside-title">⚠️ <span data-en="Called once per execution" data-pt="Chamado uma vez por execução">Called once per execution</span></div>
+            <span data-en="Only at the start of the loop (line 3149-3152 of &lt;code&gt;flux.service&lt;/code&gt;). The schema is then mutated in-place by &lt;code&gt;updateSchemaWithNodeOutput&lt;/code&gt; on every iteration. Not regenerated. If some handler zeroes the schema by accident, the next handlers run without substitution." data-pt="Só no início do loop (linha 3149-3152 do &lt;code&gt;flux.service&lt;/code&gt;). O schema é depois mutado in-place pelo &lt;code&gt;updateSchemaWithNodeOutput&lt;/code&gt; em cada iteração. Não é regerado. Se algum handler zera o schema por acidente, os handlers seguintes rodam sem substituição.">Only at the start of the loop (line 3149-3152 of <code>flux.service</code>). The schema is then mutated in-place by <code>updateSchemaWithNodeOutput</code> on every iteration. Not regenerated. If some handler zeroes the schema by accident, the next handlers run without substitution.</span>
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 Sem paginação</div>
-            Um flow com 500 nós gera 500 entries em memória. Cada entry pode ter valor grande se algum campo for <code>content</code> stringificado (JSON de arrays). Ver Card C.
+            <div class="aside-title">🔧 <span data-en="No pagination" data-pt="Sem paginação">No pagination</span></div>
+            <span data-en="A flow with 500 nodes produces 500 entries in memory. Each entry can have a big value if some field is a stringified &lt;code&gt;content&lt;/code&gt; (JSON of arrays). See Card C." data-pt="Um flow com 500 nós gera 500 entries em memória. Cada entry pode ter valor grande se algum campo for &lt;code&gt;content&lt;/code&gt; stringificado (JSON de arrays). Ver Card C.">A flow with 500 nodes produces 500 entries in memory. Each entry can have a big value if some field is a stringified <code>content</code> (JSON of arrays). See Card C.</span>
           </div>
         </div>
       </div>
@@ -366,7 +371,7 @@
     <div class="fn-card-header">
       <div class="fn-title">
         <span class="badge migrated" style="background:#10B981;color:white">C</span>
-        <code>Extração de value (flatten de object)</code>
+        <code><span data-en="Value extraction (object flatten)" data-pt="Extração de value (flatten de object)">Value extraction (object flatten)</span></code>
       </div>
       <div class="fn-loc">node-reference-substitution.service.ts:105-127</div>
     </div>
@@ -375,38 +380,38 @@
         for (const field of relevantFields) { let value = node.data[field]; if (object) value = value.text ?? value.content ?? value.result ?? JSON.stringify(value); entry[field] = value; }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Normaliza o valor para que seja sempre string. Se <code>node.data[field]</code> é objeto (comum em outputs), tenta extrair <code>text</code>, <code>content</code> ou <code>result</code>. Se nada bate, cai em <code>JSON.stringify</code>. Se é undefined, não cria a chave.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Normalizes the value so it is always a string. If &lt;code&gt;node.data[field]&lt;/code&gt; is an object (common in outputs), tries to extract &lt;code&gt;text&lt;/code&gt;, &lt;code&gt;content&lt;/code&gt; or &lt;code&gt;result&lt;/code&gt;. If nothing matches, falls back to &lt;code&gt;JSON.stringify&lt;/code&gt;. If it is undefined, does not create the key." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Normaliza o valor para que seja sempre string. Se &lt;code&gt;node.data[field]&lt;/code&gt; é objeto (comum em outputs), tenta extrair &lt;code&gt;text&lt;/code&gt;, &lt;code&gt;content&lt;/code&gt; ou &lt;code&gt;result&lt;/code&gt;. Se nada bate, cai em &lt;code&gt;JSON.stringify&lt;/code&gt;. Se é undefined, não cria a chave."><strong>Purpose.</strong> Normalizes the value so it is always a string. If <code>node.data[field]</code> is an object (common in outputs), tries to extract <code>text</code>, <code>content</code> or <code>result</code>. If nothing matches, falls back to <code>JSON.stringify</code>. If it is undefined, does not create the key.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Esta parte é o tradutor. Garante que tudo que vai para o schema saia como texto, porque no fim o <code>{{placeholder}}</code> é injetado dentro de um prompt de LLM, e prompt é string. Se o campo já é primitivo (string, number, boolean), passa direto. Se é objeto, tenta em ordem. Primeiro <code>text</code>, depois <code>content</code>, depois <code>result</code>. Se nenhum bate, serializa o objeto inteiro como JSON. Se o campo é <code>undefined</code>, não cria a entrada. A precedência <code>text &gt; content &gt; result</code> é silenciosa e frágil. Se um handler grava os dois, <code>text</code> ganha. Mudar essa precedência em refactor pode quebrar coisas sem aviso. Também é aqui que a memória cresce. Um único <code>result</code> de 2MB fica inteiro no schema e é replicado em cada substituição.
+        <span data-en="&lt;strong&gt;In summary.&lt;/strong&gt; This part is the translator. Ensures everything going into the schema comes out as text, because in the end &lt;code&gt;{{placeholder}}&lt;/code&gt; is injected inside an LLM prompt, and a prompt is a string. If the field is already primitive (string, number, boolean), passes through. If it is an object, tries in order. First &lt;code&gt;text&lt;/code&gt;, then &lt;code&gt;content&lt;/code&gt;, then &lt;code&gt;result&lt;/code&gt;. If none match, serializes the whole object as JSON. If the field is &lt;code&gt;undefined&lt;/code&gt;, does not create the entry. The &lt;code&gt;text &gt; content &gt; result&lt;/code&gt; precedence is silent and fragile. If a handler writes both, &lt;code&gt;text&lt;/code&gt; wins. Changing this precedence in a refactor can break things without warning. This is also where memory grows. A single 2MB &lt;code&gt;result&lt;/code&gt; lands whole in the schema and is replicated in every substitution." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Esta parte é o tradutor. Garante que tudo que vai para o schema saia como texto, porque no fim o &lt;code&gt;{{placeholder}}&lt;/code&gt; é injetado dentro de um prompt de LLM, e prompt é string. Se o campo já é primitivo (string, number, boolean), passa direto. Se é objeto, tenta em ordem. Primeiro &lt;code&gt;text&lt;/code&gt;, depois &lt;code&gt;content&lt;/code&gt;, depois &lt;code&gt;result&lt;/code&gt;. Se nenhum bate, serializa o objeto inteiro como JSON. Se o campo é &lt;code&gt;undefined&lt;/code&gt;, não cria a entrada. A precedência &lt;code&gt;text &gt; content &gt; result&lt;/code&gt; é silenciosa e frágil. Se um handler grava os dois, &lt;code&gt;text&lt;/code&gt; ganha. Mudar essa precedência em refactor pode quebrar coisas sem aviso. Também é aqui que a memória cresce. Um único &lt;code&gt;result&lt;/code&gt; de 2MB fica inteiro no schema e é replicado em cada substituição."><strong>In summary.</strong> This part is the translator. Ensures everything going into the schema comes out as text, because in the end <code>{{placeholder}}</code> is injected inside an LLM prompt, and a prompt is a string. If the field is already primitive (string, number, boolean), passes through. If it is an object, tries in order. First <code>text</code>, then <code>content</code>, then <code>result</code>. If none match, serializes the whole object as JSON. If the field is <code>undefined</code>, does not create the entry. The <code>text &gt; content &gt; result</code> precedence is silent and fragile. If a handler writes both, <code>text</code> wins. Changing this precedence in a refactor can break things without warning. This is also where memory grows. A single 2MB <code>result</code> lands whole in the schema and is replicated in every substitution.</span>
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="cascade">
-            <div class="cascade-title">🪜 Cascata de coerção</div>
+            <div class="cascade-title">🪜 <span data-en="Coercion cascade" data-pt="Cascata de coerção">Coercion cascade</span></div>
             <div class="cascade-step">
               <span class="cascade-num">1</span>
               <span class="cond"><code>node.data[field] === undefined</code></span>
-              <span class="result deny">skip (não adiciona)</span>
+              <span class="result deny"><span data-en="skip (does not add)" data-pt="skip (não adiciona)">skip (does not add)</span></span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">2</span>
-              <span class="cond">value é primitivo</span>
-              <span class="result pass">grava direto</span>
+              <span class="cond"><span data-en="value is primitive" data-pt="value é primitivo">value is primitive</span></span>
+              <span class="result pass"><span data-en="write directly" data-pt="grava direto">write directly</span></span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">3a</span>
-              <span class="cond">objeto com <code>value.text</code></span>
+              <span class="cond"><span data-en="object with &lt;code&gt;value.text&lt;/code&gt;" data-pt="objeto com &lt;code&gt;value.text&lt;/code&gt;">object with <code>value.text</code></span></span>
               <span class="result pass"><code>entry[field] = value.text</code></span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">3b</span>
-              <span class="cond">senão, com <code>value.content</code></span>
+              <span class="cond"><span data-en="otherwise, with &lt;code&gt;value.content&lt;/code&gt;" data-pt="senão, com &lt;code&gt;value.content&lt;/code&gt;">otherwise, with <code>value.content</code></span></span>
               <span class="result pass"><code>entry[field] = value.content</code></span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">3c</span>
-              <span class="cond">senão, com <code>value.result</code></span>
+              <span class="cond"><span data-en="otherwise, with &lt;code&gt;value.result&lt;/code&gt;" data-pt="senão, com &lt;code&gt;value.result&lt;/code&gt;">otherwise, with <code>value.result</code></span></span>
               <span class="result pass"><code>entry[field] = value.result</code></span>
             </div>
             <div class="cascade-step">
@@ -417,25 +422,25 @@
           </div>
           <div class="arrow">↓</div>
           <div class="box decision">
-            <div class="box-title">Resultado. <code>entry[field]: string | number | boolean</code></div>
+            <div class="box-title"><span data-en="Result. &lt;code&gt;entry[field]: string | number | boolean&lt;/code&gt;" data-pt="Resultado. &lt;code&gt;entry[field]: string | number | boolean&lt;/code&gt;">Result. <code>entry[field]: string | number | boolean</code></span></div>
             <div class="box-desc">
-              Nunca objeto. Sempre coerced. Permite que <code>String.replace</code> funcione direto no <code>applySubstitutionToObject</code>.
+              <span data-en="Never an object. Always coerced. Lets &lt;code&gt;String.replace&lt;/code&gt; work directly in &lt;code&gt;applySubstitutionToObject&lt;/code&gt;." data-pt="Nunca objeto. Sempre coerced. Permite que &lt;code&gt;String.replace&lt;/code&gt; funcione direto no &lt;code&gt;applySubstitutionToObject&lt;/code&gt;.">Never an object. Always coerced. Lets <code>String.replace</code> work directly in <code>applySubstitutionToObject</code>.</span>
             </div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside warn">
-            <div class="aside-title">⚠️ Precedência <code>text &gt; content &gt; result</code></div>
-            Se o objeto tem <code>text</code> e <code>content</code> setados (raro mas acontece), <code>text</code> ganha. Se um handler grava <code>{text: 'x', content: {...json_grande...}}</code>, o placeholder <code>{{node}}</code> resolve para <code>'x'</code>, não para o JSON.
-            <br><br>Se essa precedência mudar em um refactor, quebra silenciosamente handlers que dependem dela.
+            <div class="aside-title">⚠️ <span data-en="Precedence &lt;code&gt;text &gt; content &gt; result&lt;/code&gt;" data-pt="Precedência &lt;code&gt;text &gt; content &gt; result&lt;/code&gt;">Precedence <code>text &gt; content &gt; result</code></span></div>
+            <span data-en="If the object has both &lt;code&gt;text&lt;/code&gt; and &lt;code&gt;content&lt;/code&gt; set (rare but happens), &lt;code&gt;text&lt;/code&gt; wins. If a handler writes &lt;code&gt;{text: 'x', content: {...big_json...}}&lt;/code&gt;, the &lt;code&gt;{{node}}&lt;/code&gt; placeholder resolves to &lt;code&gt;'x'&lt;/code&gt;, not to the JSON." data-pt="Se o objeto tem &lt;code&gt;text&lt;/code&gt; e &lt;code&gt;content&lt;/code&gt; setados (raro mas acontece), &lt;code&gt;text&lt;/code&gt; ganha. Se um handler grava &lt;code&gt;{text: 'x', content: {...json_grande...}}&lt;/code&gt;, o placeholder &lt;code&gt;{{node}}&lt;/code&gt; resolve para &lt;code&gt;'x'&lt;/code&gt;, não para o JSON.">If the object has both <code>text</code> and <code>content</code> set (rare but happens), <code>text</code> wins. If a handler writes <code>{text: 'x', content: {...big_json...}}</code>, the <code>{{node}}</code> placeholder resolves to <code>'x'</code>, not to the JSON.</span>
+            <br><br><span data-en="If this precedence changes in a refactor, it silently breaks handlers that rely on it." data-pt="Se essa precedência mudar em um refactor, quebra silenciosamente handlers que dependem dela.">If this precedence changes in a refactor, it silently breaks handlers that rely on it.</span>
           </div>
           <div class="aside info">
             <div class="aside-title">🎯 <code>JSON.stringify</code> fallback</div>
-            Quando o objeto não tem nenhum dos 3 campos padrão, vira JSON serializado. Exemplo. <code>modelSettings</code> em <code>commandTextNode</code>. O prompt final tem uma string JSON literal. Não é elegante, mas funciona para o LLM ler.
+            <span data-en="When the object has none of the 3 default fields, it becomes serialized JSON. Example. &lt;code&gt;modelSettings&lt;/code&gt; in &lt;code&gt;commandTextNode&lt;/code&gt;. The final prompt has a literal JSON string. Not elegant, but works for the LLM to read." data-pt="Quando o objeto não tem nenhum dos 3 campos padrão, vira JSON serializado. Exemplo. &lt;code&gt;modelSettings&lt;/code&gt; em &lt;code&gt;commandTextNode&lt;/code&gt;. O prompt final tem uma string JSON literal. Não é elegante, mas funciona para o LLM ler.">When the object has none of the 3 default fields, it becomes serialized JSON. Example. <code>modelSettings</code> in <code>commandTextNode</code>. The final prompt has a literal JSON string. Not elegant, but works for the LLM to read.</span>
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 Grande contribuidor de RAM</div>
-            <code>content</code> e <code>result</code> podem ser payloads grandes (respostas de LLM, resultados SQL). Se um único nó tem <code>result</code> de 2MB, o schema carrega esses 2MB e todo <code>{{node}}</code> substituído replica isso na string final. Ver [[project_jsonb_fat_fields]] para o pattern relacionado.
+            <div class="aside-title">🔧 <span data-en="Big RAM contributor" data-pt="Grande contribuidor de RAM">Big RAM contributor</span></div>
+            <span data-en="&lt;code&gt;content&lt;/code&gt; and &lt;code&gt;result&lt;/code&gt; can be big payloads (LLM responses, SQL results). If a single node has a 2MB &lt;code&gt;result&lt;/code&gt;, the schema carries those 2MB and every substituted &lt;code&gt;{{node}}&lt;/code&gt; replicates it in the final string. See [[project_jsonb_fat_fields]] for the related pattern." data-pt="&lt;code&gt;content&lt;/code&gt; e &lt;code&gt;result&lt;/code&gt; podem ser payloads grandes (respostas de LLM, resultados SQL). Se um único nó tem &lt;code&gt;result&lt;/code&gt; de 2MB, o schema carrega esses 2MB e todo &lt;code&gt;{{node}}&lt;/code&gt; substituído replica isso na string final. Ver [[project_jsonb_fat_fields]] para o pattern relacionado."><code>content</code> and <code>result</code> can be big payloads (LLM responses, SQL results). If a single node has a 2MB <code>result</code>, the schema carries those 2MB and every substituted <code>{{node}}</code> replicates it in the final string. See [[project_jsonb_fat_fields]] for the related pattern.</span>
           </div>
         </div>
       </div>
@@ -453,60 +458,60 @@
     </div>
     <div class="fn-card-body">
       <div class="fn-signature">
-        schema[stableKey] = entry; schema[refKey] = entry; schema[labelKey] = entry; // 3 keys, MESMA referência
+        schema[stableKey] = entry; schema[refKey] = entry; schema[labelKey] = entry; <span data-en="// 3 keys, SAME reference" data-pt="// 3 keys, MESMA referência">// 3 keys, SAME reference</span>
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Aceita três formatos diferentes de placeholder para o mesmo nó. UUID puro, UUID normalizado e label humano. Todos apontam para a mesma referência. Atualização em uma delas reflete nas outras.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Accepts three different placeholder formats for the same node. Raw UUID, normalized UUID and human label. All point to the same reference. An update in one of them reflects in the others." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Aceita três formatos diferentes de placeholder para o mesmo nó. UUID puro, UUID normalizado e label humano. Todos apontam para a mesma referência. Atualização em uma delas reflete nas outras."><strong>Purpose.</strong> Accepts three different placeholder formats for the same node. Raw UUID, normalized UUID and human label. All point to the same reference. An update in one of them reflects in the others.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Esta etapa é o cartório que registra o mesmo nó sob três nomes diferentes, todos apontando para o mesmo endereço. O nó vai para o arquivo. Primeiro. Sob o UUID puro (<code>a1b2-...</code>). Segundo. Sob o UUID com pontos trocados por underscore (o ponto em placeholder é usado como field access <code>{{x.y}}</code>). Terceiro. Sob o label humano lowercase sem espaço (<code>personamodel</code>). Os três slots guardam a mesma referência ao objeto <code>entry</code>. Quando o output é atualizado depois, uma única mutação reflete nas três chaves automaticamente. Permite ao usuário escrever <code>{{Persona Model}}</code>, <code>{{a1b2_c3d4_...}}</code> ou o UUID cru no template. Todos resolvem para o mesmo valor. Cuidado. Se dois nós têm o mesmo label, o segundo sobrescreve o primeiro no slot do label. O <code>{{persona}}</code> vira ambíguo silenciosamente.
+        <span data-en="&lt;strong&gt;In summary.&lt;/strong&gt; This step is the registry that files the same node under three different names, all pointing to the same address. The node goes to the file. First. Under the raw UUID (&lt;code&gt;a1b2-...&lt;/code&gt;). Second. Under the UUID with dots swapped by underscore (a dot in placeholders is used as field access &lt;code&gt;{{x.y}}&lt;/code&gt;). Third. Under the human lowercase label with no spaces (&lt;code&gt;personamodel&lt;/code&gt;). The three slots store the same reference to the &lt;code&gt;entry&lt;/code&gt; object. When the output is updated later, a single mutation reflects in all three keys automatically. Lets the user write &lt;code&gt;{{Persona Model}}&lt;/code&gt;, &lt;code&gt;{{a1b2_c3d4_...}}&lt;/code&gt; or the raw UUID in the template. All resolve to the same value. Careful. If two nodes have the same label, the second overwrites the first in the label slot. &lt;code&gt;{{persona}}&lt;/code&gt; becomes silently ambiguous." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Esta etapa é o cartório que registra o mesmo nó sob três nomes diferentes, todos apontando para o mesmo endereço. O nó vai para o arquivo. Primeiro. Sob o UUID puro (&lt;code&gt;a1b2-...&lt;/code&gt;). Segundo. Sob o UUID com pontos trocados por underscore (o ponto em placeholder é usado como field access &lt;code&gt;{{x.y}}&lt;/code&gt;). Terceiro. Sob o label humano lowercase sem espaço (&lt;code&gt;personamodel&lt;/code&gt;). Os três slots guardam a mesma referência ao objeto &lt;code&gt;entry&lt;/code&gt;. Quando o output é atualizado depois, uma única mutação reflete nas três chaves automaticamente. Permite ao usuário escrever &lt;code&gt;{{Persona Model}}&lt;/code&gt;, &lt;code&gt;{{a1b2_c3d4_...}}&lt;/code&gt; ou o UUID cru no template. Todos resolvem para o mesmo valor. Cuidado. Se dois nós têm o mesmo label, o segundo sobrescreve o primeiro no slot do label. O &lt;code&gt;{{persona}}&lt;/code&gt; vira ambíguo silenciosamente."><strong>In summary.</strong> This step is the registry that files the same node under three different names, all pointing to the same address. The node goes to the file. First. Under the raw UUID (<code>a1b2-...</code>). Second. Under the UUID with dots swapped by underscore (a dot in placeholders is used as field access <code>{{x.y}}</code>). Third. Under the human lowercase label with no spaces (<code>personamodel</code>). The three slots store the same reference to the <code>entry</code> object. When the output is updated later, a single mutation reflects in all three keys automatically. Lets the user write <code>{{Persona Model}}</code>, <code>{{a1b2_c3d4_...}}</code> or the raw UUID in the template. All resolve to the same value. Careful. If two nodes have the same label, the second overwrites the first in the label slot. <code>{{persona}}</code> becomes silently ambiguous.</span>
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="code-block">
-schema[stableKey] = entry;    <span class="c">// UUID puro: schema['a1b2-...']</span>
+schema[stableKey] = entry;    <span class="c">// raw UUID: schema['a1b2-...']</span>
 <span class="k">const</span> refKey = stableKey.<span class="t">replace</span>(/\./g, <span class="s">'_'</span>);
 <span class="k">if</span> (refKey !== stableKey) {
-  schema[refKey] = entry;     <span class="c">// UUID normalizado: schema['a1b2___']</span>
+  schema[refKey] = entry;     <span class="c">// normalized UUID: schema['a1b2___']</span>
 }
 <span class="k">if</span> (labelKey &amp;&amp; labelKey !== stableKey &amp;&amp; labelKey !== refKey) {
-  schema[labelKey] = entry;   <span class="c">// label lowercase: schema['personamodel']</span>
+  schema[labelKey] = entry;   <span class="c">// lowercase label: schema['personamodel']</span>
 }
           </div>
           <div class="arrow">↓</div>
           <div class="box backend">
             <div class="box-title"><span class="badge step">D1</span> stableKey = node.id</div>
             <div class="box-desc">
-              UUID puro do nó. Sempre presente (skip acima se ausente).
+              <span data-en="Raw UUID of the node. Always present (skipped above if missing)." data-pt="UUID puro do nó. Sempre presente (skip acima se ausente).">Raw UUID of the node. Always present (skipped above if missing).</span>
             </div>
           </div>
           <div class="arrow">↓</div>
           <div class="box backend">
             <div class="box-title"><span class="badge step">D2</span> refKey = id.replace(/\./g, '_')</div>
             <div class="box-desc">
-              Normaliza pontos (não permitidos em placeholder path <code>{{x.y}}</code>. Colidiria com field access). Só entra no schema se difere do <code>stableKey</code>.
+              <span data-en="Normalizes dots (not allowed in placeholder path &lt;code&gt;{{x.y}}&lt;/code&gt;. Would collide with field access). Only enters the schema if different from &lt;code&gt;stableKey&lt;/code&gt;." data-pt="Normaliza pontos (não permitidos em placeholder path &lt;code&gt;{{x.y}}&lt;/code&gt;. Colidiria com field access). Só entra no schema se difere do &lt;code&gt;stableKey&lt;/code&gt;.">Normalizes dots (not allowed in placeholder path <code>{{x.y}}</code>. Would collide with field access). Only enters the schema if different from <code>stableKey</code>.</span>
             </div>
           </div>
           <div class="arrow">↓</div>
           <div class="box backend">
-            <div class="box-title"><span class="badge step">D3</span> labelKey (opcional)</div>
+            <div class="box-title"><span class="badge step">D3</span> <span data-en="labelKey (optional)" data-pt="labelKey (opcional)">labelKey (optional)</span></div>
             <div class="box-desc">
-              Só se o label do nó existe e não colide com as outras duas chaves. Permite ao usuário escrever <code>{{Persona Model}}</code> no prompt. O replacer busca <code>schema.personamodel</code> após normalizar.
+              <span data-en="Only if the node's label exists and does not collide with the other two keys. Lets the user write &lt;code&gt;{{Persona Model}}&lt;/code&gt; in the prompt. The replacer looks up &lt;code&gt;schema.personamodel&lt;/code&gt; after normalizing." data-pt="Só se o label do nó existe e não colide com as outras duas chaves. Permite ao usuário escrever &lt;code&gt;{{Persona Model}}&lt;/code&gt; no prompt. O replacer busca &lt;code&gt;schema.personamodel&lt;/code&gt; após normalizar.">Only if the node's label exists and does not collide with the other two keys. Lets the user write <code>{{Persona Model}}</code> in the prompt. The replacer looks up <code>schema.personamodel</code> after normalizing.</span>
             </div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside warn">
-            <div class="aside-title">⚠️ Colisão de labels</div>
-            Dois nós com o mesmo label. O último ganha no schema. <code>{{persona}}</code> vira ambíguo. O front deveria proibir labels duplicados. Sem essa proteção, um é ignorado silenciosamente.
+            <div class="aside-title">⚠️ <span data-en="Label collision" data-pt="Colisão de labels">Label collision</span></div>
+            <span data-en="Two nodes with the same label. The last wins in the schema. &lt;code&gt;{{persona}}&lt;/code&gt; becomes ambiguous. The front should forbid duplicate labels. Without that protection, one is silently ignored." data-pt="Dois nós com o mesmo label. O último ganha no schema. &lt;code&gt;{{persona}}&lt;/code&gt; vira ambíguo. O front deveria proibir labels duplicados. Sem essa proteção, um é ignorado silenciosamente.">Two nodes with the same label. The last wins in the schema. <code>{{persona}}</code> becomes ambiguous. The front should forbid duplicate labels. Without that protection, one is silently ignored.</span>
           </div>
           <div class="aside info">
-            <div class="aside-title">🎯 Compartilhamento de referência</div>
-            As três chaves apontam para o mesmo objeto <code>entry</code>. É intencional. O <code>updateSchemaWithNodeOutput</code> só precisa mutar via uma chave. As outras duas refletem automaticamente.
+            <div class="aside-title">🎯 <span data-en="Reference sharing" data-pt="Compartilhamento de referência">Reference sharing</span></div>
+            <span data-en="The three keys point to the same &lt;code&gt;entry&lt;/code&gt; object. Intentional. &lt;code&gt;updateSchemaWithNodeOutput&lt;/code&gt; only needs to mutate via one key. The other two reflect automatically." data-pt="As três chaves apontam para o mesmo objeto &lt;code&gt;entry&lt;/code&gt;. É intencional. O &lt;code&gt;updateSchemaWithNodeOutput&lt;/code&gt; só precisa mutar via uma chave. As outras duas refletem automaticamente.">The three keys point to the same <code>entry</code> object. Intentional. <code>updateSchemaWithNodeOutput</code> only needs to mutate via one key. The other two reflect automatically.</span>
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 Placeholder syntax suportada</div>
-            <code>{{&lt;key&gt;.&lt;field&gt;}}</code> ou <code>{{&lt;key&gt;}}</code> (só a chave, resolve para o fallback do primeiro campo). O <code>replacePlaceholders</code> (linhas 5-22) faz split por <code>.</code> e navega o objeto.
+            <div class="aside-title">🔧 <span data-en="Supported placeholder syntax" data-pt="Placeholder syntax suportada">Supported placeholder syntax</span></div>
+            <span data-en="&lt;code&gt;{{&lt;key&gt;.&lt;field&gt;}}&lt;/code&gt; or &lt;code&gt;{{&lt;key&gt;}}&lt;/code&gt; (only the key, resolves to the first field's fallback). &lt;code&gt;replacePlaceholders&lt;/code&gt; (lines 5-22) splits by &lt;code&gt;.&lt;/code&gt; and navigates the object." data-pt="&lt;code&gt;{{&lt;key&gt;.&lt;field&gt;}}&lt;/code&gt; ou &lt;code&gt;{{&lt;key&gt;}}&lt;/code&gt; (só a chave, resolve para o fallback do primeiro campo). O &lt;code&gt;replacePlaceholders&lt;/code&gt; (linhas 5-22) faz split por &lt;code&gt;.&lt;/code&gt; e navega o objeto."><code>{{&lt;key&gt;.&lt;field&gt;}}</code> or <code>{{&lt;key&gt;}}</code> (only the key, resolves to the first field's fallback). <code>replacePlaceholders</code> (lines 5-22) splits by <code>.</code> and navigates the object.</span>
           </div>
         </div>
       </div>
@@ -518,41 +523,41 @@ schema[stableKey] = entry;    <span class="c">// UUID puro: schema['a1b2-...']</
     <div class="fn-card-header">
       <div class="fn-title">
         <span class="badge migrated" style="background:#EF4444;color:white">E</span>
-        <code>Ciclo de vida do schema no run</code>
+        <code><span data-en="Schema lifecycle in the run" data-pt="Ciclo de vida do schema no run">Schema lifecycle in the run</span></code>
       </div>
       <div class="fn-loc">flux.service.ts:3149, 3281, 3389+ · node-reference-substitution.service.ts:145-216</div>
     </div>
     <div class="fn-card-body">
       <div class="fn-signature">
-        // 1x generate (aqui) → N× applySubstitutionToObject + updateSchemaWithNodeOutput (loop) → onMutateSchema (callback pra reatribuição)
+        <span data-en="// 1x generate (here) → N× applySubstitutionToObject + updateSchemaWithNodeOutput (loop) → onMutateSchema (reassignment callback)" data-pt="// 1x generate (aqui) → N× applySubstitutionToObject + updateSchemaWithNodeOutput (loop) → onMutateSchema (callback pra reatribuição)">// 1x generate (here) → N× applySubstitutionToObject + updateSchemaWithNodeOutput (loop) → onMutateSchema (reassignment callback)</span>
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Mostra como o schema criado aqui é consumido e mutado ao longo da execução. Não é regenerado. É atualizado ao vivo. Cada nó completado enriquece o schema com seu output.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Shows how the schema created here is consumed and mutated throughout execution. It is not regenerated. It is updated live. Each completed node enriches the schema with its output." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Mostra como o schema criado aqui é consumido e mutado ao longo da execução. Não é regenerado. É atualizado ao vivo. Cada nó completado enriquece o schema com seu output."><strong>Purpose.</strong> Shows how the schema created here is consumed and mutated throughout execution. It is not regenerated. It is updated live. Each completed node enriches the schema with its output.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Se as etapas anteriores construíram a agenda de referências, esta é o carteiro que leva e traz essa agenda durante toda a execução. O ciclo por nó vira. Primeiro. Antes do handler rodar, chama <code>applySubstitutionToObject</code>, que substitui todos os <code>{{...}}</code> pelos valores do schema. Segundo. O handler executa em cima do nó já preenchido e produz um output. Terceiro. Esse output é gravado de volta no schema via <code>updateSchemaWithNodeOutput</code> para ficar disponível para os nós seguintes. Quarto. Como o schema é reatribuído (novo objeto raiz via spread), o callback <code>onMutateSchema</code> sinaliza "use esta nova referência agora". A memória <code>[[project_substitution_engine]]</code> alerta que existem 57 lugares no <code>FluxService</code> tocando esse ciclo. Qualquer refactor do engine precisa mexer em todos ao mesmo tempo. Não dá para fazer troca cirúrgica.
+        <span data-en="&lt;strong&gt;In summary.&lt;/strong&gt; If the previous steps built the reference directory, this one is the courier that carries it back and forth throughout the execution. The per-node cycle goes. First. Before the handler runs, calls &lt;code&gt;applySubstitutionToObject&lt;/code&gt;, which replaces all &lt;code&gt;{{...}}&lt;/code&gt; with schema values. Second. The handler runs on the already-filled node and produces an output. Third. That output is written back into the schema via &lt;code&gt;updateSchemaWithNodeOutput&lt;/code&gt; so it is available for the next nodes. Fourth. Because the schema is reassigned (new root object via spread), the &lt;code&gt;onMutateSchema&lt;/code&gt; callback signals &quot;use this new reference now&quot;. Memory &lt;code&gt;[[project_substitution_engine]]&lt;/code&gt; warns that there are 57 sites in &lt;code&gt;FluxService&lt;/code&gt; touching this cycle. Any engine refactor needs to touch all of them at once. No surgical swap possible." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Se as etapas anteriores construíram a agenda de referências, esta é o carteiro que leva e traz essa agenda durante toda a execução. O ciclo por nó vira. Primeiro. Antes do handler rodar, chama &lt;code&gt;applySubstitutionToObject&lt;/code&gt;, que substitui todos os &lt;code&gt;{{...}}&lt;/code&gt; pelos valores do schema. Segundo. O handler executa em cima do nó já preenchido e produz um output. Terceiro. Esse output é gravado de volta no schema via &lt;code&gt;updateSchemaWithNodeOutput&lt;/code&gt; para ficar disponível para os nós seguintes. Quarto. Como o schema é reatribuído (novo objeto raiz via spread), o callback &lt;code&gt;onMutateSchema&lt;/code&gt; sinaliza &quot;use esta nova referência agora&quot;. A memória &lt;code&gt;[[project_substitution_engine]]&lt;/code&gt; alerta que existem 57 lugares no &lt;code&gt;FluxService&lt;/code&gt; tocando esse ciclo. Qualquer refactor do engine precisa mexer em todos ao mesmo tempo. Não dá para fazer troca cirúrgica."><strong>In summary.</strong> If the previous steps built the reference directory, this one is the courier that carries it back and forth throughout the execution. The per-node cycle goes. First. Before the handler runs, calls <code>applySubstitutionToObject</code>, which replaces all <code>{{...}}</code> with schema values. Second. The handler runs on the already-filled node and produces an output. Third. That output is written back into the schema via <code>updateSchemaWithNodeOutput</code> so it is available for the next nodes. Fourth. Because the schema is reassigned (new root object via spread), the <code>onMutateSchema</code> callback signals "use this new reference now". Memory <code>[[project_substitution_engine]]</code> warns that there are 57 sites in <code>FluxService</code> touching this cycle. Any engine refactor needs to touch all of them at once. No surgical swap possible.</span>
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
             <div class="box-title"><span class="badge step">E1</span> <code>applySubstitutionToObject(node, schema)</code></div>
             <div class="box-desc">
-              Chamada uma vez por iteração do loop (linha 3281). Substitui recursivamente todos os <code>{{...}}</code> em <code>node.data</code> (string, array, object). Retorna novo objeto. Não muta o original.
+              <span data-en="Called once per loop iteration (line 3281). Recursively replaces all &lt;code&gt;{{...}}&lt;/code&gt; in &lt;code&gt;node.data&lt;/code&gt; (string, array, object). Returns a new object. Does not mutate the original." data-pt="Chamada uma vez por iteração do loop (linha 3281). Substitui recursivamente todos os &lt;code&gt;{{...}}&lt;/code&gt; em &lt;code&gt;node.data&lt;/code&gt; (string, array, object). Retorna novo objeto. Não muta o original.">Called once per loop iteration (line 3281). Recursively replaces all <code>{{...}}</code> in <code>node.data</code> (string, array, object). Returns a new object. Does not mutate the original.</span>
             </div>
             <div class="box-file">node-reference-substitution.service.ts:145-167</div>
           </div>
           <div class="arrow">↓</div>
           <div class="box backend">
-            <div class="box-title"><span class="badge step">E2</span> Handler executa o nó</div>
+            <div class="box-title"><span class="badge step">E2</span> <span data-en="Handler runs the node" data-pt="Handler executa o nó">Handler runs the node</span></div>
             <div class="box-desc">
-              Recebe <code>processedNode</code> (com placeholders já resolvidos) e produz output.
+              <span data-en="Receives &lt;code&gt;processedNode&lt;/code&gt; (with placeholders already resolved) and produces output." data-pt="Recebe &lt;code&gt;processedNode&lt;/code&gt; (com placeholders já resolvidos) e produz output.">Receives <code>processedNode</code> (with placeholders already resolved) and produces output.</span>
             </div>
           </div>
           <div class="arrow">↓</div>
           <div class="box backend">
             <div class="box-title"><span class="badge step">E3</span> <code>updateSchemaWithNodeOutput(schema, nodeId, label, output)</code></div>
             <div class="box-desc">
-              Chamada após o handler completar (linhas 3389, 3485, 3624, 3670, 4331. Múltiplos call-sites). Cria novo schema com <code>...schema</code> spread. Atualiza <code>entry.text</code>, <code>entry.content</code> ou <code>entry.result</code>. As três chaves reindexam.
+              <span data-en="Called after the handler completes (lines 3389, 3485, 3624, 3670, 4331. Multiple call-sites). Creates a new schema with &lt;code&gt;...schema&lt;/code&gt; spread. Updates &lt;code&gt;entry.text&lt;/code&gt;, &lt;code&gt;entry.content&lt;/code&gt; or &lt;code&gt;entry.result&lt;/code&gt;. The three keys reindex." data-pt="Chamada após o handler completar (linhas 3389, 3485, 3624, 3670, 4331. Múltiplos call-sites). Cria novo schema com &lt;code&gt;...schema&lt;/code&gt; spread. Atualiza &lt;code&gt;entry.text&lt;/code&gt;, &lt;code&gt;entry.content&lt;/code&gt; ou &lt;code&gt;entry.result&lt;/code&gt;. As três chaves reindexam.">Called after the handler completes (lines 3389, 3485, 3624, 3670, 4331. Multiple call-sites). Creates a new schema with <code>...schema</code> spread. Updates <code>entry.text</code>, <code>entry.content</code> or <code>entry.result</code>. The three keys reindex.</span>
             </div>
             <div class="box-file">node-reference-substitution.service.ts:169-216</div>
           </div>
@@ -560,23 +565,23 @@ schema[stableKey] = entry;    <span class="c">// UUID puro: schema['a1b2-...']</
           <div class="box cross">
             <div class="box-title"><span class="badge step">E4</span> <code>onMutateSchema(schema)</code> callback</div>
             <div class="box-desc">
-              Como o schema é <code>let</code> e reatribuído (spread), handlers precisam do callback <code>onMutateSchema</code> para sinalizar "novo schema aqui, use este". Similar ao padrão de <code>onMutateObjectCallerData</code> em 1.5.
+              <span data-en="Since the schema is &lt;code&gt;let&lt;/code&gt; and reassigned (spread), handlers need the &lt;code&gt;onMutateSchema&lt;/code&gt; callback to signal &quot;new schema here, use this&quot;. Similar to the &lt;code&gt;onMutateObjectCallerData&lt;/code&gt; pattern in 1.5." data-pt="Como o schema é &lt;code&gt;let&lt;/code&gt; e reatribuído (spread), handlers precisam do callback &lt;code&gt;onMutateSchema&lt;/code&gt; para sinalizar &quot;novo schema aqui, use este&quot;. Similar ao padrão de &lt;code&gt;onMutateObjectCallerData&lt;/code&gt; em 1.5.">Since the schema is <code>let</code> and reassigned (spread), handlers need the <code>onMutateSchema</code> callback to signal "new schema here, use this". Similar to the <code>onMutateObjectCallerData</code> pattern in 1.5.</span>
             </div>
             <div class="box-file">flux.service.ts:2464-2467</div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside warn">
-            <div class="aside-title">⚠️ 57 sync sites (ver memória)</div>
-            [[project_substitution_engine]]. O <code>FluxService</code> tem 57 lugares que sincronizam o schema. Refactor de substitution não é regex swap. Envolve tocar em todos esses sites simultaneamente.
+            <div class="aside-title">⚠️ <span data-en="57 sync sites (see memory)" data-pt="57 sync sites (ver memória)">57 sync sites (see memory)</span></div>
+            <span data-en="[[project_substitution_engine]]. &lt;code&gt;FluxService&lt;/code&gt; has 57 sites that sync the schema. Substitution refactor is not a regex swap. It requires touching all of them simultaneously." data-pt="[[project_substitution_engine]]. O &lt;code&gt;FluxService&lt;/code&gt; tem 57 lugares que sincronizam o schema. Refactor de substitution não é regex swap. Envolve tocar em todos esses sites simultaneamente.">[[project_substitution_engine]]. <code>FluxService</code> has 57 sites that sync the schema. Substitution refactor is not a regex swap. It requires touching all of them simultaneously.</span>
           </div>
           <div class="aside info">
-            <div class="aside-title">🎯 Por que spread em <code>updateSchemaWithNodeOutput</code>?</div>
-            <code>const updatedSchema = { ...schema }</code> cria novo objeto raiz, mas as entries permanecem compartilhadas. Mutação pontual não invalida referências antigas. Reatribuição invalida. Por isso existe o callback <code>onMutateSchema</code>.
+            <div class="aside-title">🎯 <span data-en="Why spread in &lt;code&gt;updateSchemaWithNodeOutput&lt;/code&gt;?" data-pt="Por que spread em &lt;code&gt;updateSchemaWithNodeOutput&lt;/code&gt;?">Why spread in <code>updateSchemaWithNodeOutput</code>?</span></div>
+            <span data-en="&lt;code&gt;const updatedSchema = { ...schema }&lt;/code&gt; creates a new root object, but the entries remain shared. Punctual mutation does not invalidate old references. Reassignment does. That is why the &lt;code&gt;onMutateSchema&lt;/code&gt; callback exists." data-pt="&lt;code&gt;const updatedSchema = { ...schema }&lt;/code&gt; cria novo objeto raiz, mas as entries permanecem compartilhadas. Mutação pontual não invalida referências antigas. Reatribuição invalida. Por isso existe o callback &lt;code&gt;onMutateSchema&lt;/code&gt;."><code>const updatedSchema = { ...schema }</code> creates a new root object, but the entries remain shared. Punctual mutation does not invalidate old references. Reassignment does. That is why the <code>onMutateSchema</code> callback exists.</span>
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 <code>processFlowWithSubstitution</code>. Legacy</div>
-            Método na linha 241-267 do service que faz o mesmo ciclo (generate → apply → execute → update). Não é usado pela Fase 3 (que faz manualmente), mas está exportado. Possível dead code ou usado por endpoint alternativo.
+            <div class="aside-title">🔧 <code>processFlowWithSubstitution</code>. <span data-en="Legacy" data-pt="Legacy">Legacy</span></div>
+            <span data-en="Method at line 241-267 of the service that does the same cycle (generate → apply → execute → update). Not used by Phase 3 (which does it manually), but is exported. Possibly dead code or used by an alternative endpoint." data-pt="Método na linha 241-267 do service que faz o mesmo ciclo (generate → apply → execute → update). Não é usado pela Fase 3 (que faz manualmente), mas está exportado. Possível dead code ou usado por endpoint alternativo.">Method at line 241-267 of the service that does the same cycle (generate → apply → execute → update). Not used by Phase 3 (which does it manually), but is exported. Possibly dead code or used by an alternative endpoint.</span>
           </div>
         </div>
       </div>
@@ -584,25 +589,25 @@ schema[stableKey] = entry;    <span class="c">// UUID puro: schema['a1b2-...']</
   </div>
 
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo — o que sai de 2.3.</strong>
-    <br>• <code>nodeSubstitutionSchema: { [key]: { [field]: string } }</code>. Mapa in-memory pronto para <code>applySubstitutionToObject</code>.
-    <br>• De 1 a 3 chaves por nó (UUID puro, UUID normalizado, label lowercase).
-    <br>• Valores coerced para string (via <code>text ?? content ?? result ?? JSON.stringify</code>).
-    <br>• Zero I/O. Puro CPU. Complexidade O(N × F), com F em torno de 4 campos por tipo.
+    <span data-en="&lt;strong&gt;Summary — what 2.3 outputs.&lt;/strong&gt;" data-pt="&lt;strong&gt;Resumo — o que sai de 2.3.&lt;/strong&gt;"><strong>Summary — what 2.3 outputs.</strong></span>
+    <br>• <span data-en="&lt;code&gt;nodeSubstitutionSchema: { [key]: { [field]: string } }&lt;/code&gt;. In-memory map ready for &lt;code&gt;applySubstitutionToObject&lt;/code&gt;." data-pt="&lt;code&gt;nodeSubstitutionSchema: { [key]: { [field]: string } }&lt;/code&gt;. Mapa in-memory pronto para &lt;code&gt;applySubstitutionToObject&lt;/code&gt;."><code>nodeSubstitutionSchema: { [key]: { [field]: string } }</code>. In-memory map ready for <code>applySubstitutionToObject</code>.</span>
+    <br>• <span data-en="1 to 3 keys per node (raw UUID, normalized UUID, lowercase label)." data-pt="De 1 a 3 chaves por nó (UUID puro, UUID normalizado, label lowercase).">1 to 3 keys per node (raw UUID, normalized UUID, lowercase label).</span>
+    <br>• <span data-en="Values coerced to string (via &lt;code&gt;text ?? content ?? result ?? JSON.stringify&lt;/code&gt;)." data-pt="Valores coerced para string (via &lt;code&gt;text ?? content ?? result ?? JSON.stringify&lt;/code&gt;).">Values coerced to string (via <code>text ?? content ?? result ?? JSON.stringify</code>).</span>
+    <br>• <span data-en="Zero I/O. Pure CPU. Complexity O(N × F), with F around 4 fields per type." data-pt="Zero I/O. Puro CPU. Complexidade O(N × F), com F em torno de 4 campos por tipo.">Zero I/O. Pure CPU. Complexity O(N × F), with F around 4 fields per type.</span>
   </div>
 
   <div class="note">
-    <strong>Observações para migração.</strong>
-    <br>• Ver memória <a href="#">[[project_substitution_engine]]</a>. 57 sync sites em <code>FluxService</code>. Refactor exige tocar em todos simultaneamente.
-    <br>• O worker não tem esse engine. Recebe cada nó já pré-substituído. Aplica <code>applySubstitutionToObject</code> antes do handoff. Migração para o worker preserva essa boundary.
-    <br>• A <code>basedOnType</code> é hand-maintained (igual ao MCP schema catalog). Ao adicionar novo tipo de nó com campo referenciável, tem que atualizar. Sem CI check. Bug silencioso.
-    <br>• O flattening de <code>result</code>, <code>content</code> e <code>text</code> carrega payloads grandes para a memória. Não é seguro apenas preview-truncar (ver [[project_node_field_taxonomy]]). O placeholder pode precisar do valor completo.
-    <br>• Alternativa de longo prazo. Index-only schema. O schema guarda só <code>{nodeId, field}</code>. O resolver busca o valor real sob demanda. Elimina duplicação em memória. Complica cache.
-    <br>• O <code>processFlowWithSubstitution</code> (linhas 241-267) parece dead code. Validar antes de qualquer limpeza.
+    <span data-en="&lt;strong&gt;Migration notes.&lt;/strong&gt;" data-pt="&lt;strong&gt;Observações para migração.&lt;/strong&gt;"><strong>Migration notes.</strong></span>
+    <br>• <span data-en="See memory &lt;a href=&quot;#&quot;&gt;[[project_substitution_engine]]&lt;/a&gt;. 57 sync sites in &lt;code&gt;FluxService&lt;/code&gt;. Refactor requires touching all simultaneously." data-pt="Ver memória &lt;a href=&quot;#&quot;&gt;[[project_substitution_engine]]&lt;/a&gt;. 57 sync sites em &lt;code&gt;FluxService&lt;/code&gt;. Refactor exige tocar em todos simultaneamente.">See memory <a href="#">[[project_substitution_engine]]</a>. 57 sync sites in <code>FluxService</code>. Refactor requires touching all simultaneously.</span>
+    <br>• <span data-en="The worker does not have this engine. It receives each node already pre-substituted. Applies &lt;code&gt;applySubstitutionToObject&lt;/code&gt; before the handoff. Migration to the worker preserves this boundary." data-pt="O worker não tem esse engine. Recebe cada nó já pré-substituído. Aplica &lt;code&gt;applySubstitutionToObject&lt;/code&gt; antes do handoff. Migração para o worker preserva essa boundary.">The worker does not have this engine. It receives each node already pre-substituted. Applies <code>applySubstitutionToObject</code> before the handoff. Migration to the worker preserves this boundary.</span>
+    <br>• <span data-en="&lt;code&gt;basedOnType&lt;/code&gt; is hand-maintained (same as the MCP schema catalog). Adding a new node type with a referenceable field requires updating it. No CI check. Silent bug." data-pt="A &lt;code&gt;basedOnType&lt;/code&gt; é hand-maintained (igual ao MCP schema catalog). Ao adicionar novo tipo de nó com campo referenciável, tem que atualizar. Sem CI check. Bug silencioso."><code>basedOnType</code> is hand-maintained (same as the MCP schema catalog). Adding a new node type with a referenceable field requires updating it. No CI check. Silent bug.</span>
+    <br>• <span data-en="Flattening &lt;code&gt;result&lt;/code&gt;, &lt;code&gt;content&lt;/code&gt; and &lt;code&gt;text&lt;/code&gt; carries big payloads into memory. It is not safe to just preview-truncate (see [[project_node_field_taxonomy]]). The placeholder may need the full value." data-pt="O flattening de &lt;code&gt;result&lt;/code&gt;, &lt;code&gt;content&lt;/code&gt; e &lt;code&gt;text&lt;/code&gt; carrega payloads grandes para a memória. Não é seguro apenas preview-truncar (ver [[project_node_field_taxonomy]]). O placeholder pode precisar do valor completo.">Flattening <code>result</code>, <code>content</code> and <code>text</code> carries big payloads into memory. It is not safe to just preview-truncate (see [[project_node_field_taxonomy]]). The placeholder may need the full value.</span>
+    <br>• <span data-en="Long-term alternative. Index-only schema. The schema stores only &lt;code&gt;{nodeId, field}&lt;/code&gt;. The resolver fetches the real value on demand. Eliminates in-memory duplication. Complicates cache." data-pt="Alternativa de longo prazo. Index-only schema. O schema guarda só &lt;code&gt;{nodeId, field}&lt;/code&gt;. O resolver busca o valor real sob demanda. Elimina duplicação em memória. Complica cache.">Long-term alternative. Index-only schema. The schema stores only <code>{nodeId, field}</code>. The resolver fetches the real value on demand. Eliminates in-memory duplication. Complicates cache.</span>
+    <br>• <span data-en="&lt;code&gt;processFlowWithSubstitution&lt;/code&gt; (lines 241-267) looks like dead code. Validate before any cleanup." data-pt="O &lt;code&gt;processFlowWithSubstitution&lt;/code&gt; (linhas 241-267) parece dead code. Validar antes de qualquer limpeza."><code>processFlowWithSubstitution</code> (lines 241-267) looks like dead code. Validate before any cleanup.</span>
   </div>
 
   <div class="page-footer-nav">
-    <a href="../index.html#step-2-3" class="back-btn">← Voltar ao diagrama principal</a>
+    <a href="../index.html#step-2-3" class="back-btn"><span data-en="← Back to main diagram" data-pt="← Voltar ao diagrama principal">← Back to main diagram</span></a>
   </div>
 
 </div>

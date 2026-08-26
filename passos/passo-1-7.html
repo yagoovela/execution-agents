@@ -1,8 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Passo 1.7 — Refresh de token Google | Detalhamento</title>
+<link rel="stylesheet" href="../_assets/i18n.css">
+<title>Step 1.7 — Google token refresh | Detail</title>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -572,52 +573,56 @@
   <!-- TOP NAV -->
   <div class="page-nav">
     <div class="breadcrumb">
-      <a href="../index.html">📋 Execução de Agente</a>
+      <a href="../index.html"><span data-en="📋 Agent execution" data-pt="📋 Execução de Agente">📋 Agent execution</span></a>
       <span class="sep">›</span>
-      <span>Passo 1.7 — Detalhamento</span>
+      <span><span data-en="Step 1.7 — Detail" data-pt="Passo 1.7 — Detalhamento">Step 1.7 — Detail</span></span>
     </div>
-    <a href="../index.html#step-1-7" class="back-btn">← Voltar ao diagrama</a>
+    <a href="../index.html#step-1-7" class="back-btn"><span data-en="← Back to diagram" data-pt="← Voltar ao diagrama">← Back to diagram</span></a>
+    <div class="lang-sw" role="group" aria-label="Language">
+      <button type="button" data-lang="en" aria-pressed="true">EN-US</button>
+      <button type="button" data-lang="pt" aria-pressed="false">PT-BR</button>
+    </div>
   </div>
 
   <!-- PAGE HEADER -->
   <div class="page-header">
     <span class="icon">🔑</span>
-    <h1>Passo 1.7 — Refresh de token Google (condicional)</h1>
+    <h1><span data-en="Step 1.7 — Google token refresh (conditional)" data-pt="Passo 1.7 — Refresh de token Google (condicional)">Step 1.7 — Google token refresh (conditional)</span></h1>
   </div>
   <div class="page-sub">
-    Bloco em <code>flux.service.ts:2620-2643</code>. Quando o flow tem algum <code>pullData</code> ou <code>pushData</code> com <code>provider = 'google'</code> e o usuário tem <code>googleRefreshToken</code>, troca o refresh token por um <code>access_token</code> novo. O valor é guardado em uma variável local. Os handlers de <code>pullData</code>/<code>pushData</code> consomem esse valor na Fase 3.
+    <span data-en="Block in &lt;code&gt;flux.service.ts:2620-2643&lt;/code&gt;. When the flow has some &lt;code&gt;pullData&lt;/code&gt; or &lt;code&gt;pushData&lt;/code&gt; with &lt;code&gt;provider = 'google'&lt;/code&gt; and the user has &lt;code&gt;googleRefreshToken&lt;/code&gt;, exchanges the refresh token for a new &lt;code&gt;access_token&lt;/code&gt;. The value is stored in a local variable. The &lt;code&gt;pullData&lt;/code&gt;/&lt;code&gt;pushData&lt;/code&gt; handlers consume it in Phase 3." data-pt="Bloco em &lt;code&gt;flux.service.ts:2620-2643&lt;/code&gt;. Quando o flow tem algum &lt;code&gt;pullData&lt;/code&gt; ou &lt;code&gt;pushData&lt;/code&gt; com &lt;code&gt;provider = 'google'&lt;/code&gt; e o usuário tem &lt;code&gt;googleRefreshToken&lt;/code&gt;, troca o refresh token por um &lt;code&gt;access_token&lt;/code&gt; novo. O valor é guardado em uma variável local. Os handlers de &lt;code&gt;pullData&lt;/code&gt;/&lt;code&gt;pushData&lt;/code&gt; consomem esse valor na Fase 3.">Block in <code>flux.service.ts:2620-2643</code>. When the flow has some <code>pullData</code> or <code>pushData</code> with <code>provider = 'google'</code> and the user has <code>googleRefreshToken</code>, exchanges the refresh token for a new <code>access_token</code>. The value is stored in a local variable. The <code>pullData</code>/<code>pushData</code> handlers consume it in Phase 3.</span>
   </div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
-    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <div class="step-friendly-title"><span data-en="In short — what this step does" data-pt="Em resumo — o que esse passo faz">In short — what this step does</span></div>
     <ul>
-      <li><strong>Decide se compensa chamar o Google.</strong> Varre os nós procurando algum <code>pullData</code> ou <code>pushData</code> com provider Google. A maioria dos agentes não usa. A verificação economiza uma chamada de rede. Nodes antigos sem <code>provider</code> caem no default <code>'google'</code>.</li>
-      <li><strong>Passa pelo gate duplo.</strong> Só entra no refresh quando ambas as condições são verdadeiras. O usuário tem <code>googleRefreshToken</code> guardado. O flow tem nó Google. Se uma falha, <code>access_token</code> nasce vazio e o passo é pulado em silêncio.</li>
-      <li><strong>Troca o refresh token por access token.</strong> Instancia um <code>OAuth2Client</code> a cada execução, sem pool, com clientId, clientSecret e redirectUri. Chama <code>setCredentials</code> local. Faz o POST bloqueante em <code>oauth2.googleapis.com/token</code>. Só o <code>access_token</code> é aproveitado. Campos como <code>expiry_date</code> são descartados.</li>
-      <li><strong>Sem try/catch, sem log estruturado.</strong> Se o Google recusar (token revogado, quota), a exceção sobe e derruba a execução inteira. Isso vale mesmo quando 90% dos nós não são Google. Não há observabilidade sobre sucesso ou falha. A variável de ambiente <code>GOOGLE_LOGIN_CLIENT_SECRECT</code> mantém o typo por dependência histórica.</li>
-      <li><strong>Saída.</strong> Variável local <code>access_token</code>. Contém uma string Bearer válida por cerca de 1h ou <code>''</code> quando o gate fecha. Capturada por closure. Passada como <code>accessToken</code> para os handlers de <code>pullData</code>/<code>pushData</code> na Fase 3, inclusive dentro de <code>arrayNode</code>. Se o token vier vazio, os handlers chamam o Google e recebem 401 no meio da execução.</li>
+      <li><span data-en="&lt;strong&gt;Decides whether calling Google is worthwhile.&lt;/strong&gt; Scans the nodes looking for any &lt;code&gt;pullData&lt;/code&gt; or &lt;code&gt;pushData&lt;/code&gt; with Google provider. Most agents don't use it. The check saves a network call. Old nodes without &lt;code&gt;provider&lt;/code&gt; fall back to the default &lt;code&gt;'google'&lt;/code&gt;." data-pt="&lt;strong&gt;Decide se compensa chamar o Google.&lt;/strong&gt; Varre os nós procurando algum &lt;code&gt;pullData&lt;/code&gt; ou &lt;code&gt;pushData&lt;/code&gt; com provider Google. A maioria dos agentes não usa. A verificação economiza uma chamada de rede. Nodes antigos sem &lt;code&gt;provider&lt;/code&gt; caem no default &lt;code&gt;'google'&lt;/code&gt;."><strong>Decides whether calling Google is worthwhile.</strong> Scans the nodes looking for any <code>pullData</code> or <code>pushData</code> with Google provider. Most agents don't use it. The check saves a network call. Old nodes without <code>provider</code> fall back to the default <code>'google'</code>.</span></li>
+      <li><span data-en="&lt;strong&gt;Passes through the double gate.&lt;/strong&gt; Only enters the refresh when both conditions are true. The user has &lt;code&gt;googleRefreshToken&lt;/code&gt; stored. The flow has a Google node. If one fails, &lt;code&gt;access_token&lt;/code&gt; starts empty and the step is silently skipped." data-pt="&lt;strong&gt;Passa pelo gate duplo.&lt;/strong&gt; Só entra no refresh quando ambas as condições são verdadeiras. O usuário tem &lt;code&gt;googleRefreshToken&lt;/code&gt; guardado. O flow tem nó Google. Se uma falha, &lt;code&gt;access_token&lt;/code&gt; nasce vazio e o passo é pulado em silêncio."><strong>Passes through the double gate.</strong> Only enters the refresh when both conditions are true. The user has <code>googleRefreshToken</code> stored. The flow has a Google node. If one fails, <code>access_token</code> starts empty and the step is silently skipped.</span></li>
+      <li><span data-en="&lt;strong&gt;Exchanges the refresh token for an access token.&lt;/strong&gt; Instantiates an &lt;code&gt;OAuth2Client&lt;/code&gt; per execution, no pool, with clientId, clientSecret and redirectUri. Calls local &lt;code&gt;setCredentials&lt;/code&gt;. Makes the blocking POST to &lt;code&gt;oauth2.googleapis.com/token&lt;/code&gt;. Only the &lt;code&gt;access_token&lt;/code&gt; is kept. Fields such as &lt;code&gt;expiry_date&lt;/code&gt; are discarded." data-pt="&lt;strong&gt;Troca o refresh token por access token.&lt;/strong&gt; Instancia um &lt;code&gt;OAuth2Client&lt;/code&gt; a cada execução, sem pool, com clientId, clientSecret e redirectUri. Chama &lt;code&gt;setCredentials&lt;/code&gt; local. Faz o POST bloqueante em &lt;code&gt;oauth2.googleapis.com/token&lt;/code&gt;. Só o &lt;code&gt;access_token&lt;/code&gt; é aproveitado. Campos como &lt;code&gt;expiry_date&lt;/code&gt; são descartados."><strong>Exchanges the refresh token for an access token.</strong> Instantiates an <code>OAuth2Client</code> per execution, no pool, with clientId, clientSecret and redirectUri. Calls local <code>setCredentials</code>. Makes the blocking POST to <code>oauth2.googleapis.com/token</code>. Only the <code>access_token</code> is kept. Fields such as <code>expiry_date</code> are discarded.</span></li>
+      <li><span data-en="&lt;strong&gt;No try/catch, no structured log.&lt;/strong&gt; If Google refuses (revoked token, quota), the exception propagates and takes down the entire execution. This is true even when 90% of the nodes are not Google. There is no observability over success or failure. The environment variable &lt;code&gt;GOOGLE_LOGIN_CLIENT_SECRECT&lt;/code&gt; keeps the typo due to historical dependency." data-pt="&lt;strong&gt;Sem try/catch, sem log estruturado.&lt;/strong&gt; Se o Google recusar (token revogado, quota), a exceção sobe e derruba a execução inteira. Isso vale mesmo quando 90% dos nós não são Google. Não há observabilidade sobre sucesso ou falha. A variável de ambiente &lt;code&gt;GOOGLE_LOGIN_CLIENT_SECRECT&lt;/code&gt; mantém o typo por dependência histórica."><strong>No try/catch, no structured log.</strong> If Google refuses (revoked token, quota), the exception propagates and takes down the entire execution. This is true even when 90% of the nodes are not Google. There is no observability over success or failure. The environment variable <code>GOOGLE_LOGIN_CLIENT_SECRECT</code> keeps the typo due to historical dependency.</span></li>
+      <li><span data-en="&lt;strong&gt;Output.&lt;/strong&gt; Local variable &lt;code&gt;access_token&lt;/code&gt;. Contains a Bearer string valid for about 1h or &lt;code&gt;''&lt;/code&gt; when the gate closes. Captured by closure. Passed as &lt;code&gt;accessToken&lt;/code&gt; to the &lt;code&gt;pullData&lt;/code&gt;/&lt;code&gt;pushData&lt;/code&gt; handlers in Phase 3, including inside &lt;code&gt;arrayNode&lt;/code&gt;. If the token is empty, the handlers call Google and get 401 in the middle of the execution." data-pt="&lt;strong&gt;Saída.&lt;/strong&gt; Variável local &lt;code&gt;access_token&lt;/code&gt;. Contém uma string Bearer válida por cerca de 1h ou &lt;code&gt;''&lt;/code&gt; quando o gate fecha. Capturada por closure. Passada como &lt;code&gt;accessToken&lt;/code&gt; para os handlers de &lt;code&gt;pullData&lt;/code&gt;/&lt;code&gt;pushData&lt;/code&gt; na Fase 3, inclusive dentro de &lt;code&gt;arrayNode&lt;/code&gt;. Se o token vier vazio, os handlers chamam o Google e recebem 401 no meio da execução."><strong>Output.</strong> Local variable <code>access_token</code>. Contains a Bearer string valid for about 1h or <code>''</code> when the gate closes. Captured by closure. Passed as <code>accessToken</code> to the <code>pullData</code>/<code>pushData</code> handlers in Phase 3, including inside <code>arrayNode</code>. If the token is empty, the handlers call Google and get 401 in the middle of the execution.</span></li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto.</strong> Este é o único ponto do fluxo de execução que chama o <code>OAuth2</code> do Google. Access tokens do Google expiram em cerca de 1h. Toda execução refaz o refresh antes de despachar os handlers de dados Google (Sheets, etc.). Se qualquer condição falha, <code>access_token</code> continua string vazia. Os handlers downstream chamam o Google sem token e recebem 401 imediatamente.
+    <span data-en="&lt;strong&gt;Context.&lt;/strong&gt; This is the only place in the execution flow that calls Google's &lt;code&gt;OAuth2&lt;/code&gt;. Google access tokens expire in about 1h. Every execution re-runs the refresh before dispatching the Google data handlers (Sheets, etc.). If any condition fails, &lt;code&gt;access_token&lt;/code&gt; stays as an empty string. Downstream handlers call Google without a token and receive 401 immediately." data-pt="&lt;strong&gt;Contexto.&lt;/strong&gt; Este é o único ponto do fluxo de execução que chama o &lt;code&gt;OAuth2&lt;/code&gt; do Google. Access tokens do Google expiram em cerca de 1h. Toda execução refaz o refresh antes de despachar os handlers de dados Google (Sheets, etc.). Se qualquer condição falha, &lt;code&gt;access_token&lt;/code&gt; continua string vazia. Os handlers downstream chamam o Google sem token e recebem 401 imediatamente."><strong>Context.</strong> This is the only place in the execution flow that calls Google's <code>OAuth2</code>. Google access tokens expire in about 1h. Every execution re-runs the refresh before dispatching the Google data handlers (Sheets, etc.). If any condition fails, <code>access_token</code> stays as an empty string. Downstream handlers call Google without a token and receive 401 immediately.</span>
   </div>
 
   <!-- Overview chain -->
   <div class="overview-mini">
-    <div class="overview-mini-title">Cadeia de operações em 1.7</div>
+    <div class="overview-mini-title"><span data-en="Operation chain in 1.7" data-pt="Cadeia de operações em 1.7">Operation chain in 1.7</span></div>
     <div class="overview-chain">
-      <a href="#fn-a" class="overview-chip"><span class="lbl">A</span>Detecta google data node</a>
+      <a href="#fn-a" class="overview-chip"><span class="lbl">A</span><span data-en="Detects google data node" data-pt="Detecta google data node">Detects google data node</span></a>
       <span class="overview-sep">→</span>
       <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>Gate + OAuth2Client init</a>
       <span class="overview-sep">→</span>
       <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>refreshAccessToken → Google</a>
       <span class="overview-sep">→</span>
-      <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>Consumidores downstream</a>
+      <a href="#fn-d" class="overview-chip"><span class="lbl">D</span><span data-en="Downstream consumers" data-pt="Consumidores downstream">Downstream consumers</span></a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado final. A variável local <code>access_token</code> fica preenchida ou vazia (quando o gate não abre). Pronta para ser passada em <code>{ accessToken: access_token }</code> para os handlers de <code>pushData</code>/<code>pullData</code> na Fase 3.
+      <span data-en="Final result. The local &lt;code&gt;access_token&lt;/code&gt; variable ends up filled or empty (when the gate does not open). Ready to be passed as &lt;code&gt;{ accessToken: access_token }&lt;/code&gt; to the &lt;code&gt;pushData&lt;/code&gt;/&lt;code&gt;pullData&lt;/code&gt; handlers in Phase 3." data-pt="Resultado final. A variável local &lt;code&gt;access_token&lt;/code&gt; fica preenchida ou vazia (quando o gate não abre). Pronta para ser passada em &lt;code&gt;{ accessToken: access_token }&lt;/code&gt; para os handlers de &lt;code&gt;pushData&lt;/code&gt;/&lt;code&gt;pullData&lt;/code&gt; na Fase 3.">Final result. The local <code>access_token</code> variable ends up filled or empty (when the gate does not open). Ready to be passed as <code>{ accessToken: access_token }</code> to the <code>pushData</code>/<code>pullData</code> handlers in Phase 3.</span>
     </div>
   </div>
 
@@ -628,7 +633,7 @@
     <div class="fn-card-header">
       <div class="fn-title">
         <span class="badge migrated" style="background:#EAB308;color:white">A</span>
-        <code>Detecta google data node</code>
+        <code><span data-en="Detects google data node" data-pt="Detecta google data node">Detects google data node</span></code>
       </div>
       <div class="fn-loc">flux.service.ts:2620-2626</div>
     </div>
@@ -637,18 +642,18 @@
         const hasGoogleDataNode = nodes?.find(n =&gt; (n.type === 'pushData' || n.type === 'pullData') && (n.data?.provider ?? 'google') === 'google');
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Descobre se compensa gastar uma chamada de rede para o Google. Se nenhum nó do flow é <code>pullData</code> ou <code>pushData</code> com provider Google, o refresh é desnecessário e o passo é pulado.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Discovers whether it is worth spending a network call to Google. If no node in the flow is &lt;code&gt;pullData&lt;/code&gt; or &lt;code&gt;pushData&lt;/code&gt; with Google provider, the refresh is unnecessary and the step is skipped." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Descobre se compensa gastar uma chamada de rede para o Google. Se nenhum nó do flow é &lt;code&gt;pullData&lt;/code&gt; ou &lt;code&gt;pushData&lt;/code&gt; com provider Google, o refresh é desnecessário e o passo é pulado."><strong>Purpose.</strong> Discovers whether it is worth spending a network call to Google. If no node in the flow is <code>pullData</code> or <code>pushData</code> with Google provider, the refresh is unnecessary and the step is skipped.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Esta parte é um vigia rápido. Olha o agente inteiro antes de chamar o Google. Varre a lista de nós procurando alguém que leia ou grave dados no Google (Sheets, basicamente). Se ninguém precisa, o passo termina. A variável <code>access_token</code> nasce vazia e o resto do passo é ignorado. A economia importa. A maioria dos agentes não usa Google. O vigia evita uma chamada de rede desnecessária. Detalhe. Nós antigos sem o campo <code>provider</code> são tratados como Google por padrão. Dados legados ainda disparam o refresh.
+        <span data-en="&lt;strong&gt;In short.&lt;/strong&gt; This part is a quick lookout. It checks the entire agent before calling Google. Scans the node list looking for someone that reads or writes data in Google (Sheets, mostly). If no one needs it, the step ends. The &lt;code&gt;access_token&lt;/code&gt; variable starts empty and the rest of the step is skipped. The savings matter. Most agents don't use Google. The lookout avoids an unnecessary network call. Detail. Old nodes without a &lt;code&gt;provider&lt;/code&gt; field are treated as Google by default. Legacy data still triggers the refresh." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Esta parte é um vigia rápido. Olha o agente inteiro antes de chamar o Google. Varre a lista de nós procurando alguém que leia ou grave dados no Google (Sheets, basicamente). Se ninguém precisa, o passo termina. A variável &lt;code&gt;access_token&lt;/code&gt; nasce vazia e o resto do passo é ignorado. A economia importa. A maioria dos agentes não usa Google. O vigia evita uma chamada de rede desnecessária. Detalhe. Nós antigos sem o campo &lt;code&gt;provider&lt;/code&gt; são tratados como Google por padrão. Dados legados ainda disparam o refresh."><strong>In short.</strong> This part is a quick lookout. It checks the entire agent before calling Google. Scans the node list looking for someone that reads or writes data in Google (Sheets, mostly). If no one needs it, the step ends. The <code>access_token</code> variable starts empty and the rest of the step is skipped. The savings matter. Most agents don't use Google. The lookout avoids an unnecessary network call. Detail. Old nodes without a <code>provider</code> field are treated as Google by default. Legacy data still triggers the refresh.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">A1</span> Inicializa <code>access_token = ''</code></div>
+            <div class="box-title"><span class="badge step">A1</span> <span data-en="Initializes" data-pt="Inicializa">Initializes</span> <code>access_token = ''</code></div>
             <div class="box-desc">
-              Variável <code>let</code> declarada logo antes da detecção. Fica visível até o fim do <code>try</code> em <code>apiV2()</code>. É capturada por closure implícito nos handlers de Fase 3.
+              <span data-en="&lt;code&gt;let&lt;/code&gt; variable declared just before detection. Visible until the end of the &lt;code&gt;try&lt;/code&gt; in &lt;code&gt;apiV2()&lt;/code&gt;. Captured by implicit closure in the Phase 3 handlers." data-pt="Variável &lt;code&gt;let&lt;/code&gt; declarada logo antes da detecção. Fica visível até o fim do &lt;code&gt;try&lt;/code&gt; em &lt;code&gt;apiV2()&lt;/code&gt;. É capturada por closure implícito nos handlers de Fase 3."><code>let</code> variable declared just before detection. Visible until the end of the <code>try</code> in <code>apiV2()</code>. Captured by implicit closure in the Phase 3 handlers.</span>
             </div>
             <div class="box-file">flux.service.ts:2620</div>
           </div>
@@ -657,15 +662,14 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">A2</span> <code>nodes?.find(...)</code></div>
             <div class="box-desc">
-              Retorna o primeiro node compatível ou <code>undefined</code>. O resultado é usado como boolean no gate (B). O objeto em si é descartado.
-              <br><br><code>nodes</code> aqui é o array pós-<code>stripStaleErrorState</code> (linha 2469). Não é o <code>updatedFlows</code> do 1.6.
+              <span data-en="Returns the first compatible node or &lt;code&gt;undefined&lt;/code&gt;. The result is used as a boolean in gate (B). The object itself is discarded.&lt;br&gt;&lt;br&gt;&lt;code&gt;nodes&lt;/code&gt; here is the array after &lt;code&gt;stripStaleErrorState&lt;/code&gt; (line 2469). It is not the &lt;code&gt;updatedFlows&lt;/code&gt; from 1.6." data-pt="Retorna o primeiro node compatível ou &lt;code&gt;undefined&lt;/code&gt;. O resultado é usado como boolean no gate (B). O objeto em si é descartado.&lt;br&gt;&lt;br&gt;&lt;code&gt;nodes&lt;/code&gt; aqui é o array pós-&lt;code&gt;stripStaleErrorState&lt;/code&gt; (linha 2469). Não é o &lt;code&gt;updatedFlows&lt;/code&gt; do 1.6.">Returns the first compatible node or <code>undefined</code>. The result is used as a boolean in gate (B). The object itself is discarded.<br><br><code>nodes</code> here is the array after <code>stripStaleErrorState</code> (line 2469). It is not the <code>updatedFlows</code> from 1.6.</span>
             </div>
             <div class="box-file">flux.service.ts:2622-2626</div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box decision">
-            <div class="box-title"><span class="badge step">A3</span> Filtro de node</div>
+            <div class="box-title"><span class="badge step">A3</span> <span data-en="Node filter" data-pt="Filtro de node">Node filter</span></div>
             <div class="code-block">
 (node.type === <span class="s">'pushData'</span> || node.type === <span class="s">'pullData'</span>)
   &amp;&amp; (node.data?.provider ?? <span class="s">'google'</span>) === <span class="s">'google'</span>
@@ -676,19 +680,18 @@
 
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Fallback <code>?? 'google'</code></div>
-            Nodes antigos criados antes do campo <code>provider</code> existir não têm essa chave. O <code>??</code> assume que ausente equivale a Google. Se o front hoje só grava provider explícito, o fallback funciona como rede de segurança para dados legados.
-            <br><br>Consequência. Um node novo criado sem setar <code>provider</code> (por exemplo, MCP mal configurado — [[project_mcp_node_schemas]]) é tratado como Google. Pode disparar o refresh sem necessidade.
+            <div class="aside-title">🎯 <span data-en="Fallback" data-pt="Fallback">Fallback</span> <code>?? 'google'</code></div>
+            <span data-en="Old nodes created before the &lt;code&gt;provider&lt;/code&gt; field existed do not have this key. The &lt;code&gt;??&lt;/code&gt; assumes absent equals Google. If the front only writes explicit provider today, the fallback works as a safety net for legacy data.&lt;br&gt;&lt;br&gt;Consequence. A new node created without setting &lt;code&gt;provider&lt;/code&gt; (for example, misconfigured MCP — [[project_mcp_node_schemas]]) is treated as Google. It may trigger the refresh unnecessarily." data-pt="Nodes antigos criados antes do campo &lt;code&gt;provider&lt;/code&gt; existir não têm essa chave. O &lt;code&gt;??&lt;/code&gt; assume que ausente equivale a Google. Se o front hoje só grava provider explícito, o fallback funciona como rede de segurança para dados legados.&lt;br&gt;&lt;br&gt;Consequência. Um node novo criado sem setar &lt;code&gt;provider&lt;/code&gt; (por exemplo, MCP mal configurado — [[project_mcp_node_schemas]]) é tratado como Google. Pode disparar o refresh sem necessidade.">Old nodes created before the <code>provider</code> field existed do not have this key. The <code>??</code> assumes absent equals Google. If the front only writes explicit provider today, the fallback works as a safety net for legacy data.<br><br>Consequence. A new node created without setting <code>provider</code> (for example, misconfigured MCP — [[project_mcp_node_schemas]]) is treated as Google. It may trigger the refresh unnecessarily.</span>
           </div>
 
           <div class="aside">
-            <div class="aside-title">📎 Por que só pullData/pushData?</div>
-            Google Sheets é o único provider Google integrado no motor de execução. Outras integrações Google (Gmail, Docs) vivem em <code>mail.service.ts</code> e serviços similares. Cada uma tem o próprio <code>OAuth2Client</code> isolado.
+            <div class="aside-title">📎 <span data-en="Why only pullData/pushData?" data-pt="Por que só pullData/pushData?">Why only pullData/pushData?</span></div>
+            <span data-en="Google Sheets is the only Google provider integrated into the execution engine. Other Google integrations (Gmail, Docs) live in &lt;code&gt;mail.service.ts&lt;/code&gt; and similar services. Each has its own isolated &lt;code&gt;OAuth2Client&lt;/code&gt;." data-pt="Google Sheets é o único provider Google integrado no motor de execução. Outras integrações Google (Gmail, Docs) vivem em &lt;code&gt;mail.service.ts&lt;/code&gt; e serviços similares. Cada uma tem o próprio &lt;code&gt;OAuth2Client&lt;/code&gt; isolado.">Google Sheets is the only Google provider integrated into the execution engine. Other Google integrations (Gmail, Docs) live in <code>mail.service.ts</code> and similar services. Each has its own isolated <code>OAuth2Client</code>.</span>
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 <code>find</code> vs <code>some</code></div>
-            Poderia ser <code>nodes?.some(...)</code>, mais claro semanticamente ("existe algum?"). Usar <code>find</code> aloca o node e descarta. O overhead é irrelevante em produção, mas é um smell.
+            <span data-en="Could be &lt;code&gt;nodes?.some(...)&lt;/code&gt;, semantically clearer (&quot;is there any?&quot;). Using &lt;code&gt;find&lt;/code&gt; allocates the node and discards it. The overhead is irrelevant in production, but it's a smell." data-pt="Poderia ser &lt;code&gt;nodes?.some(...)&lt;/code&gt;, mais claro semanticamente (&quot;existe algum?&quot;). Usar &lt;code&gt;find&lt;/code&gt; aloca o node e descarta. O overhead é irrelevante em produção, mas é um smell.">Could be <code>nodes?.some(...)</code>, semantically clearer ("is there any?"). Using <code>find</code> allocates the node and discards it. The overhead is irrelevant in production, but it's a smell.</span>
           </div>
         </div>
       </div>
@@ -711,39 +714,39 @@
         if (user.googleRefreshToken && hasGoogleDataNode) { const client = new OAuth2Client({ clientId, clientSecret, redirectUri }); ... }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Só entra no fluxo de refresh quando as duas condições valem. O usuário já autenticou com Google alguma vez (tem <code>googleRefreshToken</code>). O flow atual precisa. Se qualquer uma falha, <code>access_token</code> fica string vazia.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Only enters the refresh flow when both conditions hold. The user has already authenticated with Google at some point (has &lt;code&gt;googleRefreshToken&lt;/code&gt;). The current flow needs it. If either fails, &lt;code&gt;access_token&lt;/code&gt; stays as an empty string." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Só entra no fluxo de refresh quando as duas condições valem. O usuário já autenticou com Google alguma vez (tem &lt;code&gt;googleRefreshToken&lt;/code&gt;). O flow atual precisa. Se qualquer uma falha, &lt;code&gt;access_token&lt;/code&gt; fica string vazia."><strong>Purpose.</strong> Only enters the refresh flow when both conditions hold. The user has already authenticated with Google at some point (has <code>googleRefreshToken</code>). The current flow needs it. If either fails, <code>access_token</code> stays as an empty string.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Aqui entra o gate duplo. Só libera o refresh quando as duas condições passam. Primeira. O usuário já se logou no Google alguma vez e deixou um <code>googleRefreshToken</code> guardado. Segunda. O agente prestes a rodar tem um nó Google esperando dados. Se alguma condição falha, o gate fecha em silêncio. A variável <code>access_token</code> continua vazia. Sem alarme e sem erro. Passando o gate, o código monta um <code>OAuth2Client</code> novo (um por execução, sem reciclar) com clientId, clientSecret e redirect prontos para conversar com o Google no próximo passo. Atenção ao typo em <code>GOOGLE_LOGIN_CLIENT_SECRECT</code>. A env var precisa manter o typo para funcionar.
+        <span data-en="&lt;strong&gt;In short.&lt;/strong&gt; This is where the double gate kicks in. It only allows the refresh when both conditions pass. First. The user has logged into Google at some point and left a &lt;code&gt;googleRefreshToken&lt;/code&gt; stored. Second. The agent about to run has a Google node waiting for data. If any condition fails, the gate closes silently. The &lt;code&gt;access_token&lt;/code&gt; variable stays empty. No alarm, no error. Once past the gate, the code builds a new &lt;code&gt;OAuth2Client&lt;/code&gt; (one per execution, no recycling) with clientId, clientSecret and redirect ready to talk to Google in the next step. Beware of the typo in &lt;code&gt;GOOGLE_LOGIN_CLIENT_SECRECT&lt;/code&gt;. The env var must keep the typo to work." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Aqui entra o gate duplo. Só libera o refresh quando as duas condições passam. Primeira. O usuário já se logou no Google alguma vez e deixou um &lt;code&gt;googleRefreshToken&lt;/code&gt; guardado. Segunda. O agente prestes a rodar tem um nó Google esperando dados. Se alguma condição falha, o gate fecha em silêncio. A variável &lt;code&gt;access_token&lt;/code&gt; continua vazia. Sem alarme e sem erro. Passando o gate, o código monta um &lt;code&gt;OAuth2Client&lt;/code&gt; novo (um por execução, sem reciclar) com clientId, clientSecret e redirect prontos para conversar com o Google no próximo passo. Atenção ao typo em &lt;code&gt;GOOGLE_LOGIN_CLIENT_SECRECT&lt;/code&gt;. A env var precisa manter o typo para funcionar."><strong>In short.</strong> This is where the double gate kicks in. It only allows the refresh when both conditions pass. First. The user has logged into Google at some point and left a <code>googleRefreshToken</code> stored. Second. The agent about to run has a Google node waiting for data. If any condition fails, the gate closes silently. The <code>access_token</code> variable stays empty. No alarm, no error. Once past the gate, the code builds a new <code>OAuth2Client</code> (one per execution, no recycling) with clientId, clientSecret and redirect ready to talk to Google in the next step. Beware of the typo in <code>GOOGLE_LOGIN_CLIENT_SECRECT</code>. The env var must keep the typo to work.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="cascade">
-            <div class="cascade-title">🪜 Gate booleano AND</div>
+            <div class="cascade-title">🪜 <span data-en="Boolean AND gate" data-pt="Gate booleano AND">Boolean AND gate</span></div>
             <div class="cascade-step">
               <span class="cascade-num">1</span>
-              <span class="cond"><code>user.googleRefreshToken</code> presente?</span>
-              <span class="result next">continua</span>
+              <span class="cond"><span data-en="&lt;code&gt;user.googleRefreshToken&lt;/code&gt; present?" data-pt="&lt;code&gt;user.googleRefreshToken&lt;/code&gt; presente?"><code>user.googleRefreshToken</code> present?</span></span>
+              <span class="result next"><span data-en="continues" data-pt="continua">continues</span></span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">2</span>
               <span class="cond">&&&nbsp;<code>hasGoogleDataNode</code> truthy?</span>
-              <span class="result pass">entra no bloco</span>
+              <span class="result pass"><span data-en="enters block" data-pt="entra no bloco">enters block</span></span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">3</span>
-              <span class="cond">qualquer um <em>falsy</em></span>
-              <span class="result deny">pula → <code>access_token = ''</code></span>
+              <span class="cond"><span data-en="any of them &lt;em&gt;falsy&lt;/em&gt;" data-pt="qualquer um &lt;em&gt;falsy&lt;/em&gt;">any of them <em>falsy</em></span></span>
+              <span class="result deny"><span data-en="skips → &lt;code&gt;access_token = ''&lt;/code&gt;" data-pt="pula → &lt;code&gt;access_token = ''&lt;/code&gt;">skips → <code>access_token = ''</code></span></span>
             </div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box backend">
-            <div class="box-title"><span class="badge step">B1</span> Constrói <code>redirect_uri</code></div>
+            <div class="box-title"><span class="badge step">B1</span> <span data-en="Builds" data-pt="Constrói">Builds</span> <code>redirect_uri</code></div>
             <div class="box-desc">
               <code>const redirect_uri = process.env.FRONTEND_URL</code>
-              <br><br>Reaproveita a URL do frontend como redirect. O Google não valida <code>redirect_uri</code> em <code>refreshAccessToken()</code>. A validação ocorre em <code>getToken()</code> e no authorization code exchange. Aqui o valor é ignorado, mas o SDK exige o campo.
+              <br><br><span data-en="Reuses the frontend URL as redirect. Google does not validate &lt;code&gt;redirect_uri&lt;/code&gt; in &lt;code&gt;refreshAccessToken()&lt;/code&gt;. Validation happens in &lt;code&gt;getToken()&lt;/code&gt; and in the authorization code exchange. Here the value is ignored, but the SDK requires the field." data-pt="Reaproveita a URL do frontend como redirect. O Google não valida &lt;code&gt;redirect_uri&lt;/code&gt; em &lt;code&gt;refreshAccessToken()&lt;/code&gt;. A validação ocorre em &lt;code&gt;getToken()&lt;/code&gt; e no authorization code exchange. Aqui o valor é ignorado, mas o SDK exige o campo.">Reuses the frontend URL as redirect. Google does not validate <code>redirect_uri</code> in <code>refreshAccessToken()</code>. Validation happens in <code>getToken()</code> and in the authorization code exchange. Here the value is ignored, but the SDK requires the field.</span>
             </div>
             <div class="box-file">flux.service.ts:2629</div>
           </div>
@@ -759,7 +762,7 @@
 });
             </div>
             <div class="box-desc">
-              <code>OAuth2Client</code> vem de <code>google-auth-library</code>. É criado por execução. Não há reciclagem nem pool.
+              <span data-en="&lt;code&gt;OAuth2Client&lt;/code&gt; comes from &lt;code&gt;google-auth-library&lt;/code&gt;. Created per execution. No recycling, no pool." data-pt="&lt;code&gt;OAuth2Client&lt;/code&gt; vem de &lt;code&gt;google-auth-library&lt;/code&gt;. É criado por execução. Não há reciclagem nem pool."><code>OAuth2Client</code> comes from <code>google-auth-library</code>. Created per execution. No recycling, no pool.</span>
             </div>
             <div class="box-file">flux.service.ts:2631-2635</div>
           </div>
@@ -767,23 +770,23 @@
 
         <div class="fn-asides">
           <div class="aside warn">
-            <div class="aside-title">⚠️ Typo em env var: <code>GOOGLE_LOGIN_CLIENT_SECRECT</code></div>
-            <strong>SECRECT</strong>, não SECRET. A variável de ambiente precisa ser gravada com o typo para funcionar. Corrigir isso quebra produção em todos os ambientes até que os envs sejam atualizados simultaneamente. A mesma grafia aparece em <code>auth.controller.ts</code>. Busque por <code>SECRECT</code> antes de qualquer refactor.
+            <div class="aside-title">⚠️ <span data-en="Typo in env var:" data-pt="Typo em env var:">Typo in env var:</span> <code>GOOGLE_LOGIN_CLIENT_SECRECT</code></div>
+            <span data-en="&lt;strong&gt;SECRECT&lt;/strong&gt;, not SECRET. The environment variable must be stored with the typo to work. Fixing it breaks production in all environments until the envs are updated simultaneously. The same spelling appears in &lt;code&gt;auth.controller.ts&lt;/code&gt;. Grep for &lt;code&gt;SECRECT&lt;/code&gt; before any refactor." data-pt="&lt;strong&gt;SECRECT&lt;/strong&gt;, não SECRET. A variável de ambiente precisa ser gravada com o typo para funcionar. Corrigir isso quebra produção em todos os ambientes até que os envs sejam atualizados simultaneamente. A mesma grafia aparece em &lt;code&gt;auth.controller.ts&lt;/code&gt;. Busque por &lt;code&gt;SECRECT&lt;/code&gt; antes de qualquer refactor."><strong>SECRECT</strong>, not SECRET. The environment variable must be stored with the typo to work. Fixing it breaks production in all environments until the envs are updated simultaneously. The same spelling appears in <code>auth.controller.ts</code>. Grep for <code>SECRECT</code> before any refactor.</span>
           </div>
 
           <div class="aside info">
-            <div class="aside-title">🎯 Client criado por execução</div>
-            Diferente de <code>google_sheets.service.ts</code>, <code>pull_data.service.ts</code> e <code>push_data.service.ts</code>, nos quais o <code>OAuth2Client</code> é injetado no construtor do serviço e é long-lived. Aqui é <code>new</code> em toda execução de <code>apiV2()</code>. O custo é trivial (só cria o objeto), mas duplica a lógica de env vars.
+            <div class="aside-title">🎯 <span data-en="Client created per execution" data-pt="Client criado por execução">Client created per execution</span></div>
+            <span data-en="Different from &lt;code&gt;google_sheets.service.ts&lt;/code&gt;, &lt;code&gt;pull_data.service.ts&lt;/code&gt; and &lt;code&gt;push_data.service.ts&lt;/code&gt;, in which the &lt;code&gt;OAuth2Client&lt;/code&gt; is injected into the service constructor and is long-lived. Here it is &lt;code&gt;new&lt;/code&gt; on every &lt;code&gt;apiV2()&lt;/code&gt; execution. The cost is trivial (just creates the object), but it duplicates the env-var logic." data-pt="Diferente de &lt;code&gt;google_sheets.service.ts&lt;/code&gt;, &lt;code&gt;pull_data.service.ts&lt;/code&gt; e &lt;code&gt;push_data.service.ts&lt;/code&gt;, nos quais o &lt;code&gt;OAuth2Client&lt;/code&gt; é injetado no construtor do serviço e é long-lived. Aqui é &lt;code&gt;new&lt;/code&gt; em toda execução de &lt;code&gt;apiV2()&lt;/code&gt;. O custo é trivial (só cria o objeto), mas duplica a lógica de env vars.">Different from <code>google_sheets.service.ts</code>, <code>pull_data.service.ts</code> and <code>push_data.service.ts</code>, in which the <code>OAuth2Client</code> is injected into the service constructor and is long-lived. Here it is <code>new</code> on every <code>apiV2()</code> execution. The cost is trivial (just creates the object), but it duplicates the env-var logic.</span>
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 <code>user.googleRefreshToken</code></div>
-            Coluna em <code>users.googleRefreshToken</code>. Varchar, nullable, migration <code>1728376454797</code>. Gravada em <code>auth.controller.ts:917</code> no callback do Google OAuth. Se ficar <code>null</code>, o gate fecha. Nenhum handler Google funciona para o usuário.
+            <span data-en="Column in &lt;code&gt;users.googleRefreshToken&lt;/code&gt;. Varchar, nullable, migration &lt;code&gt;1728376454797&lt;/code&gt;. Written in &lt;code&gt;auth.controller.ts:917&lt;/code&gt; in the Google OAuth callback. If it becomes &lt;code&gt;null&lt;/code&gt;, the gate closes. No Google handler works for the user." data-pt="Coluna em &lt;code&gt;users.googleRefreshToken&lt;/code&gt;. Varchar, nullable, migration &lt;code&gt;1728376454797&lt;/code&gt;. Gravada em &lt;code&gt;auth.controller.ts:917&lt;/code&gt; no callback do Google OAuth. Se ficar &lt;code&gt;null&lt;/code&gt;, o gate fecha. Nenhum handler Google funciona para o usuário.">Column in <code>users.googleRefreshToken</code>. Varchar, nullable, migration <code>1728376454797</code>. Written in <code>auth.controller.ts:917</code> in the Google OAuth callback. If it becomes <code>null</code>, the gate closes. No Google handler works for the user.</span>
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 Outros pontos que usam OAuth2Client</div>
-            <code>auth.controller.ts</code> (login/revoke), <code>mail.service.ts</code>, <code>google_sheets.service.ts</code>, <code>pull_data.service.ts</code>, <code>push_data.service.ts</code>. Cada um instancia o próprio client. Zero reuso de token entre eles.
+            <div class="aside-title">🔧 <span data-en="Other places that use OAuth2Client" data-pt="Outros pontos que usam OAuth2Client">Other places that use OAuth2Client</span></div>
+            <span data-en="&lt;code&gt;auth.controller.ts&lt;/code&gt; (login/revoke), &lt;code&gt;mail.service.ts&lt;/code&gt;, &lt;code&gt;google_sheets.service.ts&lt;/code&gt;, &lt;code&gt;pull_data.service.ts&lt;/code&gt;, &lt;code&gt;push_data.service.ts&lt;/code&gt;. Each instantiates its own client. Zero token reuse between them." data-pt="&lt;code&gt;auth.controller.ts&lt;/code&gt; (login/revoke), &lt;code&gt;mail.service.ts&lt;/code&gt;, &lt;code&gt;google_sheets.service.ts&lt;/code&gt;, &lt;code&gt;pull_data.service.ts&lt;/code&gt;, &lt;code&gt;push_data.service.ts&lt;/code&gt;. Cada um instancia o próprio client. Zero reuso de token entre eles."><code>auth.controller.ts</code> (login/revoke), <code>mail.service.ts</code>, <code>google_sheets.service.ts</code>, <code>pull_data.service.ts</code>, <code>push_data.service.ts</code>. Each instantiates its own client. Zero token reuse between them.</span>
           </div>
         </div>
       </div>
@@ -806,10 +809,10 @@
         client.setCredentials({ refresh_token }); const token = await client.refreshAccessToken(); access_token = token.credentials.access_token;
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Fazer o roundtrip para <code>oauth2.googleapis.com/token</code>. Troca o <code>refresh_token</code> por um <code>access_token</code> novo, com validade de cerca de 1h. Guarda só o <code>access_token</code> na variável do escopo pai.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Do the roundtrip to &lt;code&gt;oauth2.googleapis.com/token&lt;/code&gt;. Exchange the &lt;code&gt;refresh_token&lt;/code&gt; for a new &lt;code&gt;access_token&lt;/code&gt;, valid for about 1h. Store only the &lt;code&gt;access_token&lt;/code&gt; in the parent scope variable." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Fazer o roundtrip para &lt;code&gt;oauth2.googleapis.com/token&lt;/code&gt;. Troca o &lt;code&gt;refresh_token&lt;/code&gt; por um &lt;code&gt;access_token&lt;/code&gt; novo, com validade de cerca de 1h. Guarda só o &lt;code&gt;access_token&lt;/code&gt; na variável do escopo pai."><strong>Purpose.</strong> Do the roundtrip to <code>oauth2.googleapis.com/token</code>. Exchange the <code>refresh_token</code> for a new <code>access_token</code>, valid for about 1h. Store only the <code>access_token</code> in the parent scope variable.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Esta etapa é o cartório. Você entrega o refresh token (a carteira permanente) e o Google devolve um access token novo, válido por cerca de uma hora. Primeiro o código chama <code>setCredentials</code>, que arruma a papelada localmente, sem rede. Depois dispara o <code>refreshAccessToken()</code>, que vai até o servidor do Google. Bloqueia a execução inteira aguardando a resposta. Retorna com o crachá novo. Só o campo <code>access_token</code> é guardado. O resto (<code>expiry_date</code>, <code>scope</code>, <code>id_token</code>) é descartado. Sem try/catch. Se o Google recusar (token revogado, quota estourada), a execução inteira morre. Isso vale mesmo quando 90% dos nós não são Google.
+        <span data-en="&lt;strong&gt;In short.&lt;/strong&gt; This step is the registry office. You hand over the refresh token (the permanent wallet) and Google returns a new access token, valid for about one hour. First the code calls &lt;code&gt;setCredentials&lt;/code&gt;, which sorts the paperwork locally, no network. Then it fires &lt;code&gt;refreshAccessToken()&lt;/code&gt;, which goes to Google's server. Blocks the entire execution waiting for the response. Returns with the new badge. Only the &lt;code&gt;access_token&lt;/code&gt; field is kept. The rest (&lt;code&gt;expiry_date&lt;/code&gt;, &lt;code&gt;scope&lt;/code&gt;, &lt;code&gt;id_token&lt;/code&gt;) is discarded. No try/catch. If Google refuses (revoked token, quota exceeded), the entire execution dies. This is true even when 90% of the nodes are not Google." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Esta etapa é o cartório. Você entrega o refresh token (a carteira permanente) e o Google devolve um access token novo, válido por cerca de uma hora. Primeiro o código chama &lt;code&gt;setCredentials&lt;/code&gt;, que arruma a papelada localmente, sem rede. Depois dispara o &lt;code&gt;refreshAccessToken()&lt;/code&gt;, que vai até o servidor do Google. Bloqueia a execução inteira aguardando a resposta. Retorna com o crachá novo. Só o campo &lt;code&gt;access_token&lt;/code&gt; é guardado. O resto (&lt;code&gt;expiry_date&lt;/code&gt;, &lt;code&gt;scope&lt;/code&gt;, &lt;code&gt;id_token&lt;/code&gt;) é descartado. Sem try/catch. Se o Google recusar (token revogado, quota estourada), a execução inteira morre. Isso vale mesmo quando 90% dos nós não são Google."><strong>In short.</strong> This step is the registry office. You hand over the refresh token (the permanent wallet) and Google returns a new access token, valid for about one hour. First the code calls <code>setCredentials</code>, which sorts the paperwork locally, no network. Then it fires <code>refreshAccessToken()</code>, which goes to Google's server. Blocks the entire execution waiting for the response. Returns with the new badge. Only the <code>access_token</code> field is kept. The rest (<code>expiry_date</code>, <code>scope</code>, <code>id_token</code>) is discarded. No try/catch. If Google refuses (revoked token, quota exceeded), the entire execution dies. This is true even when 90% of the nodes are not Google.</span>
       </div>
 
       <div class="fn-body-cols">
@@ -822,7 +825,7 @@ client.<span class="t">setCredentials</span>({
 });
             </div>
             <div class="box-desc">
-              Método síncrono. Só popula <code>client.credentials</code> internamente. Nenhuma chamada de rede aqui.
+              <span data-en="Synchronous method. Only populates &lt;code&gt;client.credentials&lt;/code&gt; internally. No network call here." data-pt="Método síncrono. Só popula &lt;code&gt;client.credentials&lt;/code&gt; internamente. Nenhuma chamada de rede aqui.">Synchronous method. Only populates <code>client.credentials</code> internally. No network call here.</span>
             </div>
             <div class="box-file">flux.service.ts:2636-2638</div>
           </div>
@@ -831,20 +834,19 @@ client.<span class="t">setCredentials</span>({
           <div class="box external">
             <div class="box-title"><span class="badge step">C2</span> await client.refreshAccessToken()</div>
             <div class="box-desc">
-              POST <code>https://oauth2.googleapis.com/token</code> com <code>grant_type=refresh_token</code>, clientId, clientSecret e refresh_token.
-              <br><br>Bloqueia a execução inteira até a resposta. Sem timeout customizado. Usa o default do SDK.
+              <span data-en="POST &lt;code&gt;https://oauth2.googleapis.com/token&lt;/code&gt; with &lt;code&gt;grant_type=refresh_token&lt;/code&gt;, clientId, clientSecret and refresh_token.&lt;br&gt;&lt;br&gt;Blocks the entire execution until the response. No custom timeout. Uses the SDK default." data-pt="POST &lt;code&gt;https://oauth2.googleapis.com/token&lt;/code&gt; com &lt;code&gt;grant_type=refresh_token&lt;/code&gt;, clientId, clientSecret e refresh_token.&lt;br&gt;&lt;br&gt;Bloqueia a execução inteira até a resposta. Sem timeout customizado. Usa o default do SDK.">POST <code>https://oauth2.googleapis.com/token</code> with <code>grant_type=refresh_token</code>, clientId, clientSecret and refresh_token.<br><br>Blocks the entire execution until the response. No custom timeout. Uses the SDK default.</span>
             </div>
             <div class="box-file">flux.service.ts:2640 · google-auth-library</div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box backend">
-            <div class="box-title"><span class="badge step">C3</span> Extrai <code>access_token</code></div>
+            <div class="box-title"><span class="badge step">C3</span> <span data-en="Extracts" data-pt="Extrai">Extracts</span> <code>access_token</code></div>
             <div class="code-block">
 access_token = token.credentials.access_token;
             </div>
             <div class="box-desc">
-              Só o <code>access_token</code> chega ao escopo pai. Outros campos retornados (<code>expiry_date</code>, <code>id_token</code>, <code>scope</code>) são descartados.
+              <span data-en="Only the &lt;code&gt;access_token&lt;/code&gt; reaches the parent scope. Other returned fields (&lt;code&gt;expiry_date&lt;/code&gt;, &lt;code&gt;id_token&lt;/code&gt;, &lt;code&gt;scope&lt;/code&gt;) are discarded." data-pt="Só o &lt;code&gt;access_token&lt;/code&gt; chega ao escopo pai. Outros campos retornados (&lt;code&gt;expiry_date&lt;/code&gt;, &lt;code&gt;id_token&lt;/code&gt;, &lt;code&gt;scope&lt;/code&gt;) são descartados.">Only the <code>access_token</code> reaches the parent scope. Other returned fields (<code>expiry_date</code>, <code>id_token</code>, <code>scope</code>) are discarded.</span>
             </div>
             <div class="box-file">flux.service.ts:2642</div>
           </div>
@@ -852,26 +854,24 @@ access_token = token.credentials.access_token;
 
         <div class="fn-asides">
           <div class="aside warn">
-            <div class="aside-title">⚠️ Sem try/catch. Falha derruba a execução</div>
-            <code>refreshAccessToken()</code> não está protegido. Se o Google devolver erro (refresh token revogado, quota, timeout), a exceção sobe para <code>apiV2()</code>. O único <code>try/catch</code> está no orquestrador. A execução inteira morre, mesmo quando 90% dos nós não são Google.
-            <br><br>Se o usuário revogou a permissão no Google Account settings, toda execução de qualquer flow com um único <code>pullData</code>/<code>pushData</code> Google quebra até ele reautenticar.
+            <div class="aside-title">⚠️ <span data-en="No try/catch. Failure crashes the execution" data-pt="Sem try/catch. Falha derruba a execução">No try/catch. Failure crashes the execution</span></div>
+            <span data-en="&lt;code&gt;refreshAccessToken()&lt;/code&gt; is not protected. If Google returns an error (revoked refresh token, quota, timeout), the exception bubbles up to &lt;code&gt;apiV2()&lt;/code&gt;. The only &lt;code&gt;try/catch&lt;/code&gt; is at the orchestrator. The entire execution dies, even when 90% of the nodes are not Google.&lt;br&gt;&lt;br&gt;If the user revoked permission in Google Account settings, every execution of any flow with a single Google &lt;code&gt;pullData&lt;/code&gt;/&lt;code&gt;pushData&lt;/code&gt; breaks until they re-authenticate." data-pt="&lt;code&gt;refreshAccessToken()&lt;/code&gt; não está protegido. Se o Google devolver erro (refresh token revogado, quota, timeout), a exceção sobe para &lt;code&gt;apiV2()&lt;/code&gt;. O único &lt;code&gt;try/catch&lt;/code&gt; está no orquestrador. A execução inteira morre, mesmo quando 90% dos nós não são Google.&lt;br&gt;&lt;br&gt;Se o usuário revogou a permissão no Google Account settings, toda execução de qualquer flow com um único &lt;code&gt;pullData&lt;/code&gt;/&lt;code&gt;pushData&lt;/code&gt; Google quebra até ele reautenticar."><code>refreshAccessToken()</code> is not protected. If Google returns an error (revoked refresh token, quota, timeout), the exception bubbles up to <code>apiV2()</code>. The only <code>try/catch</code> is at the orchestrator. The entire execution dies, even when 90% of the nodes are not Google.<br><br>If the user revoked permission in Google Account settings, every execution of any flow with a single Google <code>pullData</code>/<code>pushData</code> breaks until they re-authenticate.</span>
           </div>
 
           <div class="aside info">
-            <div class="aside-title">🎯 Descarta <code>expiry_date</code></div>
-            O SDK do Google devolve <code>token.credentials.expiry_date</code>. O código ignora. Consequência. Se uma execução for muito longa (mais de 1h), o access_token expira no meio. Chamadas tardias de <code>pullData</code>/<code>pushData</code> podem retornar 401 mesmo tendo passado no refresh inicial.
-            <br><br>Cenário raro (arrays gigantes ou loops), porém latente.
+            <div class="aside-title">🎯 <span data-en="Discards" data-pt="Descarta">Discards</span> <code>expiry_date</code></div>
+            <span data-en="Google's SDK returns &lt;code&gt;token.credentials.expiry_date&lt;/code&gt;. The code ignores it. Consequence. If an execution is very long (more than 1h), the access_token expires mid-run. Late &lt;code&gt;pullData&lt;/code&gt;/&lt;code&gt;pushData&lt;/code&gt; calls may return 401 even though the initial refresh succeeded.&lt;br&gt;&lt;br&gt;Rare scenario (huge arrays or loops), but latent." data-pt="O SDK do Google devolve &lt;code&gt;token.credentials.expiry_date&lt;/code&gt;. O código ignora. Consequência. Se uma execução for muito longa (mais de 1h), o access_token expira no meio. Chamadas tardias de &lt;code&gt;pullData&lt;/code&gt;/&lt;code&gt;pushData&lt;/code&gt; podem retornar 401 mesmo tendo passado no refresh inicial.&lt;br&gt;&lt;br&gt;Cenário raro (arrays gigantes ou loops), porém latente.">Google's SDK returns <code>token.credentials.expiry_date</code>. The code ignores it. Consequence. If an execution is very long (more than 1h), the access_token expires mid-run. Late <code>pullData</code>/<code>pushData</code> calls may return 401 even though the initial refresh succeeded.<br><br>Rare scenario (huge arrays or loops), but latent.</span>
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 <code>token.credentials</code> shape</div>
             <table class="field-table">
-              <tr><th>Campo</th><th>O que é</th></tr>
-              <tr><td>access_token</td><td>Bearer token para APIs Google</td></tr>
-              <tr><td>expiry_date</td><td>Timestamp (ms). Ignorado.</td></tr>
-              <tr><td>token_type</td><td>Sempre <code>'Bearer'</code></td></tr>
-              <tr><td>scope</td><td>Scopes autorizados</td></tr>
-              <tr><td>id_token</td><td>JWT com claims do usuário Google</td></tr>
+              <tr><th><span data-en="Field" data-pt="Campo">Field</span></th><th><span data-en="What it is" data-pt="O que é">What it is</span></th></tr>
+              <tr><td>access_token</td><td><span data-en="Bearer token for Google APIs" data-pt="Bearer token para APIs Google">Bearer token for Google APIs</span></td></tr>
+              <tr><td>expiry_date</td><td><span data-en="Timestamp (ms). Ignored." data-pt="Timestamp (ms). Ignorado.">Timestamp (ms). Ignored.</span></td></tr>
+              <tr><td>token_type</td><td><span data-en="Always" data-pt="Sempre">Always</span> <code>'Bearer'</code></td></tr>
+              <tr><td>scope</td><td><span data-en="Authorized scopes" data-pt="Scopes autorizados">Authorized scopes</span></td></tr>
+              <tr><td>id_token</td><td><span data-en="JWT with Google user claims" data-pt="JWT com claims do usuário Google">JWT with Google user claims</span></td></tr>
             </table>
           </div>
         </div>
@@ -886,47 +886,47 @@ access_token = token.credentials.access_token;
     <div class="fn-card-header">
       <div class="fn-title">
         <span class="badge migrated" style="background:#10B981;color:white">D</span>
-        <code>Consumidores downstream do access_token</code>
+        <code><span data-en="Downstream consumers of access_token" data-pt="Consumidores downstream do access_token">Downstream consumers of access_token</span></code>
       </div>
       <div class="fn-loc">flux.service.ts:3407, 3425, 4209, 4227</div>
     </div>
     <div class="fn-card-body">
       <div class="fn-signature">
-        // Fase 3: pullDataService.pullData({ ..., accessToken: access_token }) / pushDataService.pushData({ ..., accessToken: access_token })
+        // Phase 3: pullDataService.pullData({ ..., accessToken: access_token }) / pushDataService.pushData({ ..., accessToken: access_token })
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Mapear para onde o <code>access_token</code> preparado aqui vai fluir. Nada é feito com ele em 1.7. O valor vive em uma variável até os handlers da Fase 3 consumirem.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Maps where the &lt;code&gt;access_token&lt;/code&gt; prepared here will flow. Nothing is done with it in 1.7. The value lives in a variable until the Phase 3 handlers consume it." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Mapear para onde o &lt;code&gt;access_token&lt;/code&gt; preparado aqui vai fluir. Nada é feito com ele em 1.7. O valor vive em uma variável até os handlers da Fase 3 consumirem."><strong>Purpose.</strong> Maps where the <code>access_token</code> prepared here will flow. Nothing is done with it in 1.7. The value lives in a variable until the Phase 3 handlers consume it.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Esta parte não é uma função. Mostra para onde o access_token vai ser entregue adiante. O token fica guardado em uma variável local do escopo do <code>apiV2()</code>. Só sai quando os handlers da Fase 3 solicitam. Consumidores. <code>pullDataService.pullData</code>. <code>pushDataService.pushData</code>. As versões que rodam dentro de um <code>arrayNode</code> (iterando). Todos recebem o mesmo token, sem revalidação. Se o gate (B) não abriu, os handlers ainda são chamados normalmente, com <code>accessToken: ''</code>. O Google responde 401 quando o nó de fato executa. Não existe validação early-fail. Observe a troca de convenção. A variável local é <code>access_token</code> (snake, formato do Google). O parâmetro é <code>accessToken</code> (camel, padrão TS do backend).
+        <span data-en="&lt;strong&gt;In short.&lt;/strong&gt; This part is not a function. It shows where the access_token will be delivered later. The token stays in a local variable of the &lt;code&gt;apiV2()&lt;/code&gt; scope. It only leaves when the Phase 3 handlers request it. Consumers. &lt;code&gt;pullDataService.pullData&lt;/code&gt;. &lt;code&gt;pushDataService.pushData&lt;/code&gt;. The versions running inside an &lt;code&gt;arrayNode&lt;/code&gt; (iterating). All receive the same token, without revalidation. If the gate (B) did not open, the handlers are still called normally, with &lt;code&gt;accessToken: ''&lt;/code&gt;. Google returns 401 when the node actually executes. There is no early-fail validation. Note the convention shift. The local variable is &lt;code&gt;access_token&lt;/code&gt; (snake, Google's format). The parameter is &lt;code&gt;accessToken&lt;/code&gt; (camel, backend TS standard)." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Esta parte não é uma função. Mostra para onde o access_token vai ser entregue adiante. O token fica guardado em uma variável local do escopo do &lt;code&gt;apiV2()&lt;/code&gt;. Só sai quando os handlers da Fase 3 solicitam. Consumidores. &lt;code&gt;pullDataService.pullData&lt;/code&gt;. &lt;code&gt;pushDataService.pushData&lt;/code&gt;. As versões que rodam dentro de um &lt;code&gt;arrayNode&lt;/code&gt; (iterando). Todos recebem o mesmo token, sem revalidação. Se o gate (B) não abriu, os handlers ainda são chamados normalmente, com &lt;code&gt;accessToken: ''&lt;/code&gt;. O Google responde 401 quando o nó de fato executa. Não existe validação early-fail. Observe a troca de convenção. A variável local é &lt;code&gt;access_token&lt;/code&gt; (snake, formato do Google). O parâmetro é &lt;code&gt;accessToken&lt;/code&gt; (camel, padrão TS do backend)."><strong>In short.</strong> This part is not a function. It shows where the access_token will be delivered later. The token stays in a local variable of the <code>apiV2()</code> scope. It only leaves when the Phase 3 handlers request it. Consumers. <code>pullDataService.pullData</code>. <code>pushDataService.pushData</code>. The versions running inside an <code>arrayNode</code> (iterating). All receive the same token, without revalidation. If the gate (B) did not open, the handlers are still called normally, with <code>accessToken: ''</code>. Google returns 401 when the node actually executes. There is no early-fail validation. Note the convention shift. The local variable is <code>access_token</code> (snake, Google's format). The parameter is <code>accessToken</code> (camel, backend TS standard).</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">D1</span> Handler <code>pullData</code> (top-level)</div>
+            <div class="box-title"><span class="badge step">D1</span> <span data-en="Handler" data-pt="Handler">Handler</span> <code>pullData</code> (top-level)</div>
             <div class="box-desc">
               <code>this.pullDataService.pullData({ ..., accessToken: access_token })</code>
-              <br><br>Handler no switch da Fase 3. Passa como <code>accessToken</code> (camelCase). Diferente do <code>access_token</code> snake_case local.
+              <br><br><span data-en="Handler in the Phase 3 switch. Passes it as &lt;code&gt;accessToken&lt;/code&gt; (camelCase). Different from local &lt;code&gt;access_token&lt;/code&gt; snake_case." data-pt="Handler no switch da Fase 3. Passa como &lt;code&gt;accessToken&lt;/code&gt; (camelCase). Diferente do &lt;code&gt;access_token&lt;/code&gt; snake_case local.">Handler in the Phase 3 switch. Passes it as <code>accessToken</code> (camelCase). Different from local <code>access_token</code> snake_case.</span>
             </div>
             <div class="box-file">flux.service.ts:3407</div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box backend">
-            <div class="box-title"><span class="badge step">D2</span> Handler <code>pushData</code> (top-level)</div>
+            <div class="box-title"><span class="badge step">D2</span> <span data-en="Handler" data-pt="Handler">Handler</span> <code>pushData</code> (top-level)</div>
             <div class="box-desc">
               <code>this.pushDataService.pushData({ ..., accessToken: access_token })</code>
-              <br><br>Simétrico ao <code>pullData</code>. Mesmo shape de argumento.
+              <br><br><span data-en="Symmetric to &lt;code&gt;pullData&lt;/code&gt;. Same argument shape." data-pt="Simétrico ao &lt;code&gt;pullData&lt;/code&gt;. Mesmo shape de argumento.">Symmetric to <code>pullData</code>. Same argument shape.</span>
             </div>
             <div class="box-file">flux.service.ts:3425</div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box backend">
-            <div class="box-title"><span class="badge step">D3</span> Handlers dentro de <code>arrayNode</code> (iterations)</div>
+            <div class="box-title"><span class="badge step">D3</span> <span data-en="Handlers inside &lt;code&gt;arrayNode&lt;/code&gt; (iterations)" data-pt="Handlers dentro de &lt;code&gt;arrayNode&lt;/code&gt; (iterations)">Handlers inside <code>arrayNode</code> (iterations)</span></div>
             <div class="box-desc">
-              Quando <code>pullData</code>/<code>pushData</code> são body de um <code>arrayNode</code>, o handler é chamado novamente por iteração (dentro do loop de <code>arrayNode</code>). Usa o mesmo <code>access_token</code> capturado no início da execução.
+              <span data-en="When &lt;code&gt;pullData&lt;/code&gt;/&lt;code&gt;pushData&lt;/code&gt; are the body of an &lt;code&gt;arrayNode&lt;/code&gt;, the handler is called again per iteration (inside the &lt;code&gt;arrayNode&lt;/code&gt; loop). Uses the same &lt;code&gt;access_token&lt;/code&gt; captured at the start of the execution." data-pt="Quando &lt;code&gt;pullData&lt;/code&gt;/&lt;code&gt;pushData&lt;/code&gt; são body de um &lt;code&gt;arrayNode&lt;/code&gt;, o handler é chamado novamente por iteração (dentro do loop de &lt;code&gt;arrayNode&lt;/code&gt;). Usa o mesmo &lt;code&gt;access_token&lt;/code&gt; capturado no início da execução.">When <code>pullData</code>/<code>pushData</code> are the body of an <code>arrayNode</code>, the handler is called again per iteration (inside the <code>arrayNode</code> loop). Uses the same <code>access_token</code> captured at the start of the execution.</span>
             </div>
             <div class="box-file">flux.service.ts:4209, 4227</div>
           </div>
@@ -934,24 +934,18 @@ access_token = token.credentials.access_token;
 
         <div class="fn-asides">
           <div class="aside warn">
-            <div class="aside-title">⚠️ Token vazio. Handler tenta chamar o Google sem auth</div>
-            Se o gate (B) não abriu, <code>access_token</code> continua vazio. Os handlers ainda são chamados normalmente. Passam string vazia como <code>accessToken</code>. O Google responde 401 no meio da execução.
-            <br><br>Não existe validação em <code>pullData</code>/<code>pushData</code> para abortar cedo quando <code>accessToken</code> é falsy. É falha implícita. O erro só aparece quando o nó executa.
+            <div class="aside-title">⚠️ <span data-en="Empty token. Handler tries to call Google without auth" data-pt="Token vazio. Handler tenta chamar o Google sem auth">Empty token. Handler tries to call Google without auth</span></div>
+            <span data-en="If the gate (B) did not open, &lt;code&gt;access_token&lt;/code&gt; stays empty. The handlers are still called normally. They pass an empty string as &lt;code&gt;accessToken&lt;/code&gt;. Google returns 401 in the middle of the execution.&lt;br&gt;&lt;br&gt;There is no validation in &lt;code&gt;pullData&lt;/code&gt;/&lt;code&gt;pushData&lt;/code&gt; to abort early when &lt;code&gt;accessToken&lt;/code&gt; is falsy. It is an implicit failure. The error only shows when the node executes." data-pt="Se o gate (B) não abriu, &lt;code&gt;access_token&lt;/code&gt; continua vazio. Os handlers ainda são chamados normalmente. Passam string vazia como &lt;code&gt;accessToken&lt;/code&gt;. O Google responde 401 no meio da execução.&lt;br&gt;&lt;br&gt;Não existe validação em &lt;code&gt;pullData&lt;/code&gt;/&lt;code&gt;pushData&lt;/code&gt; para abortar cedo quando &lt;code&gt;accessToken&lt;/code&gt; é falsy. É falha implícita. O erro só aparece quando o nó executa.">If the gate (B) did not open, <code>access_token</code> stays empty. The handlers are still called normally. They pass an empty string as <code>accessToken</code>. Google returns 401 in the middle of the execution.<br><br>There is no validation in <code>pullData</code>/<code>pushData</code> to abort early when <code>accessToken</code> is falsy. It is an implicit failure. The error only shows when the node executes.</span>
           </div>
 
           <div class="aside info">
-            <div class="aside-title">🎯 Ciclo de vida do token</div>
-            <strong>Início da execução</strong> (aqui, 1.7). Refresh uma vez.
-            <br><strong>Durante a execução.</strong> Token compartilhado por closure (mesma string em N handlers).
-            <br><strong>Fim da execução.</strong> Variável descartada. A próxima execução refaz o refresh.
-            <br><br>Sem cache. Execuções consecutivas do mesmo usuário gastam 1 chamada Google cada.
+            <div class="aside-title">🎯 <span data-en="Token lifecycle" data-pt="Ciclo de vida do token">Token lifecycle</span></div>
+            <span data-en="&lt;strong&gt;Execution start&lt;/strong&gt; (here, 1.7). Refresh once.&lt;br&gt;&lt;strong&gt;During the execution.&lt;/strong&gt; Token shared by closure (same string across N handlers).&lt;br&gt;&lt;strong&gt;End of execution.&lt;/strong&gt; Variable discarded. The next execution redoes the refresh.&lt;br&gt;&lt;br&gt;No cache. Consecutive executions from the same user cost 1 Google call each." data-pt="&lt;strong&gt;Início da execução&lt;/strong&gt; (aqui, 1.7). Refresh uma vez.&lt;br&gt;&lt;strong&gt;Durante a execução.&lt;/strong&gt; Token compartilhado por closure (mesma string em N handlers).&lt;br&gt;&lt;strong&gt;Fim da execução.&lt;/strong&gt; Variável descartada. A próxima execução refaz o refresh.&lt;br&gt;&lt;br&gt;Sem cache. Execuções consecutivas do mesmo usuário gastam 1 chamada Google cada."><strong>Execution start</strong> (here, 1.7). Refresh once.<br><strong>During the execution.</strong> Token shared by closure (same string across N handlers).<br><strong>End of execution.</strong> Variable discarded. The next execution redoes the refresh.<br><br>No cache. Consecutive executions from the same user cost 1 Google call each.</span>
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 Divergência snake_case/camelCase</div>
-            Local. <code>access_token</code> (snake, alinhado com o formato do Google).
-            <br>Parâmetro dos handlers. <code>accessToken</code> (camel, alinhado com o padrão TS do backend).
-            <br><br>O mapeamento é manual no call-site. Renomear a variável local exige atualizar os 4 call-sites.
+            <div class="aside-title">🔧 <span data-en="snake_case/camelCase divergence" data-pt="Divergência snake_case/camelCase">snake_case/camelCase divergence</span></div>
+            <span data-en="Local. &lt;code&gt;access_token&lt;/code&gt; (snake, aligned with Google's format).&lt;br&gt;Handler parameter. &lt;code&gt;accessToken&lt;/code&gt; (camel, aligned with the backend TS standard).&lt;br&gt;&lt;br&gt;The mapping is manual at the call-site. Renaming the local variable requires updating the 4 call-sites." data-pt="Local. &lt;code&gt;access_token&lt;/code&gt; (snake, alinhado com o formato do Google).&lt;br&gt;Parâmetro dos handlers. &lt;code&gt;accessToken&lt;/code&gt; (camel, alinhado com o padrão TS do backend).&lt;br&gt;&lt;br&gt;O mapeamento é manual no call-site. Renomear a variável local exige atualizar os 4 call-sites.">Local. <code>access_token</code> (snake, aligned with Google's format).<br>Handler parameter. <code>accessToken</code> (camel, aligned with the backend TS standard).<br><br>The mapping is manual at the call-site. Renaming the local variable requires updating the 4 call-sites.</span>
           </div>
         </div>
       </div>
@@ -960,29 +954,20 @@ access_token = token.credentials.access_token;
 
   <!-- SUMMARY -->
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo — o que sai de 1.7.</strong>
-    <br>• <code>access_token</code>. String com Bearer token do Google, ou <code>''</code> quando o gate não abre.
-    <br>• Nenhum outro side effect. Nada é gravado em DB. Nenhum log estruturado. Nenhum cache.
-    <br>• I/O. Zero ou um POST em <code>oauth2.googleapis.com/token</code>, sequencial, blocking.
-    <br>• Consumido na Fase 3 pelos handlers de <code>pullData</code>/<code>pushData</code>, top-level e dentro de <code>arrayNode</code>.
+    <span data-en="&lt;strong&gt;Summary — what leaves 1.7.&lt;/strong&gt;&lt;br&gt;• &lt;code&gt;access_token&lt;/code&gt;. String with Google Bearer token, or &lt;code&gt;''&lt;/code&gt; when the gate does not open.&lt;br&gt;• No other side effects. Nothing is written to the DB. No structured log. No cache.&lt;br&gt;• I/O. Zero or one POST to &lt;code&gt;oauth2.googleapis.com/token&lt;/code&gt;, sequential, blocking.&lt;br&gt;• Consumed in Phase 3 by the &lt;code&gt;pullData&lt;/code&gt;/&lt;code&gt;pushData&lt;/code&gt; handlers, top-level and inside &lt;code&gt;arrayNode&lt;/code&gt;." data-pt="&lt;strong&gt;Resumo — o que sai de 1.7.&lt;/strong&gt;&lt;br&gt;• &lt;code&gt;access_token&lt;/code&gt;. String com Bearer token do Google, ou &lt;code&gt;''&lt;/code&gt; quando o gate não abre.&lt;br&gt;• Nenhum outro side effect. Nada é gravado em DB. Nenhum log estruturado. Nenhum cache.&lt;br&gt;• I/O. Zero ou um POST em &lt;code&gt;oauth2.googleapis.com/token&lt;/code&gt;, sequencial, blocking.&lt;br&gt;• Consumido na Fase 3 pelos handlers de &lt;code&gt;pullData&lt;/code&gt;/&lt;code&gt;pushData&lt;/code&gt;, top-level e dentro de &lt;code&gt;arrayNode&lt;/code&gt;."><strong>Summary — what leaves 1.7.</strong><br>• <code>access_token</code>. String with Google Bearer token, or <code>''</code> when the gate does not open.<br>• No other side effects. Nothing is written to the DB. No structured log. No cache.<br>• I/O. Zero or one POST to <code>oauth2.googleapis.com/token</code>, sequential, blocking.<br>• Consumed in Phase 3 by the <code>pullData</code>/<code>pushData</code> handlers, top-level and inside <code>arrayNode</code>.</span>
   </div>
 
   <div class="note">
-    <strong>Observações para migração.</strong>
-    <br>• Não é essencial para a maioria das execuções. A maior parte dos flows não tem <code>pullData</code>/<code>pushData</code> Google. O gate (A+B) pula 100% do custo.
-    <br>• Pode ficar no backend mesmo com worker. Cada handler Google no worker também pode fazer o próprio refresh (é o padrão em <code>google_sheets.service.ts</code>). Isso multiplica N chamadas Google por execução quando há múltiplos nós. O refresh centralizado no backend é mais eficiente.
-    <br>• Alternativa. O worker recebe o access_token via workflow args, já refeito pelo backend. Vantagem. Um refresh por execução. O worker fica simples. Desvantagem. Se a execução passar de 1h (não é o caso hoje), o token expira no meio.
-    <br>• Corrigir o typo <code>SECRECT</code>. Exige coordenar a mudança de env var em produção, dev e CI simultaneamente. Não é trivial.
-    <br>• Envolver em try/catch. Hoje uma falha aqui derruba a execução inteira. Se envolver, um usuário com token revogado ainda executa nós não-Google. Os Google falham com 401 downstream. Discussão sobre fail early vs fail late.
-    <br>• Adicionar log estruturado. Hoje nada é logado, sucesso ou falha. Um <code>console.log('[GoogleRefresh]', { userId, ok })</code> ajudaria a diagnosticar problemas de reauth.
+    <span data-en="&lt;strong&gt;Migration notes.&lt;/strong&gt;&lt;br&gt;• Not essential for most executions. Most flows don't have Google &lt;code&gt;pullData&lt;/code&gt;/&lt;code&gt;pushData&lt;/code&gt;. The gate (A+B) skips 100% of the cost.&lt;br&gt;• Can stay in the backend even with the worker. Each Google handler in the worker can also do its own refresh (that's the pattern in &lt;code&gt;google_sheets.service.ts&lt;/code&gt;). That multiplies N Google calls per execution when there are multiple nodes. The centralized refresh in the backend is more efficient.&lt;br&gt;• Alternative. The worker receives the access_token via workflow args, already refreshed by the backend. Advantage. One refresh per execution. The worker stays simple. Disadvantage. If the execution passes 1h (not the case today), the token expires mid-run.&lt;br&gt;• Fixing the &lt;code&gt;SECRECT&lt;/code&gt; typo. Requires coordinating the env var change in production, dev and CI simultaneously. Not trivial.&lt;br&gt;• Wrap in try/catch. Today a failure here crashes the entire execution. If wrapped, a user with a revoked token still runs non-Google nodes. The Google ones fail with 401 downstream. Discussion about fail early vs fail late.&lt;br&gt;• Add structured log. Today nothing is logged, success or failure. A &lt;code&gt;console.log('[GoogleRefresh]', { userId, ok })&lt;/code&gt; would help diagnose reauth issues." data-pt="&lt;strong&gt;Observações para migração.&lt;/strong&gt;&lt;br&gt;• Não é essencial para a maioria das execuções. A maior parte dos flows não tem &lt;code&gt;pullData&lt;/code&gt;/&lt;code&gt;pushData&lt;/code&gt; Google. O gate (A+B) pula 100% do custo.&lt;br&gt;• Pode ficar no backend mesmo com worker. Cada handler Google no worker também pode fazer o próprio refresh (é o padrão em &lt;code&gt;google_sheets.service.ts&lt;/code&gt;). Isso multiplica N chamadas Google por execução quando há múltiplos nós. O refresh centralizado no backend é mais eficiente.&lt;br&gt;• Alternativa. O worker recebe o access_token via workflow args, já refeito pelo backend. Vantagem. Um refresh por execução. O worker fica simples. Desvantagem. Se a execução passar de 1h (não é o caso hoje), o token expira no meio.&lt;br&gt;• Corrigir o typo &lt;code&gt;SECRECT&lt;/code&gt;. Exige coordenar a mudança de env var em produção, dev e CI simultaneamente. Não é trivial.&lt;br&gt;• Envolver em try/catch. Hoje uma falha aqui derruba a execução inteira. Se envolver, um usuário com token revogado ainda executa nós não-Google. Os Google falham com 401 downstream. Discussão sobre fail early vs fail late.&lt;br&gt;• Adicionar log estruturado. Hoje nada é logado, sucesso ou falha. Um &lt;code&gt;console.log('[GoogleRefresh]', { userId, ok })&lt;/code&gt; ajudaria a diagnosticar problemas de reauth."><strong>Migration notes.</strong><br>• Not essential for most executions. Most flows don't have Google <code>pullData</code>/<code>pushData</code>. The gate (A+B) skips 100% of the cost.<br>• Can stay in the backend even with the worker. Each Google handler in the worker can also do its own refresh (that's the pattern in <code>google_sheets.service.ts</code>). That multiplies N Google calls per execution when there are multiple nodes. The centralized refresh in the backend is more efficient.<br>• Alternative. The worker receives the access_token via workflow args, already refreshed by the backend. Advantage. One refresh per execution. The worker stays simple. Disadvantage. If the execution passes 1h (not the case today), the token expires mid-run.<br>• Fixing the <code>SECRECT</code> typo. Requires coordinating the env var change in production, dev and CI simultaneously. Not trivial.<br>• Wrap in try/catch. Today a failure here crashes the entire execution. If wrapped, a user with a revoked token still runs non-Google nodes. The Google ones fail with 401 downstream. Discussion about fail early vs fail late.<br>• Add structured log. Today nothing is logged, success or failure. A <code>console.log('[GoogleRefresh]', { userId, ok })</code> would help diagnose reauth issues.</span>
   </div>
 
   <!-- FOOTER NAV -->
   <div class="page-footer-nav">
-    <a href="../index.html#step-1-7" class="back-btn">← Voltar ao diagrama principal</a>
+    <a href="../index.html#step-1-7" class="back-btn"><span data-en="← Back to main diagram" data-pt="← Voltar ao diagrama principal">← Back to main diagram</span></a>
   </div>
 
 </div>
+<script src="../_assets/i18n.js" defer></script>
 <script>
 (function() {
   function toggle(card) {
