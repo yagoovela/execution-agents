@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<title>Flux — Progresso da refatoração v2</title>
+<link rel="stylesheet" href="_assets/i18n.css">
+<link rel="stylesheet" href="_assets/header.css">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #F1F5F9;
+    color: #0F172A;
+    margin: 0;
+    padding: 32px 24px 80px;
+    line-height: 1.5;
+  }
+  .container { max-width: 1300px; margin: 0 auto; }
+
+  /* ========================= HERO ========================= */
+  .hero {
+    background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+    color: white;
+    border-radius: 16px;
+    padding: 36px 40px;
+    margin-bottom: 32px;
+    box-shadow: 0 4px 20px rgba(15,23,42,0.15);
+  }
+  .hero .kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 100px;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: #CBD5E1;
+    margin-bottom: 14px;
+  }
+  .hero h1 {
+    margin: 0 0 10px 0;
+    font-size: 32px;
+    letter-spacing: -0.6px;
+  }
+  .hero .subtitle {
+    font-size: 15px;
+    color: #CBD5E1;
+    max-width: 820px;
+    line-height: 1.7;
+  }
+  .hero .subtitle p { margin: 0 0 6px 0; }
+  .hero .subtitle p:last-child { margin-bottom: 0; }
+
+  /* ========================= DEFINITIONS strip ========================= */
+  .defs {
+    background: white;
+    border-radius: 14px;
+    padding: 22px 26px;
+    margin-bottom: 32px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .defs-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #334155;
+    margin-bottom: 14px;
+  }
+  .defs-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .def {
+    padding: 16px 18px;
+    background: #F8FAFC;
+    border-radius: 10px;
+    border-left: 4px solid #3B82F6;
+  }
+  .def-term {
+    font-weight: 700;
+    color: #0F172A;
+    font-size: 15px;
+    margin-bottom: 6px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+  }
+  .def-body {
+    font-size: 13.5px;
+    color: #334155;
+    line-height: 1.6;
+  }
+  .def-body p { margin: 0 0 6px 0; }
+  .def-body p:last-child { margin: 0; }
+  @media (max-width: 700px) {
+    .defs-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ========================= TWO PHASES visual ========================= */
+  .two-phases-wrap {
+    background: white;
+    border-radius: 18px;
+    padding: 32px 32px;
+    margin-bottom: 32px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .two-phases-lead {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .two-phases-lead h2 {
+    margin: 0 0 10px 0;
+    font-size: 22px;
+    letter-spacing: -0.4px;
+    color: #0F172A;
+  }
+  .two-phases-lead .lead-body {
+    margin: 0 auto;
+    max-width: 780px;
+    color: #475569;
+    font-size: 14.5px;
+    line-height: 1.7;
+  }
+  .two-phases-lead .lead-body p { margin: 0 0 4px 0; }
+  .two-phases-lead .lead-body p:last-child { margin: 0; }
+  .two-phases {
+    display: grid;
+    grid-template-columns: 1fr 60px 1fr;
+    gap: 0;
+    align-items: stretch;
+  }
+  .phase-card {
+    border-radius: 14px;
+    padding: 24px 26px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  .phase-card.done {
+    background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
+    border: 2px solid #10B981;
+  }
+  .phase-card.todo {
+    background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
+    border: 2px solid #EF4444;
+  }
+  .phase-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    align-self: flex-start;
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .phase-card.done .phase-badge { background: #10B981; color: white; }
+  .phase-card.todo .phase-badge { background: #EF4444; color: white; }
+
+  .phase-status {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .phase-card.done .phase-status { color: #065F46; }
+  .phase-card.todo .phase-status { color: #991B1B; }
+
+  .phase-icon {
+    font-size: 46px;
+    line-height: 1;
+    margin-bottom: 14px;
+  }
+  .phase-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 22px;
+    letter-spacing: -0.4px;
+    color: #0F172A;
+  }
+  .phase-desc {
+    color: #334155;
+    font-size: 14px;
+    margin: 0 0 16px 0;
+    line-height: 1.65;
+  }
+  .phase-desc p { margin: 0 0 4px 0; }
+  .phase-desc p:last-child { margin: 0; }
+  .phase-stats {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .phase-stat {
+    background: rgba(255,255,255,0.7);
+    padding: 12px 14px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .phase-stat-num {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.6px;
+    line-height: 1;
+    min-width: 46px;
+  }
+  .phase-card.done .phase-stat-num { color: #065F46; }
+  .phase-card.todo .phase-stat-num { color: #991B1B; }
+  .phase-stat-label {
+    font-size: 12.5px;
+    color: #334155;
+    line-height: 1.45;
+  }
+  .phase-stat-label p { margin: 0; }
+
+  .phase-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 44px;
+    color: #94A3B8;
+    font-weight: 300;
+  }
+
+  @media (max-width: 900px) {
+    .two-phases { grid-template-columns: 1fr; gap: 14px; }
+    .phase-arrow { transform: rotate(90deg); padding: 8px 0; }
+  }
+
+  /* ========================= LEGEND ========================= */
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    padding: 14px 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    color: #334155;
+    font-weight: 500;
+  }
+  .legend-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .legend-dot.done { background: #10B981; }
+  .legend-dot.pending { background: #F59E0B; }
+  .legend-dot.todo { background: #EF4444; }
+
+  /* ========================= BIG PART BLOCK ========================= */
+  .part {
+    background: white;
+    border-radius: 18px;
+    margin-bottom: 28px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    overflow: hidden;
+  }
+  .part-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 26px 32px;
+  }
+  .part-header.done {
+    background: linear-gradient(to right, #ECFDF5, #F0FDF4);
+    border-bottom: 3px solid #10B981;
+  }
+  .part-header.todo {
+    background: linear-gradient(to right, #FEF2F2, #FEF3F3);
+    border-bottom: 3px solid #EF4444;
+  }
+  .part-badge {
+    padding: 6px 16px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: white;
+    flex-shrink: 0;
+  }
+  .part-header.done .part-badge { background: #10B981; }
+  .part-header.todo .part-badge { background: #EF4444; }
+  .part-title { flex: 1; }
+  .part-title h2 {
+    margin: 0 0 4px 0;
+    font-size: 24px;
+    letter-spacing: -0.4px;
+    color: #0F172A;
+  }
+  .part-title .sub {
+    font-size: 13.5px;
+    color: #64748B;
+  }
+  .part-progress-visual {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .progress-ring {
+    position: relative;
+    width: 72px;
+    height: 72px;
+  }
+  .progress-ring svg { transform: rotate(-90deg); }
+  .progress-ring-track { stroke: #E2E8F0; }
+  .progress-ring-fill.done { stroke: #10B981; }
+  .progress-ring-fill.todo { stroke: #EF4444; }
+  .progress-ring-text {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: 800;
+    color: #0F172A;
+  }
+
+  .part-body { padding: 28px 32px; }
+
+  /* Subsections inside a part */
+  .subsection { margin-bottom: 28px; }
+  .subsection:last-child { margin-bottom: 0; }
+  .subsection-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #0F172A;
+    margin-bottom: 14px;
+  }
+  .subsection-title .icon { font-size: 20px; }
+
+  .plain {
+    background: #F8FAFC;
+    border-left: 4px solid #3B82F6;
+    border-radius: 8px;
+    padding: 14px 18px;
+    color: #334155;
+    font-size: 13.5px;
+    margin-bottom: 20px;
+    line-height: 1.65;
+  }
+  .plain strong { color: #0F172A; }
+  .plain p { margin: 0 0 6px 0; }
+  .plain p:last-child { margin: 0; }
+
+  .chips-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 8px;
+  }
+  .chip {
+    padding: 11px 14px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13.5px;
+    font-weight: 500;
+  }
+  .chip.done { background: #ECFDF5; color: #065F46; border-left: 4px solid #10B981; }
+  .chip.pending { background: #FFFBEB; color: #78350F; border-left: 4px solid #F59E0B; }
+  .chip.todo { background: #FEF2F2; color: #991B1B; border-left: 4px solid #EF4444; }
+  .chip-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  .chip.done .chip-icon { background: #10B981; }
+  .chip.pending .chip-icon { background: #F59E0B; }
+  .chip.todo .chip-icon { background: #EF4444; }
+
+  .sub-group { margin-bottom: 20px; }
+  .sub-group:last-child { margin-bottom: 0; }
+  .sub-group-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #64748B;
+    margin-bottom: 10px;
+  }
+  .sub-group-title .count {
+    padding: 2px 8px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 700;
+    background: #F1F5F9;
+    color: #334155;
+  }
+
+  .unlock {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .unlock-item {
+    background: #FEF2F2;
+    border: 1px solid #FECACA;
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .unlock-item .u-title {
+    font-weight: 700;
+    color: #991B1B;
+    font-size: 14px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .unlock-item .u-body {
+    font-size: 13px;
+    color: #7F1D1D;
+    line-height: 1.6;
+  }
+  .unlock-item .u-body p { margin: 0 0 4px 0; }
+  .unlock-item .u-body p:last-child { margin: 0; }
+
+  @media (max-width: 700px) {
+    .unlock { grid-template-columns: 1fr; }
+  }
+
+  .closing {
+    background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
+    border-radius: 14px;
+    padding: 26px 32px;
+    color: #78350F;
+  }
+  .closing h3 {
+    margin: 0 0 12px 0;
+    font-size: 18px;
+    color: #78350F;
+  }
+  .closing .closing-body {
+    font-size: 14px;
+    line-height: 1.7;
+    color: #78350F;
+  }
+  .closing .closing-body p { margin: 0 0 6px 0; }
+  .closing .closing-body p:last-child { margin: 0; }
+  .closing strong { color: #451A03; }
+</style>
+</head>
+<body>
+<div class="container">
+<div class="doc-nav">
+  <nav class="doc-tabs" aria-label="Documentation sections">
+    <a href="index.html" class="doc-tab"><span data-en="Current architecture" data-pt="Arquitetura atual">Current architecture</span></a>
+    <a href="arquitetura-v2.html" class="doc-tab"><span data-en="v2 architecture" data-pt="Arquitetura v2">v2 architecture</span></a>
+    <a href="arquitetura-v2-complemento.html" class="doc-tab"><span data-en="Plan as tasks" data-pt="Plano em tarefas">Plan as tasks</span></a>
+    <a href="timeline/index.html" class="doc-tab"><span data-en="Timeline" data-pt="Timeline">Timeline</span></a>
+    <a href="progresso-refatoracao.html" class="doc-tab is-active"><span data-en="Progress" data-pt="Progresso">Progresso</span></a>
+  </nav>
+  <div class="lang-sw" role="group" aria-label="Language">
+    <button type="button" data-lang="pt" aria-pressed="true">PT-BR</button>
+    <button type="button" data-lang="en" aria-pressed="false">EN-US</button>
+  </div>
+</div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="kicker">📊 <span data-en="Executive overview" data-pt="Visão executiva">Visão executiva</span></div>
+    <h1><span data-en="v2 refactor progress" data-pt="Progresso da refatoração v2">Progresso da refatoração v2</span></h1>
+    <div class="subtitle">
+      <p><span data-en="The v2 refactor has two parts." data-pt="A refatoração v2 tem duas partes.">A refatoração v2 tem duas partes.</span></p>
+      <p><span data-en="Part 1 rebuilds each node type of the agent." data-pt="A Parte 1 reconstrói cada tipo de node do agente.">A Parte 1 reconstrói cada tipo de node do agente.</span></p>
+      <p><span data-en="Part 2 rebuilds the orchestrator that runs the agent." data-pt="A Parte 2 reconstrói o orquestrador que executa o agente.">A Parte 2 reconstrói o orquestrador que executa o agente.</span></p>
+      <p><span data-en="The team has completed most of Part 1." data-pt="O time já completou a Parte 1 em grande parte.">O time já completou a Parte 1 em grande parte.</span></p>
+      <p><span data-en="The team has not started Part 2." data-pt="O time ainda não iniciou a Parte 2.">O time ainda não iniciou a Parte 2.</span></p>
+      <p><span data-en="Ahead of Part 2, the team already shipped the new api-v2 entry surface (endpoint, callback, polling, execution status)." data-pt="Antes da Parte 2, o time já entregou a nova superfície de entrada api-v2 (endpoint, callback, polling, status da execução).">Antes da Parte 2, o time já entregou a nova superfície de entrada api-v2 (endpoint, callback, polling, status da execução).</span></p>
+    </div>
+  </div>
+
+  <!-- ==========================================================
+       PARTE 1 — NODES DO AGENTE
+       ========================================================== -->
+  <div class="part">
+    <div class="part-header done">
+      <div class="part-badge">PARTE 1</div>
+      <div class="part-title">
+        <h2>📦 <span data-en="Nodes of the agent" data-pt="Nodes do agente">Nodes do agente</span></h2>
+        <div class="sub"><span data-en="What the team already built and what already runs in production" data-pt="O que o time já construiu e o que já roda em produção">O que o time já construiu e o que já roda em produção</span></div>
+      </div>
+      <div class="part-progress-visual">
+        <div class="progress-ring">
+          <svg width="72" height="72">
+            <circle class="progress-ring-track" cx="36" cy="36" r="30" stroke-width="8" fill="none"/>
+            <circle class="progress-ring-fill done" cx="36" cy="36" r="30" stroke-width="8" fill="none"
+                    stroke-dasharray="188.5" stroke-dashoffset="30" stroke-linecap="round"/>
+          </svg>
+          <div class="progress-ring-text">85%</div>
+        </div>
+      </div>
+    </div>
+    <div class="part-body">
+
+      <div class="plain">
+        <p><strong><span data-en="Scope of Part 1." data-pt="Escopo da Parte 1.">Escopo da Parte 1.</span></strong></p>
+        <p><span data-en="The team rebuilds each node type inside the new worker." data-pt="O time reescreve cada tipo de node dentro do worker novo.">O time reescreve cada tipo de node dentro do worker novo.</span></p>
+        <p><span data-en="The worker runs each node in an isolated Temporal activity." data-pt="O worker executa cada node em uma activity Temporal isolada.">O worker executa cada node em uma activity Temporal isolada.</span></p>
+        <p><span data-en="The worker also ships the base infrastructure that lets the nodes run." data-pt="O worker também entrega a infraestrutura base que faz os nodes rodarem.">O worker também entrega a infraestrutura base que faz os nodes rodarem.</span></p>
+      </div>
+
+      <!-- SUBSECTION: nodes migrated -->
+      <div class="subsection">
+        <div class="subsection-title">
+          <span class="icon">🧱</span>
+          <span data-en="Node types rebuilt (14 of ~24)" data-pt="Tipos de node reconstruídos (14 de ~24)">Tipos de node reconstruídos (14 de ~24)</span>
+        </div>
+
+        <div class="sub-group">
+          <div class="sub-group-title">
+            <span class="legend-dot done"></span>
+            <span data-en="In production" data-pt="Em produção">Em produção</span>
+            <span class="count">7</span>
+          </div>
+          <div class="chips-grid">
+            <div class="chip done"><span class="chip-icon">✓</span><span>Text Generator</span></div>
+            <div class="chip done"><span class="chip-icon">✓</span><span>Scripting</span></div>
+            <div class="chip done"><span class="chip-icon">✓</span><span>Api Caller</span></div>
+            <div class="chip done"><span class="chip-icon">✓</span><span>MCP</span></div>
+            <div class="chip done"><span class="chip-icon">✓</span><span>Math Function</span></div>
+            <div class="chip done"><span class="chip-icon">✓</span><span>Counter</span></div>
+            <div class="chip done"><span class="chip-icon">✓</span><span>Output Controller</span></div>
+          </div>
+        </div>
+
+        <div class="sub-group">
+          <div class="sub-group-title">
+            <span class="legend-dot pending"></span>
+            <span data-en="Done, awaiting release to production" data-pt="Feito, aguardando release para produção">Feito, aguardando release para produção</span>
+            <span class="count">7</span>
+          </div>
+          <div class="chips-grid">
+            <div class="chip pending"><span class="chip-icon">⌛</span><span>Pull Data</span></div>
+            <div class="chip pending"><span class="chip-icon">⌛</span><span>Push Data</span></div>
+            <div class="chip pending"><span class="chip-icon">⌛</span><span>Image Generator</span></div>
+            <div class="chip pending"><span class="chip-icon">⌛</span><span>Voice Generator</span></div>
+            <div class="chip pending"><span class="chip-icon">⌛</span><span>Large Memory</span></div>
+            <div class="chip pending"><span class="chip-icon">⌛</span><span>Web Search</span></div>
+            <div class="chip pending"><span class="chip-icon">⌛</span><span>Webpage Scrapper</span></div>
+          </div>
+        </div>
+
+        <div class="sub-group">
+          <div class="sub-group-title">
+            <span class="legend-dot todo"></span>
+            <span data-en="Not migrated yet (still on the legacy orchestrator)" data-pt="Não migrados ainda (continuam no orquestrador legacy)">Não migrados ainda (continuam no orquestrador legacy)</span>
+            <span class="count">10+</span>
+          </div>
+          <div class="chips-grid">
+            <div class="chip todo"><span class="chip-icon">✗</span><span>Audio Reader</span></div>
+            <div class="chip todo"><span class="chip-icon">✗</span><span>Voice Box</span></div>
+            <div class="chip todo"><span class="chip-icon">✗</span><span>Command Content</span></div>
+            <div class="chip todo"><span class="chip-icon">✗</span><span>Report Builder</span></div>
+            <div class="chip todo"><span class="chip-icon">✗</span><span>Third Party Integration</span></div>
+            <div class="chip todo"><span class="chip-icon">✗</span><span>Condition Node</span></div>
+            <div class="chip todo"><span class="chip-icon">✗</span><span>Flux Box</span></div>
+            <div class="chip todo"><span class="chip-icon">✗</span><span>Library Node</span></div>
+            <div class="chip todo"><span class="chip-icon">✗</span><span>Array Node</span></div>
+            <div class="chip todo"><span class="chip-icon">✗</span><span>Nodes Box</span></div>
+            <div class="chip todo"><span class="chip-icon">✗</span><span><span data-en="Other web-data nodes" data-pt="Outros nodes de web-data">Outros nodes de web-data</span></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUBSECTION: base infra -->
+      <div class="subsection">
+        <div class="subsection-title">
+          <span class="icon">🏗️</span>
+          <span data-en="Base infrastructure (built and running)" data-pt="Infraestrutura base (construída e no ar)">Infraestrutura base (construída e no ar)</span>
+        </div>
+
+        <div class="plain">
+          <p><span data-en="The base infrastructure had to exist before the team rebuilt any node." data-pt="A infraestrutura base precisou existir antes do time reescrever qualquer node.">A infraestrutura base precisou existir antes do time reescrever qualquer node.</span></p>
+          <p><span data-en="The team already shipped this layer." data-pt="O time já entregou essa camada.">O time já entregou essa camada.</span></p>
+          <p><span data-en="The layer runs in production." data-pt="A camada roda em produção.">A camada roda em produção.</span></p>
+        </div>
+
+        <div class="sub-group">
+          <div class="sub-group-title">
+            <span class="legend-dot done"></span>
+            <span data-en="New services running in production" data-pt="Novos serviços rodando em produção">Novos serviços rodando em produção</span>
+            <span class="count">3</span>
+          </div>
+          <div class="chips-grid">
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="The worker (dedicated service that runs the nodes)" data-pt="O worker (serviço dedicado que executa os nodes)">O worker (serviço dedicado que executa os nodes)</span></span></div>
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="The Temporal server (keeps the execution state)" data-pt="O servidor Temporal (mantém o estado da execução)">O servidor Temporal (mantém o estado da execução)</span></span></div>
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="The backend↔worker bridge" data-pt="A ponte backend↔worker">A ponte backend↔worker</span></span></div>
+          </div>
+        </div>
+
+        <div class="sub-group">
+          <div class="sub-group-title">
+            <span class="legend-dot done"></span>
+            <span data-en="Internal modules of the worker" data-pt="Módulos internos do worker">Módulos internos do worker</span>
+            <span class="count">6</span>
+          </div>
+          <div class="chips-grid">
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="Temporal module (dispatches activities and workflows)" data-pt="Módulo Temporal (dispara activities e workflows)">Módulo Temporal (dispara activities e workflows)</span></span></div>
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="Nodes module (one folder per node type)" data-pt="Módulo Nodes (uma pasta por tipo de node)">Módulo Nodes (uma pasta por tipo de node)</span></span></div>
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="AI Provider module (talks to each AI model)" data-pt="Módulo AI Provider (conversa com cada modelo de IA)">Módulo AI Provider (conversa com cada modelo de IA)</span></span></div>
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="Database module (accesses the database)" data-pt="Módulo Database (acessa o banco de dados)">Módulo Database (acessa o banco de dados)</span></span></div>
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="Integrations module (calls third-party APIs)" data-pt="Módulo Integrations (chama APIs de terceiros)">Módulo Integrations (chama APIs de terceiros)</span></span></div>
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="Notification module (pushes updates to the UI)" data-pt="Módulo Notification (envia updates para a UI)">Módulo Notification (envia updates para a UI)</span></span></div>
+          </div>
+        </div>
+
+        <div class="sub-group">
+          <div class="sub-group-title">
+            <span class="legend-dot done"></span>
+            <span data-en="Reliability and observability of each node" data-pt="Confiabilidade e observabilidade de cada node">Confiabilidade e observabilidade de cada node</span>
+            <span class="count">4</span>
+          </div>
+          <div class="chips-grid">
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="The activity isolates each node from the others" data-pt="A activity isola cada node dos demais">A activity isola cada node dos demais</span></span></div>
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="The worker retries the node on transient failures" data-pt="O worker tenta de novo o node em falhas transitórias">O worker tenta de novo o node em falhas transitórias</span></span></div>
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="Temporal detects stuck nodes by heartbeat" data-pt="O Temporal detecta nodes travados por heartbeat">O Temporal detecta nodes travados por heartbeat</span></span></div>
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="Each node writes its own execution row" data-pt="Cada node grava sua própria linha de execução">Cada node grava sua própria linha de execução</span></span></div>
+          </div>
+        </div>
+
+        <div class="sub-group">
+          <div class="sub-group-title">
+            <span class="legend-dot done"></span>
+            <span data-en="Backend-side integration" data-pt="Integração no backend">Integração no backend</span>
+            <span class="count">3</span>
+          </div>
+          <div class="chips-grid">
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="The single-node endpoint runs one node at a time" data-pt="O endpoint single-node executa um node por vez">O endpoint single-node executa um node por vez</span></span></div>
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="The allowlist routes migrated nodes to the worker" data-pt="A allowlist roteia nodes migrados para o worker">A allowlist roteia nodes migrados para o worker</span></span></div>
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="The legacy fallback runs non-migrated nodes on the old engine" data-pt="O fallback legacy executa nodes não migrados no motor antigo">O fallback legacy executa nodes não migrados no motor antigo</span></span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==========================================================
+       ENDPOINT API v2 — porta de entrada (superfície já pronta)
+       ========================================================== -->
+  <div class="part">
+    <div class="part-header done">
+      <div class="part-badge">API v2</div>
+      <div class="part-title">
+        <h2>🚪 <span data-en="Endpoint API v2 (entry surface)" data-pt="Endpoint API v2 (porta de entrada)">Endpoint API v2 (porta de entrada)</span></h2>
+        <div class="sub"><span data-en="Caller-facing surface delivered ahead of Part 2" data-pt="Superfície voltada ao caller, entregue antes da Parte 2">Superfície voltada ao caller, entregue antes da Parte 2</span></div>
+      </div>
+      <div class="part-progress-visual">
+        <div class="progress-ring">
+          <svg width="72" height="72">
+            <circle class="progress-ring-track" cx="36" cy="36" r="30" stroke-width="8" fill="none"/>
+            <circle class="progress-ring-fill done" cx="36" cy="36" r="30" stroke-width="8" fill="none"
+                    stroke-dasharray="188.5" stroke-dashoffset="75" stroke-linecap="round"/>
+          </svg>
+          <div class="progress-ring-text">60%</div>
+        </div>
+      </div>
+    </div>
+    <div class="part-body">
+
+      <div class="plain">
+        <p><strong><span data-en="Why this section exists." data-pt="Por que esta seção existe.">Por que esta seção existe.</span></strong></p>
+        <p><span data-en="The team already shipped the caller-facing side of the api-v2 endpoint." data-pt="O time já entregou o lado voltado ao caller do endpoint api-v2.">O time já entregou o lado voltado ao caller do endpoint api-v2.</span></p>
+        <p><span data-en="The endpoint still calls the legacy engine underneath, but the shape is already the v2 shape." data-pt="O endpoint ainda chama o motor legacy por baixo, mas o formato já é o da v2.">O endpoint ainda chama o motor legacy por baixo, mas o formato já é o da v2.</span></p>
+        <p><span data-en="Part 2 swaps the engine underneath without changing the caller contract." data-pt="A Parte 2 troca o motor por baixo sem alterar o contrato com o caller.">A Parte 2 troca o motor por baixo sem alterar o contrato com o caller.</span></p>
+      </div>
+
+      <!-- SUBSECTION: what was delivered -->
+      <div class="subsection">
+        <div class="subsection-title">
+          <span class="icon">✅</span>
+          <span data-en="Already delivered on the endpoint" data-pt="Já entregue no endpoint">Já entregue no endpoint</span>
+        </div>
+
+        <div class="sub-group">
+          <div class="sub-group-title">
+            <span class="legend-dot done"></span>
+            <span data-en="POST /flux/api-v2 — three response modes" data-pt="POST /flux/api-v2 — três modos de resposta">POST /flux/api-v2 — três modos de resposta</span>
+            <span class="count">3</span>
+          </div>
+          <div class="chips-grid">
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="Fast sync (200) — flow finishes inside the wait window" data-pt="Sync rápido (200) — flow termina dentro da janela de espera">Sync rápido (200) — flow termina dentro da janela de espera</span></span></div>
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="Slow sync (202) — wait times out, backend returns statusUrl" data-pt="Sync lento (202) — espera dá timeout, backend devolve statusUrl">Sync lento (202) — espera dá timeout, backend devolve statusUrl</span></span></div>
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="Async callback (202) — caller passes callback_url, backend replies immediately" data-pt="Callback assíncrono (202) — caller passa callback_url, backend responde imediato">Callback assíncrono (202) — caller passa callback_url, backend responde imediato</span></span></div>
+          </div>
+        </div>
+
+        <div class="sub-group">
+          <div class="sub-group-title">
+            <span class="legend-dot done"></span>
+            <span data-en="Execution identity and status persistence" data-pt="Identidade e persistência de status da execução">Identidade e persistência de status da execução</span>
+            <span class="count">4</span>
+          </div>
+          <div class="chips-grid">
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="Every request generates its own executionId (UUID)" data-pt="Cada request gera seu próprio executionId (UUID)">Cada request gera seu próprio executionId (UUID)</span></span></div>
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="A flow_executions row is inserted at request time (status=queued)" data-pt="Linha em flow_executions criada no momento do request (status=queued)">Linha em flow_executions criada no momento do request (status=queued)</span></span></div>
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="Status transitions: queued → in_progress → completed / error" data-pt="Transições de status: queued → in_progress → completed / error">Transições de status: queued → in_progress → completed / error</span></span></div>
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="The row records tokens used, cost, durationMs and error message" data-pt="A linha registra tokens usados, custo, durationMs e mensagem de erro">A linha registra tokens usados, custo, durationMs e mensagem de erro</span></span></div>
+          </div>
+        </div>
+
+        <div class="sub-group">
+          <div class="sub-group-title">
+            <span class="legend-dot done"></span>
+            <span data-en="GET /flux/executions/:id — polling" data-pt="GET /flux/executions/:id — polling">GET /flux/executions/:id — polling</span>
+            <span class="count">3</span>
+          </div>
+          <div class="chips-grid">
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="Returns output, tokens, cost and duration when completed" data-pt="Retorna output, tokens, custo e duração quando completo">Retorna output, tokens, custo e duração quando completo</span></span></div>
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="Returns errorMessage when the execution failed" data-pt="Retorna errorMessage quando a execução falhou">Retorna errorMessage quando a execução falhou</span></span></div>
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="Scoped to the API-key owner (404 for other users)" data-pt="Escopado ao dono da API-key (404 para outros usuários)">Escopado ao dono da API-key (404 para outros usuários)</span></span></div>
+          </div>
+        </div>
+
+        <div class="sub-group">
+          <div class="sub-group-title">
+            <span class="legend-dot done"></span>
+            <span data-en="Queue, processor and callback plumbing" data-pt="Fila, processador e encanamento do callback">Fila, processador e encanamento do callback</span>
+            <span class="count">4</span>
+          </div>
+          <div class="chips-grid">
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="Dedicated Bull queue (ApiV2Queue) with configurable concurrency" data-pt="Fila Bull dedicada (ApiV2Queue) com concorrência configurável">Fila Bull dedicada (ApiV2Queue) com concorrência configurável</span></span></div>
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="Processor picks up the job and drives the status transitions" data-pt="Processador pega o job e conduz as transições de status">Processador pega o job e conduz as transições de status</span></span></div>
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="On finish, POSTs a structured payload to callback_url" data-pt="Ao terminar, POSTa payload estruturado no callback_url">Ao terminar, POSTa payload estruturado no callback_url</span></span></div>
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="Payload carries executionId, success, flowId, tokens, cost, outputs, error" data-pt="Payload carrega executionId, success, flowId, tokens, custo, outputs, erro">Payload carrega executionId, success, flowId, tokens, custo, outputs, erro</span></span></div>
+          </div>
+        </div>
+
+        <div class="sub-group">
+          <div class="sub-group-title">
+            <span class="legend-dot done"></span>
+            <span data-en="Basic callback_url validation" data-pt="Validação básica do callback_url">Validação básica do callback_url</span>
+            <span class="count">2</span>
+          </div>
+          <div class="chips-grid">
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="Must be a well-formed URL" data-pt="Precisa ser uma URL bem formada">Precisa ser uma URL bem formada</span></span></div>
+            <div class="chip done"><span class="chip-icon">✓</span><span><span data-en="Must use http or https protocol" data-pt="Precisa usar protocolo http ou https">Precisa usar protocolo http ou https</span></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUBSECTION: pending on this surface -->
+      <div class="subsection">
+        <div class="subsection-title">
+          <span class="icon">⏳</span>
+          <span data-en="Still pending on this surface" data-pt="Ainda pendente nesta superfície">Ainda pendente nesta superfície</span>
+        </div>
+
+        <div class="plain">
+          <p><span data-en="These items depend on Part 2 or on hardening decisions." data-pt="Estes itens dependem da Parte 2 ou de decisões de hardening.">Estes itens dependem da Parte 2 ou de decisões de hardening.</span></p>
+          <p><span data-en="The team can ship each one independently." data-pt="O time pode entregar cada um independentemente.">O time pode entregar cada um independentemente.</span></p>
+        </div>
+
+        <div class="sub-group">
+          <div class="sub-group-title">
+            <span class="legend-dot todo"></span>
+            <span data-en="Coupling with the new orchestrator (waits for Part 2)" data-pt="Acoplamento com o orquestrador novo (depende da Parte 2)">Acoplamento com o orquestrador novo (depende da Parte 2)</span>
+            <span class="count">3</span>
+          </div>
+          <div class="chips-grid">
+            <div class="chip todo"><span class="chip-icon">✗</span><span><span data-en="Dispatch through the new orchestrator (still calls the legacy engine)" data-pt="Disparar pelo orquestrador novo (ainda chama o motor legacy)">Disparar pelo orquestrador novo (ainda chama o motor legacy)</span></span></div>
+            <div class="chip todo"><span class="chip-icon">✗</span><span><span data-en="Freeze agent config into flow_execution_snapshots" data-pt="Congelar a config do agente em flow_execution_snapshots">Congelar a config do agente em flow_execution_snapshots</span></span></div>
+            <div class="chip todo"><span class="chip-icon">✗</span><span><span data-en="Freeze edges into flow_execution_edge_snapshots" data-pt="Congelar as arestas em flow_execution_edge_snapshots">Congelar as arestas em flow_execution_edge_snapshots</span></span></div>
+          </div>
+        </div>
+
+        <div class="sub-group">
+          <div class="sub-group-title">
+            <span class="legend-dot todo"></span>
+            <span data-en="Request-level idempotency" data-pt="Idempotência no nível do request">Idempotência no nível do request</span>
+            <span class="count">1</span>
+          </div>
+          <div class="chips-grid">
+            <div class="chip todo"><span class="chip-icon">✗</span><span><span data-en="Idempotency-Key header (dedup on caller retries)" data-pt="Header Idempotency-Key (dedup em retries do caller)">Header Idempotency-Key (dedup em retries do caller)</span></span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==========================================================
+       PARTE 2 — ORQUESTRADOR DO AGENTE
+       ========================================================== -->
+  <div class="part">
+    <div class="part-header todo">
+      <div class="part-badge">PARTE 2</div>
+      <div class="part-title">
+        <h2>🎛️ <span data-en="Orchestrator of the agent" data-pt="Orquestrador do agente">Orquestrador do agente</span></h2>
+        <div class="sub"><span data-en="What the team needs to build next" data-pt="O que o time precisa construir a seguir">O que o time precisa construir a seguir</span></div>
+      </div>
+      <div class="part-progress-visual">
+        <div class="progress-ring">
+          <svg width="72" height="72">
+            <circle class="progress-ring-track" cx="36" cy="36" r="30" stroke-width="8" fill="none"/>
+            <circle class="progress-ring-fill todo" cx="36" cy="36" r="30" stroke-width="8" fill="none"
+                    stroke-dasharray="188.5" stroke-dashoffset="188.5" stroke-linecap="round"/>
+          </svg>
+          <div class="progress-ring-text">0%</div>
+        </div>
+      </div>
+    </div>
+    <div class="part-body">
+
+      <div class="plain">
+        <p><strong><span data-en="Scope of Part 2." data-pt="Escopo da Parte 2.">Escopo da Parte 2.</span></strong></p>
+        <p><span data-en="The legacy orchestrator still runs the agent today." data-pt="O orquestrador legacy ainda executa o agente hoje.">O orquestrador legacy ainda executa o agente hoje.</span></p>
+        <p><span data-en="The legacy orchestrator runs the nodes in serial order." data-pt="O orquestrador legacy executa os nodes em série.">O orquestrador legacy executa os nodes em série.</span></p>
+        <p><span data-en="The legacy orchestrator does not freeze the agent config during execution." data-pt="O orquestrador legacy não congela a configuração do agente durante a execução.">O orquestrador legacy não congela a configuração do agente durante a execução.</span></p>
+        <p><span data-en="Part 2 replaces the legacy orchestrator with a new orchestrator." data-pt="A Parte 2 substitui o orquestrador legacy por um orquestrador novo.">A Parte 2 substitui o orquestrador legacy por um orquestrador novo.</span></p>
+      </div>
+
+      <div class="subsection">
+        <div class="subsection-title">
+          <span class="icon">💡</span>
+          <span data-en="What Part 2 unlocks" data-pt="O que a Parte 2 destrava">O que a Parte 2 destrava</span>
+        </div>
+        <div class="unlock">
+          <div class="unlock-item">
+            <div class="u-title">⚡ <span data-en="Parallelism" data-pt="Paralelismo">Paralelismo</span></div>
+            <div class="u-body">
+              <p><span data-en="The legacy orchestrator runs nodes in serial order." data-pt="O orquestrador legacy executa os nodes em série.">O orquestrador legacy executa os nodes em série.</span></p>
+              <p><span data-en="The new orchestrator dispatches independent nodes in parallel." data-pt="O orquestrador novo dispara nodes independentes em paralelo.">O orquestrador novo dispara nodes independentes em paralelo.</span></p>
+              <p><span data-en="The agent latency drops." data-pt="A latência do agente cai.">A latência do agente cai.</span></p>
+            </div>
+          </div>
+          <div class="unlock-item">
+            <div class="u-title">🔒 <span data-en="Immutable execution state" data-pt="Estado imutável de execução">Estado imutável de execução</span></div>
+            <div class="u-body">
+              <p><span data-en="The new orchestrator freezes the agent config at the start of the execution." data-pt="O orquestrador novo congela a configuração do agente no início da execução.">O orquestrador novo congela a configuração do agente no início da execução.</span></p>
+              <p><span data-en="An edit made during execution does not affect the running execution." data-pt="Uma edição feita durante a execução não afeta a execução em curso.">Uma edição feita durante a execução não afeta a execução em curso.</span></p>
+            </div>
+          </div>
+          <div class="unlock-item">
+            <div class="u-title">🛟 <span data-en="Cancellation and retry" data-pt="Cancelamento e retry">Cancelamento e retry</span></div>
+            <div class="u-body">
+              <p><span data-en="The new orchestrator cancels an execution instantly by signal." data-pt="O orquestrador novo cancela uma execução na hora por signal.">O orquestrador novo cancela uma execução na hora por signal.</span></p>
+              <p><span data-en="The new orchestrator retries only the node that failed." data-pt="O orquestrador novo tenta de novo apenas o node que falhou.">O orquestrador novo tenta de novo apenas o node que falhou.</span></p>
+              <p><span data-en="Temporal recovers the workflow after a worker crash." data-pt="O Temporal recupera o workflow depois de um crash do worker.">O Temporal recupera o workflow depois de um crash do worker.</span></p>
+            </div>
+          </div>
+          <div class="unlock-item">
+            <div class="u-title">📊 <span data-en="Observability" data-pt="Observabilidade">Observabilidade</span></div>
+            <div class="u-body">
+              <p><span data-en="The new orchestrator records each node execution." data-pt="O orquestrador novo registra cada execução de node.">O orquestrador novo registra cada execução de node.</span></p>
+              <p><span data-en="The team reproduces agent failures from the record." data-pt="O time reproduz falhas do agente a partir do registro.">O time reproduz falhas do agente a partir do registro.</span></p>
+              <p><span data-en="The time-to-debug drops from hours to minutes." data-pt="O tempo de debug cai de horas para minutos.">O tempo de debug cai de horas para minutos.</span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <div class="subsection-title">
+          <span class="icon">🚧</span>
+          <span data-en="What the team needs to build" data-pt="O que o time precisa construir">O que o time precisa construir</span>
+        </div>
+
+        <div class="sub-group">
+          <div class="sub-group-title">
+            <span class="legend-dot todo"></span>
+            <span data-en="Execution logic" data-pt="Lógica de execução">Lógica de execução</span>
+            <span class="count">4</span>
+          </div>
+          <div class="chips-grid">
+            <div class="chip todo"><span class="chip-icon">✗</span><span><span data-en="The orchestrator reads the graph of the agent" data-pt="O orquestrador lê o grafo do agente">O orquestrador lê o grafo do agente</span></span></div>
+            <div class="chip todo"><span class="chip-icon">✗</span><span><span data-en="The orchestrator validates the graph before execution" data-pt="O orquestrador valida o grafo antes da execução">O orquestrador valida o grafo antes da execução</span></span></div>
+            <div class="chip todo"><span class="chip-icon">✗</span><span><span data-en="The orchestrator dispatches independent nodes in parallel" data-pt="O orquestrador dispara nodes independentes em paralelo">O orquestrador dispara nodes independentes em paralelo</span></span></div>
+            <div class="chip todo"><span class="chip-icon">✗</span><span><span data-en="The orchestrator handles conditions and sub-flows" data-pt="O orquestrador processa condições e sub-flows">O orquestrador processa condições e sub-flows</span></span></div>
+          </div>
+        </div>
+
+        <div class="sub-group">
+          <div class="sub-group-title">
+            <span class="legend-dot todo"></span>
+            <span data-en="Persistence (frozen state during execution)" data-pt="Persistência (estado congelado durante a execução)">Persistência (estado congelado durante a execução)</span>
+            <span class="count">4</span>
+          </div>
+          <div class="chips-grid">
+            <div class="chip todo"><span class="chip-icon">✗</span><span><span data-en="The backend inserts a flow_executions row" data-pt="O backend insere uma linha em flow_executions">O backend insere uma linha em flow_executions</span></span></div>
+            <div class="chip todo"><span class="chip-icon">✗</span><span><span data-en="The backend copies the node config into flow_execution_snapshots" data-pt="O backend copia a configuração dos nodes para flow_execution_snapshots">O backend copia a configuração dos nodes para flow_execution_snapshots</span></span></div>
+            <div class="chip todo"><span class="chip-icon">✗</span><span><span data-en="The backend copies the edges into flow_execution_edge_snapshots" data-pt="O backend copia as arestas para flow_execution_edge_snapshots">O backend copia as arestas para flow_execution_edge_snapshots</span></span></div>
+            <div class="chip todo"><span class="chip-icon">✗</span><span><span data-en="The backend stores the request input in flow_execution_trigger_inputs" data-pt="O backend armazena o input do request em flow_execution_trigger_inputs">O backend armazena o input do request em flow_execution_trigger_inputs</span></span></div>
+          </div>
+        </div>
+
+        <div class="sub-group">
+          <div class="sub-group-title">
+            <span class="legend-dot todo"></span>
+            <span data-en="Cancellation and retry controls" data-pt="Controles de cancelamento e retry">Controles de cancelamento e retry</span>
+            <span class="count">2</span>
+          </div>
+          <div class="chips-grid">
+            <div class="chip todo"><span class="chip-icon">✗</span><span><span data-en="The orchestrator cancels a running execution by signal" data-pt="O orquestrador cancela uma execução em andamento por signal">O orquestrador cancela uma execução em andamento por signal</span></span></div>
+            <div class="chip todo"><span class="chip-icon">✗</span><span><span data-en="The worker applies a retry policy per node type" data-pt="O worker aplica política de retry por tipo de node">O worker aplica política de retry por tipo de node</span></span></div>
+          </div>
+        </div>
+
+        <div class="sub-group">
+          <div class="sub-group-title">
+            <span class="legend-dot todo"></span>
+            <span data-en="Entry point" data-pt="Porta de entrada">Porta de entrada</span>
+            <span class="count">1</span>
+          </div>
+          <div class="chips-grid">
+            <div class="chip todo"><span class="chip-icon">✗</span><span><span data-en="The api-v2 endpoint dispatches the full agent through the new orchestrator" data-pt="O endpoint api-v2 dispara o agente completo pelo orquestrador novo">O endpoint api-v2 dispara o agente completo pelo orquestrador novo</span></span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+<script src="_assets/i18n.js"></script>
+</body>
+</html>
