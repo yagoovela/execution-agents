@@ -315,7 +315,8 @@ def render(T):
         if st['ref']:
             bits_en.append('<b>%s</b>' % esc(st['ref'])); bits_pt.append('<b>%s</b>' % esc(st['ref']))
         if st['note']:
-            bits_en.append(esc(st['note'])); bits_pt.append(esc(st['note']))
+            bits_en.append(esc(st['note']))
+            bits_pt.append(esc(st.get('note_pt') or st['note']))
         w(D((' · '.join(bits_en), ' · '.join(bits_pt)), cls='stnote'))
     w('<div class="hero-links">')
     if T.get('phase'):

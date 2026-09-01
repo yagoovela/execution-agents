@@ -311,6 +311,34 @@ PARTS = [
  'callouts': [('mig', ('Out of scope', 'Fora de escopo'),
    ('<p>Changing pricing, plan structure, or how charges are computed. <strong>This task adds a ceiling over numbers that already exist.</strong></p>',
     '<p>Mudar preço, estrutura de plano, ou como as cobranças são calculadas. <strong>Esta task adiciona um teto sobre números que já existem.</strong></p>'))]},
+
+{'n': '4',
+ 'title': ('Check the credit before the run, not on each node', 'Checar o crédito antes do run, não em cada node'),
+ 'loc': ('D19 · D20 · the pre-flight gate S1 already runs', 'D19 · D20 · o gate pré-execução que a S1 já roda'),
+ 'purpose': ('Refuse work that was never going to finish, before any of it is paid for.',
+             'Recusar trabalho que nunca ia terminar, antes de qualquer parte dele ser paga.'),
+ 'body': (
+  '<p><strong>The ceiling is not a property of a node evaluated at dispatch time.</strong> <code>S1</code> already runs a gate between building the DAG and '
+  'starting to spend, and <code>S4</code> already validates the graph there; extend that gate to credit. Does this flow need credit, and is there enough — '
+  'asked once, before anything runs.</p>'
+  '<p>Refusing there turns a bill into an error message. It is also the reason the registry does <strong>not</strong> need a per-type <em>can this spend</em> '
+  'flag: nothing has to be classified at dispatch time if the question is answered before dispatch begins.</p>',
+  '<p><strong>O teto não é propriedade de um node avaliada na hora do dispatch.</strong> A <code>S1</code> já roda um gate entre montar o DAG e começar a gastar, '
+  'e a <code>S4</code> já valida o grafo ali; estenda esse gate ao crédito. Este fluxo precisa de crédito, e há o suficiente — perguntado uma vez, antes de '
+  'qualquer coisa rodar.</p>'
+  '<p>Recusar ali transforma uma fatura numa mensagem de erro. É também o motivo de o registro <strong>não</strong> precisar de uma flag por tipo dizendo '
+  '<em>isto gasta</em>: nada precisa ser classificado no dispatch se a pergunta é respondida antes de o dispatch começar.</p>'),
+ 'ba': (('Nothing is asked before the run. The first signal that a flow could never afford itself is the charge it already made.',
+         'Nada é perguntado antes do run. O primeiro sinal de que um fluxo nunca poderia se pagar é a cobrança que ele já fez.'),
+        ('The gate asks once, before spending. A flow with no credit fails with a message instead of a partial bill.',
+         'O gate pergunta uma vez, antes de gastar. Um fluxo sem crédito falha com uma mensagem em vez de uma fatura parcial.')),
+ 'callouts': [('warn', ('It does not replace the charge-time ceiling', 'Não substitui o teto na hora da cobrança'),
+   ('<p>A pre-flight check answers <strong>can this flow spend</strong>, never <strong>will it</strong> — the branch taken depends on data that does not exist '
+    'until the run happens. That is the same argument <code>S4</code> makes for keeping a runtime budget, and it applies here unchanged. '
+    'The two answer different questions and both are needed.</p>',
+    '<p>Um check pré-execução responde <strong>este fluxo pode gastar</strong>, nunca <strong>vai gastar</strong> — o ramo tomado depende de dado que só existe '
+    'quando o run acontece. É o mesmo argumento que a <code>S4</code> faz para manter um orçamento em runtime, e vale aqui sem mudança. '
+    'Os dois respondem perguntas diferentes e os dois são necessários.</p>'))]},
 ]
 
 VERIF = [

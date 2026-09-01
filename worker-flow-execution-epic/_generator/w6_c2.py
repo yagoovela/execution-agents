@@ -227,7 +227,29 @@ PARTS = [
        ('One way to run a node. The legacy endpoint returns a clear <code>404</code>/<code>410</code>, and the front has already stopped calling it.',
         'Uma forma de rodar um node. A entrada legada retorna um <code>404</code>/<code>410</code> claro, e o front já parou de chamá-la.'))},
 
-{'n':'2','title':('The prefetch executor — measure, then decide','O executor de prefetch — medir, e então decidir'),
+{'n':'2','title':('What this task must not remove','O que esta task não pode remover'),
+ 'loc':('D18 · flux.controller.ts:643, 839, 872, 888, 923','D18 · flux.controller.ts:643, 839, 872, 888, 923'),
+ 'purpose':('Name the endpoints that look legacy and are not, before a sweep takes them with the ones that are.',
+            'Nomear os endpoints que parecem legados e não são, antes que uma varredura os leve junto com os que são.'),
+ 'body':('<p><strong><code>D18</code> keeps the whole batch-process family.</strong> None of the five is deprecated: '
+         '<code>POST /batch-process</code> (<code>:643</code>), <code>GET /batch-process/:id/status</code> (<code>:839</code>), '
+         '<code>GET /batch-process/all</code> (<code>:872</code>), <code>POST /batch-process/:id/stop</code> (<code>:888</code>) and '
+         '<code>GET /batch-process/:ids/download</code> (<code>:923</code>).</p>'
+         '<p>The route stays as the entry point and its body moves into <code>B7</code>&#x27;s durable workflow. The status, listing, stop and download endpoints '
+         'are the surface a batch screen reads, so in this epic they <strong>gain a consumer rather than losing one</strong>.</p>',
+         '<p><strong>A <code>D18</code> mantém toda a família batch-process.</strong> Nenhum dos cinco é depreciado: '
+         '<code>POST /batch-process</code> (<code>:643</code>), <code>GET /batch-process/:id/status</code> (<code>:839</code>), '
+         '<code>GET /batch-process/all</code> (<code>:872</code>), <code>POST /batch-process/:id/stop</code> (<code>:888</code>) e '
+         '<code>GET /batch-process/:ids/download</code> (<code>:923</code>).</p>'
+         '<p>A rota permanece como porta de entrada e o miolo dela vai para o workflow durável da <code>B7</code>. Os endpoints de status, listagem, stop e download '
+         'são a superfície que uma tela de lote lê, então neste épico eles <strong>ganham um consumidor em vez de perder um</strong>.</p>'),
+ 'callouts':[('warn',('They look like the legacy endpoint and are not','Eles parecem o endpoint legado e não são'),
+   ('<p>Both are older routes on the same controller, and both predate the worker. The difference is that one has no caller left and the other is about to get '
+    'its first real one. <strong>Check the list above before deleting anything named <code>batch</code>.</strong></p>',
+    '<p>Os dois são rotas antigas no mesmo controller, e os dois são anteriores ao worker. A diferença é que um não tem mais chamador e o outro está prestes a '
+    'ganhar o primeiro de verdade. <strong>Confira a lista acima antes de apagar qualquer coisa chamada <code>batch</code>.</strong></p>'))]},
+
+{'n':'3','title':('The prefetch executor — measure, then decide','O executor de prefetch — medir, e então decidir'),
  'loc':'app-api/flux/prefetch/ · flux.service.ts:1402–1431, 3198–3226',
  'purpose':('Answer D2 with two numbers instead of an opinion — and report what could not be determined as unverifiable, not as zero.',
             'Responder a D2 com dois números em vez de uma opinião — e reportar o que não pôde ser determinado como não verificável, não como zero.'),
@@ -263,7 +285,7 @@ PARTS = [
     '<p><code>PLAN §3.3.2</code> aplicado à própria medição: reporte os fluxos cuja elegibilidade <strong>não pôde ser determinada</strong> como '
     '<em>não verificáveis</em>, não como inelegíveis. <strong>A decisão do prefetch não pode se apoiar numa contagem que arredondou desconhecidos para zero em silêncio.</strong></p>'))]},
 
-{'n':'3','title':('The migration flags','As flags de migração'),
+{'n':'4','title':('The migration flags','As flags de migração'),
  'loc':'PLAN §3.2',
  'purpose':('Remove each flag once its node has soaked, because a flag that outlives its migration is untested production behaviour.',
             'Remover cada flag quando o node dela tiver soakado, porque uma flag que sobrevive à sua migração é comportamento de produção não testado.'),

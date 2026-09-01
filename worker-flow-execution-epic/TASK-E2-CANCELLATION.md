@@ -35,6 +35,20 @@ measure it and state the number rather than assuming.
 **In.** Validate the feature flag's current state before relying on it. `NODE_CANCEL_IN_FLIGHT_FLAG`
 was added after the original design and is not proven at production scale.
 
+**In — what the ledger records, per `D22`.** We ask the provider to cancel. If it reports the tokens
+spent up to that point, record the charge **normally**, exactly as a generation that completed — the
+work was really done and really cost. If it reports nothing, record what is available and mark the
+entry as cancelled or aborted by the user. **Never record zero for a cancelled generation that
+consumed tokens**, because that is the case that makes the ledger disagree with the provider's
+invoice, and it disagrees silently.
+
+**In — cancellation propagates down the chain, per `D23`.** A `fluxBox`, `libraryNode` or
+`arrayNode` is not allowed to finish the way a generation is: its execution is an open-ended amount
+of further work. Cancelling one cancels its children, which is native for Temporal child workflows
+and is what the `parentRunId` chain from `S1` exists to carry. For `arrayNode`, the element already
+generating finishes; the remaining elements never start. **`nodesBox` is not in this list:** it dispatches to `objectCaller`, which executes no nodes and only reads and writes an object's
+session state, so cancelling it prevents no spend and leaves the object half-written.
+
 **Out.** Changing what cancellation means to the user, or cancelling already-committed side
 effects. A cancelled push that already reached Stripe stays sent.
 

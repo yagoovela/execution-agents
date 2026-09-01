@@ -10,7 +10,7 @@ count, and before publishing the doc set.
 
 Exit code 1 when any group disagrees, so it can gate a publish.
 """
-import os, re, sys, glob, collections
+import io, os, re, sys, glob, collections
 
 EPIC = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -76,6 +76,76 @@ for name, rules in GROUPS:
         for v, where in sorted(found.items()):
             for w in sorted(set(where)):
                 print('        %-4s <- %s' % (v, w))
+
+
+# --- decision coverage -------------------------------------------------------
+# PLAN.md §7 is the single source for what a decision says; DELIVERY-PLAN.md's wave
+# map is the single source for which wave it gates.  Splitting them that way only
+# works if every decision appears in both, so this is the check that keeps the split
+# honest: a decision added to one and forgotten in the other is a failure here.
+plan = read('PLAN.md') or ''
+sec7 = plan.split('## 7.')[-1].split('## 8.')[0]
+in_plan = set(re.findall(r'^\|\s*(D\d+)\s*\|', sec7, re.M))
+wavemap = (read('DELIVERY-PLAN.md') or '').split('Decisions that gate a wave')[-1]
+in_waves = collections.Counter(re.findall(r'\bD\d+\b', wavemap))
+missing_wave = sorted(in_plan - set(in_waves), key=lambda d: int(d[1:]))
+missing_plan = sorted(set(in_waves) - in_plan, key=lambda d: int(d[1:]))
+dupes = sorted([d for d, n in in_waves.items() if n > 1], key=lambda d: int(d[1:]))
+if not in_plan:
+    failures += 1
+    print('BLIND %-32s PLAN.md section 7 matched no decision row' % 'decision coverage')
+elif missing_wave or missing_plan or dupes:
+    failures += 1
+    print('DRIFT %-32s decision tables disagree:' % 'decision coverage')
+    for d in missing_wave:
+        print('        %-4s <- in PLAN.md section 7, absent from the wave map' % d)
+    for d in missing_plan:
+        print('        %-4s <- in the wave map, absent from PLAN.md section 7' % d)
+    for d in dupes:
+        print('        %-4s <- listed under %d waves' % (d, in_waves[d]))
+else:
+    print('OK    %-32s %d decisions, each in one wave' % ('decision coverage', len(in_plan)))
+
+
+# --- task page freshness ------------------------------------------------------
+# TASK-<code>.md is the spec; timeline/task-<code>.html is written by hand from it,
+# through a content module, so nothing makes them agree.  Editing the spec and
+# forgetting the module is silent, and it happened during the 2026-08-31 review.
+# The tightest signal with almost no false positives: a decision the spec cites must
+# be visible on the page.  The page may cite more; it may never cite less.
+# The published copy puts timeline/ beside the spec folder rather than inside it,
+# so resolve both layouts.  A gate that fails on a valid layout is a false refusal,
+# and a false refusal is worse than the drift it was meant to catch.
+TIMELINE = next((d for d in (os.path.join(EPIC, 'timeline'),
+                             os.path.join(os.path.dirname(EPIC), 'timeline'))
+                 if os.path.isdir(d)), None)
+stale = []
+for md in sorted(glob.glob(os.path.join(EPIC, 'TASK-*.md'))):
+    code = os.path.basename(md).split('-')[1]
+    page = os.path.join(TIMELINE, 'task-%s.html' % code) if TIMELINE else None
+    if not page or not os.path.exists(page):
+        stale.append((code, 'no published page'))
+        continue
+    in_md = set(re.findall(r'\bD(\d+)\b', io.open(md, encoding='utf-8').read()))
+    in_pg = set(re.findall(r'\bD(\d+)\b', io.open(page, encoding='utf-8').read()))
+    missing = sorted(in_md - in_pg, key=int)
+    if missing:
+        stale.append((code, 'spec cites ' + ', '.join('D' + m for m in missing) + ' — page does not'))
+if not glob.glob(os.path.join(EPIC, 'TASK-*.md')):
+    failures += 1
+    print('BLIND %-32s no TASK-*.md matched' % 'task page freshness')
+elif TIMELINE is None:
+    failures += 1
+    print('BLIND %-32s no timeline/ directory beside or inside the spec folder'
+          % 'task page freshness')
+elif stale:
+    failures += 1
+    print('DRIFT %-32s the page is behind its spec:' % 'task page freshness')
+    for code, why in stale:
+        print('        %-4s <- %s' % (code, why))
+else:
+    print('OK    %-32s %d pages cite every decision their spec does'
+          % ('task page freshness', len(glob.glob(os.path.join(EPIC, 'TASK-*.md')))))
 
 print()
 if failures:
