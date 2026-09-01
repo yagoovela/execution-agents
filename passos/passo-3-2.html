@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Passo 3.2 — Busca do nó + previewResponses cache | Detalhamento</title>
+<link rel="stylesheet" href="../_assets/i18n.css">
+<link rel="stylesheet" href="../_assets/header.css">
+<title>Step 3.2 — Node lookup + previewResponses cache | Detail</title>
 <style>
   * { box-sizing: border-box; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F1F5F9; color: #0F172A; margin: 0; padding: 32px 24px 80px; line-height: 1.4; }
@@ -162,43 +164,57 @@
 </head>
 <body>
 <div class="container">
+<div class="doc-nav">
+  <nav class="doc-tabs" aria-label="Documentation sections">
+    <a href="../index.html" class="doc-tab is-active"><span data-en="Current architecture" data-pt="Arquitetura atual">Current architecture</span></a>
+    <a href="../arquitetura-v2.html" class="doc-tab"><span data-en="v2 architecture" data-pt="Arquitetura v2">v2 architecture</span></a>
+    <a href="../arquitetura-v2-complemento.html" class="doc-tab"><span data-en="Plan as tasks" data-pt="Plano em tarefas">Plan as tasks</span></a>
+    <a href="../timeline/index.html" class="doc-tab"><span data-en="Timeline" data-pt="Timeline">Timeline</span></a>
+  </nav>
+  <div class="lang-sw" role="group" aria-label="Language">
+    <button type="button" data-lang="en" aria-pressed="true">EN-US</button>
+    <button type="button" data-lang="pt" aria-pressed="false">PT-BR</button>
+  </div>
+</div>
+
+
+
 
   <div class="page-nav">
     <div class="breadcrumb">
-      <a href="../index.html">📋 Execução de Agente</a>
+      <a href="../index.html"><span data-en="📋 Agent execution" data-pt="📋 Execução de Agente">📋 Agent execution</span></a>
       <span class="sep">›</span>
-      <span>Passo 3.2 — Detalhamento</span>
+      <span data-en="Step 3.2 — Detail" data-pt="Passo 3.2 — Detalhamento">Step 3.2 — Detail</span>
     </div>
-    <a href="../index.html#step-3-2" class="back-btn">← Voltar ao diagrama</a>
+    <a href="../index.html#step-3-2" class="back-btn"><span data-en="← Back to diagram" data-pt="← Voltar ao diagrama">← Back to diagram</span></a>
+    
   </div>
 
-  <div class="page-header">
-    <span class="icon">🔎</span>
-    <h1>Passo 3.2 — Busca do nó + previewResponses cache</h1>
-  </div>
-  <div class="page-sub">
-    Bloco em <code>flux.service.ts:3240-3278</code>. Recupera o objeto <code>node</code> completo (com data mutada por passos anteriores) do array <code>myUpdatedNodes</code>, marca o id como processado e prepara o cache local <code>responses</code> (últimas 10 preview responses).
+  <div class="hero">
+    <div class="kicker"><span class="ico">🔎</span></div>
+    <h1><span data-en="Step 3.2 — Node lookup + previewResponses cache" data-pt="Passo 3.2 — Busca do nó + previewResponses cache">Step 3.2 — Node lookup + previewResponses cache</span></h1>
+    <div class="goal"><span data-en="Block in &lt;code&gt;flux.service.ts:3240-3278&lt;/code&gt;. Retrieves the full &lt;code&gt;node&lt;/code&gt; object (with data mutated by previous steps) from the &lt;code&gt;myUpdatedNodes&lt;/code&gt; array, marks the id as processed, and prepares the local &lt;code&gt;responses&lt;/code&gt; cache (last 10 preview responses)." data-pt="Bloco em &lt;code&gt;flux.service.ts:3240-3278&lt;/code&gt;. Recupera o objeto &lt;code&gt;node&lt;/code&gt; completo (com data mutada por passos anteriores) do array &lt;code&gt;myUpdatedNodes&lt;/code&gt;, marca o id como processado e prepara o cache local &lt;code&gt;responses&lt;/code&gt; (últimas 10 preview responses).">Block in <code>flux.service.ts:3240-3278</code>. Retrieves the full <code>node</code> object (with data mutated by previous steps) from the <code>myUpdatedNodes</code> array, marks the id as processed, and prepares the local <code>responses</code> cache (last 10 preview responses).</span></div>
   </div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
-    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <div class="step-friendly-title"><span data-en="In summary — what this step does" data-pt="Em resumo — o que esse passo faz">In summary — what this step does</span></div>
     <ul>
-      <li><strong>Abre a pasta viva do funcionário.</strong> O scheduler entregou só um <code>id</code> em 3.1. Agora <code>myUpdatedNodes.find</code> devolve o <em>node inteiro</em> como <strong>referência viva</strong> do array, com todas as mutações que handlers anteriores já fizeram (schema, contentData, previewResponses).</li>
-      <li><strong>Skip silencioso se sumiu.</strong> Se o <code>find</code> não achar (bug latente sem repro), o loop <em>não crasha</em>. O guard <code>if (node) { ... }</code> engole o caso e pula para a próxima iteração. Custo é <code>O(n)</code> por nó. Em agentes com 1000+ nós vira quadrático.</li>
-      <li><strong>Carimba o ponto e tira foto dos contadores.</strong> <code>processedNodeIds.add(id)</code> vira audit trail para Fase 4.1. <code>genericTokensBefore</code> e <code>genericCostBefore</code> guardam snapshot dos acumuladores globais para calcular o <em>delta desse nó</em> em 3.9. <code>nodeStartedAtMs</code> marca o timer para <code>durationMs</code>.</li>
-      <li><strong>Clona o carrossel de preview responses.</strong> Lê <code>node.data.previewResponses</code> para um array local com até 10 itens (ring buffer com bug <code>=== 10</code> em vez de <code>&gt;= 10</code>). Só handlers <em>legacy</em> usam esse cache. O path Temporal persiste em <code>node_executions</code>.</li>
-      <li><strong>Saída.</strong> <code>node</code> (ref viva), <code>responses</code> (array local), snapshots de tokens e custo, timer de duração. Tudo pronto para o dispatch em 3.5. Zero I/O.</li>
+      <li><span data-en="&lt;strong&gt;Opens the employee's live folder.&lt;/strong&gt; The scheduler handed over only an &lt;code&gt;id&lt;/code&gt; in 3.1. Now &lt;code&gt;myUpdatedNodes.find&lt;/code&gt; returns the &lt;em&gt;entire node&lt;/em&gt; as a &lt;strong&gt;live reference&lt;/strong&gt; into the array, with every mutation previous handlers already made (schema, contentData, previewResponses)." data-pt="&lt;strong&gt;Abre a pasta viva do funcionário.&lt;/strong&gt; O scheduler entregou só um &lt;code&gt;id&lt;/code&gt; em 3.1. Agora &lt;code&gt;myUpdatedNodes.find&lt;/code&gt; devolve o &lt;em&gt;node inteiro&lt;/em&gt; como &lt;strong&gt;referência viva&lt;/strong&gt; do array, com todas as mutações que handlers anteriores já fizeram (schema, contentData, previewResponses)."><strong>Opens the employee's live folder.</strong> The scheduler handed over only an <code>id</code> in 3.1. Now <code>myUpdatedNodes.find</code> returns the <em>entire node</em> as a <strong>live reference</strong> into the array, with every mutation previous handlers already made (schema, contentData, previewResponses).</span></li>
+      <li><span data-en="&lt;strong&gt;Silent skip if it vanished.&lt;/strong&gt; If &lt;code&gt;find&lt;/code&gt; doesn't hit (latent bug with no repro), the loop &lt;em&gt;does not crash&lt;/em&gt;. The guard &lt;code&gt;if (node) { ... }&lt;/code&gt; swallows the case and moves to the next iteration. Cost is &lt;code&gt;O(n)&lt;/code&gt; per node. On agents with 1000+ nodes it goes quadratic." data-pt="&lt;strong&gt;Skip silencioso se sumiu.&lt;/strong&gt; Se o &lt;code&gt;find&lt;/code&gt; não achar (bug latente sem repro), o loop &lt;em&gt;não crasha&lt;/em&gt;. O guard &lt;code&gt;if (node) { ... }&lt;/code&gt; engole o caso e pula para a próxima iteração. Custo é &lt;code&gt;O(n)&lt;/code&gt; por nó. Em agentes com 1000+ nós vira quadrático."><strong>Silent skip if it vanished.</strong> If <code>find</code> doesn't hit (latent bug with no repro), the loop <em>does not crash</em>. The guard <code>if (node) { ... }</code> swallows the case and moves to the next iteration. Cost is <code>O(n)</code> per node. On agents with 1000+ nodes it goes quadratic.</span></li>
+      <li><span data-en="&lt;strong&gt;Punches the clock and snapshots the counters.&lt;/strong&gt; &lt;code&gt;processedNodeIds.add(id)&lt;/code&gt; becomes the audit trail for Phase 4.1. &lt;code&gt;genericTokensBefore&lt;/code&gt; and &lt;code&gt;genericCostBefore&lt;/code&gt; snapshot the global accumulators to compute the &lt;em&gt;per-node delta&lt;/em&gt; at 3.9. &lt;code&gt;nodeStartedAtMs&lt;/code&gt; sets the timer for &lt;code&gt;durationMs&lt;/code&gt;." data-pt="&lt;strong&gt;Carimba o ponto e tira foto dos contadores.&lt;/strong&gt; &lt;code&gt;processedNodeIds.add(id)&lt;/code&gt; vira audit trail para Fase 4.1. &lt;code&gt;genericTokensBefore&lt;/code&gt; e &lt;code&gt;genericCostBefore&lt;/code&gt; guardam snapshot dos acumuladores globais para calcular o &lt;em&gt;delta desse nó&lt;/em&gt; em 3.9. &lt;code&gt;nodeStartedAtMs&lt;/code&gt; marca o timer para &lt;code&gt;durationMs&lt;/code&gt;."><strong>Punches the clock and snapshots the counters.</strong> <code>processedNodeIds.add(id)</code> becomes the audit trail for Phase 4.1. <code>genericTokensBefore</code> and <code>genericCostBefore</code> snapshot the global accumulators to compute the <em>per-node delta</em> at 3.9. <code>nodeStartedAtMs</code> sets the timer for <code>durationMs</code>.</span></li>
+      <li><span data-en="&lt;strong&gt;Clones the preview responses carousel.&lt;/strong&gt; Reads &lt;code&gt;node.data.previewResponses&lt;/code&gt; into a local array capped at 10 items (ring buffer with a &lt;code&gt;=== 10&lt;/code&gt; instead of &lt;code&gt;&amp;gt;= 10&lt;/code&gt; bug). Only &lt;em&gt;legacy&lt;/em&gt; handlers use this cache. The Temporal path persists in &lt;code&gt;node_executions&lt;/code&gt;." data-pt="&lt;strong&gt;Clona o carrossel de preview responses.&lt;/strong&gt; Lê &lt;code&gt;node.data.previewResponses&lt;/code&gt; para um array local com até 10 itens (ring buffer com bug &lt;code&gt;=== 10&lt;/code&gt; em vez de &lt;code&gt;&amp;gt;= 10&lt;/code&gt;). Só handlers &lt;em&gt;legacy&lt;/em&gt; usam esse cache. O path Temporal persiste em &lt;code&gt;node_executions&lt;/code&gt;."><strong>Clones the preview responses carousel.</strong> Reads <code>node.data.previewResponses</code> into a local array capped at 10 items (ring buffer with a <code>=== 10</code> instead of <code>&gt;= 10</code> bug). Only <em>legacy</em> handlers use this cache. The Temporal path persists in <code>node_executions</code>.</span></li>
+      <li><span data-en="&lt;strong&gt;Output.&lt;/strong&gt; &lt;code&gt;node&lt;/code&gt; (live ref), &lt;code&gt;responses&lt;/code&gt; (local array), token and cost snapshots, duration timer. Everything ready for dispatch at 3.5. Zero I/O." data-pt="&lt;strong&gt;Saída.&lt;/strong&gt; &lt;code&gt;node&lt;/code&gt; (ref viva), &lt;code&gt;responses&lt;/code&gt; (array local), snapshots de tokens e custo, timer de duração. Tudo pronto para o dispatch em 3.5. Zero I/O."><strong>Output.</strong> <code>node</code> (live ref), <code>responses</code> (local array), token and cost snapshots, duration timer. Everything ready for dispatch at 3.5. Zero I/O.</span></li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto.</strong> O scheduler devolveu só um <code>id</code> em 3.1. Agora é preciso o <em>node inteiro</em>, inclusive campos <code>data</code> que já foram atualizados por nós anteriores nesta mesma execução (ex.: schema mutado, contentData preenchido). Essa referência é <strong>viva</strong>. Mutar <code>node.data</code> aqui reflete no array pai (é o mesmo objeto). Vários handlers dependem disso depois.
+    <span data-en="&lt;strong&gt;Context.&lt;/strong&gt; The scheduler returned only an &lt;code&gt;id&lt;/code&gt; in 3.1. Now we need the &lt;em&gt;whole node&lt;/em&gt;, including &lt;code&gt;data&lt;/code&gt; fields that were already updated by earlier nodes in this same run (e.g. mutated schema, filled contentData). That reference is &lt;strong&gt;live&lt;/strong&gt;. Mutating &lt;code&gt;node.data&lt;/code&gt; here reflects on the parent array (same object). Several handlers rely on that later." data-pt="&lt;strong&gt;Contexto.&lt;/strong&gt; O scheduler devolveu só um &lt;code&gt;id&lt;/code&gt; em 3.1. Agora é preciso o &lt;em&gt;node inteiro&lt;/em&gt;, inclusive campos &lt;code&gt;data&lt;/code&gt; que já foram atualizados por nós anteriores nesta mesma execução (ex.: schema mutado, contentData preenchido). Essa referência é &lt;strong&gt;viva&lt;/strong&gt;. Mutar &lt;code&gt;node.data&lt;/code&gt; aqui reflete no array pai (é o mesmo objeto). Vários handlers dependem disso depois."><strong>Context.</strong> The scheduler returned only an <code>id</code> in 3.1. Now we need the <em>whole node</em>, including <code>data</code> fields that were already updated by earlier nodes in this same run (e.g. mutated schema, filled contentData). That reference is <strong>live</strong>. Mutating <code>node.data</code> here reflects on the parent array (same object). Several handlers rely on that later.</span>
   </div>
 
   <!-- Overview chain -->
   <div class="overview-mini">
-    <div class="overview-mini-title">Cadeia de operações em 3.2</div>
+    <div class="overview-mini-title"><span data-en="Operation chain in 3.2" data-pt="Cadeia de operações em 3.2">Operation chain in 3.2</span></div>
     <div class="overview-chain">
       <a href="#fn-a" class="overview-chip"><span class="lbl">A</span>myUpdatedNodes.find</a>
       <span class="overview-sep">→</span>
@@ -206,10 +222,10 @@
       <span class="overview-sep">→</span>
       <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>previewResponses cache</a>
       <span class="overview-sep">→</span>
-      <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>Ring buffer (max 10)</a>
+      <a href="#fn-d" class="overview-chip"><span class="lbl">D</span><span data-en="Ring buffer (max 10)" data-pt="Ring buffer (max 10)">Ring buffer (max 10)</span></a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado. <code>node</code> (ref viva), <code>responses</code> (array local com até 10 itens do histórico), snapshot de tokens e custo pré-execução. Se <code>node</code> não for encontrado, o loop <em>não</em> lança erro. Apenas pula o body inteiro.
+      <span data-en="Result. &lt;code&gt;node&lt;/code&gt; (live ref), &lt;code&gt;responses&lt;/code&gt; (local array with up to 10 history items), pre-execution snapshot of tokens and cost. If &lt;code&gt;node&lt;/code&gt; is not found, the loop does &lt;em&gt;not&lt;/em&gt; throw. It just skips the entire body." data-pt="Resultado. &lt;code&gt;node&lt;/code&gt; (ref viva), &lt;code&gt;responses&lt;/code&gt; (array local com até 10 itens do histórico), snapshot de tokens e custo pré-execução. Se &lt;code&gt;node&lt;/code&gt; não for encontrado, o loop &lt;em&gt;não&lt;/em&gt; lança erro. Apenas pula o body inteiro.">Result. <code>node</code> (live ref), <code>responses</code> (local array with up to 10 history items), pre-execution snapshot of tokens and cost. If <code>node</code> is not found, the loop does <em>not</em> throw. It just skips the entire body.</span>
     </div>
   </div>
 
@@ -229,31 +245,31 @@
         const node = myUpdatedNodes.find(node =&gt; node.id === id);
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Busca linear pelo id no array <code>myUpdatedNodes</code>. Devolve <em>referência</em>, não cópia. Qualquer mutação em <code>node.data</code> nas etapas seguintes atinge o mesmo objeto que o próximo <code>find</code> vai encontrar.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Linear lookup by id in the &lt;code&gt;myUpdatedNodes&lt;/code&gt; array. Returns a &lt;em&gt;reference&lt;/em&gt;, not a copy. Any mutation on &lt;code&gt;node.data&lt;/code&gt; in the next steps hits the same object the next &lt;code&gt;find&lt;/code&gt; will encounter." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Busca linear pelo id no array &lt;code&gt;myUpdatedNodes&lt;/code&gt;. Devolve &lt;em&gt;referência&lt;/em&gt;, não cópia. Qualquer mutação em &lt;code&gt;node.data&lt;/code&gt; nas etapas seguintes atinge o mesmo objeto que o próximo &lt;code&gt;find&lt;/code&gt; vai encontrar."><strong>Purpose.</strong> Linear lookup by id in the <code>myUpdatedNodes</code> array. Returns a <em>reference</em>, not a copy. Any mutation on <code>node.data</code> in the next steps hits the same object the next <code>find</code> will encounter.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> É o <em>arquivo vivo</em> da execução. O scheduler entregou só uma etiqueta (id), mas o loop precisa da pasta inteira do funcionário. A pasta contém todos os documentos que outros nós já mexeram: schema atualizado, contentData preenchido, previewResponses acumulados. O <code>find</code> abre essa pasta no arquivo compartilhado (<code>myUpdatedNodes</code>) e entrega a <strong>pasta original, não uma fotocópia</strong>. Qualquer coisa que se rabisque ou escreva nela aparece para o próximo que abrir a mesma pasta. É o que permite handlers escreverem <code>node.data.text = 'resposta do LLM'</code> e o próximo nó já ver essa saída. Se o <code>find</code> não achar (algum handler removeu o nó do array mas o scheduler ainda tem esse id na fila — bug latente sem repro conhecido), o loop <em>não crasha</em>. Apenas pula para a próxima iteração com um <code>if (node) { ... }</code> silencioso. É <strong>O(n)</strong>. Em agentes com 1000+ nós, essa busca linear por iteração vira quadrática. Barato hoje, ofensor amanhã.
+        <span data-en="&lt;strong&gt;In summary.&lt;/strong&gt; This is the run's &lt;em&gt;live archive&lt;/em&gt;. The scheduler handed over just a label (id), but the loop needs the employee's whole folder. The folder holds every document other nodes already touched: updated schema, filled contentData, accumulated previewResponses. &lt;code&gt;find&lt;/code&gt; opens that folder in the shared archive (&lt;code&gt;myUpdatedNodes&lt;/code&gt;) and hands over the &lt;strong&gt;original folder, not a photocopy&lt;/strong&gt;. Anything scribbled or written on it shows up for the next person who opens the same folder. That's what lets handlers write &lt;code&gt;node.data.text = 'LLM response'&lt;/code&gt; and the next node already see that output. If &lt;code&gt;find&lt;/code&gt; misses (some handler removed the node from the array but the scheduler still has that id in the queue — latent bug, no known repro), the loop &lt;em&gt;does not crash&lt;/em&gt;. It just moves to the next iteration with a silent &lt;code&gt;if (node) { ... }&lt;/code&gt;. It's &lt;strong&gt;O(n)&lt;/strong&gt;. On agents with 1000+ nodes, this per-iteration linear search becomes quadratic. Cheap today, offender tomorrow." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; É o &lt;em&gt;arquivo vivo&lt;/em&gt; da execução. O scheduler entregou só uma etiqueta (id), mas o loop precisa da pasta inteira do funcionário. A pasta contém todos os documentos que outros nós já mexeram: schema atualizado, contentData preenchido, previewResponses acumulados. O &lt;code&gt;find&lt;/code&gt; abre essa pasta no arquivo compartilhado (&lt;code&gt;myUpdatedNodes&lt;/code&gt;) e entrega a &lt;strong&gt;pasta original, não uma fotocópia&lt;/strong&gt;. Qualquer coisa que se rabisque ou escreva nela aparece para o próximo que abrir a mesma pasta. É o que permite handlers escreverem &lt;code&gt;node.data.text = 'resposta do LLM'&lt;/code&gt; e o próximo nó já ver essa saída. Se o &lt;code&gt;find&lt;/code&gt; não achar (algum handler removeu o nó do array mas o scheduler ainda tem esse id na fila — bug latente sem repro conhecido), o loop &lt;em&gt;não crasha&lt;/em&gt;. Apenas pula para a próxima iteração com um &lt;code&gt;if (node) { ... }&lt;/code&gt; silencioso. É &lt;strong&gt;O(n)&lt;/strong&gt;. Em agentes com 1000+ nós, essa busca linear por iteração vira quadrática. Barato hoje, ofensor amanhã."><strong>In summary.</strong> This is the run's <em>live archive</em>. The scheduler handed over just a label (id), but the loop needs the employee's whole folder. The folder holds every document other nodes already touched: updated schema, filled contentData, accumulated previewResponses. <code>find</code> opens that folder in the shared archive (<code>myUpdatedNodes</code>) and hands over the <strong>original folder, not a photocopy</strong>. Anything scribbled or written on it shows up for the next person who opens the same folder. That's what lets handlers write <code>node.data.text = 'LLM response'</code> and the next node already see that output. If <code>find</code> misses (some handler removed the node from the array but the scheduler still has that id in the queue — latent bug, no known repro), the loop <em>does not crash</em>. It just moves to the next iteration with a silent <code>if (node) { ... }</code>. It's <strong>O(n)</strong>. On agents with 1000+ nodes, this per-iteration linear search becomes quadratic. Cheap today, offender tomorrow.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">A1</span> Array de nós mutáveis do run</div>
+            <div class="box-title"><span class="badge step">A1</span> <span data-en="Mutable node array of the run" data-pt="Array de nós mutáveis do run">Mutable node array of the run</span></div>
             <div class="box-desc">
-              <code>myUpdatedNodes</code> foi inicializado no início do <code>apiV2()</code> a partir de <code>newFlows</code> (nós carregados em 1.3). É <strong>reatribuído</strong> por vários handlers ao longo do loop:
-              <br>• handlers Temporal: <code>myUpdatedNodes = result.myUpdatedNodes</code> (novo array)
-              <br>• handlers inline: <code>myUpdatedNodes = [...nodes]</code>
-              <br>• arrayNode: reescreve durante iteração
+              <span data-en="&lt;code&gt;myUpdatedNodes&lt;/code&gt; was initialized at the top of &lt;code&gt;apiV2()&lt;/code&gt; from &lt;code&gt;newFlows&lt;/code&gt; (nodes loaded in 1.3). It is &lt;strong&gt;reassigned&lt;/strong&gt; by several handlers throughout the loop:&lt;br&gt;• Temporal handlers: &lt;code&gt;myUpdatedNodes = result.myUpdatedNodes&lt;/code&gt; (new array)&lt;br&gt;• inline handlers: &lt;code&gt;myUpdatedNodes = [...nodes]&lt;/code&gt;&lt;br&gt;• arrayNode: rewrites during iteration" data-pt="&lt;code&gt;myUpdatedNodes&lt;/code&gt; foi inicializado no início do &lt;code&gt;apiV2()&lt;/code&gt; a partir de &lt;code&gt;newFlows&lt;/code&gt; (nós carregados em 1.3). É &lt;strong&gt;reatribuído&lt;/strong&gt; por vários handlers ao longo do loop:&lt;br&gt;• handlers Temporal: &lt;code&gt;myUpdatedNodes = result.myUpdatedNodes&lt;/code&gt; (novo array)&lt;br&gt;• handlers inline: &lt;code&gt;myUpdatedNodes = [...nodes]&lt;/code&gt;&lt;br&gt;• arrayNode: reescreve durante iteração"><code>myUpdatedNodes</code> was initialized at the top of <code>apiV2()</code> from <code>newFlows</code> (nodes loaded in 1.3). It is <strong>reassigned</strong> by several handlers throughout the loop:
+              <br>• Temporal handlers: <code>myUpdatedNodes = result.myUpdatedNodes</code> (new array)
+              <br>• inline handlers: <code>myUpdatedNodes = [...nodes]</code>
+              <br>• arrayNode: rewrites during iteration</span>
             </div>
-            <div class="box-file">flux.service.ts:3241 · inicializado em ~3146-3182</div>
+            <div class="box-file"><span data-en="flux.service.ts:3241 · initialized at ~3146-3182" data-pt="flux.service.ts:3241 · inicializado em ~3146-3182">flux.service.ts:3241 · initialized at ~3146-3182</span></div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box decision">
-            <div class="box-title"><span class="badge step">A2</span> node encontrado?</div>
+            <div class="box-title"><span class="badge step">A2</span> <span data-en="node found?" data-pt="node encontrado?">node found?</span></div>
             <div class="box-desc">
-              <code>if (node) { ... }</code>. Todo o corpo do loop está dentro desse guard. Se <code>find</code> retornar <code>undefined</code>, o loop pula para a próxima iteração sem executar 3.3-3.11.
-              <br><br>Por que isso aconteceria? Se um handler removeu um id do array mas o scheduler ainda tem esse id em <code>ready</code> (bug latente, sem repro conhecido).
+              <span data-en="&lt;code&gt;if (node) { ... }&lt;/code&gt;. The whole loop body lives inside that guard. If &lt;code&gt;find&lt;/code&gt; returns &lt;code&gt;undefined&lt;/code&gt;, the loop moves to the next iteration without executing 3.3-3.11.&lt;br&gt;&lt;br&gt;Why would that happen? If a handler removed an id from the array but the scheduler still holds that id in &lt;code&gt;ready&lt;/code&gt; (latent bug, no known repro)." data-pt="&lt;code&gt;if (node) { ... }&lt;/code&gt;. Todo o corpo do loop está dentro desse guard. Se &lt;code&gt;find&lt;/code&gt; retornar &lt;code&gt;undefined&lt;/code&gt;, o loop pula para a próxima iteração sem executar 3.3-3.11.&lt;br&gt;&lt;br&gt;Por que isso aconteceria? Se um handler removeu um id do array mas o scheduler ainda tem esse id em &lt;code&gt;ready&lt;/code&gt; (bug latente, sem repro conhecido)."><code>if (node) { ... }</code>. The whole loop body lives inside that guard. If <code>find</code> returns <code>undefined</code>, the loop moves to the next iteration without executing 3.3-3.11.
+              <br><br>Why would that happen? If a handler removed an id from the array but the scheduler still holds that id in <code>ready</code> (latent bug, no known repro).</span>
             </div>
             <div class="box-file">flux.service.ts:3244</div>
           </div>
@@ -261,19 +277,19 @@
 
         <div class="fn-asides">
           <div class="aside warn">
-            <div class="aside-title">⚠️ Custo O(n) por nó</div>
-            <code>Array.find</code> é linear no tamanho de <code>myUpdatedNodes</code>. Em agentes com 100+ nós, isso é 100 iterações internas × 100 nós no loop = 10.000 comparações. Barato hoje. Escalar para 1.000+ nós vira O(n²).
-            <br><br>Um <code>Map&lt;id, node&gt;</code> resolveria em O(1). Exigiria manutenção sempre que <code>myUpdatedNodes</code> é reatribuído.
+            <div class="aside-title"><span data-en="⚠️ O(n) cost per node" data-pt="⚠️ Custo O(n) por nó">⚠️ O(n) cost per node</span></div>
+            <span data-en="&lt;code&gt;Array.find&lt;/code&gt; is linear in the size of &lt;code&gt;myUpdatedNodes&lt;/code&gt;. On agents with 100+ nodes that's 100 inner iterations × 100 nodes in the loop = 10,000 comparisons. Cheap today. Scaling to 1,000+ nodes goes O(n²).&lt;br&gt;&lt;br&gt;A &lt;code&gt;Map&amp;lt;id, node&amp;gt;&lt;/code&gt; would solve it in O(1). Would require maintenance every time &lt;code&gt;myUpdatedNodes&lt;/code&gt; is reassigned." data-pt="&lt;code&gt;Array.find&lt;/code&gt; é linear no tamanho de &lt;code&gt;myUpdatedNodes&lt;/code&gt;. Em agentes com 100+ nós, isso é 100 iterações internas × 100 nós no loop = 10.000 comparações. Barato hoje. Escalar para 1.000+ nós vira O(n²).&lt;br&gt;&lt;br&gt;Um &lt;code&gt;Map&amp;lt;id, node&amp;gt;&lt;/code&gt; resolveria em O(1). Exigiria manutenção sempre que &lt;code&gt;myUpdatedNodes&lt;/code&gt; é reatribuído."><code>Array.find</code> is linear in the size of <code>myUpdatedNodes</code>. On agents with 100+ nodes that's 100 inner iterations × 100 nodes in the loop = 10,000 comparisons. Cheap today. Scaling to 1,000+ nodes goes O(n²).
+            <br><br>A <code>Map&lt;id, node&gt;</code> would solve it in O(1). Would require maintenance every time <code>myUpdatedNodes</code> is reassigned.</span>
           </div>
 
           <div class="aside info">
-            <div class="aside-title">🎯 Reatribuição vs mutação</div>
-            Alguns handlers <strong>reatribuem</strong> <code>myUpdatedNodes</code> (novo array). Outros mutam campos in-place em <code>node.data</code>. As duas coisas convivem. Para saber qual, é preciso ler o handler específico. Consistência não é garantida.
+            <div class="aside-title"><span data-en="🎯 Reassignment vs mutation" data-pt="🎯 Reatribuição vs mutação">🎯 Reassignment vs mutation</span></div>
+            <span data-en="Some handlers &lt;strong&gt;reassign&lt;/strong&gt; &lt;code&gt;myUpdatedNodes&lt;/code&gt; (new array). Others mutate fields in place on &lt;code&gt;node.data&lt;/code&gt;. Both live together. To find out which, you have to read the specific handler. Consistency is not guaranteed." data-pt="Alguns handlers &lt;strong&gt;reatribuem&lt;/strong&gt; &lt;code&gt;myUpdatedNodes&lt;/code&gt; (novo array). Outros mutam campos in-place em &lt;code&gt;node.data&lt;/code&gt;. As duas coisas convivem. Para saber qual, é preciso ler o handler específico. Consistência não é garantida.">Some handlers <strong>reassign</strong> <code>myUpdatedNodes</code> (new array). Others mutate fields in place on <code>node.data</code>. Both live together. To find out which, you have to read the specific handler. Consistency is not guaranteed.</span>
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 Silent skip quando node = undefined</div>
-            O guard <code>if (node)</code> engole o caso sem log. Se o scheduler agendou um id que não existe mais em <code>myUpdatedNodes</code>, o loop apenas prossegue para o próximo. Sem marcar como completed nem dead. Isso pode causar warning na Fase 4 (nós não-processados), mas sem crash.
+            <div class="aside-title"><span data-en="🔧 Silent skip when node = undefined" data-pt="🔧 Silent skip quando node = undefined">🔧 Silent skip when node = undefined</span></div>
+            <span data-en="The &lt;code&gt;if (node)&lt;/code&gt; guard swallows the case without a log. If the scheduler scheduled an id that no longer exists in &lt;code&gt;myUpdatedNodes&lt;/code&gt;, the loop just moves to the next one. Without marking as completed or dead. That may cause a warning in Phase 4 (unprocessed nodes), but no crash." data-pt="O guard &lt;code&gt;if (node)&lt;/code&gt; engole o caso sem log. Se o scheduler agendou um id que não existe mais em &lt;code&gt;myUpdatedNodes&lt;/code&gt;, o loop apenas prossegue para o próximo. Sem marcar como completed nem dead. Isso pode causar warning na Fase 4 (nós não-processados), mas sem crash.">The <code>if (node)</code> guard swallows the case without a log. If the scheduler scheduled an id that no longer exists in <code>myUpdatedNodes</code>, the loop just moves to the next one. Without marking as completed or dead. That may cause a warning in Phase 4 (unprocessed nodes), but no crash.</span>
           </div>
         </div>
       </div>
@@ -287,7 +303,7 @@
     <div class="fn-card-header">
       <div class="fn-title">
         <span class="badge migrated" style="background:#3B82F6;color:white">B</span>
-        <code>processedNodeIds.add + snapshot de tokens/cost</code>
+        <code><span data-en="processedNodeIds.add + tokens/cost snapshot" data-pt="processedNodeIds.add + snapshot de tokens/cost">processedNodeIds.add + tokens/cost snapshot</span></code>
       </div>
       <div class="fn-loc">flux.service.ts:3245-3250</div>
     </div>
@@ -296,15 +312,15 @@
         processedNodeIds.add(id); lastExecutedNodeId = id; genericTokensBefore = totalTokensUsed; genericCostBefore = totalCost; nodeStartedAtMs = Date.now();
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Registra para usos posteriores: (i) que este id foi visto pelo loop (usado no aviso da Fase 4.1 sobre nós não-processados); (ii) snapshot de <em>quantos tokens e custo</em> já foram gastos <strong>antes</strong> deste nó. O delta é atribuído ao nó em 3.7 e 3.9.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Records for later use: (i) that this id was seen by the loop (used in the Phase 4.1 warning about unprocessed nodes); (ii) snapshot of &lt;em&gt;how many tokens and how much cost&lt;/em&gt; were already spent &lt;strong&gt;before&lt;/strong&gt; this node. The delta is attributed to the node at 3.7 and 3.9." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Registra para usos posteriores: (i) que este id foi visto pelo loop (usado no aviso da Fase 4.1 sobre nós não-processados); (ii) snapshot de &lt;em&gt;quantos tokens e custo&lt;/em&gt; já foram gastos &lt;strong&gt;antes&lt;/strong&gt; deste nó. O delta é atribuído ao nó em 3.7 e 3.9."><strong>Purpose.</strong> Records for later use: (i) that this id was seen by the loop (used in the Phase 4.1 warning about unprocessed nodes); (ii) snapshot of <em>how many tokens and how much cost</em> were already spent <strong>before</strong> this node. The delta is attributed to the node at 3.7 and 3.9.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> É o <em>carimbo de entrada</em> do funcionário no ponto. Antes do trabalho começar, o sistema anota 4 coisas.
-        <br>(1) "Este passou por aqui hoje" (<code>processedNodeIds</code>). Vira audit trail para Fase 4 detectar nós órfãos.
-        <br>(2) "Este foi o último a entrar" (<code>lastExecutedNodeId</code>). Se a execução explodir, o catch top-level sabe onde parou.
-        <br>(3) Snapshot do <em>total de tokens e custo já gastos</em> na execução inteira <strong>até esse momento</strong>. Depois do nó rodar, o passo 3.9 faz a subtração <code>totalTokensUsed - genericTokensBefore</code> e sabe exatamente quantos tokens esse nó consumiu.
-        <br>(4) Marca o timestamp de início para calcular <code>durationMs</code>.
-        <br>Nada disso executa o nó. É apenas preparação de contadores. O ponto sutil é o snapshot. Os acumuladores <code>totalTokensUsed</code> e <code>totalCost</code> são <em>globais da execução</em>, atualizados via callback <code>onUpdateTokens</code> durante streaming de LLM. A única forma de saber "quanto foi só desse nó" é fazer esse snapshot antes-depois. Padrão simples, essencial para o billing por nó.
+        <span data-en="&lt;strong&gt;In summary.&lt;/strong&gt; This is the employee's &lt;em&gt;entry punch card&lt;/em&gt;. Before work starts, the system logs 4 things.&lt;br&gt;(1) &quot;This one passed through today&quot; (&lt;code&gt;processedNodeIds&lt;/code&gt;). Becomes the audit trail for Phase 4 to detect orphan nodes.&lt;br&gt;(2) &quot;This was the last one in&quot; (&lt;code&gt;lastExecutedNodeId&lt;/code&gt;). If the run blows up, the top-level catch knows where it stopped.&lt;br&gt;(3) Snapshot of the &lt;em&gt;total tokens and cost spent so far&lt;/em&gt; across the entire run &lt;strong&gt;up to this moment&lt;/strong&gt;. After the node runs, step 3.9 does the subtraction &lt;code&gt;totalTokensUsed - genericTokensBefore&lt;/code&gt; and knows exactly how many tokens this node consumed.&lt;br&gt;(4) Marks the start timestamp to compute &lt;code&gt;durationMs&lt;/code&gt;.&lt;br&gt;None of this runs the node. It's just counter setup. The subtle bit is the snapshot. The &lt;code&gt;totalTokensUsed&lt;/code&gt; and &lt;code&gt;totalCost&lt;/code&gt; accumulators are &lt;em&gt;run-global&lt;/em&gt;, updated via the &lt;code&gt;onUpdateTokens&lt;/code&gt; callback during LLM streaming. The only way to know &quot;how much only this node cost&quot; is via that before-after snapshot. Simple pattern, essential for per-node billing." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; É o &lt;em&gt;carimbo de entrada&lt;/em&gt; do funcionário no ponto. Antes do trabalho começar, o sistema anota 4 coisas.&lt;br&gt;(1) &quot;Este passou por aqui hoje&quot; (&lt;code&gt;processedNodeIds&lt;/code&gt;). Vira audit trail para Fase 4 detectar nós órfãos.&lt;br&gt;(2) &quot;Este foi o último a entrar&quot; (&lt;code&gt;lastExecutedNodeId&lt;/code&gt;). Se a execução explodir, o catch top-level sabe onde parou.&lt;br&gt;(3) Snapshot do &lt;em&gt;total de tokens e custo já gastos&lt;/em&gt; na execução inteira &lt;strong&gt;até esse momento&lt;/strong&gt;. Depois do nó rodar, o passo 3.9 faz a subtração &lt;code&gt;totalTokensUsed - genericTokensBefore&lt;/code&gt; e sabe exatamente quantos tokens esse nó consumiu.&lt;br&gt;(4) Marca o timestamp de início para calcular &lt;code&gt;durationMs&lt;/code&gt;.&lt;br&gt;Nada disso executa o nó. É apenas preparação de contadores. O ponto sutil é o snapshot. Os acumuladores &lt;code&gt;totalTokensUsed&lt;/code&gt; e &lt;code&gt;totalCost&lt;/code&gt; são &lt;em&gt;globais da execução&lt;/em&gt;, atualizados via callback &lt;code&gt;onUpdateTokens&lt;/code&gt; durante streaming de LLM. A única forma de saber &quot;quanto foi só desse nó&quot; é fazer esse snapshot antes-depois. Padrão simples, essencial para o billing por nó."><strong>In summary.</strong> This is the employee's <em>entry punch card</em>. Before work starts, the system logs 4 things.
+        <br>(1) "This one passed through today" (<code>processedNodeIds</code>). Becomes the audit trail for Phase 4 to detect orphan nodes.
+        <br>(2) "This was the last one in" (<code>lastExecutedNodeId</code>). If the run blows up, the top-level catch knows where it stopped.
+        <br>(3) Snapshot of the <em>total tokens and cost spent so far</em> across the entire run <strong>up to this moment</strong>. After the node runs, step 3.9 does the subtraction <code>totalTokensUsed - genericTokensBefore</code> and knows exactly how many tokens this node consumed.
+        <br>(4) Marks the start timestamp to compute <code>durationMs</code>.
+        <br>None of this runs the node. It's just counter setup. The subtle bit is the snapshot. The <code>totalTokensUsed</code> and <code>totalCost</code> accumulators are <em>run-global</em>, updated via the <code>onUpdateTokens</code> callback during LLM streaming. The only way to know "how much only this node cost" is via that before-after snapshot. Simple pattern, essential for per-node billing.</span>
       </div>
 
       <div class="fn-body-cols">
@@ -313,28 +329,28 @@
 processedNodeIds.<span class="t">add</span>(id);
 lastExecutedNodeId = id;
 <span class="k">let</span> genericRunLogNode: RunLogNode | <span class="k">null</span> = <span class="k">null</span>;
-<span class="k">let</span> genericTokensBefore = totalTokensUsed;   <span class="c">// snapshot pré-execução</span>
+<span class="k">let</span> genericTokensBefore = totalTokensUsed;   <span class="c">// pre-execution snapshot</span>
 <span class="k">let</span> genericCostBefore = totalCost;
-<span class="k">const</span> nodeStartedAtMs = <span class="t">Date</span>.<span class="t">now</span>();       <span class="c">// timer p/ durationMs</span>
+<span class="k">const</span> nodeStartedAtMs = <span class="t">Date</span>.<span class="t">now</span>();       <span class="c">// timer for durationMs</span>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box cross">
             <div class="box-title"><span class="badge step">B1</span> processedNodeIds — Set&lt;string&gt;</div>
             <div class="box-desc">
-              Inicializado como <code>new Set&lt;string&gt;()</code> no bloco de "variáveis mutáveis" (passo 2.2). Cresce a cada iteração aqui. Não é usado para decidir schedule (isso é o <code>scheduled</code> set do scheduler). Serve como <strong>audit trail</strong> em Fase 4:
-              <br>• 4.1 loga warning se <code>nodeIds - completed - dead - processedNodeIds ≠ ∅</code>
-              <br>• Usado para debug quando a execução terminou "estranha"
+              <span data-en="Initialized as &lt;code&gt;new Set&amp;lt;string&amp;gt;()&lt;/code&gt; in the &quot;mutable variables&quot; block (step 2.2). Grows on every iteration here. Not used to decide scheduling (that's the scheduler's &lt;code&gt;scheduled&lt;/code&gt; set). Serves as an &lt;strong&gt;audit trail&lt;/strong&gt; in Phase 4:&lt;br&gt;• 4.1 logs a warning if &lt;code&gt;nodeIds - completed - dead - processedNodeIds ≠ ∅&lt;/code&gt;&lt;br&gt;• Used for debugging when a run ended &quot;weird&quot;" data-pt="Inicializado como &lt;code&gt;new Set&amp;lt;string&amp;gt;()&lt;/code&gt; no bloco de &quot;variáveis mutáveis&quot; (passo 2.2). Cresce a cada iteração aqui. Não é usado para decidir schedule (isso é o &lt;code&gt;scheduled&lt;/code&gt; set do scheduler). Serve como &lt;strong&gt;audit trail&lt;/strong&gt; em Fase 4:&lt;br&gt;• 4.1 loga warning se &lt;code&gt;nodeIds - completed - dead - processedNodeIds ≠ ∅&lt;/code&gt;&lt;br&gt;• Usado para debug quando a execução terminou &quot;estranha&quot;">Initialized as <code>new Set&lt;string&gt;()</code> in the "mutable variables" block (step 2.2). Grows on every iteration here. Not used to decide scheduling (that's the scheduler's <code>scheduled</code> set). Serves as an <strong>audit trail</strong> in Phase 4:
+              <br>• 4.1 logs a warning if <code>nodeIds - completed - dead - processedNodeIds ≠ ∅</code>
+              <br>• Used for debugging when a run ended "weird"</span>
             </div>
             <div class="box-file">flux.service.ts:3245, 4735-4778</div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box cross">
-            <div class="box-title"><span class="badge step">B2</span> Snapshot tokens/cost — base pro delta por nó</div>
+            <div class="box-title"><span class="badge step">B2</span> <span data-en="Tokens/cost snapshot — baseline for per-node delta" data-pt="Snapshot tokens/cost — base pro delta por nó">Tokens/cost snapshot — baseline for per-node delta</span></div>
             <div class="box-desc">
-              <code>totalTokensUsed</code> e <code>totalCost</code> são acumuladores <strong>globais da execução</strong>. Cada handler pode chamar <code>onUpdateTokens(delta)</code> várias vezes (streaming, retries).
-              <br><br>Em 3.9 (<code>endNode</code>), o delta é calculado: <code>tokens = totalTokensUsed - genericTokensBefore</code>. Isso é o custo <em>desse nó específico</em>, atribuído ao <code>RunLogNode</code>.
+              <span data-en="&lt;code&gt;totalTokensUsed&lt;/code&gt; and &lt;code&gt;totalCost&lt;/code&gt; are &lt;strong&gt;run-global&lt;/strong&gt; accumulators. Each handler can call &lt;code&gt;onUpdateTokens(delta)&lt;/code&gt; several times (streaming, retries).&lt;br&gt;&lt;br&gt;In 3.9 (&lt;code&gt;endNode&lt;/code&gt;), the delta is computed: &lt;code&gt;tokens = totalTokensUsed - genericTokensBefore&lt;/code&gt;. That's the cost of &lt;em&gt;this specific node&lt;/em&gt;, attributed to the &lt;code&gt;RunLogNode&lt;/code&gt;." data-pt="&lt;code&gt;totalTokensUsed&lt;/code&gt; e &lt;code&gt;totalCost&lt;/code&gt; são acumuladores &lt;strong&gt;globais da execução&lt;/strong&gt;. Cada handler pode chamar &lt;code&gt;onUpdateTokens(delta)&lt;/code&gt; várias vezes (streaming, retries).&lt;br&gt;&lt;br&gt;Em 3.9 (&lt;code&gt;endNode&lt;/code&gt;), o delta é calculado: &lt;code&gt;tokens = totalTokensUsed - genericTokensBefore&lt;/code&gt;. Isso é o custo &lt;em&gt;desse nó específico&lt;/em&gt;, atribuído ao &lt;code&gt;RunLogNode&lt;/code&gt;."><code>totalTokensUsed</code> and <code>totalCost</code> are <strong>run-global</strong> accumulators. Each handler can call <code>onUpdateTokens(delta)</code> several times (streaming, retries).
+              <br><br>In 3.9 (<code>endNode</code>), the delta is computed: <code>tokens = totalTokensUsed - genericTokensBefore</code>. That's the cost of <em>this specific node</em>, attributed to the <code>RunLogNode</code>.</span>
             </div>
             <div class="box-file">flux.service.ts:3248-3249, 4537-4546</div>
           </div>
@@ -342,18 +358,18 @@ lastExecutedNodeId = id;
 
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Por que Date.now() aqui e não em 3.4?</div>
-            <code>nodeStartedAtMs</code> é usado no branch de cancelamento (linha 4525: <code>elapsedMs: Date.now() - nodeStartedAtMs</code>) e no <code>durationMs</code> do RunLogNode. Marcar aqui garante que o timer captura <em>toda</em> a preparação do nó (substitution, RunLog, dispatch), não só a execução em si.
+            <div class="aside-title"><span data-en="🎯 Why Date.now() here and not at 3.4?" data-pt="🎯 Por que Date.now() aqui e não em 3.4?">🎯 Why Date.now() here and not at 3.4?</span></div>
+            <span data-en="&lt;code&gt;nodeStartedAtMs&lt;/code&gt; is used in the cancellation branch (line 4525: &lt;code&gt;elapsedMs: Date.now() - nodeStartedAtMs&lt;/code&gt;) and in the RunLogNode's &lt;code&gt;durationMs&lt;/code&gt;. Marking here ensures the timer captures &lt;em&gt;all&lt;/em&gt; of the node's setup (substitution, RunLog, dispatch), not just the execution itself." data-pt="&lt;code&gt;nodeStartedAtMs&lt;/code&gt; é usado no branch de cancelamento (linha 4525: &lt;code&gt;elapsedMs: Date.now() - nodeStartedAtMs&lt;/code&gt;) e no &lt;code&gt;durationMs&lt;/code&gt; do RunLogNode. Marcar aqui garante que o timer captura &lt;em&gt;toda&lt;/em&gt; a preparação do nó (substitution, RunLog, dispatch), não só a execução em si."><code>nodeStartedAtMs</code> is used in the cancellation branch (line 4525: <code>elapsedMs: Date.now() - nodeStartedAtMs</code>) and in the RunLogNode's <code>durationMs</code>. Marking here ensures the timer captures <em>all</em> of the node's setup (substitution, RunLog, dispatch), not just the execution itself.</span>
           </div>
 
           <div class="aside">
             <div class="aside-title">📎 lastExecutedNodeId</div>
-            Usado pelo catch top-level (5.1) para reportar <em>onde</em> parou quando algo explode. Também aparece em logs de webhook de erro. É uma string, atualizada a cada iteração. Se a execução crasha no meio de um nó, esse campo aponta para ele.
+            <span data-en="Used by the top-level catch (5.1) to report &lt;em&gt;where&lt;/em&gt; it stopped when something blows up. Also appears in error webhook logs. It's a string, updated every iteration. If the run crashes mid-node, this field points to it." data-pt="Usado pelo catch top-level (5.1) para reportar &lt;em&gt;onde&lt;/em&gt; parou quando algo explode. Também aparece em logs de webhook de erro. É uma string, atualizada a cada iteração. Se a execução crasha no meio de um nó, esse campo aponta para ele.">Used by the top-level catch (5.1) to report <em>where</em> it stopped when something blows up. Also appears in error webhook logs. It's a string, updated every iteration. If the run crashes mid-node, this field points to it.</span>
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 genericRunLogNode = null</div>
-            Inicializado como <code>null</code>. Vai ser preenchido em 3.4, <em>exceto</em> para <code>fluxBox</code> e <code>libraryNode</code> (sub-run anchors: o coletor cria um documento aninhado em vez de um nó simples). Depois, 3.9 só chama <code>endNode</code> se <code>genericRunLogNode</code> ficou não-nulo.
+            <span data-en="Initialized as &lt;code&gt;null&lt;/code&gt;. Will be filled in 3.4, &lt;em&gt;except&lt;/em&gt; for &lt;code&gt;fluxBox&lt;/code&gt; and &lt;code&gt;libraryNode&lt;/code&gt; (sub-run anchors: the collector creates a nested document instead of a simple node). Later, 3.9 only calls &lt;code&gt;endNode&lt;/code&gt; if &lt;code&gt;genericRunLogNode&lt;/code&gt; ended up non-null." data-pt="Inicializado como &lt;code&gt;null&lt;/code&gt;. Vai ser preenchido em 3.4, &lt;em&gt;exceto&lt;/em&gt; para &lt;code&gt;fluxBox&lt;/code&gt; e &lt;code&gt;libraryNode&lt;/code&gt; (sub-run anchors: o coletor cria um documento aninhado em vez de um nó simples). Depois, 3.9 só chama &lt;code&gt;endNode&lt;/code&gt; se &lt;code&gt;genericRunLogNode&lt;/code&gt; ficou não-nulo.">Initialized as <code>null</code>. Will be filled in 3.4, <em>except</em> for <code>fluxBox</code> and <code>libraryNode</code> (sub-run anchors: the collector creates a nested document instead of a simple node). Later, 3.9 only calls <code>endNode</code> if <code>genericRunLogNode</code> ended up non-null.</span>
           </div>
         </div>
       </div>
@@ -367,7 +383,7 @@ lastExecutedNodeId = id;
     <div class="fn-card-header">
       <div class="fn-title">
         <span class="badge migrated" style="background:#10B981;color:white">C</span>
-        <code>previewResponses (leitura do cache in-JSONB)</code>
+        <code><span data-en="previewResponses (read from in-JSONB cache)" data-pt="previewResponses (leitura do cache in-JSONB)">previewResponses (read from in-JSONB cache)</span></code>
       </div>
       <div class="fn-loc">flux.service.ts:3270-3274</div>
     </div>
@@ -376,10 +392,10 @@ lastExecutedNodeId = id;
         let responses = []; if (node?.data?.previewResponses?.length) { responses = [...node?.data?.previewResponses]; }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Copia (spread) as respostas de preview <em>já persistidas em <code>flows_nodes.data</code></em> para um array local. Handlers de nós que produzem preview (voiceBoxNode, imageGenerator, audioReaderNode, etc.) usam esse array como base para montar o próximo item do histórico.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Copies (spread) the preview responses &lt;em&gt;already persisted in &lt;code&gt;flows_nodes.data&lt;/code&gt;&lt;/em&gt; into a local array. Handlers for nodes that produce preview (voiceBoxNode, imageGenerator, audioReaderNode, etc.) use this array as the base to build the next history item." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Copia (spread) as respostas de preview &lt;em&gt;já persistidas em &lt;code&gt;flows_nodes.data&lt;/code&gt;&lt;/em&gt; para um array local. Handlers de nós que produzem preview (voiceBoxNode, imageGenerator, audioReaderNode, etc.) usam esse array como base para montar o próximo item do histórico."><strong>Purpose.</strong> Copies (spread) the preview responses <em>already persisted in <code>flows_nodes.data</code></em> into a local array. Handlers for nodes that produce preview (voiceBoxNode, imageGenerator, audioReaderNode, etc.) use this array as the base to build the next history item.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> É o <em>carrossel de últimas fotos</em> do nó. Pense num painel na UI que mostra "veja as últimas 10 respostas que esse nó gerou". Esses históricos vivem <strong>dentro do JSONB de <code>flows_nodes.data.previewResponses</code></strong>. O loop clona esse array para o escopo local no início de cada execução. Handlers que produzem preview (TTS, imagem, áudio, HTML) recebem esse array como argumento, adicionam o novo item no fim e no passo 3.6 (L4) gravam de volta no banco. Se já tiver 10 itens, o mais antigo é descartado (<code>shift</code>) para manter o carrossel no tamanho. A checagem é <code>=== 10</code>, não <code>&gt;= 10</code>. Se por bug o array chegou com 11+, remove um só. A próxima persistência já enche demais. Bug latente. O ponto crítico para migração. <code>previewResponses</code> é o <strong>principal ofensor de perf de FE</strong> em agentes grandes. Cada item pode carregar texto longo, imagem base64, contentData inteiro. Vezes 10 versões por nó vezes 100 nós dá 1000 blobs vivos no JSONB. Handlers migrados para o worker (textGenerator, scripting, etc.) já não recebem esse array. Persistem em <code>node_executions.outputData</code>, que é o padrão desejado.
+        <span data-en="&lt;strong&gt;In summary.&lt;/strong&gt; This is the node's &lt;em&gt;latest-photos carousel&lt;/em&gt;. Picture a panel in the UI showing &quot;see the last 10 responses this node generated&quot;. Those histories live &lt;strong&gt;inside the JSONB of &lt;code&gt;flows_nodes.data.previewResponses&lt;/code&gt;&lt;/strong&gt;. The loop clones that array into local scope at the start of each execution. Handlers producing preview (TTS, image, audio, HTML) receive that array as an argument, append the new item at the end, and at step 3.6 (L4) write it back to the DB. If it already has 10 items, the oldest is dropped (&lt;code&gt;shift&lt;/code&gt;) to keep the carousel bounded. The check is &lt;code&gt;=== 10&lt;/code&gt;, not &lt;code&gt;&amp;gt;= 10&lt;/code&gt;. If, due to a bug, the array arrived with 11+, only one is removed. The next persistence goes over-size. Latent bug. Critical point for migration. &lt;code&gt;previewResponses&lt;/code&gt; is the &lt;strong&gt;top FE perf offender&lt;/strong&gt; in large agents. Each item can carry long text, base64 image, whole contentData. Times 10 versions per node times 100 nodes gives 1000 live blobs in JSONB. Handlers migrated to the worker (textGenerator, scripting, etc.) no longer receive this array. They persist to &lt;code&gt;node_executions.outputData&lt;/code&gt;, the desired pattern." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; É o &lt;em&gt;carrossel de últimas fotos&lt;/em&gt; do nó. Pense num painel na UI que mostra &quot;veja as últimas 10 respostas que esse nó gerou&quot;. Esses históricos vivem &lt;strong&gt;dentro do JSONB de &lt;code&gt;flows_nodes.data.previewResponses&lt;/code&gt;&lt;/strong&gt;. O loop clona esse array para o escopo local no início de cada execução. Handlers que produzem preview (TTS, imagem, áudio, HTML) recebem esse array como argumento, adicionam o novo item no fim e no passo 3.6 (L4) gravam de volta no banco. Se já tiver 10 itens, o mais antigo é descartado (&lt;code&gt;shift&lt;/code&gt;) para manter o carrossel no tamanho. A checagem é &lt;code&gt;=== 10&lt;/code&gt;, não &lt;code&gt;&amp;gt;= 10&lt;/code&gt;. Se por bug o array chegou com 11+, remove um só. A próxima persistência já enche demais. Bug latente. O ponto crítico para migração. &lt;code&gt;previewResponses&lt;/code&gt; é o &lt;strong&gt;principal ofensor de perf de FE&lt;/strong&gt; em agentes grandes. Cada item pode carregar texto longo, imagem base64, contentData inteiro. Vezes 10 versões por nó vezes 100 nós dá 1000 blobs vivos no JSONB. Handlers migrados para o worker (textGenerator, scripting, etc.) já não recebem esse array. Persistem em &lt;code&gt;node_executions.outputData&lt;/code&gt;, que é o padrão desejado."><strong>In summary.</strong> This is the node's <em>latest-photos carousel</em>. Picture a panel in the UI showing "see the last 10 responses this node generated". Those histories live <strong>inside the JSONB of <code>flows_nodes.data.previewResponses</code></strong>. The loop clones that array into local scope at the start of each execution. Handlers producing preview (TTS, image, audio, HTML) receive that array as an argument, append the new item at the end, and at step 3.6 (L4) write it back to the DB. If it already has 10 items, the oldest is dropped (<code>shift</code>) to keep the carousel bounded. The check is <code>=== 10</code>, not <code>&gt;= 10</code>. If, due to a bug, the array arrived with 11+, only one is removed. The next persistence goes over-size. Latent bug. Critical point for migration. <code>previewResponses</code> is the <strong>top FE perf offender</strong> in large agents. Each item can carry long text, base64 image, whole contentData. Times 10 versions per node times 100 nodes gives 1000 live blobs in JSONB. Handlers migrated to the worker (textGenerator, scripting, etc.) no longer receive this array. They persist to <code>node_executions.outputData</code>, the desired pattern.</span>
       </div>
 
       <div class="fn-body-cols">
@@ -392,40 +408,40 @@ lastExecutedNodeId = id;
 }
 
 <span class="k">if</span> (responses.length === <span class="s">10</span>) {
-  responses.<span class="t">shift</span>();                        <span class="c">// remove o mais antigo</span>
+  responses.<span class="t">shift</span>();                        <span class="c">// removes the oldest</span>
 }
           </div>
           <div class="arrow">↓</div>
 
           <div class="cascade">
-            <div class="cascade-title">🪜 Estado do array responses</div>
+            <div class="cascade-title"><span data-en="🪜 State of the responses array" data-pt="🪜 Estado do array responses">🪜 State of the responses array</span></div>
             <div class="cascade-step">
               <span class="cascade-num">1</span>
-              <span class="cond">node.data.previewResponses ausente/vazio</span>
-              <span class="result pass">responses = [] (começa vazio)</span>
+              <span class="cond"><span data-en="node.data.previewResponses missing/empty" data-pt="node.data.previewResponses ausente/vazio">node.data.previewResponses missing/empty</span></span>
+              <span class="result pass"><span data-en="responses = [] (starts empty)" data-pt="responses = [] (começa vazio)">responses = [] (starts empty)</span></span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">2</span>
-              <span class="cond">tem 1-9 itens</span>
-              <span class="result pass">clone shallow, sem shift</span>
+              <span class="cond"><span data-en="has 1-9 items" data-pt="tem 1-9 itens">has 1-9 items</span></span>
+              <span class="result pass"><span data-en="shallow clone, no shift" data-pt="clone shallow, sem shift">shallow clone, no shift</span></span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">3</span>
-              <span class="cond">tem exatamente 10 itens</span>
-              <span class="result deny">shift(). Descarta o [0].</span>
+              <span class="cond"><span data-en="has exactly 10 items" data-pt="tem exatamente 10 itens">has exactly 10 items</span></span>
+              <span class="result deny"><span data-en="shift(). Discards [0]." data-pt="shift(). Descarta o [0].">shift(). Discards [0].</span></span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">4</span>
-              <span class="cond">tem 11+ itens (não deveria acontecer)</span>
-              <span class="result deny">shift() só uma vez. Bug latente.</span>
+              <span class="cond"><span data-en="has 11+ items (should not happen)" data-pt="tem 11+ itens (não deveria acontecer)">has 11+ items (should not happen)</span></span>
+              <span class="result deny"><span data-en="shift() only once. Latent bug." data-pt="shift() só uma vez. Bug latente.">shift() only once. Latent bug.</span></span>
             </div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box backend">
-            <div class="box-title"><span class="badge step">C1</span> Passado por args para handlers</div>
+            <div class="box-title"><span class="badge step">C1</span> <span data-en="Passed via args to handlers" data-pt="Passado por args para handlers">Passed via args to handlers</span></div>
             <div class="box-desc">
-              O array <code>responses</code> é passado a handlers como <code>voiceBoxNode</code>, <code>audioReaderNode</code>, <code>commandContentNode</code>, <code>imageGenerator</code>. Cada um faz <code>push</code> do novo item e grava <code>node.data.previewResponses = responses</code> na saída. É persistido em <code>flows_nodes.data</code> no passo 3.6 (L4).
+              <span data-en="The &lt;code&gt;responses&lt;/code&gt; array is passed to handlers like &lt;code&gt;voiceBoxNode&lt;/code&gt;, &lt;code&gt;audioReaderNode&lt;/code&gt;, &lt;code&gt;commandContentNode&lt;/code&gt;, &lt;code&gt;imageGenerator&lt;/code&gt;. Each &lt;code&gt;push&lt;/code&gt;es the new item and writes &lt;code&gt;node.data.previewResponses = responses&lt;/code&gt; on output. It's persisted in &lt;code&gt;flows_nodes.data&lt;/code&gt; at step 3.6 (L4)." data-pt="O array &lt;code&gt;responses&lt;/code&gt; é passado a handlers como &lt;code&gt;voiceBoxNode&lt;/code&gt;, &lt;code&gt;audioReaderNode&lt;/code&gt;, &lt;code&gt;commandContentNode&lt;/code&gt;, &lt;code&gt;imageGenerator&lt;/code&gt;. Cada um faz &lt;code&gt;push&lt;/code&gt; do novo item e grava &lt;code&gt;node.data.previewResponses = responses&lt;/code&gt; na saída. É persistido em &lt;code&gt;flows_nodes.data&lt;/code&gt; no passo 3.6 (L4).">The <code>responses</code> array is passed to handlers like <code>voiceBoxNode</code>, <code>audioReaderNode</code>, <code>commandContentNode</code>, <code>imageGenerator</code>. Each <code>push</code>es the new item and writes <code>node.data.previewResponses = responses</code> on output. It's persisted in <code>flows_nodes.data</code> at step 3.6 (L4).</span>
             </div>
             <div class="box-file">flux.service.ts:3372, 3651, 6972, 7911</div>
           </div>
@@ -433,24 +449,24 @@ lastExecutedNodeId = id;
 
         <div class="fn-asides">
           <div class="aside warn">
-            <div class="aside-title">⚠️ Ring buffer só cuida de len === 10</div>
-            O check é <code>if (responses.length === 10)</code>. Se por algum bug o array chegou com 11+ itens (ex.: dois handlers escreveram em ordem estranha), o shift acontece <em>uma vez só</em>. Permanece com 10 ou mais na próxima persistência.
-            <br><br>Não é robusto. Deveria ser <code>while (responses.length &gt;= 10)</code>.
+            <div class="aside-title"><span data-en="⚠️ Ring buffer only handles len === 10" data-pt="⚠️ Ring buffer só cuida de len === 10">⚠️ Ring buffer only handles len === 10</span></div>
+            <span data-en="The check is &lt;code&gt;if (responses.length === 10)&lt;/code&gt;. If, due to some bug, the array arrived with 11+ items (e.g. two handlers wrote in strange order), the shift happens &lt;em&gt;only once&lt;/em&gt;. It stays at 10 or more on the next persistence.&lt;br&gt;&lt;br&gt;Not robust. Should be &lt;code&gt;while (responses.length &amp;gt;= 10)&lt;/code&gt;." data-pt="O check é &lt;code&gt;if (responses.length === 10)&lt;/code&gt;. Se por algum bug o array chegou com 11+ itens (ex.: dois handlers escreveram em ordem estranha), o shift acontece &lt;em&gt;uma vez só&lt;/em&gt;. Permanece com 10 ou mais na próxima persistência.&lt;br&gt;&lt;br&gt;Não é robusto. Deveria ser &lt;code&gt;while (responses.length &amp;gt;= 10)&lt;/code&gt;.">The check is <code>if (responses.length === 10)</code>. If, due to some bug, the array arrived with 11+ items (e.g. two handlers wrote in strange order), the shift happens <em>only once</em>. It stays at 10 or more on the next persistence.
+            <br><br>Not robust. Should be <code>while (responses.length &gt;= 10)</code>.</span>
           </div>
 
           <div class="aside info">
-            <div class="aside-title">🎯 Por que 10?</div>
-            Limite arbitrário para evitar que <code>flows_nodes.data</code> cresça indefinidamente por nó com histórico de reruns manuais. É o "carrossel de últimas respostas" que aparece na UI do canvas. Permite ao usuário navegar entre execuções recentes sem persistir tudo em <code>node_executions</code>.
+            <div class="aside-title"><span data-en="🎯 Why 10?" data-pt="🎯 Por que 10?">🎯 Why 10?</span></div>
+            <span data-en="Arbitrary limit to prevent &lt;code&gt;flows_nodes.data&lt;/code&gt; from growing unbounded per node with manual rerun history. It's the &quot;latest responses carousel&quot; shown in the canvas UI. Lets the user navigate recent runs without persisting everything in &lt;code&gt;node_executions&lt;/code&gt;." data-pt="Limite arbitrário para evitar que &lt;code&gt;flows_nodes.data&lt;/code&gt; cresça indefinidamente por nó com histórico de reruns manuais. É o &quot;carrossel de últimas respostas&quot; que aparece na UI do canvas. Permite ao usuário navegar entre execuções recentes sem persistir tudo em &lt;code&gt;node_executions&lt;/code&gt;.">Arbitrary limit to prevent <code>flows_nodes.data</code> from growing unbounded per node with manual rerun history. It's the "latest responses carousel" shown in the canvas UI. Lets the user navigate recent runs without persisting everything in <code>node_executions</code>.</span>
           </div>
 
           <div class="aside warn">
-            <div class="aside-title">⚠️ Origem do JSONB gordo</div>
-            <code>previewResponses</code> é <em>o</em> campo campeão de RAM e perf pesada em <code>flows_nodes.data</code>. Cada item pode ter texto longo, imagem base64, contentData completo. Manter 10 versões por nó vezes 100 nós dá 1000 blobs vivos no JSONB. É o motivo de agentes grandes terem FE travando ao abrir o canvas.
+            <div class="aside-title"><span data-en="⚠️ Source of the fat JSONB" data-pt="⚠️ Origem do JSONB gordo">⚠️ Source of the fat JSONB</span></div>
+            <span data-en="&lt;code&gt;previewResponses&lt;/code&gt; is &lt;em&gt;the&lt;/em&gt; champion RAM and heavy-perf field in &lt;code&gt;flows_nodes.data&lt;/code&gt;. Each item can hold long text, base64 image, whole contentData. Keeping 10 versions per node times 100 nodes gives 1000 live blobs in JSONB. That's why large agents have the FE freezing when opening the canvas." data-pt="&lt;code&gt;previewResponses&lt;/code&gt; é &lt;em&gt;o&lt;/em&gt; campo campeão de RAM e perf pesada em &lt;code&gt;flows_nodes.data&lt;/code&gt;. Cada item pode ter texto longo, imagem base64, contentData completo. Manter 10 versões por nó vezes 100 nós dá 1000 blobs vivos no JSONB. É o motivo de agentes grandes terem FE travando ao abrir o canvas."><code>previewResponses</code> is <em>the</em> champion RAM and heavy-perf field in <code>flows_nodes.data</code>. Each item can hold long text, base64 image, whole contentData. Keeping 10 versions per node times 100 nodes gives 1000 live blobs in JSONB. That's why large agents have the FE freezing when opening the canvas.</span>
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 Path Temporal não usa isso</div>
-            Handlers migrados para o worker (<code>textGenerator</code>, <code>scripting</code>, etc.) <em>não recebem</em> o array <code>responses</code>. O worker persiste saída em <code>node_executions.outputData</code>. Não replica em <code>flows_nodes.data.previewResponses</code>. Só o path inline (legacy) mantém esse cache.
+            <div class="aside-title"><span data-en="🔧 The Temporal path doesn't use this" data-pt="🔧 Path Temporal não usa isso">🔧 The Temporal path doesn't use this</span></div>
+            <span data-en="Handlers migrated to the worker (&lt;code&gt;textGenerator&lt;/code&gt;, &lt;code&gt;scripting&lt;/code&gt;, etc.) &lt;em&gt;do not receive&lt;/em&gt; the &lt;code&gt;responses&lt;/code&gt; array. The worker persists output to &lt;code&gt;node_executions.outputData&lt;/code&gt;. It does not replicate it in &lt;code&gt;flows_nodes.data.previewResponses&lt;/code&gt;. Only the inline (legacy) path keeps this cache." data-pt="Handlers migrados para o worker (&lt;code&gt;textGenerator&lt;/code&gt;, &lt;code&gt;scripting&lt;/code&gt;, etc.) &lt;em&gt;não recebem&lt;/em&gt; o array &lt;code&gt;responses&lt;/code&gt;. O worker persiste saída em &lt;code&gt;node_executions.outputData&lt;/code&gt;. Não replica em &lt;code&gt;flows_nodes.data.previewResponses&lt;/code&gt;. Só o path inline (legacy) mantém esse cache.">Handlers migrated to the worker (<code>textGenerator</code>, <code>scripting</code>, etc.) <em>do not receive</em> the <code>responses</code> array. The worker persists output to <code>node_executions.outputData</code>. It does not replicate it in <code>flows_nodes.data.previewResponses</code>. Only the inline (legacy) path keeps this cache.</span>
           </div>
         </div>
       </div>
@@ -459,30 +475,31 @@ lastExecutedNodeId = id;
 
   <!-- SUMMARY -->
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo — o que sai de 3.2:</strong>
-    <br>• <code>node</code>: referência viva do array <code>myUpdatedNodes</code> (mutável).
-    <br>• <code>processedNodeIds</code> ganhou 1 entrada (audit trail).
-    <br>• <code>lastExecutedNodeId</code> = id do nó atual.
-    <br>• <code>genericTokensBefore</code> e <code>genericCostBefore</code>: snapshot para calcular delta em 3.7.
-    <br>• <code>nodeStartedAtMs</code>: timer para <code>durationMs</code> e telemetria de cancelamento.
-    <br>• <code>responses</code>: array local com até 10 preview responses (só usado pelo path inline).
-    <br>• Nenhum I/O. 100% in-memory.
+    <span data-en="&lt;strong&gt;Summary — what leaves 3.2:&lt;/strong&gt;&lt;br&gt;• &lt;code&gt;node&lt;/code&gt;: live reference into the &lt;code&gt;myUpdatedNodes&lt;/code&gt; array (mutable).&lt;br&gt;• &lt;code&gt;processedNodeIds&lt;/code&gt; got 1 new entry (audit trail).&lt;br&gt;• &lt;code&gt;lastExecutedNodeId&lt;/code&gt; = id of the current node.&lt;br&gt;• &lt;code&gt;genericTokensBefore&lt;/code&gt; and &lt;code&gt;genericCostBefore&lt;/code&gt;: snapshot to compute delta at 3.7.&lt;br&gt;• &lt;code&gt;nodeStartedAtMs&lt;/code&gt;: timer for &lt;code&gt;durationMs&lt;/code&gt; and cancellation telemetry.&lt;br&gt;• &lt;code&gt;responses&lt;/code&gt;: local array with up to 10 preview responses (only used by the inline path).&lt;br&gt;• No I/O. 100% in-memory." data-pt="&lt;strong&gt;Resumo — o que sai de 3.2:&lt;/strong&gt;&lt;br&gt;• &lt;code&gt;node&lt;/code&gt;: referência viva do array &lt;code&gt;myUpdatedNodes&lt;/code&gt; (mutável).&lt;br&gt;• &lt;code&gt;processedNodeIds&lt;/code&gt; ganhou 1 entrada (audit trail).&lt;br&gt;• &lt;code&gt;lastExecutedNodeId&lt;/code&gt; = id do nó atual.&lt;br&gt;• &lt;code&gt;genericTokensBefore&lt;/code&gt; e &lt;code&gt;genericCostBefore&lt;/code&gt;: snapshot para calcular delta em 3.7.&lt;br&gt;• &lt;code&gt;nodeStartedAtMs&lt;/code&gt;: timer para &lt;code&gt;durationMs&lt;/code&gt; e telemetria de cancelamento.&lt;br&gt;• &lt;code&gt;responses&lt;/code&gt;: array local com até 10 preview responses (só usado pelo path inline).&lt;br&gt;• Nenhum I/O. 100% in-memory."><strong>Summary — what leaves 3.2:</strong>
+    <br>• <code>node</code>: live reference into the <code>myUpdatedNodes</code> array (mutable).
+    <br>• <code>processedNodeIds</code> got 1 new entry (audit trail).
+    <br>• <code>lastExecutedNodeId</code> = id of the current node.
+    <br>• <code>genericTokensBefore</code> and <code>genericCostBefore</code>: snapshot to compute delta at 3.7.
+    <br>• <code>nodeStartedAtMs</code>: timer for <code>durationMs</code> and cancellation telemetry.
+    <br>• <code>responses</code>: local array with up to 10 preview responses (only used by the inline path).
+    <br>• No I/O. 100% in-memory.</span>
   </div>
 
   <div class="note">
-    <strong>Observações para migração:</strong>
-    <br>• <code>myUpdatedNodes.find</code> é acoplado ao modelo "backend é orquestrador único". No worker, cada activity recebe o node por payload. Sem array vivo, sem <code>find</code>.
-    <br>• <strong>previewResponses precisa sair de <code>flows_nodes.data</code></strong>. É o principal ofensor de perf de FE (memória <code>[[project_jsonb_fat_fields]]</code>). Migração vai levá-lo para <code>node_executions</code>. Isso já é o padrão do path Temporal.
-    <br>• O snapshot de tokens e custo via variável local do loop <strong>não sobrevive</strong> num modelo onde cada nó é uma activity isolada. O worker cobra individualmente via HTTP <code>/worker/charge-tokens</code> (passo W7). O backend agrega depois via <code>sumChargesByExecution</code> (T6).
-    <br>• Bookkeeping (<code>processedNodeIds</code>, <code>lastExecutedNodeId</code>) hoje é usado em Fase 4/5 para warnings e diagnóstico. No worker, essa informação pode vir do próprio <code>WorkflowHistory</code> do Temporal (mais confiável). Essencial, simples de reimplementar.
-    <br>• O bug do ring buffer (<code>=== 10</code> em vez de <code>&gt;= 10</code>) merece uma linha no plano de migração para corrigir antes de portar.
+    <span data-en="&lt;strong&gt;Migration notes:&lt;/strong&gt;&lt;br&gt;• &lt;code&gt;myUpdatedNodes.find&lt;/code&gt; is coupled to the &quot;backend is the sole orchestrator&quot; model. In the worker, each activity receives the node by payload. No live array, no &lt;code&gt;find&lt;/code&gt;.&lt;br&gt;• &lt;strong&gt;previewResponses must leave &lt;code&gt;flows_nodes.data&lt;/code&gt;&lt;/strong&gt;. It's the top FE perf offender (memory &lt;code&gt;[[project_jsonb_fat_fields]]&lt;/code&gt;). Migration will move it to &lt;code&gt;node_executions&lt;/code&gt;. That's already the Temporal path pattern.&lt;br&gt;• The tokens and cost snapshot via a loop local variable &lt;strong&gt;does not survive&lt;/strong&gt; in a model where each node is an isolated activity. The worker charges individually via HTTP &lt;code&gt;/worker/charge-tokens&lt;/code&gt; (step W7). The backend aggregates later via &lt;code&gt;sumChargesByExecution&lt;/code&gt; (T6).&lt;br&gt;• Bookkeeping (&lt;code&gt;processedNodeIds&lt;/code&gt;, &lt;code&gt;lastExecutedNodeId&lt;/code&gt;) is today used in Phase 4/5 for warnings and diagnostics. In the worker, that info can come from Temporal's own &lt;code&gt;WorkflowHistory&lt;/code&gt; (more reliable). Essential, easy to reimplement.&lt;br&gt;• The ring-buffer bug (&lt;code&gt;=== 10&lt;/code&gt; instead of &lt;code&gt;&amp;gt;= 10&lt;/code&gt;) deserves a line in the migration plan to fix before porting." data-pt="&lt;strong&gt;Observações para migração:&lt;/strong&gt;&lt;br&gt;• &lt;code&gt;myUpdatedNodes.find&lt;/code&gt; é acoplado ao modelo &quot;backend é orquestrador único&quot;. No worker, cada activity recebe o node por payload. Sem array vivo, sem &lt;code&gt;find&lt;/code&gt;.&lt;br&gt;• &lt;strong&gt;previewResponses precisa sair de &lt;code&gt;flows_nodes.data&lt;/code&gt;&lt;/strong&gt;. É o principal ofensor de perf de FE (memória &lt;code&gt;[[project_jsonb_fat_fields]]&lt;/code&gt;). Migração vai levá-lo para &lt;code&gt;node_executions&lt;/code&gt;. Isso já é o padrão do path Temporal.&lt;br&gt;• O snapshot de tokens e custo via variável local do loop &lt;strong&gt;não sobrevive&lt;/strong&gt; num modelo onde cada nó é uma activity isolada. O worker cobra individualmente via HTTP &lt;code&gt;/worker/charge-tokens&lt;/code&gt; (passo W7). O backend agrega depois via &lt;code&gt;sumChargesByExecution&lt;/code&gt; (T6).&lt;br&gt;• Bookkeeping (&lt;code&gt;processedNodeIds&lt;/code&gt;, &lt;code&gt;lastExecutedNodeId&lt;/code&gt;) hoje é usado em Fase 4/5 para warnings e diagnóstico. No worker, essa informação pode vir do próprio &lt;code&gt;WorkflowHistory&lt;/code&gt; do Temporal (mais confiável). Essencial, simples de reimplementar.&lt;br&gt;• O bug do ring buffer (&lt;code&gt;=== 10&lt;/code&gt; em vez de &lt;code&gt;&amp;gt;= 10&lt;/code&gt;) merece uma linha no plano de migração para corrigir antes de portar."><strong>Migration notes:</strong>
+    <br>• <code>myUpdatedNodes.find</code> is coupled to the "backend is the sole orchestrator" model. In the worker, each activity receives the node by payload. No live array, no <code>find</code>.
+    <br>• <strong>previewResponses must leave <code>flows_nodes.data</code></strong>. It's the top FE perf offender (memory <code>[[project_jsonb_fat_fields]]</code>). Migration will move it to <code>node_executions</code>. That's already the Temporal path pattern.
+    <br>• The tokens and cost snapshot via a loop local variable <strong>does not survive</strong> in a model where each node is an isolated activity. The worker charges individually via HTTP <code>/worker/charge-tokens</code> (step W7). The backend aggregates later via <code>sumChargesByExecution</code> (T6).
+    <br>• Bookkeeping (<code>processedNodeIds</code>, <code>lastExecutedNodeId</code>) is today used in Phase 4/5 for warnings and diagnostics. In the worker, that info can come from Temporal's own <code>WorkflowHistory</code> (more reliable). Essential, easy to reimplement.
+    <br>• The ring-buffer bug (<code>=== 10</code> instead of <code>&gt;= 10</code>) deserves a line in the migration plan to fix before porting.</span>
   </div>
 
   <div class="page-footer-nav">
-    <a href="../index.html#step-3-2" class="back-btn">← Voltar ao diagrama principal</a>
+    <a href="../index.html#step-3-2" class="back-btn"><span data-en="← Back to main diagram" data-pt="← Voltar ao diagrama principal">← Back to main diagram</span></a>
   </div>
 
 </div>
+<script src="../_assets/i18n.js" defer></script>
 <script>
 (function() {
   function toggle(card) {

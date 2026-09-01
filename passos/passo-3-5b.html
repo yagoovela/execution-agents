@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Passo 3.5b — publishInApiNodeOutput + persistSmallMemoryEntries | Detalhamento</title>
+<title>Step 3.5b — publishInApiNodeOutput + persistSmallMemoryEntries | Detail</title>
+<link rel="stylesheet" href="../_assets/i18n.css">
+<link rel="stylesheet" href="../_assets/header.css">
 <style>
   * { box-sizing: border-box; }
   body {
@@ -235,51 +237,67 @@
 </head>
 <body>
 <div class="container">
+<div class="doc-nav">
+  <nav class="doc-tabs" aria-label="Documentation sections">
+    <a href="../index.html" class="doc-tab is-active"><span data-en="Current architecture" data-pt="Arquitetura atual">Current architecture</span></a>
+    <a href="../arquitetura-v2.html" class="doc-tab"><span data-en="v2 architecture" data-pt="Arquitetura v2">v2 architecture</span></a>
+    <a href="../arquitetura-v2-complemento.html" class="doc-tab"><span data-en="Plan as tasks" data-pt="Plano em tarefas">Plan as tasks</span></a>
+    <a href="../timeline/index.html" class="doc-tab"><span data-en="Timeline" data-pt="Timeline">Timeline</span></a>
+  </nav>
+  <div class="lang-sw" role="group" aria-label="Language">
+    <button type="button" data-lang="en" aria-pressed="true">EN-US</button>
+    <button type="button" data-lang="pt" aria-pressed="false">PT-BR</button>
+  </div>
+</div>
+
+
+
 
   <!-- TOP NAV -->
   <div class="page-nav">
     <div class="breadcrumb">
-      <a href="../index.html">📋 Execução de Agente</a>
+      <a href="../index.html">📋 <span data-en="Agent execution" data-pt="Execução de Agente">Agent execution</span></a>
       <span class="sep">›</span>
-      <span>Passo 3.5b — Detalhamento</span>
+      <span data-en="Step 3.5b — Detail" data-pt="Passo 3.5b — Detalhamento">Step 3.5b — Detail</span>
     </div>
-    <a href="../index.html#step-3-5b" class="back-btn">← Voltar ao diagrama</a>
+    <div style="display:flex;gap:10px;align-items:center">
+      <a href="../index.html#step-3-5b" class="back-btn"><span data-en="← Back to diagram" data-pt="← Voltar ao diagrama">← Back to diagram</span></a>
+      
+    </div>
   </div>
 
   <!-- PAGE HEADER -->
-  <div class="page-header">
-    <span class="icon">📤</span>
-    <h1>Passo 3.5b — publishInApiNodeOutput + persistSmallMemoryEntries</h1>
-  </div>
-  <div class="page-sub">
-    Bloco em <code>flux.service.ts:4562-4581</code>. Depois que o handler de um nó terminou e o resultado está em <code>myUpdatedNodes</code>, este bloco é o equivalente inline de <strong>W7-W9 do worker</strong>. Propaga a saída para os nós conectados (via schema e edges) e persiste as entries de <code>fluxObject</code> (Small Memory) no banco. Só roda se o nó <em>não</em> for Temporal e <em>não</em> for integração roteada para o worker.
+  <div class="hero">
+    <div class="kicker"><span class="ico">📤</span></div>
+    <h1><span data-en="Step 3.5b — publishInApiNodeOutput + persistSmallMemoryEntries" data-pt="Passo 3.5b — publishInApiNodeOutput + persistSmallMemoryEntries">Step 3.5b — publishInApiNodeOutput + persistSmallMemoryEntries</span></h1>
+    <div class="goal"><span data-en="Block in &lt;code&gt;flux.service.ts:4562-4581&lt;/code&gt;. After a node's handler finished and the result is in &lt;code&gt;myUpdatedNodes&lt;/code&gt;, this block is the inline equivalent of &lt;strong&gt;W7-W9 in the worker&lt;/strong&gt;. Propagates the output to the connected nodes (via schema and edges) and persists the &lt;code&gt;fluxObject&lt;/code&gt; entries (Small Memory) in the database. Only runs if the node is &lt;em&gt;not&lt;/em&gt; Temporal and &lt;em&gt;not&lt;/em&gt; an integration routed to the worker." data-pt="Bloco em &lt;code&gt;flux.service.ts:4562-4581&lt;/code&gt;. Depois que o handler de um nó terminou e o resultado está em &lt;code&gt;myUpdatedNodes&lt;/code&gt;, este bloco é o equivalente inline de &lt;strong&gt;W7-W9 do worker&lt;/strong&gt;. Propaga a saída para os nós conectados (via schema e edges) e persiste as entries de &lt;code&gt;fluxObject&lt;/code&gt; (Small Memory) no banco. Só roda se o nó &lt;em&gt;não&lt;/em&gt; for Temporal e &lt;em&gt;não&lt;/em&gt; for integração roteada para o worker.">Block in <code>flux.service.ts:4562-4581</code>. After a node's handler finished and the result is in <code>myUpdatedNodes</code>, this block is the inline equivalent of <strong>W7-W9 in the worker</strong>. Propagates the output to the connected nodes (via schema and edges) and persists the <code>fluxObject</code> entries (Small Memory) in the database. Only runs if the node is <em>not</em> Temporal and <em>not</em> an integration routed to the worker.</span></div>
   </div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
-    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <div class="step-friendly-title"><span data-en="In short — what this step does" data-pt="Em resumo — o que esse passo faz">In short — what this step does</span></div>
     <ul>
-      <li><strong>Gate de "isso é meu problema?".</strong> <code>!isTemporalNode(node.type) && !isWorkerRoutedIntegration(processedNode)</code>. Se o nó já é processado pelo worker (7 tipos Temporal ou 9 providers de integração migrados), o worker faz W8 e W9 lá. <em>Pular.</em> Só entra aqui quando o backend inline é o responsável.</li>
-      <li><strong>Propaga saída para downstream.</strong> <code>publishInApiNodeOutput</code> delega para <code>addConnectToNodes</code> (em <code>folw/contants.ts</code>). Este <em>reescreve</em> o array de nodes rodando <code>modifyData</code> para cada source de edge. Os nós à jusante recebem a saída do nó que acabou de rodar, refletida no <code>data</code> deles. Também chama <code>onMutateSchema(nodeSchema(nodes))</code>, atualizando o schema global.</li>
-      <li><strong>Reassign, não mutação.</strong> <code>myUpdatedNodes = this.publishInApiNodeOutput({...})</code>. O método retorna um <em>novo</em> array (via <code>[...nds]</code> e <code>.map</code>) e o loop reatribui a referência. Segue o mesmo padrão de closure mutation de 1.5 (<code>onMutateObjectCallerData</code>).</li>
-      <li><strong>Persiste Small Memory.</strong> <code>persistSmallMemoryEntries</code> varre os <code>edges</code> procurando quais targets estão ligados via <code>targetHandle === 'inputAdd'</code> ao nó de origem. Para cada <code>fluxObject</code> (que é o <code>SMALL_MEMORY_TYPE</code>), faz <code>UPDATE flows_nodes SET data = ...</code> com <code>entries</code> e <code>userSessionsChat</code>.</li>
-      <li><strong>Sem filtro por tamanho.</strong> Apesar do nome "SmallMemory", <em>não há</em> validação de tamanho aqui. "Small" refere-se ao <em>tipo de nó</em>. O <code>fluxObject</code> foi renomeado para "Small Memory" na UI. Não é um cap de bytes. Persiste tudo que estiver em <code>memoryNode.data.entries</code>.</li>
+      <li><span data-en="&lt;strong&gt;&quot;Is this my problem?&quot; gate.&lt;/strong&gt; &lt;code&gt;!isTemporalNode(node.type) &amp;&amp; !isWorkerRoutedIntegration(processedNode)&lt;/code&gt;. If the node is already processed by the worker (7 Temporal types or 9 migrated integration providers), the worker runs W8 and W9 there. &lt;em&gt;Skip.&lt;/em&gt; Only enters here when the inline backend is the owner." data-pt="&lt;strong&gt;Gate de &quot;isso é meu problema?&quot;.&lt;/strong&gt; &lt;code&gt;!isTemporalNode(node.type) &amp;&amp; !isWorkerRoutedIntegration(processedNode)&lt;/code&gt;. Se o nó já é processado pelo worker (7 tipos Temporal ou 9 providers de integração migrados), o worker faz W8 e W9 lá. &lt;em&gt;Pular.&lt;/em&gt; Só entra aqui quando o backend inline é o responsável."><strong>"Is this my problem?" gate.</strong> <code>!isTemporalNode(node.type) && !isWorkerRoutedIntegration(processedNode)</code>. If the node is already processed by the worker (7 Temporal types or 9 migrated integration providers), the worker runs W8 and W9 there. <em>Skip.</em> Only enters here when the inline backend is the owner.</span></li>
+      <li><span data-en="&lt;strong&gt;Propagates output downstream.&lt;/strong&gt; &lt;code&gt;publishInApiNodeOutput&lt;/code&gt; delegates to &lt;code&gt;addConnectToNodes&lt;/code&gt; (in &lt;code&gt;folw/contants.ts&lt;/code&gt;). This one &lt;em&gt;rewrites&lt;/em&gt; the nodes array by running &lt;code&gt;modifyData&lt;/code&gt; for each edge source. Downstream nodes receive the output of the node that just ran, reflected in their &lt;code&gt;data&lt;/code&gt;. It also calls &lt;code&gt;onMutateSchema(nodeSchema(nodes))&lt;/code&gt;, updating the global schema." data-pt="&lt;strong&gt;Propaga saída para downstream.&lt;/strong&gt; &lt;code&gt;publishInApiNodeOutput&lt;/code&gt; delega para &lt;code&gt;addConnectToNodes&lt;/code&gt; (em &lt;code&gt;folw/contants.ts&lt;/code&gt;). Este &lt;em&gt;reescreve&lt;/em&gt; o array de nodes rodando &lt;code&gt;modifyData&lt;/code&gt; para cada source de edge. Os nós à jusante recebem a saída do nó que acabou de rodar, refletida no &lt;code&gt;data&lt;/code&gt; deles. Também chama &lt;code&gt;onMutateSchema(nodeSchema(nodes))&lt;/code&gt;, atualizando o schema global."><strong>Propagates output downstream.</strong> <code>publishInApiNodeOutput</code> delegates to <code>addConnectToNodes</code> (in <code>folw/contants.ts</code>). This one <em>rewrites</em> the nodes array by running <code>modifyData</code> for each edge source. Downstream nodes receive the output of the node that just ran, reflected in their <code>data</code>. It also calls <code>onMutateSchema(nodeSchema(nodes))</code>, updating the global schema.</span></li>
+      <li><span data-en="&lt;strong&gt;Reassign, not mutation.&lt;/strong&gt; &lt;code&gt;myUpdatedNodes = this.publishInApiNodeOutput({...})&lt;/code&gt;. The method returns a &lt;em&gt;new&lt;/em&gt; array (via &lt;code&gt;[...nds]&lt;/code&gt; and &lt;code&gt;.map&lt;/code&gt;) and the loop reassigns the reference. Follows the same closure-mutation pattern as 1.5 (&lt;code&gt;onMutateObjectCallerData&lt;/code&gt;)." data-pt="&lt;strong&gt;Reassign, não mutação.&lt;/strong&gt; &lt;code&gt;myUpdatedNodes = this.publishInApiNodeOutput({...})&lt;/code&gt;. O método retorna um &lt;em&gt;novo&lt;/em&gt; array (via &lt;code&gt;[...nds]&lt;/code&gt; e &lt;code&gt;.map&lt;/code&gt;) e o loop reatribui a referência. Segue o mesmo padrão de closure mutation de 1.5 (&lt;code&gt;onMutateObjectCallerData&lt;/code&gt;)."><strong>Reassign, not mutation.</strong> <code>myUpdatedNodes = this.publishInApiNodeOutput({...})</code>. The method returns a <em>new</em> array (via <code>[...nds]</code> and <code>.map</code>) and the loop reassigns the reference. Follows the same closure-mutation pattern as 1.5 (<code>onMutateObjectCallerData</code>).</span></li>
+      <li><span data-en="&lt;strong&gt;Persists Small Memory.&lt;/strong&gt; &lt;code&gt;persistSmallMemoryEntries&lt;/code&gt; scans the &lt;code&gt;edges&lt;/code&gt; looking for which targets are connected via &lt;code&gt;targetHandle === 'inputAdd'&lt;/code&gt; to the source node. For each &lt;code&gt;fluxObject&lt;/code&gt; (which is the &lt;code&gt;SMALL_MEMORY_TYPE&lt;/code&gt;), it runs &lt;code&gt;UPDATE flows_nodes SET data = ...&lt;/code&gt; with &lt;code&gt;entries&lt;/code&gt; and &lt;code&gt;userSessionsChat&lt;/code&gt;." data-pt="&lt;strong&gt;Persiste Small Memory.&lt;/strong&gt; &lt;code&gt;persistSmallMemoryEntries&lt;/code&gt; varre os &lt;code&gt;edges&lt;/code&gt; procurando quais targets estão ligados via &lt;code&gt;targetHandle === 'inputAdd'&lt;/code&gt; ao nó de origem. Para cada &lt;code&gt;fluxObject&lt;/code&gt; (que é o &lt;code&gt;SMALL_MEMORY_TYPE&lt;/code&gt;), faz &lt;code&gt;UPDATE flows_nodes SET data = ...&lt;/code&gt; com &lt;code&gt;entries&lt;/code&gt; e &lt;code&gt;userSessionsChat&lt;/code&gt;."><strong>Persists Small Memory.</strong> <code>persistSmallMemoryEntries</code> scans the <code>edges</code> looking for which targets are connected via <code>targetHandle === 'inputAdd'</code> to the source node. For each <code>fluxObject</code> (which is the <code>SMALL_MEMORY_TYPE</code>), it runs <code>UPDATE flows_nodes SET data = ...</code> with <code>entries</code> and <code>userSessionsChat</code>.</span></li>
+      <li><span data-en="&lt;strong&gt;No size filter.&lt;/strong&gt; Despite the name &quot;SmallMemory&quot;, &lt;em&gt;there is no&lt;/em&gt; size validation here. &quot;Small&quot; refers to the &lt;em&gt;node type&lt;/em&gt;. The &lt;code&gt;fluxObject&lt;/code&gt; was renamed to &quot;Small Memory&quot; in the UI. It is not a byte cap. It persists everything that is in &lt;code&gt;memoryNode.data.entries&lt;/code&gt;." data-pt="&lt;strong&gt;Sem filtro por tamanho.&lt;/strong&gt; Apesar do nome &quot;SmallMemory&quot;, &lt;em&gt;não há&lt;/em&gt; validação de tamanho aqui. &quot;Small&quot; refere-se ao &lt;em&gt;tipo de nó&lt;/em&gt;. O &lt;code&gt;fluxObject&lt;/code&gt; foi renomeado para &quot;Small Memory&quot; na UI. Não é um cap de bytes. Persiste tudo que estiver em &lt;code&gt;memoryNode.data.entries&lt;/code&gt;."><strong>No size filter.</strong> Despite the name "SmallMemory", <em>there is no</em> size validation here. "Small" refers to the <em>node type</em>. The <code>fluxObject</code> was renamed to "Small Memory" in the UI. It is not a byte cap. It persists everything that is in <code>memoryNode.data.entries</code>.</span></li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto.</strong> Este par (<code>publishInApiNodeOutput</code> mais <code>persistSmallMemoryEntries</code>) é o "eu não sou Temporal, então tenho que fazer eu mesmo". No worker, W7-W9 já cuidam disso para os nós migrados. Aqui, o backend inline precisa replicar manualmente para manter compatibilidade, enquanto a migração para o Temporal continua incremental.
+    <span data-en="&lt;strong&gt;Context.&lt;/strong&gt; This pair (&lt;code&gt;publishInApiNodeOutput&lt;/code&gt; plus &lt;code&gt;persistSmallMemoryEntries&lt;/code&gt;) is the &quot;I'm not Temporal, so I have to do it myself&quot;. In the worker, W7-W9 already handle this for migrated nodes. Here, the inline backend has to replicate it manually to keep compatibility while the migration to Temporal continues incrementally." data-pt="&lt;strong&gt;Contexto.&lt;/strong&gt; Este par (&lt;code&gt;publishInApiNodeOutput&lt;/code&gt; mais &lt;code&gt;persistSmallMemoryEntries&lt;/code&gt;) é o &quot;eu não sou Temporal, então tenho que fazer eu mesmo&quot;. No worker, W7-W9 já cuidam disso para os nós migrados. Aqui, o backend inline precisa replicar manualmente para manter compatibilidade, enquanto a migração para o Temporal continua incremental."><strong>Context.</strong> This pair (<code>publishInApiNodeOutput</code> plus <code>persistSmallMemoryEntries</code>) is the "I'm not Temporal, so I have to do it myself". In the worker, W7-W9 already handle this for migrated nodes. Here, the inline backend has to replicate it manually to keep compatibility while the migration to Temporal continues incrementally.</span>
   </div>
 
   <!-- Overview chain -->
   <div class="overview-mini">
-    <div class="overview-mini-title">Cadeia de chamadas em 3.5b</div>
+    <div class="overview-mini-title"><span data-en="Call chain in 3.5b" data-pt="Cadeia de chamadas em 3.5b">Call chain in 3.5b</span></div>
     <div class="overview-chain">
-      <a href="#fn-a" class="overview-chip"><span class="lbl">A · gate</span>isTemporal + isWorkerRouted</a>
+      <a href="#fn-a" class="overview-chip"><span class="lbl"><span data-en="A · gate" data-pt="A · gate">A · gate</span></span>isTemporal + isWorkerRouted</a>
       <span class="overview-sep">→</span>
       <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>publishInApiNodeOutput</a>
       <span class="overview-sep">→</span>
-      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>addConnectToNodes (helper)</a>
+      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>addConnectToNodes <span data-en="(helper)" data-pt="(helper)">(helper)</span></a>
       <span class="overview-sep">→</span>
       <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>persistSmallMemoryEntries</a>
       <span class="overview-sep">→</span>
@@ -303,19 +321,19 @@
         if (!this.isTemporalNode(node.type) && !isWorkerRoutedIntegration(processedNode)) { /* publish + persist */ }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Evitar dupla execução. Se o nó já foi rodado pelo worker Temporal (ou vai ser roteado para lá), o worker já fez W7-W9. Publicou saída e persistiu memória. Rodar aqui de novo <em>corromperia</em> o state (double-persist, edges reprocessadas duas vezes).
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Avoid double execution. If the node has already been run by the Temporal worker (or is going to be routed there), the worker already did W7-W9. Published output and persisted memory. Running here again would &lt;em&gt;corrupt&lt;/em&gt; the state (double-persist, edges reprocessed twice)." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Evitar dupla execução. Se o nó já foi rodado pelo worker Temporal (ou vai ser roteado para lá), o worker já fez W7-W9. Publicou saída e persistiu memória. Rodar aqui de novo &lt;em&gt;corromperia&lt;/em&gt; o state (double-persist, edges reprocessadas duas vezes)."><strong>Purpose.</strong> Avoid double execution. If the node has already been run by the Temporal worker (or is going to be routed there), the worker already did W7-W9. Published output and persisted memory. Running here again would <em>corrupt</em> the state (double-persist, edges reprocessed twice).</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Pense num <em>guarda de reciclagem</em> na porta. "Este nó já foi lá para o fundo (Temporal) fazer o serviço dele? Então nem tenta reprocessar aqui." Checa dois grupos.
-        <br>(1) Tipos Temporal: 7 tipos hardcoded (<code>commandTextNode</code>, <code>scripting</code>, <code>apiCaller</code>, <code>mathFunction</code>, <code>counterNode</code>, <code>outputController</code>, <code>mcpNode</code>). Desses, o worker inteiro toma conta.
-        <br>(2) Integrações roteadas ao worker: providers listados em <code>MIGRATED_INTEGRATION_PROVIDERS</code> (Stripe, WordPress, Slack, Notion, Zapier, HubSpot, Supabase, Pinecone, MCP).
-        <br>Se o nó cair em qualquer um dos dois, o backend inline <em>não</em> republica nem persiste. O worker já fez.
+        <span data-en="&lt;strong&gt;In short.&lt;/strong&gt; Think of a &lt;em&gt;recycling guard&lt;/em&gt; at the door. &quot;Has this node already gone to the back (Temporal) to do its job? Then don't even try to reprocess here.&quot; Checks two groups.&lt;br&gt;(1) Temporal types: 7 hardcoded types (&lt;code&gt;commandTextNode&lt;/code&gt;, &lt;code&gt;scripting&lt;/code&gt;, &lt;code&gt;apiCaller&lt;/code&gt;, &lt;code&gt;mathFunction&lt;/code&gt;, &lt;code&gt;counterNode&lt;/code&gt;, &lt;code&gt;outputController&lt;/code&gt;, &lt;code&gt;mcpNode&lt;/code&gt;). For those, the entire worker takes over.&lt;br&gt;(2) Integrations routed to the worker: providers listed in &lt;code&gt;MIGRATED_INTEGRATION_PROVIDERS&lt;/code&gt; (Stripe, WordPress, Slack, Notion, Zapier, HubSpot, Supabase, Pinecone, MCP).&lt;br&gt;If the node falls into either of the two, the inline backend does &lt;em&gt;not&lt;/em&gt; re-publish or persist. The worker already did." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Pense num &lt;em&gt;guarda de reciclagem&lt;/em&gt; na porta. &quot;Este nó já foi lá para o fundo (Temporal) fazer o serviço dele? Então nem tenta reprocessar aqui.&quot; Checa dois grupos.&lt;br&gt;(1) Tipos Temporal: 7 tipos hardcoded (&lt;code&gt;commandTextNode&lt;/code&gt;, &lt;code&gt;scripting&lt;/code&gt;, &lt;code&gt;apiCaller&lt;/code&gt;, &lt;code&gt;mathFunction&lt;/code&gt;, &lt;code&gt;counterNode&lt;/code&gt;, &lt;code&gt;outputController&lt;/code&gt;, &lt;code&gt;mcpNode&lt;/code&gt;). Desses, o worker inteiro toma conta.&lt;br&gt;(2) Integrações roteadas ao worker: providers listados em &lt;code&gt;MIGRATED_INTEGRATION_PROVIDERS&lt;/code&gt; (Stripe, WordPress, Slack, Notion, Zapier, HubSpot, Supabase, Pinecone, MCP).&lt;br&gt;Se o nó cair em qualquer um dos dois, o backend inline &lt;em&gt;não&lt;/em&gt; republica nem persiste. O worker já fez."><strong>In short.</strong> Think of a <em>recycling guard</em> at the door. "Has this node already gone to the back (Temporal) to do its job? Then don't even try to reprocess here." Checks two groups.
+        <br>(1) Temporal types: 7 hardcoded types (<code>commandTextNode</code>, <code>scripting</code>, <code>apiCaller</code>, <code>mathFunction</code>, <code>counterNode</code>, <code>outputController</code>, <code>mcpNode</code>). For those, the entire worker takes over.
+        <br>(2) Integrations routed to the worker: providers listed in <code>MIGRATED_INTEGRATION_PROVIDERS</code> (Stripe, WordPress, Slack, Notion, Zapier, HubSpot, Supabase, Pinecone, MCP).
+        <br>If the node falls into either of the two, the inline backend does <em>not</em> re-publish or persist. The worker already did.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box decision">
-            <div class="box-title"><span class="badge step">A1</span> isTemporalNode — lista hardcoded</div>
+            <div class="box-title"><span class="badge step">A1</span> <span data-en="isTemporalNode — hardcoded list" data-pt="isTemporalNode — lista hardcoded">isTemporalNode — hardcoded list</span></div>
             <div class="code-block">
 <span class="k">private</span> <span class="t">isTemporalNode</span>(type: string): boolean {
   <span class="k">return</span> [
@@ -334,10 +352,10 @@
           <div class="arrow">↓</div>
 
           <div class="box decision">
-            <div class="box-title"><span class="badge step">A2</span> isWorkerRoutedIntegration: providers migrados</div>
+            <div class="box-title"><span class="badge step">A2</span> <span data-en="isWorkerRoutedIntegration: migrated providers" data-pt="isWorkerRoutedIntegration: providers migrados">isWorkerRoutedIntegration: migrated providers</span></div>
             <div class="box-desc">
-              Chama <code>resolveIntegrationProvider(node)</code> e testa contra <code>MIGRATED_INTEGRATION_PROVIDERS</code>. Providers hoje no worker: <code>stripe, wordpress, slack, notion, zapier, hubspot, supabase, pinecone, mcp</code>.
-              <br><br>Suporta 2 formatos: <code>thirdPartyIntegration</code> (lê <code>data.provider</code>) ou node dedicado como <code>hubSpotCRM</code> (via <code>DEDICATED_INTEGRATION_PROVIDER_BY_NODE_TYPE</code>).
+              <span data-en="Calls &lt;code&gt;resolveIntegrationProvider(node)&lt;/code&gt; and tests against &lt;code&gt;MIGRATED_INTEGRATION_PROVIDERS&lt;/code&gt;. Providers in the worker today: &lt;code&gt;stripe, wordpress, slack, notion, zapier, hubspot, supabase, pinecone, mcp&lt;/code&gt;.&lt;br&gt;&lt;br&gt;Supports 2 formats: &lt;code&gt;thirdPartyIntegration&lt;/code&gt; (reads &lt;code&gt;data.provider&lt;/code&gt;) or dedicated node like &lt;code&gt;hubSpotCRM&lt;/code&gt; (via &lt;code&gt;DEDICATED_INTEGRATION_PROVIDER_BY_NODE_TYPE&lt;/code&gt;)." data-pt="Chama &lt;code&gt;resolveIntegrationProvider(node)&lt;/code&gt; e testa contra &lt;code&gt;MIGRATED_INTEGRATION_PROVIDERS&lt;/code&gt;. Providers hoje no worker: &lt;code&gt;stripe, wordpress, slack, notion, zapier, hubspot, supabase, pinecone, mcp&lt;/code&gt;.&lt;br&gt;&lt;br&gt;Suporta 2 formatos: &lt;code&gt;thirdPartyIntegration&lt;/code&gt; (lê &lt;code&gt;data.provider&lt;/code&gt;) ou node dedicado como &lt;code&gt;hubSpotCRM&lt;/code&gt; (via &lt;code&gt;DEDICATED_INTEGRATION_PROVIDER_BY_NODE_TYPE&lt;/code&gt;).">Calls <code>resolveIntegrationProvider(node)</code> and tests against <code>MIGRATED_INTEGRATION_PROVIDERS</code>. Providers in the worker today: <code>stripe, wordpress, slack, notion, zapier, hubspot, supabase, pinecone, mcp</code>.
+              <br><br>Supports 2 formats: <code>thirdPartyIntegration</code> (reads <code>data.provider</code>) or dedicated node like <code>hubSpotCRM</code> (via <code>DEDICATED_INTEGRATION_PROVIDER_BY_NODE_TYPE</code>).</span>
             </div>
             <div class="box-file">shared/integration/integration-executable-node.ts:16-46</div>
           </div>
@@ -345,21 +363,21 @@
 
         <div class="fn-asides">
           <div class="aside warn">
-            <div class="aside-title">⚠️ Lista hardcoded, divergência silenciosa</div>
-            Se um novo tipo de nó for migrado para o Temporal mas <em>não</em> for adicionado a <code>isTemporalNode</code>, o backend inline vai continuar tentando publicar e persistir depois do worker já ter feito. <strong>Double-persist bug.</strong>
-            <br><br>Simétrico. Se um provider for tirado de <code>MIGRATED_INTEGRATION_PROVIDERS</code> mas ainda estiver roteado ao worker, o backend inline <em>não</em> vai publicar. Nada persiste, nada propaga.
+            <div class="aside-title"><span data-en="⚠️ Hardcoded list, silent divergence" data-pt="⚠️ Lista hardcoded, divergência silenciosa">⚠️ Hardcoded list, silent divergence</span></div>
+            <span data-en="If a new node type is migrated to Temporal but is &lt;em&gt;not&lt;/em&gt; added to &lt;code&gt;isTemporalNode&lt;/code&gt;, the inline backend will keep trying to publish and persist after the worker already did. &lt;strong&gt;Double-persist bug.&lt;/strong&gt;&lt;br&gt;&lt;br&gt;Symmetric. If a provider is removed from &lt;code&gt;MIGRATED_INTEGRATION_PROVIDERS&lt;/code&gt; but is still routed to the worker, the inline backend will &lt;em&gt;not&lt;/em&gt; publish. Nothing persists, nothing propagates." data-pt="Se um novo tipo de nó for migrado para o Temporal mas &lt;em&gt;não&lt;/em&gt; for adicionado a &lt;code&gt;isTemporalNode&lt;/code&gt;, o backend inline vai continuar tentando publicar e persistir depois do worker já ter feito. &lt;strong&gt;Double-persist bug.&lt;/strong&gt;&lt;br&gt;&lt;br&gt;Simétrico. Se um provider for tirado de &lt;code&gt;MIGRATED_INTEGRATION_PROVIDERS&lt;/code&gt; mas ainda estiver roteado ao worker, o backend inline &lt;em&gt;não&lt;/em&gt; vai publicar. Nada persiste, nada propaga.">If a new node type is migrated to Temporal but is <em>not</em> added to <code>isTemporalNode</code>, the inline backend will keep trying to publish and persist after the worker already did. <strong>Double-persist bug.</strong>
+            <br><br>Symmetric. If a provider is removed from <code>MIGRATED_INTEGRATION_PROVIDERS</code> but is still routed to the worker, the inline backend will <em>not</em> publish. Nothing persists, nothing propagates.</span>
           </div>
 
           <div class="aside info">
-            <div class="aside-title">📎 Por que dois testes separados?</div>
-            <code>isTemporalNode</code> testa <strong>tipo do nó</strong>. <code>isWorkerRoutedIntegration</code> testa <strong>provider da integração</strong> (mesmo tipo, depende de <code>data.provider</code>).
-            <br><br>Um nó <code>thirdPartyIntegration</code> com <code>provider=stripe</code> vai para o worker. O mesmo tipo com <code>provider=airtable</code> não vai. Só o segundo teste consegue distinguir.
+            <div class="aside-title"><span data-en="📎 Why two separate tests?" data-pt="📎 Por que dois testes separados?">📎 Why two separate tests?</span></div>
+            <span data-en="&lt;code&gt;isTemporalNode&lt;/code&gt; tests the &lt;strong&gt;node type&lt;/strong&gt;. &lt;code&gt;isWorkerRoutedIntegration&lt;/code&gt; tests the &lt;strong&gt;integration provider&lt;/strong&gt; (same type, depends on &lt;code&gt;data.provider&lt;/code&gt;).&lt;br&gt;&lt;br&gt;A &lt;code&gt;thirdPartyIntegration&lt;/code&gt; node with &lt;code&gt;provider=stripe&lt;/code&gt; goes to the worker. The same type with &lt;code&gt;provider=airtable&lt;/code&gt; does not. Only the second test can tell them apart." data-pt="&lt;code&gt;isTemporalNode&lt;/code&gt; testa &lt;strong&gt;tipo do nó&lt;/strong&gt;. &lt;code&gt;isWorkerRoutedIntegration&lt;/code&gt; testa &lt;strong&gt;provider da integração&lt;/strong&gt; (mesmo tipo, depende de &lt;code&gt;data.provider&lt;/code&gt;).&lt;br&gt;&lt;br&gt;Um nó &lt;code&gt;thirdPartyIntegration&lt;/code&gt; com &lt;code&gt;provider=stripe&lt;/code&gt; vai para o worker. O mesmo tipo com &lt;code&gt;provider=airtable&lt;/code&gt; não vai. Só o segundo teste consegue distinguir."><code>isTemporalNode</code> tests the <strong>node type</strong>. <code>isWorkerRoutedIntegration</code> tests the <strong>integration provider</strong> (same type, depends on <code>data.provider</code>).
+            <br><br>A <code>thirdPartyIntegration</code> node with <code>provider=stripe</code> goes to the worker. The same type with <code>provider=airtable</code> does not. Only the second test can tell them apart.</span>
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 Mesmo gate aparece 6x</div>
-            No arquivo, o par <code>!isTemporalNode && !isWorkerRoutedIntegration</code> aparece nas linhas 3353, 4325, 4563, 4657, 4684, 4768. Em cada ponto onde o backend inline precisa decidir se cuida da coisa ou deixa para o worker.
-            <br><br>Candidato óbvio para extrair como <code>isBackendInlineOwned(node, processedNode)</code>.
+            <div class="aside-title"><span data-en="🔧 Same gate appears 6x" data-pt="🔧 Mesmo gate aparece 6x">🔧 Same gate appears 6x</span></div>
+            <span data-en="In the file, the pair &lt;code&gt;!isTemporalNode &amp;&amp; !isWorkerRoutedIntegration&lt;/code&gt; appears at lines 3353, 4325, 4563, 4657, 4684, 4768. At every point where the inline backend needs to decide whether to handle it or leave it to the worker.&lt;br&gt;&lt;br&gt;Obvious candidate to extract as &lt;code&gt;isBackendInlineOwned(node, processedNode)&lt;/code&gt;." data-pt="No arquivo, o par &lt;code&gt;!isTemporalNode &amp;&amp; !isWorkerRoutedIntegration&lt;/code&gt; aparece nas linhas 3353, 4325, 4563, 4657, 4684, 4768. Em cada ponto onde o backend inline precisa decidir se cuida da coisa ou deixa para o worker.&lt;br&gt;&lt;br&gt;Candidato óbvio para extrair como &lt;code&gt;isBackendInlineOwned(node, processedNode)&lt;/code&gt;.">In the file, the pair <code>!isTemporalNode && !isWorkerRoutedIntegration</code> appears at lines 3353, 4325, 4563, 4657, 4684, 4768. At every point where the inline backend needs to decide whether to handle it or leave it to the worker.
+            <br><br>Obvious candidate to extract as <code>isBackendInlineOwned(node, processedNode)</code>.</span>
           </div>
         </div>
       </div>
@@ -382,32 +400,32 @@
         private publishInApiNodeOutput({ nodeId, nodes, edges, onMutateSchema, objectCallerData }): any[]
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Marca o nó como finalizado no array <code>myUpdatedNodes</code> e propaga o <code>data</code> dele para os nós conectados via edges. Delega para <code>addConnectToNodes</code>. O retorno é reatribuído a <code>myUpdatedNodes</code>. Isso garante que o próximo nó do loop já veja o estado atualizado.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Marks the node as finished in the &lt;code&gt;myUpdatedNodes&lt;/code&gt; array and propagates its &lt;code&gt;data&lt;/code&gt; to the nodes connected via edges. Delegates to &lt;code&gt;addConnectToNodes&lt;/code&gt;. The return value is reassigned to &lt;code&gt;myUpdatedNodes&lt;/code&gt;. This ensures that the next node in the loop already sees the updated state." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Marca o nó como finalizado no array &lt;code&gt;myUpdatedNodes&lt;/code&gt; e propaga o &lt;code&gt;data&lt;/code&gt; dele para os nós conectados via edges. Delega para &lt;code&gt;addConnectToNodes&lt;/code&gt;. O retorno é reatribuído a &lt;code&gt;myUpdatedNodes&lt;/code&gt;. Isso garante que o próximo nó do loop já veja o estado atualizado."><strong>Purpose.</strong> Marks the node as finished in the <code>myUpdatedNodes</code> array and propagates its <code>data</code> to the nodes connected via edges. Delegates to <code>addConnectToNodes</code>. The return value is reassigned to <code>myUpdatedNodes</code>. This ensures that the next node in the loop already sees the updated state.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Pense num <em>carteiro que anuncia o resultado</em>. Depois que o nó terminou, o resultado dele está guardado em <code>myUpdatedNodes</code>, ainda em formato "meu". Este método faz três coisas.
-        <br>(1) Acha o nó finalizado no array.
-        <br>(2) Passa a lista inteira para <code>addConnectToNodes</code>. Este varre todas as edges e, para cada nó que <em>recebe</em> conexão desse nó finalizado, injeta o <code>data</code> dele nos campos apropriados via <code>modifyData</code>. Assim, quando o próximo nó do loop for lido, já tem as entradas corretas.
-        <br>(3) Como bônus, recalcula o schema global via <code>nodeSchema(nodes)</code> e joga no <code>onMutateSchema</code>. Mesmo padrão de closure mutation que 1.5.
+        <span data-en="&lt;strong&gt;In short.&lt;/strong&gt; Think of a &lt;em&gt;mailman who announces the result&lt;/em&gt;. After the node finished, its result is stored in &lt;code&gt;myUpdatedNodes&lt;/code&gt;, still in &quot;mine&quot; format. This method does three things.&lt;br&gt;(1) Finds the finished node in the array.&lt;br&gt;(2) Passes the whole list to &lt;code&gt;addConnectToNodes&lt;/code&gt;. It scans all edges and, for each node that &lt;em&gt;receives&lt;/em&gt; a connection from that finished node, injects its &lt;code&gt;data&lt;/code&gt; into the appropriate fields via &lt;code&gt;modifyData&lt;/code&gt;. That way, when the next node in the loop is read, it already has the right inputs.&lt;br&gt;(3) As a bonus, it recomputes the global schema via &lt;code&gt;nodeSchema(nodes)&lt;/code&gt; and passes it to &lt;code&gt;onMutateSchema&lt;/code&gt;. Same closure-mutation pattern as 1.5." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Pense num &lt;em&gt;carteiro que anuncia o resultado&lt;/em&gt;. Depois que o nó terminou, o resultado dele está guardado em &lt;code&gt;myUpdatedNodes&lt;/code&gt;, ainda em formato &quot;meu&quot;. Este método faz três coisas.&lt;br&gt;(1) Acha o nó finalizado no array.&lt;br&gt;(2) Passa a lista inteira para &lt;code&gt;addConnectToNodes&lt;/code&gt;. Este varre todas as edges e, para cada nó que &lt;em&gt;recebe&lt;/em&gt; conexão desse nó finalizado, injeta o &lt;code&gt;data&lt;/code&gt; dele nos campos apropriados via &lt;code&gt;modifyData&lt;/code&gt;. Assim, quando o próximo nó do loop for lido, já tem as entradas corretas.&lt;br&gt;(3) Como bônus, recalcula o schema global via &lt;code&gt;nodeSchema(nodes)&lt;/code&gt; e joga no &lt;code&gt;onMutateSchema&lt;/code&gt;. Mesmo padrão de closure mutation que 1.5."><strong>In short.</strong> Think of a <em>mailman who announces the result</em>. After the node finished, its result is stored in <code>myUpdatedNodes</code>, still in "mine" format. This method does three things.
+        <br>(1) Finds the finished node in the array.
+        <br>(2) Passes the whole list to <code>addConnectToNodes</code>. It scans all edges and, for each node that <em>receives</em> a connection from that finished node, injects its <code>data</code> into the appropriate fields via <code>modifyData</code>. That way, when the next node in the loop is read, it already has the right inputs.
+        <br>(3) As a bonus, it recomputes the global schema via <code>nodeSchema(nodes)</code> and passes it to <code>onMutateSchema</code>. Same closure-mutation pattern as 1.5.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">B1</span> Acha o nó finalizado</div>
+            <div class="box-title"><span class="badge step">B1</span> <span data-en="Finds the finished node" data-pt="Acha o nó finalizado">Finds the finished node</span></div>
             <div class="code-block">
 <span class="k">const</span> finishedNode = nodes.<span class="t">find</span>(n =&gt; n.id === nodeId);
 <span class="k">if</span> (!finishedNode) <span class="k">return</span> nodes;
             </div>
             <div class="box-desc">
-              Se por algum motivo o nó sumiu do array, retorna a lista intacta (defensive check).
+              <span data-en="If for some reason the node vanished from the array, returns the list intact (defensive check)." data-pt="Se por algum motivo o nó sumiu do array, retorna a lista intacta (defensive check).">If for some reason the node vanished from the array, returns the list intact (defensive check).</span>
             </div>
             <div class="box-file">flux.service.ts:742-745</div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box backend">
-            <div class="box-title"><span class="badge step">B2</span> Delega pra addConnectToNodes</div>
+            <div class="box-title"><span class="badge step">B2</span> <span data-en="Delegates to addConnectToNodes" data-pt="Delega pra addConnectToNodes">Delegates to addConnectToNodes</span></div>
             <div class="code-block">
 <span class="k">return</span> <span class="t">addConnectToNodes</span>({
   edges,
@@ -425,9 +443,9 @@
           <div class="nested-flow">
             <div class="nested-flow-title">↳ addConnectToNodes — folw/contants.ts:2045-2089</div>
             <div class="box backend" style="margin-top:6px">
-              <div class="box-title">O que ela faz</div>
+              <div class="box-title"><span data-en="What it does" data-pt="O que ela faz">What it does</span></div>
               <div class="box-desc">
-                (1) Clona <code>edges</code> e <code>nds</code>. (2) Para o nó finalizado, faz shallow merge do <code>data</code> novo. (3) Coleta todos os <code>source</code> de edges únicos. Para cada source presente no array, chama <code>modifyData(nodes, id, newEdges, objectCallerData, nodeData?.id, 'execute')</code>. Propaga saída para os nós à jusante conectados àquele source. (4) Recalcula <code>nodeSchema(nodes)</code> e chama <code>onMutateSchema(sx)</code>.
+                <span data-en="(1) Clones &lt;code&gt;edges&lt;/code&gt; and &lt;code&gt;nds&lt;/code&gt;. (2) For the finished node, does a shallow merge with the new &lt;code&gt;data&lt;/code&gt;. (3) Collects all unique edge &lt;code&gt;source&lt;/code&gt;s. For each source present in the array, calls &lt;code&gt;modifyData(nodes, id, newEdges, objectCallerData, nodeData?.id, 'execute')&lt;/code&gt;. Propagates output to downstream nodes connected to that source. (4) Recomputes &lt;code&gt;nodeSchema(nodes)&lt;/code&gt; and calls &lt;code&gt;onMutateSchema(sx)&lt;/code&gt;." data-pt="(1) Clona &lt;code&gt;edges&lt;/code&gt; e &lt;code&gt;nds&lt;/code&gt;. (2) Para o nó finalizado, faz shallow merge do &lt;code&gt;data&lt;/code&gt; novo. (3) Coleta todos os &lt;code&gt;source&lt;/code&gt; de edges únicos. Para cada source presente no array, chama &lt;code&gt;modifyData(nodes, id, newEdges, objectCallerData, nodeData?.id, 'execute')&lt;/code&gt;. Propaga saída para os nós à jusante conectados àquele source. (4) Recalcula &lt;code&gt;nodeSchema(nodes)&lt;/code&gt; e chama &lt;code&gt;onMutateSchema(sx)&lt;/code&gt;.">(1) Clones <code>edges</code> and <code>nds</code>. (2) For the finished node, does a shallow merge with the new <code>data</code>. (3) Collects all unique edge <code>source</code>s. For each source present in the array, calls <code>modifyData(nodes, id, newEdges, objectCallerData, nodeData?.id, 'execute')</code>. Propagates output to downstream nodes connected to that source. (4) Recomputes <code>nodeSchema(nodes)</code> and calls <code>onMutateSchema(sx)</code>.</span>
               </div>
               <div class="box-file">folw/contants.ts:2045-2089</div>
             </div>
@@ -437,17 +455,17 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 changeType: 'execute'</div>
-            <code>modifyData</code> tem múltiplos modos (<code>'execute'</code>, <code>'default'</code>, etc.). Em <code>'execute'</code>, propaga saída resultante da execução do nó. Em <code>'default'</code> (usado no fim da execução, linha 4943), é reset e limpeza.
+            <span data-en="&lt;code&gt;modifyData&lt;/code&gt; has multiple modes (&lt;code&gt;'execute'&lt;/code&gt;, &lt;code&gt;'default'&lt;/code&gt;, etc.). In &lt;code&gt;'execute'&lt;/code&gt;, it propagates the output resulting from the node's execution. In &lt;code&gt;'default'&lt;/code&gt; (used at the end of execution, line 4943), it is reset and cleanup." data-pt="&lt;code&gt;modifyData&lt;/code&gt; tem múltiplos modos (&lt;code&gt;'execute'&lt;/code&gt;, &lt;code&gt;'default'&lt;/code&gt;, etc.). Em &lt;code&gt;'execute'&lt;/code&gt;, propaga saída resultante da execução do nó. Em &lt;code&gt;'default'&lt;/code&gt; (usado no fim da execução, linha 4943), é reset e limpeza."><code>modifyData</code> has multiple modes (<code>'execute'</code>, <code>'default'</code>, etc.). In <code>'execute'</code>, it propagates the output resulting from the node's execution. In <code>'default'</code> (used at the end of execution, line 4943), it is reset and cleanup.</span>
           </div>
 
           <div class="aside">
-            <div class="aside-title">📎 objectCallerData vai junto</div>
-            <code>modifyData</code> precisa da lista atual de objetos personalizados (do passo 1.5) porque nós como <code>nodesBox</code> podem ler valores de objetos ao construir entrada dos nós filhos.
+            <div class="aside-title"><span data-en="📎 objectCallerData goes along" data-pt="📎 objectCallerData vai junto">📎 objectCallerData goes along</span></div>
+            <span data-en="&lt;code&gt;modifyData&lt;/code&gt; needs the current list of custom objects (from step 1.5) because nodes like &lt;code&gt;nodesBox&lt;/code&gt; can read object values when building the input of child nodes." data-pt="&lt;code&gt;modifyData&lt;/code&gt; precisa da lista atual de objetos personalizados (do passo 1.5) porque nós como &lt;code&gt;nodesBox&lt;/code&gt; podem ler valores de objetos ao construir entrada dos nós filhos."><code>modifyData</code> needs the current list of custom objects (from step 1.5) because nodes like <code>nodesBox</code> can read object values when building the input of child nodes.</span>
           </div>
 
           <div class="aside warn">
-            <div class="aside-title">⚠️ Não emite WebSocket aqui</div>
-            Apesar do nome "publish", <strong>não há emit de WebSocket</strong> neste método. O status do nó no frontend é emitido em outros pontos (via <code>notificationsGateway.sendToUser</code> em <code>emitNodeStatus</code>, <code>emitCancelledRunStatuses</code>, etc.). "Publish" aqui significa "publicar saída no grafo local, propagar via edges".
+            <div class="aside-title"><span data-en="⚠️ Does not emit WebSocket here" data-pt="⚠️ Não emite WebSocket aqui">⚠️ Does not emit WebSocket here</span></div>
+            <span data-en="Despite the name &quot;publish&quot;, &lt;strong&gt;there is no WebSocket emit&lt;/strong&gt; in this method. The node status in the frontend is emitted at other points (via &lt;code&gt;notificationsGateway.sendToUser&lt;/code&gt; in &lt;code&gt;emitNodeStatus&lt;/code&gt;, &lt;code&gt;emitCancelledRunStatuses&lt;/code&gt;, etc.). &quot;Publish&quot; here means &quot;publish output into the local graph, propagate via edges&quot;." data-pt="Apesar do nome &quot;publish&quot;, &lt;strong&gt;não há emit de WebSocket&lt;/strong&gt; neste método. O status do nó no frontend é emitido em outros pontos (via &lt;code&gt;notificationsGateway.sendToUser&lt;/code&gt; em &lt;code&gt;emitNodeStatus&lt;/code&gt;, &lt;code&gt;emitCancelledRunStatuses&lt;/code&gt;, etc.). &quot;Publish&quot; aqui significa &quot;publicar saída no grafo local, propagar via edges&quot;.">Despite the name "publish", <strong>there is no WebSocket emit</strong> in this method. The node status in the frontend is emitted at other points (via <code>notificationsGateway.sendToUser</code> in <code>emitNodeStatus</code>, <code>emitCancelledRunStatuses</code>, etc.). "Publish" here means "publish output into the local graph, propagate via edges".</span>
           </div>
         </div>
       </div>
@@ -470,16 +488,16 @@
         private async persistSmallMemoryEntries({ sourceNodeId, nodes, edges, flowId, flowVersionHistoryId }): Promise&lt;void&gt;
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Persistir no banco as entries que o nó que <em>acabou de rodar</em> escreveu num <code>fluxObject</code> (Small Memory) conectado a ele. Sem isso, o valor gravado durante a execução existe só em memória e some quando o processo reinicia. É o <em>writeback</em> para <code>flows_nodes.data</code>.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Persist in the database the entries that the node that &lt;em&gt;just ran&lt;/em&gt; wrote to a &lt;code&gt;fluxObject&lt;/code&gt; (Small Memory) connected to it. Without this, the value written during execution exists only in memory and vanishes when the process restarts. This is the &lt;em&gt;writeback&lt;/em&gt; to &lt;code&gt;flows_nodes.data&lt;/code&gt;." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Persistir no banco as entries que o nó que &lt;em&gt;acabou de rodar&lt;/em&gt; escreveu num &lt;code&gt;fluxObject&lt;/code&gt; (Small Memory) conectado a ele. Sem isso, o valor gravado durante a execução existe só em memória e some quando o processo reinicia. É o &lt;em&gt;writeback&lt;/em&gt; para &lt;code&gt;flows_nodes.data&lt;/code&gt;."><strong>Purpose.</strong> Persist in the database the entries that the node that <em>just ran</em> wrote to a <code>fluxObject</code> (Small Memory) connected to it. Without this, the value written during execution exists only in memory and vanishes when the process restarts. This is the <em>writeback</em> to <code>flows_nodes.data</code>.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Pense em <em>gravar o rascunho no HD</em>. Durante a execução, quando um nó (por exemplo, um LLM ou <code>outputController</code>) grava algo numa Small Memory conectada via handle <code>inputAdd</code>, isso fica só em <code>myUpdatedNodes</code>. Memória do processo. Se o backend cair no meio da execução, o dado <strong>se perde</strong>. Este método é a resposta. Assim que o nó terminou, varre os edges procurando qualquer Small Memory conectada como target de <code>inputAdd</code> a esse nó. Pega os campos <code>entries</code> e <code>userSessionsChat</code> do nó de memória. Faz <code>UPDATE flows_nodes SET data = ...</code> naquela linha específica. Nome enganoso. Apesar de "small memory", <strong>não tem filtro de tamanho</strong>. O "small" é o nome do produto na UI (nó do tipo <code>fluxObject</code>), não um limite.
+        <span data-en="&lt;strong&gt;In short.&lt;/strong&gt; Think of &lt;em&gt;saving the draft to disk&lt;/em&gt;. During execution, when a node (for example, an LLM or &lt;code&gt;outputController&lt;/code&gt;) writes something to a Small Memory connected via the &lt;code&gt;inputAdd&lt;/code&gt; handle, that stays only in &lt;code&gt;myUpdatedNodes&lt;/code&gt;. Process memory. If the backend crashes mid-execution, the data &lt;strong&gt;is lost&lt;/strong&gt;. This method is the answer. As soon as the node has finished, it scans the edges looking for any Small Memory connected as an &lt;code&gt;inputAdd&lt;/code&gt; target of that node. Takes the &lt;code&gt;entries&lt;/code&gt; and &lt;code&gt;userSessionsChat&lt;/code&gt; fields from the memory node. Runs &lt;code&gt;UPDATE flows_nodes SET data = ...&lt;/code&gt; on that specific row. Misleading name. Despite &quot;small memory&quot;, &lt;strong&gt;there is no size filter&lt;/strong&gt;. &quot;Small&quot; is the product name in the UI (node of type &lt;code&gt;fluxObject&lt;/code&gt;), not a limit." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Pense em &lt;em&gt;gravar o rascunho no HD&lt;/em&gt;. Durante a execução, quando um nó (por exemplo, um LLM ou &lt;code&gt;outputController&lt;/code&gt;) grava algo numa Small Memory conectada via handle &lt;code&gt;inputAdd&lt;/code&gt;, isso fica só em &lt;code&gt;myUpdatedNodes&lt;/code&gt;. Memória do processo. Se o backend cair no meio da execução, o dado &lt;strong&gt;se perde&lt;/strong&gt;. Este método é a resposta. Assim que o nó terminou, varre os edges procurando qualquer Small Memory conectada como target de &lt;code&gt;inputAdd&lt;/code&gt; a esse nó. Pega os campos &lt;code&gt;entries&lt;/code&gt; e &lt;code&gt;userSessionsChat&lt;/code&gt; do nó de memória. Faz &lt;code&gt;UPDATE flows_nodes SET data = ...&lt;/code&gt; naquela linha específica. Nome enganoso. Apesar de &quot;small memory&quot;, &lt;strong&gt;não tem filtro de tamanho&lt;/strong&gt;. O &quot;small&quot; é o nome do produto na UI (nó do tipo &lt;code&gt;fluxObject&lt;/code&gt;), não um limite."><strong>In short.</strong> Think of <em>saving the draft to disk</em>. During execution, when a node (for example, an LLM or <code>outputController</code>) writes something to a Small Memory connected via the <code>inputAdd</code> handle, that stays only in <code>myUpdatedNodes</code>. Process memory. If the backend crashes mid-execution, the data <strong>is lost</strong>. This method is the answer. As soon as the node has finished, it scans the edges looking for any Small Memory connected as an <code>inputAdd</code> target of that node. Takes the <code>entries</code> and <code>userSessionsChat</code> fields from the memory node. Runs <code>UPDATE flows_nodes SET data = ...</code> on that specific row. Misleading name. Despite "small memory", <strong>there is no size filter</strong>. "Small" is the product name in the UI (node of type <code>fluxObject</code>), not a limit.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">D1</span> Filtra edges: source é o nó atual + handle inputAdd</div>
+            <div class="box-title"><span class="badge step">D1</span> <span data-en="Filters edges: source is the current node + handle inputAdd" data-pt="Filtra edges: source é o nó atual + handle inputAdd">Filters edges: source is the current node + handle inputAdd</span></div>
             <div class="code-block">
 <span class="k">const</span> memoryIds = <span class="k">new</span> <span class="t">Set</span>(
   (edges ?? [])
@@ -495,7 +513,7 @@
           <div class="arrow">↓</div>
 
           <div class="box backend">
-            <div class="box-title"><span class="badge step">D2</span> Para cada memory target, verifica tipo</div>
+            <div class="box-title"><span class="badge step">D2</span> <span data-en="For each memory target, verifies type" data-pt="Para cada memory target, verifica tipo">For each memory target, verifies type</span></div>
             <div class="code-block">
 <span class="k">for</span> (<span class="k">const</span> memoryId <span class="k">of</span> memoryIds) {
   <span class="k">const</span> memoryNode = nodes.<span class="t">find</span>(n =&gt; n.id === memoryId);
@@ -508,7 +526,7 @@
           <div class="arrow">↓</div>
 
           <div class="box db">
-            <div class="box-title"><span class="badge step">D3</span> Persiste na row live</div>
+            <div class="box-title"><span class="badge step">D3</span> <span data-en="Persists to the live row" data-pt="Persiste na row live">Persists to the live row</span></div>
             <div class="code-block">
 <span class="k">await this</span>.<span class="t">persistNodeDataToLiveRow</span>(
   flowId,
@@ -529,7 +547,7 @@
             <div class="box db" style="margin-top:6px">
               <div class="box-title">UPDATE flows_nodes</div>
               <div class="box-desc">
-                Se <code>flowVersionHistoryId</code> existe: chama <code>flowNodeService.updateSingleNodeDataInHistory(...)</code>. Caso contrário: <code>flowNodeService.updateSingleNodeData(flowId, nodeId, data)</code>. Try/catch. Se falhar, loga com <code>error_type: 'live_node_persist_failed'</code> mas <strong>não</strong> propaga o erro. A execução continua.
+                <span data-en="If &lt;code&gt;flowVersionHistoryId&lt;/code&gt; exists: calls &lt;code&gt;flowNodeService.updateSingleNodeDataInHistory(...)&lt;/code&gt;. Otherwise: &lt;code&gt;flowNodeService.updateSingleNodeData(flowId, nodeId, data)&lt;/code&gt;. Try/catch. If it fails, logs with &lt;code&gt;error_type: 'live_node_persist_failed'&lt;/code&gt; but does &lt;strong&gt;not&lt;/strong&gt; propagate the error. Execution continues." data-pt="Se &lt;code&gt;flowVersionHistoryId&lt;/code&gt; existe: chama &lt;code&gt;flowNodeService.updateSingleNodeDataInHistory(...)&lt;/code&gt;. Caso contrário: &lt;code&gt;flowNodeService.updateSingleNodeData(flowId, nodeId, data)&lt;/code&gt;. Try/catch. Se falhar, loga com &lt;code&gt;error_type: 'live_node_persist_failed'&lt;/code&gt; mas &lt;strong&gt;não&lt;/strong&gt; propaga o erro. A execução continua.">If <code>flowVersionHistoryId</code> exists: calls <code>flowNodeService.updateSingleNodeDataInHistory(...)</code>. Otherwise: <code>flowNodeService.updateSingleNodeData(flowId, nodeId, data)</code>. Try/catch. If it fails, logs with <code>error_type: 'live_node_persist_failed'</code> but does <strong>not</strong> propagate the error. Execution continues.</span>
               </div>
               <div class="box-file">flux.service.ts:2235-2262</div>
             </div>
@@ -538,21 +556,21 @@
 
         <div class="fn-asides">
           <div class="aside warn">
-            <div class="aside-title">⚠️ "Small" não existe como cap</div>
-            Apesar do nome, não há limite de tamanho na hora de persistir. Se <code>entries</code> tem 10 MB de JSON, os 10 MB vão para o Postgres. O nome vem da UI ("Small Memory" node). Não é uma constraint técnica.
-            <br><br>Ver constante em <code>small-memory.ts:1</code>: <code>SMALL_MEMORY_TYPE = 'fluxObject'</code>.
+            <div class="aside-title"><span data-en="⚠️ &quot;Small&quot; does not exist as a cap" data-pt="⚠️ &quot;Small&quot; não existe como cap">⚠️ "Small" does not exist as a cap</span></div>
+            <span data-en="Despite the name, there is no size limit at persist time. If &lt;code&gt;entries&lt;/code&gt; has 10 MB of JSON, the 10 MB go to Postgres. The name comes from the UI (&quot;Small Memory&quot; node). It is not a technical constraint.&lt;br&gt;&lt;br&gt;See the constant in &lt;code&gt;small-memory.ts:1&lt;/code&gt;: &lt;code&gt;SMALL_MEMORY_TYPE = 'fluxObject'&lt;/code&gt;." data-pt="Apesar do nome, não há limite de tamanho na hora de persistir. Se &lt;code&gt;entries&lt;/code&gt; tem 10 MB de JSON, os 10 MB vão para o Postgres. O nome vem da UI (&quot;Small Memory&quot; node). Não é uma constraint técnica.&lt;br&gt;&lt;br&gt;Ver constante em &lt;code&gt;small-memory.ts:1&lt;/code&gt;: &lt;code&gt;SMALL_MEMORY_TYPE = 'fluxObject'&lt;/code&gt;.">Despite the name, there is no size limit at persist time. If <code>entries</code> has 10 MB of JSON, the 10 MB go to Postgres. The name comes from the UI ("Small Memory" node). It is not a technical constraint.
+            <br><br>See the constant in <code>small-memory.ts:1</code>: <code>SMALL_MEMORY_TYPE = 'fluxObject'</code>.</span>
           </div>
 
           <div class="aside info">
-            <div class="aside-title">📎 Handle mágico: inputAdd</div>
-            <code>SMALL_MEMORY_INPUT_HANDLE = 'inputAdd'</code>. <em>String handle</em> específico. Só edges com esse <code>targetHandle</code> disparam persist. Outros handles do fluxObject (leitura, session switch) não persistem.
-            <br><br>Regra tácita. "Quem escreve na memória se conecta em <code>inputAdd</code>."
+            <div class="aside-title"><span data-en="📎 Magic handle: inputAdd" data-pt="📎 Handle mágico: inputAdd">📎 Magic handle: inputAdd</span></div>
+            <span data-en="&lt;code&gt;SMALL_MEMORY_INPUT_HANDLE = 'inputAdd'&lt;/code&gt;. A specific &lt;em&gt;handle string&lt;/em&gt;. Only edges with that &lt;code&gt;targetHandle&lt;/code&gt; trigger persist. Other fluxObject handles (read, session switch) do not persist.&lt;br&gt;&lt;br&gt;Tacit rule. &quot;Whoever writes to memory connects on &lt;code&gt;inputAdd&lt;/code&gt;.&quot;" data-pt="&lt;code&gt;SMALL_MEMORY_INPUT_HANDLE = 'inputAdd'&lt;/code&gt;. &lt;em&gt;String handle&lt;/em&gt; específico. Só edges com esse &lt;code&gt;targetHandle&lt;/code&gt; disparam persist. Outros handles do fluxObject (leitura, session switch) não persistem.&lt;br&gt;&lt;br&gt;Regra tácita. &quot;Quem escreve na memória se conecta em &lt;code&gt;inputAdd&lt;/code&gt;.&quot;"><code>SMALL_MEMORY_INPUT_HANDLE = 'inputAdd'</code>. A specific <em>handle string</em>. Only edges with that <code>targetHandle</code> trigger persist. Other fluxObject handles (read, session switch) do not persist.
+            <br><br>Tacit rule. "Whoever writes to memory connects on <code>inputAdd</code>."</span>
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 Persist falha silenciosa</div>
-            <code>persistNodeDataToLiveRow</code> tem <code>try/catch</code> interno. Se o <code>UPDATE</code> falhar (deadlock, constraint, banco fora), loga <code>error_type: 'live_node_persist_failed'</code> e o método volta <code>void</code>. A execução <em>não</em> aborta.
-            <br><br>Efeito. Em pane de banco, todas as persistências de Small Memory fracassam silenciosamente. O usuário só descobre na próxima execução.
+            <div class="aside-title"><span data-en="🔧 Silent persist failure" data-pt="🔧 Persist falha silenciosa">🔧 Silent persist failure</span></div>
+            <span data-en="&lt;code&gt;persistNodeDataToLiveRow&lt;/code&gt; has an internal &lt;code&gt;try/catch&lt;/code&gt;. If the &lt;code&gt;UPDATE&lt;/code&gt; fails (deadlock, constraint, database down), it logs &lt;code&gt;error_type: 'live_node_persist_failed'&lt;/code&gt; and the method returns &lt;code&gt;void&lt;/code&gt;. Execution does &lt;em&gt;not&lt;/em&gt; abort.&lt;br&gt;&lt;br&gt;Effect. During a database outage, all Small Memory persistences fail silently. The user only finds out on the next execution." data-pt="&lt;code&gt;persistNodeDataToLiveRow&lt;/code&gt; tem &lt;code&gt;try/catch&lt;/code&gt; interno. Se o &lt;code&gt;UPDATE&lt;/code&gt; falhar (deadlock, constraint, banco fora), loga &lt;code&gt;error_type: 'live_node_persist_failed'&lt;/code&gt; e o método volta &lt;code&gt;void&lt;/code&gt;. A execução &lt;em&gt;não&lt;/em&gt; aborta.&lt;br&gt;&lt;br&gt;Efeito. Em pane de banco, todas as persistências de Small Memory fracassam silenciosamente. O usuário só descobre na próxima execução."><code>persistNodeDataToLiveRow</code> has an internal <code>try/catch</code>. If the <code>UPDATE</code> fails (deadlock, constraint, database down), it logs <code>error_type: 'live_node_persist_failed'</code> and the method returns <code>void</code>. Execution does <em>not</em> abort.
+            <br><br>Effect. During a database outage, all Small Memory persistences fail silently. The user only finds out on the next execution.</span>
           </div>
         </div>
       </div>
@@ -561,25 +579,25 @@
 
   <!-- SUMMARY -->
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo — o que sai de 3.5b:</strong>
-    <br>• <code>myUpdatedNodes</code> = novo array com o nó finalizado e edges downstream atualizadas via <code>modifyData</code>.
-    <br>• Schema global recalculado e propagado via <code>onMutateSchema</code>.
-    <br>• Linhas de <code>fluxObject</code> conectadas via <code>inputAdd</code> persistidas em <code>flows_nodes.data</code> (ou <code>flow_version_history_nodes</code>).
-    <br>• Um <code>UPDATE</code> por Small Memory conectada. Sem batching, sem paralelismo (loop <code>for ... of</code> com <code>await</code>).
+    <span data-en="&lt;strong&gt;Summary — what comes out of 3.5b:&lt;/strong&gt;&lt;br&gt;• &lt;code&gt;myUpdatedNodes&lt;/code&gt; = new array with the finished node and downstream edges updated via &lt;code&gt;modifyData&lt;/code&gt;.&lt;br&gt;• Global schema recomputed and propagated via &lt;code&gt;onMutateSchema&lt;/code&gt;.&lt;br&gt;• &lt;code&gt;fluxObject&lt;/code&gt; rows connected via &lt;code&gt;inputAdd&lt;/code&gt; persisted to &lt;code&gt;flows_nodes.data&lt;/code&gt; (or &lt;code&gt;flow_version_history_nodes&lt;/code&gt;).&lt;br&gt;• One &lt;code&gt;UPDATE&lt;/code&gt; per connected Small Memory. No batching, no parallelism (&lt;code&gt;for ... of&lt;/code&gt; loop with &lt;code&gt;await&lt;/code&gt;)." data-pt="&lt;strong&gt;Resumo — o que sai de 3.5b:&lt;/strong&gt;&lt;br&gt;• &lt;code&gt;myUpdatedNodes&lt;/code&gt; = novo array com o nó finalizado e edges downstream atualizadas via &lt;code&gt;modifyData&lt;/code&gt;.&lt;br&gt;• Schema global recalculado e propagado via &lt;code&gt;onMutateSchema&lt;/code&gt;.&lt;br&gt;• Linhas de &lt;code&gt;fluxObject&lt;/code&gt; conectadas via &lt;code&gt;inputAdd&lt;/code&gt; persistidas em &lt;code&gt;flows_nodes.data&lt;/code&gt; (ou &lt;code&gt;flow_version_history_nodes&lt;/code&gt;).&lt;br&gt;• Um &lt;code&gt;UPDATE&lt;/code&gt; por Small Memory conectada. Sem batching, sem paralelismo (loop &lt;code&gt;for ... of&lt;/code&gt; com &lt;code&gt;await&lt;/code&gt;)."><strong>Summary — what comes out of 3.5b:</strong>
+    <br>• <code>myUpdatedNodes</code> = new array with the finished node and downstream edges updated via <code>modifyData</code>.
+    <br>• Global schema recomputed and propagated via <code>onMutateSchema</code>.
+    <br>• <code>fluxObject</code> rows connected via <code>inputAdd</code> persisted to <code>flows_nodes.data</code> (or <code>flow_version_history_nodes</code>).
+    <br>• One <code>UPDATE</code> per connected Small Memory. No batching, no parallelism (<code>for ... of</code> loop with <code>await</code>).</span>
   </div>
 
   <div class="note">
-    <strong>Observações para migração:</strong>
-    <br>• Este par é o <strong>equivalente inline de W7-W9 do worker</strong>. Migrar um novo tipo de nó para o Temporal significa três passos. (1) Adicionar em <code>isTemporalNode</code>. (2) Garantir que W7-W9 no worker chamam a mesma lógica. (3) O gate deste passo automaticamente vai pular para o nó novo, evitando double-persist.
-    <br>• <code>publishInApiNodeOutput</code> muta um array via <code>[...nds]</code> e <code>.map</code>. <strong>Não</strong> muta <code>myUpdatedNodes</code> in-place. Preserva referências para o padrão de closure mutation (mesmo estilo do 1.5).
-    <br>• <code>persistSmallMemoryEntries</code> é <em>fire-and-forget</em>. Tem <code>await</code>, mas o erro é engolido no <code>try/catch</code> interno de <code>persistNodeDataToLiveRow</code>. No worker, ideal seria activity com retry policy.
-    <br>• Handle mágico (<code>'inputAdd'</code>) e tipo mágico (<code>'fluxObject'</code>) estão em constantes num arquivo dedicado (<code>flux/small-memory.ts</code>). Fácil de reaproveitar no worker.
-    <br>• Prioridade média-alta na migração. Enquanto o backend inline existir, este par tem que continuar funcionando. Cada tipo novo migrado remove clientes desse code path.
+    <span data-en="&lt;strong&gt;Notes for migration:&lt;/strong&gt;&lt;br&gt;• This pair is the &lt;strong&gt;inline equivalent of W7-W9 from the worker&lt;/strong&gt;. Migrating a new node type to Temporal takes three steps. (1) Add it to &lt;code&gt;isTemporalNode&lt;/code&gt;. (2) Ensure W7-W9 in the worker call the same logic. (3) The gate in this step will automatically skip the new node, avoiding double-persist.&lt;br&gt;• &lt;code&gt;publishInApiNodeOutput&lt;/code&gt; mutates an array via &lt;code&gt;[...nds]&lt;/code&gt; and &lt;code&gt;.map&lt;/code&gt;. It does &lt;strong&gt;not&lt;/strong&gt; mutate &lt;code&gt;myUpdatedNodes&lt;/code&gt; in-place. It preserves references for the closure-mutation pattern (same style as 1.5).&lt;br&gt;• &lt;code&gt;persistSmallMemoryEntries&lt;/code&gt; is &lt;em&gt;fire-and-forget&lt;/em&gt;. It has &lt;code&gt;await&lt;/code&gt;, but the error is swallowed in the internal &lt;code&gt;try/catch&lt;/code&gt; of &lt;code&gt;persistNodeDataToLiveRow&lt;/code&gt;. In the worker, the ideal would be an activity with a retry policy.&lt;br&gt;• Magic handle (&lt;code&gt;'inputAdd'&lt;/code&gt;) and magic type (&lt;code&gt;'fluxObject'&lt;/code&gt;) are in constants in a dedicated file (&lt;code&gt;flux/small-memory.ts&lt;/code&gt;). Easy to reuse in the worker.&lt;br&gt;• Medium-high priority in the migration. As long as the inline backend exists, this pair has to keep working. Each new migrated type removes clients from this code path." data-pt="&lt;strong&gt;Observações para migração:&lt;/strong&gt;&lt;br&gt;• Este par é o &lt;strong&gt;equivalente inline de W7-W9 do worker&lt;/strong&gt;. Migrar um novo tipo de nó para o Temporal significa três passos. (1) Adicionar em &lt;code&gt;isTemporalNode&lt;/code&gt;. (2) Garantir que W7-W9 no worker chamam a mesma lógica. (3) O gate deste passo automaticamente vai pular para o nó novo, evitando double-persist.&lt;br&gt;• &lt;code&gt;publishInApiNodeOutput&lt;/code&gt; muta um array via &lt;code&gt;[...nds]&lt;/code&gt; e &lt;code&gt;.map&lt;/code&gt;. &lt;strong&gt;Não&lt;/strong&gt; muta &lt;code&gt;myUpdatedNodes&lt;/code&gt; in-place. Preserva referências para o padrão de closure mutation (mesmo estilo do 1.5).&lt;br&gt;• &lt;code&gt;persistSmallMemoryEntries&lt;/code&gt; é &lt;em&gt;fire-and-forget&lt;/em&gt;. Tem &lt;code&gt;await&lt;/code&gt;, mas o erro é engolido no &lt;code&gt;try/catch&lt;/code&gt; interno de &lt;code&gt;persistNodeDataToLiveRow&lt;/code&gt;. No worker, ideal seria activity com retry policy.&lt;br&gt;• Handle mágico (&lt;code&gt;'inputAdd'&lt;/code&gt;) e tipo mágico (&lt;code&gt;'fluxObject'&lt;/code&gt;) estão em constantes num arquivo dedicado (&lt;code&gt;flux/small-memory.ts&lt;/code&gt;). Fácil de reaproveitar no worker.&lt;br&gt;• Prioridade média-alta na migração. Enquanto o backend inline existir, este par tem que continuar funcionando. Cada tipo novo migrado remove clientes desse code path."><strong>Notes for migration:</strong>
+    <br>• This pair is the <strong>inline equivalent of W7-W9 from the worker</strong>. Migrating a new node type to Temporal takes three steps. (1) Add it to <code>isTemporalNode</code>. (2) Ensure W7-W9 in the worker call the same logic. (3) The gate in this step will automatically skip the new node, avoiding double-persist.
+    <br>• <code>publishInApiNodeOutput</code> mutates an array via <code>[...nds]</code> and <code>.map</code>. It does <strong>not</strong> mutate <code>myUpdatedNodes</code> in-place. It preserves references for the closure-mutation pattern (same style as 1.5).
+    <br>• <code>persistSmallMemoryEntries</code> is <em>fire-and-forget</em>. It has <code>await</code>, but the error is swallowed in the internal <code>try/catch</code> of <code>persistNodeDataToLiveRow</code>. In the worker, the ideal would be an activity with a retry policy.
+    <br>• Magic handle (<code>'inputAdd'</code>) and magic type (<code>'fluxObject'</code>) are in constants in a dedicated file (<code>flux/small-memory.ts</code>). Easy to reuse in the worker.
+    <br>• Medium-high priority in the migration. As long as the inline backend exists, this pair has to keep working. Each new migrated type removes clients from this code path.</span>
   </div>
 
   <!-- FOOTER NAV -->
   <div class="page-footer-nav">
-    <a href="../index.html#step-3-5b" class="back-btn">← Voltar ao diagrama principal</a>
+    <a href="../index.html#step-3-5b" class="back-btn"><span data-en="← Back to main diagram" data-pt="← Voltar ao diagrama principal">← Back to main diagram</span></a>
   </div>
 
 </div>
@@ -609,5 +627,6 @@
   });
 })();
 </script>
+<script src="../_assets/i18n.js" defer></script>
 </body>
 </html>

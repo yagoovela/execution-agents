@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Passo 2.2 — Variáveis mutáveis de execução | Detalhamento</title>
+<link rel="stylesheet" href="../_assets/i18n.css">
+<link rel="stylesheet" href="../_assets/header.css">
+<title>Step 2.2 — Mutable execution variables | Detail</title>
 <style>
   * { box-sizing: border-box; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F1F5F9; color: #0F172A; margin: 0; padding: 32px 24px 80px; line-height: 1.4; }
@@ -167,56 +169,70 @@
 </head>
 <body>
 <div class="container">
+<div class="doc-nav">
+  <nav class="doc-tabs" aria-label="Documentation sections">
+    <a href="../index.html" class="doc-tab is-active"><span data-en="Current architecture" data-pt="Arquitetura atual">Current architecture</span></a>
+    <a href="../arquitetura-v2.html" class="doc-tab"><span data-en="v2 architecture" data-pt="Arquitetura v2">v2 architecture</span></a>
+    <a href="../arquitetura-v2-complemento.html" class="doc-tab"><span data-en="Plan as tasks" data-pt="Plano em tarefas">Plan as tasks</span></a>
+    <a href="../timeline/index.html" class="doc-tab"><span data-en="Timeline" data-pt="Timeline">Timeline</span></a>
+  </nav>
+  <div class="lang-sw" role="group" aria-label="Language">
+    <button type="button" data-lang="en" aria-pressed="true">EN-US</button>
+    <button type="button" data-lang="pt" aria-pressed="false">PT-BR</button>
+  </div>
+</div>
+
+
+
 
   <div class="page-nav">
     <div class="breadcrumb">
-      <a href="../index.html">📋 Execução de Agente</a>
+      <a href="../index.html"><span data-en="📋 Agent execution" data-pt="📋 Execução de Agente">📋 Agent execution</span></a>
       <span class="sep">›</span>
-      <span>Passo 2.2 — Detalhamento</span>
+      <span data-en="Step 2.2 — Detail" data-pt="Passo 2.2 — Detalhamento">Step 2.2 — Detail</span>
     </div>
-    <a href="../index.html#step-2-2" class="back-btn">← Voltar ao diagrama</a>
+    <a href="../index.html#step-2-2" class="back-btn"><span data-en="← Back to diagram" data-pt="← Voltar ao diagrama">← Back to diagram</span></a>
+    
   </div>
 
-  <div class="page-header">
-    <span class="icon">🧮</span>
-    <h1>Passo 2.2 — Variáveis mutáveis de execução</h1>
-  </div>
-  <div class="page-sub">
-    Bloco em <code>flux.service.ts:3146-3197</code>. Declara todo o estado in-memory que o loop principal da Fase 3 muta a cada iteração. Cópia dos nós, schema de substituição, entrada do usuário, sets de progresso, flags de parada e setup de cancelamento. É onde a RAM cresce em execuções grandes.
+  <div class="hero">
+    <div class="kicker"><span class="ico">🧮</span></div>
+    <h1><span data-en="Step 2.2 — Mutable execution variables" data-pt="Passo 2.2 — Variáveis mutáveis de execução">Step 2.2 — Mutable execution variables</span></h1>
+    <div class="goal"><span data-en="Block at &lt;code&gt;flux.service.ts:3146-3197&lt;/code&gt;. Declares all the in-memory state that the Phase 3 main loop mutates on every iteration. Node copy, substitution schema, user input, progress sets, stop flags and cancellation setup. This is where RAM grows in large executions." data-pt="Bloco em &lt;code&gt;flux.service.ts:3146-3197&lt;/code&gt;. Declara todo o estado in-memory que o loop principal da Fase 3 muta a cada iteração. Cópia dos nós, schema de substituição, entrada do usuário, sets de progresso, flags de parada e setup de cancelamento. É onde a RAM cresce em execuções grandes.">Block at <code>flux.service.ts:3146-3197</code>. Declares all the in-memory state that the Phase 3 main loop mutates on every iteration. Node copy, substitution schema, user input, progress sets, stop flags and cancellation setup. This is where RAM grows in large executions.</span></div>
   </div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
-    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <div class="step-friendly-title"><span data-en="In summary — what this step does" data-pt="Em resumo — o que esse passo faz">In summary — what this step does</span></div>
     <ul>
-      <li><strong>Abre a mesa de trabalho da execução.</strong> Cria as três estruturas centrais que os handlers manipulam o tempo todo. <code>myUpdatedNodes</code> (cópia viva dos nós). <code>myTexts</code> (coleção de outputs textuais). <code>nodeSubstitutionSchema</code> (dicionário <code>{{label}}</code> → valor). É a principal fonte de pressão de RAM em execuções grandes.</li>
-      <li><strong>Formata a entrada do usuário como chat message.</strong> Pega o primeiro <code>variableInputs[0]</code> do request e empacota como <code>{role:'user', content, timestamp}</code>. Fica pronto para prependar no histórico antes de despachar para o LLM. Se veio arquivo, cola a URL no <code>content</code> com <code>\n</code>.</li>
-      <li><strong>Instala os trackers de progresso.</strong> <code>processedNodeIds</code> (quais nós já rodaram). <code>lastExecutedNodeId</code> (para saber onde cancelar). <code>idx</code> (contador de debug). <code>scheduledId</code> (variável de controle do <code>while</code>; quando vem <code>null</code>, o loop encerra).</li>
-      <li><strong>Prepara três botões de emergência.</strong> As flags <code>stoppedByLoopBehavior</code>, <code>stoppedByNodeFailure</code> e <code>stoppedByCancel</code> começam <em>false</em>. Podem ser ativadas durante a execução para indicar por que o loop parou antes do fim natural.</li>
-      <li><strong>Configura o cancelamento.</strong> Decide se a execução deve escutar cancel (sub-runs herdam do pai). Resolve a <code>cancelRunKey</code>. Faz o único I/O do passo. Um <code>await</code> no <code>featureFlagsService</code> para descobrir se o cancel in-flight (interromper nó no meio) está ligado.</li>
-      <li><strong>Saída.</strong> Cerca de 13 variáveis no escopo do <code>try</code> do <code>apiV2()</code>. Capturadas por closure pelos handlers da Fase 3. É o maior blocker para migrar handlers para o worker. Quase tudo aqui é estado mutado por closure.</li>
+      <li><span data-en="&lt;strong&gt;Opens the execution workbench.&lt;/strong&gt; Creates the three central structures that handlers manipulate all the time. &lt;code&gt;myUpdatedNodes&lt;/code&gt; (live copy of nodes). &lt;code&gt;myTexts&lt;/code&gt; (collection of textual outputs). &lt;code&gt;nodeSubstitutionSchema&lt;/code&gt; (&lt;code&gt;{{label}}&lt;/code&gt; → value dictionary). This is the main source of RAM pressure in large executions." data-pt="&lt;strong&gt;Abre a mesa de trabalho da execução.&lt;/strong&gt; Cria as três estruturas centrais que os handlers manipulam o tempo todo. &lt;code&gt;myUpdatedNodes&lt;/code&gt; (cópia viva dos nós). &lt;code&gt;myTexts&lt;/code&gt; (coleção de outputs textuais). &lt;code&gt;nodeSubstitutionSchema&lt;/code&gt; (dicionário &lt;code&gt;{{label}}&lt;/code&gt; → valor). É a principal fonte de pressão de RAM em execuções grandes."><strong>Opens the execution workbench.</strong> Creates the three central structures that handlers manipulate all the time. <code>myUpdatedNodes</code> (live copy of nodes). <code>myTexts</code> (collection of textual outputs). <code>nodeSubstitutionSchema</code> (<code>{{label}}</code> → value dictionary). This is the main source of RAM pressure in large executions.</span></li>
+      <li><span data-en="&lt;strong&gt;Formats user input as chat message.&lt;/strong&gt; Takes the first &lt;code&gt;variableInputs[0]&lt;/code&gt; from the request and packages it as &lt;code&gt;{role:'user', content, timestamp}&lt;/code&gt;. Ready to be prepended to the history before dispatching to the LLM. If a file came in, appends the URL to &lt;code&gt;content&lt;/code&gt; with &lt;code&gt;\n&lt;/code&gt;." data-pt="&lt;strong&gt;Formata a entrada do usuário como chat message.&lt;/strong&gt; Pega o primeiro &lt;code&gt;variableInputs[0]&lt;/code&gt; do request e empacota como &lt;code&gt;{role:'user', content, timestamp}&lt;/code&gt;. Fica pronto para prependar no histórico antes de despachar para o LLM. Se veio arquivo, cola a URL no &lt;code&gt;content&lt;/code&gt; com &lt;code&gt;\n&lt;/code&gt;."><strong>Formats user input as chat message.</strong> Takes the first <code>variableInputs[0]</code> from the request and packages it as <code>{role:'user', content, timestamp}</code>. Ready to be prepended to the history before dispatching to the LLM. If a file came in, appends the URL to <code>content</code> with <code>\n</code>.</span></li>
+      <li><span data-en="&lt;strong&gt;Installs the progress trackers.&lt;/strong&gt; &lt;code&gt;processedNodeIds&lt;/code&gt; (which nodes already ran). &lt;code&gt;lastExecutedNodeId&lt;/code&gt; (to know where to cancel). &lt;code&gt;idx&lt;/code&gt; (debug counter). &lt;code&gt;scheduledId&lt;/code&gt; (control variable of the &lt;code&gt;while&lt;/code&gt;; when it returns &lt;code&gt;null&lt;/code&gt;, the loop ends)." data-pt="&lt;strong&gt;Instala os trackers de progresso.&lt;/strong&gt; &lt;code&gt;processedNodeIds&lt;/code&gt; (quais nós já rodaram). &lt;code&gt;lastExecutedNodeId&lt;/code&gt; (para saber onde cancelar). &lt;code&gt;idx&lt;/code&gt; (contador de debug). &lt;code&gt;scheduledId&lt;/code&gt; (variável de controle do &lt;code&gt;while&lt;/code&gt;; quando vem &lt;code&gt;null&lt;/code&gt;, o loop encerra)."><strong>Installs the progress trackers.</strong> <code>processedNodeIds</code> (which nodes already ran). <code>lastExecutedNodeId</code> (to know where to cancel). <code>idx</code> (debug counter). <code>scheduledId</code> (control variable of the <code>while</code>; when it returns <code>null</code>, the loop ends).</span></li>
+      <li><span data-en="&lt;strong&gt;Prepares three emergency buttons.&lt;/strong&gt; The flags &lt;code&gt;stoppedByLoopBehavior&lt;/code&gt;, &lt;code&gt;stoppedByNodeFailure&lt;/code&gt; and &lt;code&gt;stoppedByCancel&lt;/code&gt; start &lt;em&gt;false&lt;/em&gt;. They can be activated during execution to indicate why the loop stopped before the natural end." data-pt="&lt;strong&gt;Prepara três botões de emergência.&lt;/strong&gt; As flags &lt;code&gt;stoppedByLoopBehavior&lt;/code&gt;, &lt;code&gt;stoppedByNodeFailure&lt;/code&gt; e &lt;code&gt;stoppedByCancel&lt;/code&gt; começam &lt;em&gt;false&lt;/em&gt;. Podem ser ativadas durante a execução para indicar por que o loop parou antes do fim natural."><strong>Prepares three emergency buttons.</strong> The flags <code>stoppedByLoopBehavior</code>, <code>stoppedByNodeFailure</code> and <code>stoppedByCancel</code> start <em>false</em>. They can be activated during execution to indicate why the loop stopped before the natural end.</span></li>
+      <li><span data-en="&lt;strong&gt;Sets up cancellation.&lt;/strong&gt; Decides whether the execution should listen for cancel (sub-runs inherit from the parent). Resolves the &lt;code&gt;cancelRunKey&lt;/code&gt;. Does the only I/O of this step. An &lt;code&gt;await&lt;/code&gt; on &lt;code&gt;featureFlagsService&lt;/code&gt; to find out whether in-flight cancel (interrupt a node midway) is on." data-pt="&lt;strong&gt;Configura o cancelamento.&lt;/strong&gt; Decide se a execução deve escutar cancel (sub-runs herdam do pai). Resolve a &lt;code&gt;cancelRunKey&lt;/code&gt;. Faz o único I/O do passo. Um &lt;code&gt;await&lt;/code&gt; no &lt;code&gt;featureFlagsService&lt;/code&gt; para descobrir se o cancel in-flight (interromper nó no meio) está ligado."><strong>Sets up cancellation.</strong> Decides whether the execution should listen for cancel (sub-runs inherit from the parent). Resolves the <code>cancelRunKey</code>. Does the only I/O of this step. An <code>await</code> on <code>featureFlagsService</code> to find out whether in-flight cancel (interrupt a node midway) is on.</span></li>
+      <li><span data-en="&lt;strong&gt;Output.&lt;/strong&gt; About 13 variables in the &lt;code&gt;try&lt;/code&gt; scope of &lt;code&gt;apiV2()&lt;/code&gt;. Captured by closure by the Phase 3 handlers. This is the biggest blocker for migrating handlers to the worker. Almost everything here is closure-mutated state." data-pt="&lt;strong&gt;Saída.&lt;/strong&gt; Cerca de 13 variáveis no escopo do &lt;code&gt;try&lt;/code&gt; do &lt;code&gt;apiV2()&lt;/code&gt;. Capturadas por closure pelos handlers da Fase 3. É o maior blocker para migrar handlers para o worker. Quase tudo aqui é estado mutado por closure."><strong>Output.</strong> About 13 variables in the <code>try</code> scope of <code>apiV2()</code>. Captured by closure by the Phase 3 handlers. This is the biggest blocker for migrating handlers to the worker. Almost everything here is closure-mutated state.</span></li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto.</strong> A maioria dessas variáveis existe porque o loop mistura orquestração (scheduler) com estado do domínio (nós atualizados, tokens gastos, etc.). Cada handler da Fase 3 pode ler ou mutar qualquer uma delas. Este é o principal blocker para migrar handlers para o worker. O worker não tem acesso a nada disso. Recebe cada nó já pré-substituído e retorna output puro.
+    <span data-en="&lt;strong&gt;Context.&lt;/strong&gt; Most of these variables exist because the loop mixes orchestration (scheduler) with domain state (updated nodes, spent tokens, etc). Every Phase 3 handler can read or mutate any of them. This is the main blocker for migrating handlers to the worker. The worker has no access to any of it. It receives each node already pre-substituted and returns pure output." data-pt="&lt;strong&gt;Contexto.&lt;/strong&gt; A maioria dessas variáveis existe porque o loop mistura orquestração (scheduler) com estado do domínio (nós atualizados, tokens gastos, etc.). Cada handler da Fase 3 pode ler ou mutar qualquer uma delas. Este é o principal blocker para migrar handlers para o worker. O worker não tem acesso a nada disso. Recebe cada nó já pré-substituído e retorna output puro."><strong>Context.</strong> Most of these variables exist because the loop mixes orchestration (scheduler) with domain state (updated nodes, spent tokens, etc). Every Phase 3 handler can read or mutate any of them. This is the main blocker for migrating handlers to the worker. The worker has no access to any of it. It receives each node already pre-substituted and returns pure output.</span>
   </div>
 
   <div class="overview-mini">
-    <div class="overview-mini-title">Grupos de variáveis em 2.2</div>
+    <div class="overview-mini-title"><span data-en="Variable groups in 2.2" data-pt="Grupos de variáveis em 2.2">Variable groups in 2.2</span></div>
     <div class="overview-chain">
-      <a href="#fn-a" class="overview-chip"><span class="lbl">A</span>Estado dos nós + schema</a>
+      <a href="#fn-a" class="overview-chip"><span class="lbl">A</span><span data-en="Node state + schema" data-pt="Estado dos nós + schema">Node state + schema</span></a>
       <span class="overview-sep">→</span>
       <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>User input (chat)</a>
       <span class="overview-sep">→</span>
-      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>Progresso (sets/counters)</a>
+      <a href="#fn-c" class="overview-chip"><span class="lbl">C</span><span data-en="Progress (sets/counters)" data-pt="Progresso (sets/counters)">Progress (sets/counters)</span></a>
       <span class="overview-sep">→</span>
-      <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>Flags de parada</a>
+      <a href="#fn-d" class="overview-chip"><span class="lbl">D</span><span data-en="Stop flags" data-pt="Flags de parada">Stop flags</span></a>
       <span class="overview-sep">→</span>
       <a href="#fn-e" class="overview-chip"><span class="lbl">E</span>Cancellation setup</a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado final. Cerca de 13 variáveis no escopo do <code>try</code> em <code>apiV2()</code>. Capturadas por closure pelos handlers da Fase 3.
+      <span data-en="Final result. About 13 variables in the &lt;code&gt;try&lt;/code&gt; scope of &lt;code&gt;apiV2()&lt;/code&gt;. Captured by closure by the Phase 3 handlers." data-pt="Resultado final. Cerca de 13 variáveis no escopo do &lt;code&gt;try&lt;/code&gt; em &lt;code&gt;apiV2()&lt;/code&gt;. Capturadas por closure pelos handlers da Fase 3.">Final result. About 13 variables in the <code>try</code> scope of <code>apiV2()</code>. Captured by closure by the Phase 3 handlers.</span>
     </div>
   </div>
 
@@ -234,17 +250,17 @@
         let myUpdatedNodes = [...newFlows]; let myTexts = []; let nodeSubstitutionSchema = generateSchemaFromNodes(myUpdatedNodes);
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Estado central da execução. A "verdade viva" dos nós enquanto o loop roda. <code>myUpdatedNodes</code> começa como cópia rasa do array preparado nas Fases 1. Cada handler que grava output muta esse array. <code>nodeSubstitutionSchema</code> é o mapa <code>{{label}}</code> → valor que <code>applySubstitutionToObject</code> usa em cada iteração.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Central execution state. The &quot;living truth&quot; of the nodes while the loop runs. &lt;code&gt;myUpdatedNodes&lt;/code&gt; starts as a shallow copy of the array prepared in Phase 1. Every handler that writes output mutates this array. &lt;code&gt;nodeSubstitutionSchema&lt;/code&gt; is the &lt;code&gt;{{label}}&lt;/code&gt; → value map that &lt;code&gt;applySubstitutionToObject&lt;/code&gt; uses on every iteration." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Estado central da execução. A &quot;verdade viva&quot; dos nós enquanto o loop roda. &lt;code&gt;myUpdatedNodes&lt;/code&gt; começa como cópia rasa do array preparado nas Fases 1. Cada handler que grava output muta esse array. &lt;code&gt;nodeSubstitutionSchema&lt;/code&gt; é o mapa &lt;code&gt;{{label}}&lt;/code&gt; → valor que &lt;code&gt;applySubstitutionToObject&lt;/code&gt; usa em cada iteração."><strong>Purpose.</strong> Central execution state. The "living truth" of the nodes while the loop runs. <code>myUpdatedNodes</code> starts as a shallow copy of the array prepared in Phase 1. Every handler that writes output mutates this array. <code>nodeSubstitutionSchema</code> is the <code>{{label}}</code> → value map that <code>applySubstitutionToObject</code> uses on every iteration.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Este bloco é a mesa de trabalho onde o agente monta tudo. Antes de executar nó por nó, o backend abre três estruturas na memória. Cópia da lista de nós, atualizada a cada saída (o <code>myUpdatedNodes</code>). Coleção vazia para acumular o texto que os nós gerarem (o <code>myTexts</code>). Um dicionário rápido de referências (quem responde por <code>{{label}}</code>, quem responde por <code>{{nodeId}}</code>), que é o schema de substituição. Todo handler da Fase 3 manipula essas três estruturas o tempo todo. É onde a RAM cresce em agentes grandes. Esse estado vivo cresce junto com <code>previewResponses</code>, <code>contentData</code> e streams parciais.
+        <span data-en="&lt;strong&gt;In summary.&lt;/strong&gt; This block is the workbench where the agent assembles everything. Before executing node by node, the backend opens three memory structures. A copy of the node list, updated on every output (the &lt;code&gt;myUpdatedNodes&lt;/code&gt;). An empty collection to accumulate text generated by nodes (the &lt;code&gt;myTexts&lt;/code&gt;). A fast dictionary of references (who answers to &lt;code&gt;{{label}}&lt;/code&gt;, who answers to &lt;code&gt;{{nodeId}}&lt;/code&gt;), which is the substitution schema. Every Phase 3 handler manipulates these three structures all the time. It is where RAM grows in large agents. This live state grows along with &lt;code&gt;previewResponses&lt;/code&gt;, &lt;code&gt;contentData&lt;/code&gt; and partial streams." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Este bloco é a mesa de trabalho onde o agente monta tudo. Antes de executar nó por nó, o backend abre três estruturas na memória. Cópia da lista de nós, atualizada a cada saída (o &lt;code&gt;myUpdatedNodes&lt;/code&gt;). Coleção vazia para acumular o texto que os nós gerarem (o &lt;code&gt;myTexts&lt;/code&gt;). Um dicionário rápido de referências (quem responde por &lt;code&gt;{{label}}&lt;/code&gt;, quem responde por &lt;code&gt;{{nodeId}}&lt;/code&gt;), que é o schema de substituição. Todo handler da Fase 3 manipula essas três estruturas o tempo todo. É onde a RAM cresce em agentes grandes. Esse estado vivo cresce junto com &lt;code&gt;previewResponses&lt;/code&gt;, &lt;code&gt;contentData&lt;/code&gt; e streams parciais."><strong>In summary.</strong> This block is the workbench where the agent assembles everything. Before executing node by node, the backend opens three memory structures. A copy of the node list, updated on every output (the <code>myUpdatedNodes</code>). An empty collection to accumulate text generated by nodes (the <code>myTexts</code>). A fast dictionary of references (who answers to <code>{{label}}</code>, who answers to <code>{{nodeId}}</code>), which is the substitution schema. Every Phase 3 handler manipulates these three structures all the time. It is where RAM grows in large agents. This live state grows along with <code>previewResponses</code>, <code>contentData</code> and partial streams.</span>
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
             <div class="box-title"><span class="badge step">A1</span> <code>myUpdatedNodes = [...newFlows]</code></div>
             <div class="box-desc">
-              O spread cria um array novo, mas as referências dos nós são compartilhadas. Handlers mutam <code>node.data</code> diretamente (writers no loop legacy). Contribui para a confusão de "quem mutou o quê" e para o crescimento in-memory.
+              <span data-en="The spread creates a new array, but node references are shared. Handlers mutate &lt;code&gt;node.data&lt;/code&gt; directly (writers in the legacy loop). Contributes to the &quot;who mutated what&quot; confusion and to in-memory growth." data-pt="O spread cria um array novo, mas as referências dos nós são compartilhadas. Handlers mutam &lt;code&gt;node.data&lt;/code&gt; diretamente (writers no loop legacy). Contribui para a confusão de &quot;quem mutou o quê&quot; e para o crescimento in-memory.">The spread creates a new array, but node references are shared. Handlers mutate <code>node.data</code> directly (writers in the legacy loop). Contributes to the "who mutated what" confusion and to in-memory growth.</span>
             </div>
             <div class="box-file">flux.service.ts:3146</div>
           </div>
@@ -252,7 +268,7 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">A2</span> <code>myTexts = []</code></div>
             <div class="box-desc">
-              Coleção de outputs textuais dos nós que geraram texto (chat responses, streams). Handlers de <code>commandTextNode</code> e <code>textGenerator</code> fazem append aqui. Usada depois para montar <code>finalResult</code>.
+              <span data-en="Collection of textual outputs from nodes that generated text (chat responses, streams). Handlers &lt;code&gt;commandTextNode&lt;/code&gt; and &lt;code&gt;textGenerator&lt;/code&gt; append here. Used later to build &lt;code&gt;finalResult&lt;/code&gt;." data-pt="Coleção de outputs textuais dos nós que geraram texto (chat responses, streams). Handlers de &lt;code&gt;commandTextNode&lt;/code&gt; e &lt;code&gt;textGenerator&lt;/code&gt; fazem append aqui. Usada depois para montar &lt;code&gt;finalResult&lt;/code&gt;.">Collection of textual outputs from nodes that generated text (chat responses, streams). Handlers <code>commandTextNode</code> and <code>textGenerator</code> append here. Used later to build <code>finalResult</code>.</span>
             </div>
             <div class="box-file">flux.service.ts:3147</div>
           </div>
@@ -260,9 +276,9 @@
           <div class="nested-flow">
             <div class="nested-flow-title">↳ nodeReferenceSubstitutionService.generateSchemaFromNodes()</div>
             <div class="box backend">
-              <div class="box-title"><span class="badge step">A3</span> Monta schema in-memory</div>
+              <div class="box-title"><span class="badge step">A3</span> <span data-en="Builds in-memory schema" data-pt="Monta schema in-memory">Builds in-memory schema</span></div>
               <div class="box-desc">
-                Três chaves por nó. <code>schema[nodeId]</code>, <code>schema[nodeId_normalizado]</code>, <code>schema[label_lowercase]</code>. Ver <a href="passo-2-3.html">passo 2.3</a> para o detalhamento completo desta função.
+                <span data-en="Three keys per node. &lt;code&gt;schema[nodeId]&lt;/code&gt;, &lt;code&gt;schema[nodeId_normalized]&lt;/code&gt;, &lt;code&gt;schema[label_lowercase]&lt;/code&gt;. See &lt;a href=&quot;passo-2-3.html&quot;&gt;step 2.3&lt;/a&gt; for the full breakdown of this function." data-pt="Três chaves por nó. &lt;code&gt;schema[nodeId]&lt;/code&gt;, &lt;code&gt;schema[nodeId_normalizado]&lt;/code&gt;, &lt;code&gt;schema[label_lowercase]&lt;/code&gt;. Ver &lt;a href=&quot;passo-2-3.html&quot;&gt;passo 2.3&lt;/a&gt; para o detalhamento completo desta função.">Three keys per node. <code>schema[nodeId]</code>, <code>schema[nodeId_normalized]</code>, <code>schema[label_lowercase]</code>. See <a href="passo-2-3.html">step 2.3</a> for the full breakdown of this function.</span>
               </div>
               <div class="box-file">node-reference-substitution.service.ts:82-143</div>
             </div>
@@ -270,16 +286,16 @@
         </div>
         <div class="fn-asides">
           <div class="aside warn">
-            <div class="aside-title">⚠️ Fonte principal de pressão de RAM</div>
-            O <code>myUpdatedNodes</code> carrega todo o <code>node.data</code>. Inclui <code>previewResponses</code> (10 últimas respostas), <code>contentData</code>, <code>text</code>, streams parciais. A cada iteração, handlers pesados podem clonar ou expandir. Em agente com 50 text-gen e 20 arrayNode loops, chega a centenas de MB. Ver [[project_jsonb_fat_fields]].
+            <div class="aside-title">⚠️ <span data-en="Main source of RAM pressure" data-pt="Fonte principal de pressão de RAM">Main source of RAM pressure</span></div>
+            <span data-en="&lt;code&gt;myUpdatedNodes&lt;/code&gt; carries all of &lt;code&gt;node.data&lt;/code&gt;. Includes &lt;code&gt;previewResponses&lt;/code&gt; (last 10 responses), &lt;code&gt;contentData&lt;/code&gt;, &lt;code&gt;text&lt;/code&gt;, partial streams. On every iteration, heavy handlers can clone or expand. In an agent with 50 text-gens and 20 arrayNode loops, it reaches hundreds of MB. See [[project_jsonb_fat_fields]]." data-pt="O &lt;code&gt;myUpdatedNodes&lt;/code&gt; carrega todo o &lt;code&gt;node.data&lt;/code&gt;. Inclui &lt;code&gt;previewResponses&lt;/code&gt; (10 últimas respostas), &lt;code&gt;contentData&lt;/code&gt;, &lt;code&gt;text&lt;/code&gt;, streams parciais. A cada iteração, handlers pesados podem clonar ou expandir. Em agente com 50 text-gen e 20 arrayNode loops, chega a centenas de MB. Ver [[project_jsonb_fat_fields]]."><code>myUpdatedNodes</code> carries all of <code>node.data</code>. Includes <code>previewResponses</code> (last 10 responses), <code>contentData</code>, <code>text</code>, partial streams. On every iteration, heavy handlers can clone or expand. In an agent with 50 text-gens and 20 arrayNode loops, it reaches hundreds of MB. See [[project_jsonb_fat_fields]].</span>
           </div>
           <div class="aside info">
-            <div class="aside-title">🎯 Por que <code>let</code> e não <code>const</code>?</div>
-            <code>myUpdatedNodes</code> e <code>nodeSubstitutionSchema</code> são reatribuídos em alguns pontos do loop, não só mutados. Exemplo. Dentro do <code>arrayNode</code>, <code>newNodes = [...myUpdatedNodes]</code> e depois <code>myUpdatedNodes = newNodes</code>. O callback <code>onMutateSchema</code> também reatribui o schema inteiro.
+            <div class="aside-title">🎯 <span data-en="Why &lt;code&gt;let&lt;/code&gt; and not &lt;code&gt;const&lt;/code&gt;?" data-pt="Por que &lt;code&gt;let&lt;/code&gt; e não &lt;code&gt;const&lt;/code&gt;?">Why <code>let</code> and not <code>const</code>?</span></div>
+            <span data-en="&lt;code&gt;myUpdatedNodes&lt;/code&gt; and &lt;code&gt;nodeSubstitutionSchema&lt;/code&gt; are reassigned at some points in the loop, not just mutated. Example. Inside &lt;code&gt;arrayNode&lt;/code&gt;, &lt;code&gt;newNodes = [...myUpdatedNodes]&lt;/code&gt; then &lt;code&gt;myUpdatedNodes = newNodes&lt;/code&gt;. The &lt;code&gt;onMutateSchema&lt;/code&gt; callback also reassigns the whole schema." data-pt="&lt;code&gt;myUpdatedNodes&lt;/code&gt; e &lt;code&gt;nodeSubstitutionSchema&lt;/code&gt; são reatribuídos em alguns pontos do loop, não só mutados. Exemplo. Dentro do &lt;code&gt;arrayNode&lt;/code&gt;, &lt;code&gt;newNodes = [...myUpdatedNodes]&lt;/code&gt; e depois &lt;code&gt;myUpdatedNodes = newNodes&lt;/code&gt;. O callback &lt;code&gt;onMutateSchema&lt;/code&gt; também reatribui o schema inteiro."><code>myUpdatedNodes</code> and <code>nodeSubstitutionSchema</code> are reassigned at some points in the loop, not just mutated. Example. Inside <code>arrayNode</code>, <code>newNodes = [...myUpdatedNodes]</code> then <code>myUpdatedNodes = newNodes</code>. The <code>onMutateSchema</code> callback also reassigns the whole schema.</span>
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 <code>newFlows</code>. Origem</div>
-            É o <code>updatedFlows</code> das Fases 1 (após 1.6 e 1.7) renomeado para <code>newFlows</code> em algum ponto acima da linha 3146. Já inclui todas as hidratações de chat, objetos e token Google.
+            <div class="aside-title">🔧 <span data-en="&lt;code&gt;newFlows&lt;/code&gt;. Origin" data-pt="&lt;code&gt;newFlows&lt;/code&gt;. Origem"><code>newFlows</code>. Origin</span></div>
+            <span data-en="It is the &lt;code&gt;updatedFlows&lt;/code&gt; from Phase 1 (after 1.6 and 1.7) renamed to &lt;code&gt;newFlows&lt;/code&gt; somewhere above line 3146. Already includes all chat, object and Google token hydrations." data-pt="É o &lt;code&gt;updatedFlows&lt;/code&gt; das Fases 1 (após 1.6 e 1.7) renomeado para &lt;code&gt;newFlows&lt;/code&gt; em algum ponto acima da linha 3146. Já inclui todas as hidratações de chat, objetos e token Google.">It is the <code>updatedFlows</code> from Phase 1 (after 1.6 and 1.7) renamed to <code>newFlows</code> somewhere above line 3146. Already includes all chat, object and Google token hydrations.</span>
           </div>
         </div>
       </div>
@@ -291,7 +307,7 @@
     <div class="fn-card-header">
       <div class="fn-title">
         <span class="badge migrated" style="background:#3B82F6;color:white">B</span>
-        <code>object (user input formatado)</code>
+        <code><span data-en="object (formatted user input)" data-pt="object (user input formatado)">object (formatted user input)</span></code>
       </div>
       <div class="fn-loc">flux.service.ts:3157-3177</div>
     </div>
@@ -300,10 +316,10 @@
         const object = [{ role: 'user', content: inputText + inputFileUrl, timestamp: ... }]
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Empacota a entrada do usuário no shape de chat message (<code>{role, content, timestamp}</code>). Fica pronta para ser prependada no histórico de chat quando a execução começa. Só o primeiro <code>variableInput</code> é considerado.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Packages the user input in chat message shape (&lt;code&gt;{role, content, timestamp}&lt;/code&gt;). Ready to be prepended to the chat history when execution begins. Only the first &lt;code&gt;variableInput&lt;/code&gt; is considered." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Empacota a entrada do usuário no shape de chat message (&lt;code&gt;{role, content, timestamp}&lt;/code&gt;). Fica pronta para ser prependada no histórico de chat quando a execução começa. Só o primeiro &lt;code&gt;variableInput&lt;/code&gt; é considerado."><strong>Purpose.</strong> Packages the user input in chat message shape (<code>{role, content, timestamp}</code>). Ready to be prepended to the chat history when execution begins. Only the first <code>variableInput</code> is considered.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Esta etapa é o carteiro. Pega o que o usuário digitou no request e transforma em uma mensagem no formato que o LLM entende (<code>{role:'user', content:'...', timestamp:'...'}</code>). Se veio anexo, cola a URL no final do texto com um <code>\n</code>. Essa mensagem é prependada no histórico do chat antes do despacho para o modelo. Só olha o primeiro item de <code>variableInputs</code>. Se o cliente mandou vários, os outros ficam ignorados aqui e só chegam nos handlers específicos depois.
+        <span data-en="&lt;strong&gt;In summary.&lt;/strong&gt; This step is the mailman. Takes what the user typed in the request and turns it into a message in the format the LLM understands (&lt;code&gt;{role:'user', content:'...', timestamp:'...'}&lt;/code&gt;). If a file came in, appends the URL at the end of the text with a &lt;code&gt;\n&lt;/code&gt;. This message is prepended to the chat history before dispatching to the model. Only looks at the first item of &lt;code&gt;variableInputs&lt;/code&gt;. If the client sent several, the rest are ignored here and only reach the specific handlers later." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Esta etapa é o carteiro. Pega o que o usuário digitou no request e transforma em uma mensagem no formato que o LLM entende (&lt;code&gt;{role:'user', content:'...', timestamp:'...'}&lt;/code&gt;). Se veio anexo, cola a URL no final do texto com um &lt;code&gt;\n&lt;/code&gt;. Essa mensagem é prependada no histórico do chat antes do despacho para o modelo. Só olha o primeiro item de &lt;code&gt;variableInputs&lt;/code&gt;. Se o cliente mandou vários, os outros ficam ignorados aqui e só chegam nos handlers específicos depois."><strong>In summary.</strong> This step is the mailman. Takes what the user typed in the request and turns it into a message in the format the LLM understands (<code>{role:'user', content:'...', timestamp:'...'}</code>). If a file came in, appends the URL at the end of the text with a <code>\n</code>. This message is prepended to the chat history before dispatching to the model. Only looks at the first item of <code>variableInputs</code>. If the client sent several, the rest are ignored here and only reach the specific handlers later.</span>
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
@@ -319,25 +335,25 @@
           </div>
           <div class="arrow">↓</div>
           <div class="box backend">
-            <div class="box-title">Uso downstream</div>
+            <div class="box-title"><span data-en="Downstream usage" data-pt="Uso downstream">Downstream usage</span></div>
             <div class="box-desc">
-              Consumido pelos handlers de chat (<code>fluxObject</code> e <code>commandTextNode</code> com <code>chat=true</code>) para prependar o turno do usuário no <code>entries[]</code> antes de enviar ao LLM.
+              <span data-en="Consumed by chat handlers (&lt;code&gt;fluxObject&lt;/code&gt; and &lt;code&gt;commandTextNode&lt;/code&gt; with &lt;code&gt;chat=true&lt;/code&gt;) to prepend the user's turn in &lt;code&gt;entries[]&lt;/code&gt; before sending to the LLM." data-pt="Consumido pelos handlers de chat (&lt;code&gt;fluxObject&lt;/code&gt; e &lt;code&gt;commandTextNode&lt;/code&gt; com &lt;code&gt;chat=true&lt;/code&gt;) para prependar o turno do usuário no &lt;code&gt;entries[]&lt;/code&gt; antes de enviar ao LLM.">Consumed by chat handlers (<code>fluxObject</code> and <code>commandTextNode</code> with <code>chat=true</code>) to prepend the user's turn in <code>entries[]</code> before sending to the LLM.</span>
             </div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside warn">
-            <div class="aside-title">⚠️ Só <code>variableInputs[0]</code></div>
-            Se o request mandar múltiplos inputs (chat multi-turno, múltiplos arquivos), só o índice 0 vira <code>object</code>. Os demais só chegam via <code>body.variableInputs</code> nos handlers específicos.
+            <div class="aside-title">⚠️ <span data-en="Only &lt;code&gt;variableInputs[0]&lt;/code&gt;" data-pt="Só &lt;code&gt;variableInputs[0]&lt;/code&gt;">Only <code>variableInputs[0]</code></span></div>
+            <span data-en="If the request sends multiple inputs (multi-turn chat, multiple files), only index 0 becomes &lt;code&gt;object&lt;/code&gt;. The others only reach the specific handlers via &lt;code&gt;body.variableInputs&lt;/code&gt;." data-pt="Se o request mandar múltiplos inputs (chat multi-turno, múltiplos arquivos), só o índice 0 vira &lt;code&gt;object&lt;/code&gt;. Os demais só chegam via &lt;code&gt;body.variableInputs&lt;/code&gt; nos handlers específicos.">If the request sends multiple inputs (multi-turn chat, multiple files), only index 0 becomes <code>object</code>. The others only reach the specific handlers via <code>body.variableInputs</code>.</span>
 
           </div>
           <div class="aside info">
-            <div class="aside-title">🎯 Timestamp em <code>en-US</code></div>
-            Formato. <code>M/D/YYYY, H:MM:SS AM/PM</code>. Salvo direto no <code>entries</code> do chat sem normalizar para ISO. Se o cliente ou log downstream tenta parsear como ISO, quebra.
+            <div class="aside-title">🎯 <span data-en="Timestamp in &lt;code&gt;en-US&lt;/code&gt;" data-pt="Timestamp em &lt;code&gt;en-US&lt;/code&gt;">Timestamp in <code>en-US</code></span></div>
+            <span data-en="Format. &lt;code&gt;M/D/YYYY, H:MM:SS AM/PM&lt;/code&gt;. Saved straight into the chat &lt;code&gt;entries&lt;/code&gt; without ISO normalization. If the client or a downstream log tries to parse it as ISO, it breaks." data-pt="Formato. &lt;code&gt;M/D/YYYY, H:MM:SS AM/PM&lt;/code&gt;. Salvo direto no &lt;code&gt;entries&lt;/code&gt; do chat sem normalizar para ISO. Se o cliente ou log downstream tenta parsear como ISO, quebra.">Format. <code>M/D/YYYY, H:MM:SS AM/PM</code>. Saved straight into the chat <code>entries</code> without ISO normalization. If the client or a downstream log tries to parse it as ISO, it breaks.</span>
           </div>
           <div class="aside helper">
             <div class="aside-title">🔧 <code>inputFileUrl</code> concat</div>
-            Se veio arquivo, a URL é anexada ao <code>content</code> com <code>\n</code>. O LLM tem que interpretar isso como "aqui está o link do arquivo" sem hint estruturado. Simples e frágil. Melhor seria <code>content: [{type:'text'}, {type:'file_url'}]</code> multimodal.
+            <span data-en="If a file came in, the URL is appended to &lt;code&gt;content&lt;/code&gt; with &lt;code&gt;\n&lt;/code&gt;. The LLM has to interpret this as &quot;here is the file link&quot; without a structured hint. Simple and fragile. Better would be multimodal &lt;code&gt;content: [{type:'text'}, {type:'file_url'}]&lt;/code&gt;." data-pt="Se veio arquivo, a URL é anexada ao &lt;code&gt;content&lt;/code&gt; com &lt;code&gt;\n&lt;/code&gt;. O LLM tem que interpretar isso como &quot;aqui está o link do arquivo&quot; sem hint estruturado. Simples e frágil. Melhor seria &lt;code&gt;content: [{type:'text'}, {type:'file_url'}]&lt;/code&gt; multimodal.">If a file came in, the URL is appended to <code>content</code> with <code>\n</code>. The LLM has to interpret this as "here is the file link" without a structured hint. Simple and fragile. Better would be multimodal <code>content: [{type:'text'}, {type:'file_url'}]</code>.</span>
           </div>
         </div>
       </div>
@@ -358,17 +374,17 @@
         const processedNodeIds = new Set&lt;string&gt;(); let lastExecutedNodeId = null; let idx = 0; let scheduledId: string | null;
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Trackers de progresso do loop. <code>processedNodeIds</code> é o histórico "quem já rodou" (usado para dedupe e skip). <code>lastExecutedNodeId</code> serve para o <code>finishCancelledNode</code>. <code>idx</code> é contador visual (log/debug). <code>scheduledId</code> é a variável de controle do <code>while</code>.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Loop progress trackers. &lt;code&gt;processedNodeIds&lt;/code&gt; is the &quot;who has already run&quot; history (used for dedupe and skip). &lt;code&gt;lastExecutedNodeId&lt;/code&gt; serves &lt;code&gt;finishCancelledNode&lt;/code&gt;. &lt;code&gt;idx&lt;/code&gt; is a visual counter (log/debug). &lt;code&gt;scheduledId&lt;/code&gt; is the control variable of the &lt;code&gt;while&lt;/code&gt;." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Trackers de progresso do loop. &lt;code&gt;processedNodeIds&lt;/code&gt; é o histórico &quot;quem já rodou&quot; (usado para dedupe e skip). &lt;code&gt;lastExecutedNodeId&lt;/code&gt; serve para o &lt;code&gt;finishCancelledNode&lt;/code&gt;. &lt;code&gt;idx&lt;/code&gt; é contador visual (log/debug). &lt;code&gt;scheduledId&lt;/code&gt; é a variável de controle do &lt;code&gt;while&lt;/code&gt;."><strong>Purpose.</strong> Loop progress trackers. <code>processedNodeIds</code> is the "who has already run" history (used for dedupe and skip). <code>lastExecutedNodeId</code> serves <code>finishCancelledNode</code>. <code>idx</code> is a visual counter (log/debug). <code>scheduledId</code> is the control variable of the <code>while</code>.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Este bloco é o registro de presença do loop. <code>processedNodeIds</code> é o <code>Set</code> que anota quem já rodou. Evita rodar duas vezes em um subrun. <code>lastExecutedNodeId</code> é o último a ser chamado. Importante para saber onde parar se o usuário cancelar no meio. <code>idx</code> é apenas um contador de posição para debug. <code>scheduledId</code> é a variável-chave. O <code>while</code> lê essa variável a cada volta. Enquanto o scheduler devolve um id, o loop continua. Quando vem <code>null</code>, a execução acaba. Junto com <code>totalTokensUsed</code> e <code>totalCost</code>, declarados antes, formam o painel de instrumentos da execução.
+        <span data-en="&lt;strong&gt;In summary.&lt;/strong&gt; This block is the loop's attendance sheet. &lt;code&gt;processedNodeIds&lt;/code&gt; is the &lt;code&gt;Set&lt;/code&gt; that records who has already run. Prevents running twice in a subrun. &lt;code&gt;lastExecutedNodeId&lt;/code&gt; is the last one to be called. Important to know where to stop if the user cancels midway. &lt;code&gt;idx&lt;/code&gt; is just a position counter for debug. &lt;code&gt;scheduledId&lt;/code&gt; is the key variable. The &lt;code&gt;while&lt;/code&gt; reads it on every turn. While the scheduler returns an id, the loop keeps going. When &lt;code&gt;null&lt;/code&gt; comes back, execution ends. Together with &lt;code&gt;totalTokensUsed&lt;/code&gt; and &lt;code&gt;totalCost&lt;/code&gt;, declared earlier, they form the execution instrument panel." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Este bloco é o registro de presença do loop. &lt;code&gt;processedNodeIds&lt;/code&gt; é o &lt;code&gt;Set&lt;/code&gt; que anota quem já rodou. Evita rodar duas vezes em um subrun. &lt;code&gt;lastExecutedNodeId&lt;/code&gt; é o último a ser chamado. Importante para saber onde parar se o usuário cancelar no meio. &lt;code&gt;idx&lt;/code&gt; é apenas um contador de posição para debug. &lt;code&gt;scheduledId&lt;/code&gt; é a variável-chave. O &lt;code&gt;while&lt;/code&gt; lê essa variável a cada volta. Enquanto o scheduler devolve um id, o loop continua. Quando vem &lt;code&gt;null&lt;/code&gt;, a execução acaba. Junto com &lt;code&gt;totalTokensUsed&lt;/code&gt; e &lt;code&gt;totalCost&lt;/code&gt;, declarados antes, formam o painel de instrumentos da execução."><strong>In summary.</strong> This block is the loop's attendance sheet. <code>processedNodeIds</code> is the <code>Set</code> that records who has already run. Prevents running twice in a subrun. <code>lastExecutedNodeId</code> is the last one to be called. Important to know where to stop if the user cancels midway. <code>idx</code> is just a position counter for debug. <code>scheduledId</code> is the key variable. The <code>while</code> reads it on every turn. While the scheduler returns an id, the loop keeps going. When <code>null</code> comes back, execution ends. Together with <code>totalTokensUsed</code> and <code>totalCost</code>, declared earlier, they form the execution instrument panel.</span>
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
             <div class="box-title"><span class="badge step">C1</span> <code>processedNodeIds: Set&lt;string&gt;</code></div>
             <div class="box-desc">
-              Adicionado em cada iteração via <code>processedNodeIds.add(id)</code> logo após <code>const id = scheduledId</code>. Usado para evitar reprocessamento em subruns de <code>fluxBox</code> e <code>libraryNode</code>.
+              <span data-en="Added on each iteration via &lt;code&gt;processedNodeIds.add(id)&lt;/code&gt; right after &lt;code&gt;const id = scheduledId&lt;/code&gt;. Used to avoid reprocessing in subruns of &lt;code&gt;fluxBox&lt;/code&gt; and &lt;code&gt;libraryNode&lt;/code&gt;." data-pt="Adicionado em cada iteração via &lt;code&gt;processedNodeIds.add(id)&lt;/code&gt; logo após &lt;code&gt;const id = scheduledId&lt;/code&gt;. Usado para evitar reprocessamento em subruns de &lt;code&gt;fluxBox&lt;/code&gt; e &lt;code&gt;libraryNode&lt;/code&gt;.">Added on each iteration via <code>processedNodeIds.add(id)</code> right after <code>const id = scheduledId</code>. Used to avoid reprocessing in subruns of <code>fluxBox</code> and <code>libraryNode</code>.</span>
             </div>
             <div class="box-file">flux.service.ts:3179, 3245</div>
           </div>
@@ -376,7 +392,7 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">C2</span> <code>lastExecutedNodeId</code></div>
             <div class="box-desc">
-              Atualizado a cada nó processado. Usado pelo handling de cancelamento para saber onde parou e escrever "cancelled at node X" no run log.
+              <span data-en="Updated on each processed node. Used by cancellation handling to know where it stopped and write &quot;cancelled at node X&quot; to the run log." data-pt="Atualizado a cada nó processado. Usado pelo handling de cancelamento para saber onde parou e escrever &quot;cancelled at node X&quot; no run log.">Updated on each processed node. Used by cancellation handling to know where it stopped and write "cancelled at node X" to the run log.</span>
             </div>
             <div class="box-file">flux.service.ts:3183, 3246</div>
           </div>
@@ -384,23 +400,23 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">C3</span> <code>scheduledId</code></div>
             <div class="box-desc">
-              Recebe o retorno de <code>nextReady(schedState)</code> em cada volta do <code>while</code>. Se retornar <code>null</code>, o loop encerra.
+              <span data-en="Receives the return of &lt;code&gt;nextReady(schedState)&lt;/code&gt; on every turn of the &lt;code&gt;while&lt;/code&gt;. If it returns &lt;code&gt;null&lt;/code&gt;, the loop ends." data-pt="Recebe o retorno de &lt;code&gt;nextReady(schedState)&lt;/code&gt; em cada volta do &lt;code&gt;while&lt;/code&gt;. Se retornar &lt;code&gt;null&lt;/code&gt;, o loop encerra.">Receives the return of <code>nextReady(schedState)</code> on every turn of the <code>while</code>. If it returns <code>null</code>, the loop ends.</span>
             </div>
             <div class="box-file">flux.service.ts:3197, 3227, 3229</div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 <code>totalTokensUsed</code> e <code>totalCost</code>. Declarados antes</div>
-            Estas duas variáveis (também consumidas aqui) foram declaradas na linha 2277-2278, no início do <code>apiV2()</code>. Acumulam ao longo da execução via <code>onUpdateTokens</code>. É o callback que handlers chamam com <code>(tokensUsed, cost)</code>.
+            <div class="aside-title">🎯 <span data-en="&lt;code&gt;totalTokensUsed&lt;/code&gt; and &lt;code&gt;totalCost&lt;/code&gt;. Declared earlier" data-pt="&lt;code&gt;totalTokensUsed&lt;/code&gt; e &lt;code&gt;totalCost&lt;/code&gt;. Declarados antes"><code>totalTokensUsed</code> and <code>totalCost</code>. Declared earlier</span></div>
+            <span data-en="These two variables (also consumed here) were declared at line 2277-2278, at the start of &lt;code&gt;apiV2()&lt;/code&gt;. Accumulate throughout execution via &lt;code&gt;onUpdateTokens&lt;/code&gt;. It is the callback handlers call with &lt;code&gt;(tokensUsed, cost)&lt;/code&gt;." data-pt="Estas duas variáveis (também consumidas aqui) foram declaradas na linha 2277-2278, no início do &lt;code&gt;apiV2()&lt;/code&gt;. Acumulam ao longo da execução via &lt;code&gt;onUpdateTokens&lt;/code&gt;. É o callback que handlers chamam com &lt;code&gt;(tokensUsed, cost)&lt;/code&gt;.">These two variables (also consumed here) were declared at line 2277-2278, at the start of <code>apiV2()</code>. Accumulate throughout execution via <code>onUpdateTokens</code>. It is the callback handlers call with <code>(tokensUsed, cost)</code>.</span>
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ <code>idx</code> não é incrementado no trecho lido</div>
-            Declarado como <code>let idx = 0</code> em 3196, mas não há incremento no snippet 3146-3197. Deve ser incrementado dentro do body do <code>while</code>. Se foi removido silenciosamente, é dead-code. Grep por <code>idx++</code> para confirmar.
+            <div class="aside-title">⚠️ <span data-en="&lt;code&gt;idx&lt;/code&gt; is not incremented in the snippet read" data-pt="&lt;code&gt;idx&lt;/code&gt; não é incrementado no trecho lido"><code>idx</code> is not incremented in the snippet read</span></div>
+            <span data-en="Declared as &lt;code&gt;let idx = 0&lt;/code&gt; at 3196, but no increment in the 3146-3197 snippet. It must be incremented inside the &lt;code&gt;while&lt;/code&gt; body. If it was silently removed, it is dead-code. Grep for &lt;code&gt;idx++&lt;/code&gt; to confirm." data-pt="Declarado como &lt;code&gt;let idx = 0&lt;/code&gt; em 3196, mas não há incremento no snippet 3146-3197. Deve ser incrementado dentro do body do &lt;code&gt;while&lt;/code&gt;. Se foi removido silenciosamente, é dead-code. Grep por &lt;code&gt;idx++&lt;/code&gt; para confirmar.">Declared as <code>let idx = 0</code> at 3196, but no increment in the 3146-3197 snippet. It must be incremented inside the <code>while</code> body. If it was silently removed, it is dead-code. Grep for <code>idx++</code> to confirm.</span>
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 Set vs Array para <code>processedNodeIds</code></div>
-            Set (O(1) has). Correto. Se virasse Array (O(n) includes), agente com 200 nós ficaria lento em subrun checks.
+            <div class="aside-title">🔧 <span data-en="Set vs Array for &lt;code&gt;processedNodeIds&lt;/code&gt;" data-pt="Set vs Array para &lt;code&gt;processedNodeIds&lt;/code&gt;">Set vs Array for <code>processedNodeIds</code></span></div>
+            <span data-en="Set (O(1) has). Correct. If it were an Array (O(n) includes), an agent with 200 nodes would be slow on subrun checks." data-pt="Set (O(1) has). Correto. Se virasse Array (O(n) includes), agente com 200 nós ficaria lento em subrun checks.">Set (O(1) has). Correct. If it were an Array (O(n) includes), an agent with 200 nodes would be slow on subrun checks.</span>
           </div>
         </div>
       </div>
@@ -421,51 +437,51 @@
         let stoppedByLoopBehavior = false; let stoppedByNodeFailure = false; let stoppedByCancel = false;
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Três flags booleanas não exclusivas que indicam por que o loop parou antes do fim natural. Usadas na finalização para reportar status correto ao caller e aos logs.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Three non-exclusive boolean flags that indicate why the loop stopped before its natural end. Used at finalization to report the correct status to the caller and to the logs." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Três flags booleanas não exclusivas que indicam por que o loop parou antes do fim natural. Usadas na finalização para reportar status correto ao caller e aos logs."><strong>Purpose.</strong> Three non-exclusive boolean flags that indicate why the loop stopped before its natural end. Used at finalization to report the correct status to the caller and to the logs.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> São três botões de emergência. Começam desligados e podem ser ativados durante a execução. O primeiro (<code>stoppedByLoopBehavior</code>) é o <code>arrayNode</code> sinalizando "atingi a condição de parada configurada". O segundo (<code>stoppedByNodeFailure</code>) é um handler que lançou erro fatal e a execução não pode continuar. O terceiro (<code>stoppedByCancel</code>) é o usuário disparando o cancel pela API. Nenhum é exclusivo. Teoricamente os três podem virar <code>true</code> na mesma iteração. No fim, quem reporta o status é a última flag ativada. O ideal seria trocar essas três variáveis por um único enum <code>status</code>. Refactor futuro.
+        <span data-en="&lt;strong&gt;In summary.&lt;/strong&gt; Three emergency buttons. They start off and can be flipped during execution. The first (&lt;code&gt;stoppedByLoopBehavior&lt;/code&gt;) is the &lt;code&gt;arrayNode&lt;/code&gt; signaling &quot;I hit the configured stop condition&quot;. The second (&lt;code&gt;stoppedByNodeFailure&lt;/code&gt;) is a handler that threw a fatal error and the execution cannot continue. The third (&lt;code&gt;stoppedByCancel&lt;/code&gt;) is the user firing cancel via the API. None is exclusive. In theory all three can turn &lt;code&gt;true&lt;/code&gt; on the same iteration. In the end, the last flag activated is the one reported. Ideally, these three variables would be replaced by a single &lt;code&gt;status&lt;/code&gt; enum. Future refactor." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; São três botões de emergência. Começam desligados e podem ser ativados durante a execução. O primeiro (&lt;code&gt;stoppedByLoopBehavior&lt;/code&gt;) é o &lt;code&gt;arrayNode&lt;/code&gt; sinalizando &quot;atingi a condição de parada configurada&quot;. O segundo (&lt;code&gt;stoppedByNodeFailure&lt;/code&gt;) é um handler que lançou erro fatal e a execução não pode continuar. O terceiro (&lt;code&gt;stoppedByCancel&lt;/code&gt;) é o usuário disparando o cancel pela API. Nenhum é exclusivo. Teoricamente os três podem virar &lt;code&gt;true&lt;/code&gt; na mesma iteração. No fim, quem reporta o status é a última flag ativada. O ideal seria trocar essas três variáveis por um único enum &lt;code&gt;status&lt;/code&gt;. Refactor futuro."><strong>In summary.</strong> Three emergency buttons. They start off and can be flipped during execution. The first (<code>stoppedByLoopBehavior</code>) is the <code>arrayNode</code> signaling "I hit the configured stop condition". The second (<code>stoppedByNodeFailure</code>) is a handler that threw a fatal error and the execution cannot continue. The third (<code>stoppedByCancel</code>) is the user firing cancel via the API. None is exclusive. In theory all three can turn <code>true</code> on the same iteration. In the end, the last flag activated is the one reported. Ideally, these three variables would be replaced by a single <code>status</code> enum. Future refactor.</span>
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="cascade">
-            <div class="cascade-title">🚩 Quem seta cada flag</div>
+            <div class="cascade-title">🚩 <span data-en="Who sets each flag" data-pt="Quem seta cada flag">Who sets each flag</span></div>
             <div class="cascade-step">
               <span class="cascade-num">1</span>
               <span class="cond"><code>stoppedByLoopBehavior</code></span>
-              <span class="result call"><code>arrayNode</code> com <code>stopOn*</code> config</span>
+              <span class="result call"><span data-en="&lt;code&gt;arrayNode&lt;/code&gt; with &lt;code&gt;stopOn*&lt;/code&gt; config" data-pt="&lt;code&gt;arrayNode&lt;/code&gt; com &lt;code&gt;stopOn*&lt;/code&gt; config"><code>arrayNode</code> with <code>stopOn*</code> config</span></span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">2</span>
               <span class="cond"><code>stoppedByNodeFailure</code></span>
-              <span class="result deny">handler lança erro fatal (ver 3.8)</span>
+              <span class="result deny"><span data-en="handler throws fatal error (see 3.8)" data-pt="handler lança erro fatal (ver 3.8)">handler throws fatal error (see 3.8)</span></span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">3</span>
               <span class="cond"><code>stoppedByCancel</code></span>
-              <span class="result deny">usuário cancelou a execução (3.5 cancel check)</span>
+              <span class="result deny"><span data-en="user cancelled the execution (3.5 cancel check)" data-pt="usuário cancelou a execução (3.5 cancel check)">user cancelled the execution (3.5 cancel check)</span></span>
             </div>
           </div>
           <div class="arrow">↓</div>
           <div class="box backend">
-            <div class="box-title">Consumo</div>
+            <div class="box-title"><span data-en="Consumption" data-pt="Consumo">Consumption</span></div>
             <div class="box-desc">
-              Cada uma gera <code>break</code> no <code>while</code> ou skip. Na finalização, o <code>runLogCollector.finalize()</code> recebe <code>status</code> derivado dessas flags.
+              <span data-en="Each one triggers &lt;code&gt;break&lt;/code&gt; in the &lt;code&gt;while&lt;/code&gt; or a skip. At finalization, &lt;code&gt;runLogCollector.finalize()&lt;/code&gt; receives &lt;code&gt;status&lt;/code&gt; derived from these flags." data-pt="Cada uma gera &lt;code&gt;break&lt;/code&gt; no &lt;code&gt;while&lt;/code&gt; ou skip. Na finalização, o &lt;code&gt;runLogCollector.finalize()&lt;/code&gt; recebe &lt;code&gt;status&lt;/code&gt; derivado dessas flags.">Each one triggers <code>break</code> in the <code>while</code> or a skip. At finalization, <code>runLogCollector.finalize()</code> receives <code>status</code> derived from these flags.</span>
             </div>
           </div>
         </div>
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Não exclusivas</div>
-            Teoricamente as três podem virar <code>true</code> na mesma iteração (um handler falha e, ao mesmo tempo, o usuário cancela dentro de um <code>arrayNode</code>). A prioridade no report é a última ativada. Não há tie-break explícito.
+            <div class="aside-title">🎯 <span data-en="Non-exclusive" data-pt="Não exclusivas">Non-exclusive</span></div>
+            <span data-en="In theory all three can become &lt;code&gt;true&lt;/code&gt; on the same iteration (a handler fails and, at the same time, the user cancels inside an &lt;code&gt;arrayNode&lt;/code&gt;). Priority in the report is the last one activated. There is no explicit tie-break." data-pt="Teoricamente as três podem virar &lt;code&gt;true&lt;/code&gt; na mesma iteração (um handler falha e, ao mesmo tempo, o usuário cancela dentro de um &lt;code&gt;arrayNode&lt;/code&gt;). A prioridade no report é a última ativada. Não há tie-break explícito.">In theory all three can become <code>true</code> on the same iteration (a handler fails and, at the same time, the user cancels inside an <code>arrayNode</code>). Priority in the report is the last one activated. There is no explicit tie-break.</span>
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ 3 booleans em vez de 1 enum</div>
-            <code>status: 'ok' | 'loop' | 'failure' | 'cancel'</code> resolveria a ambiguidade e reduziria a superfície de bugs de "esqueci de setar essa flag". Refactor trivial. Quebra call-sites que verificam individualmente.
+            <div class="aside-title">⚠️ <span data-en="3 booleans instead of 1 enum" data-pt="3 booleans em vez de 1 enum">3 booleans instead of 1 enum</span></div>
+            <span data-en="&lt;code&gt;status: 'ok' | 'loop' | 'failure' | 'cancel'&lt;/code&gt; would resolve the ambiguity and reduce the &quot;forgot to set this flag&quot; bug surface. Trivial refactor. Breaks call-sites that check individually." data-pt="&lt;code&gt;status: 'ok' | 'loop' | 'failure' | 'cancel'&lt;/code&gt; resolveria a ambiguidade e reduziria a superfície de bugs de &quot;esqueci de setar essa flag&quot;. Refactor trivial. Quebra call-sites que verificam individualmente."><code>status: 'ok' | 'loop' | 'failure' | 'cancel'</code> would resolve the ambiguity and reduce the "forgot to set this flag" bug surface. Trivial refactor. Breaks call-sites that check individually.</span>
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 <code>stoppedByCancel</code>. Novo pós-doc</div>
-            Introduzido junto com o feature flag <code>NODE_CANCEL_IN_FLIGHT_FLAG</code>. As outras duas vieram do doc original.
+            <div class="aside-title">🔧 <span data-en="&lt;code&gt;stoppedByCancel&lt;/code&gt;. Added post-doc" data-pt="&lt;code&gt;stoppedByCancel&lt;/code&gt;. Novo pós-doc"><code>stoppedByCancel</code>. Added post-doc</span></div>
+            <span data-en="Introduced together with the feature flag &lt;code&gt;NODE_CANCEL_IN_FLIGHT_FLAG&lt;/code&gt;. The other two came from the original doc." data-pt="Introduzido junto com o feature flag &lt;code&gt;NODE_CANCEL_IN_FLIGHT_FLAG&lt;/code&gt;. As outras duas vieram do doc original.">Introduced together with the feature flag <code>NODE_CANCEL_IN_FLIGHT_FLAG</code>. The other two came from the original doc.</span>
           </div>
         </div>
       </div>
@@ -486,17 +502,17 @@
         const cancelWatchEnabled = shouldWatchCancellation({...}); const cancelRunKey = resolveCancelRunKey({...}); const inFlightEnabled = await featureFlagsService.isEnabled(NODE_CANCEL_IN_FLIGHT_FLAG);
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Configura o mecanismo de cancelamento. Decide se a execução deve escutar pedidos de cancel (não se aplica a sub-runs, por exemplo). Calcula a <code>runKey</code> que o cliente usa para solicitar cancel. Busca o feature flag para saber se o cancel in-flight (durante a execução de um nó) está ativo.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Configures the cancellation mechanism. Decides whether the execution should listen for cancel requests (does not apply to sub-runs, for instance). Computes the &lt;code&gt;runKey&lt;/code&gt; the client uses to request cancel. Fetches the feature flag to know whether in-flight cancel (during a node's execution) is on." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Configura o mecanismo de cancelamento. Decide se a execução deve escutar pedidos de cancel (não se aplica a sub-runs, por exemplo). Calcula a &lt;code&gt;runKey&lt;/code&gt; que o cliente usa para solicitar cancel. Busca o feature flag para saber se o cancel in-flight (durante a execução de um nó) está ativo."><strong>Purpose.</strong> Configures the cancellation mechanism. Decides whether the execution should listen for cancel requests (does not apply to sub-runs, for instance). Computes the <code>runKey</code> the client uses to request cancel. Fetches the feature flag to know whether in-flight cancel (during a node's execution) is on.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> O backend monta o botão de emergência da execução. Primeiro pergunta se vale a pena escutar cancel para este tipo de execução. Sub-runs não escutam. Quem escuta é o pai. Depois calcula qual é a chave que o cliente vai usar para pedir cancel. Se é sub-run, herda a do pai. Cancelar o pai cancela os filhos automaticamente. Por último, faz um <code>await</code> no serviço de feature flag para descobrir se o modo agressivo está ligado. Esse modo interrompe um nó no meio da execução, não só entre nós. É o único I/O deste passo inteiro. Se o feature flag service ficar lento, atrasa toda execução de agente.
+        <span data-en="&lt;strong&gt;In summary.&lt;/strong&gt; The backend wires up the execution's emergency button. First it asks whether it is worth listening for cancel for this run type. Sub-runs do not listen. The parent does. Then it computes which key the client will use to request cancel. If it is a sub-run, it inherits the parent's key. Cancelling the parent cancels children automatically. Finally, it &lt;code&gt;await&lt;/code&gt;s the feature flag service to find out whether aggressive mode is on. This mode interrupts a node mid-execution, not just between nodes. It is the only I/O of this entire step. If the feature flag service is slow, every agent execution is delayed." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; O backend monta o botão de emergência da execução. Primeiro pergunta se vale a pena escutar cancel para este tipo de execução. Sub-runs não escutam. Quem escuta é o pai. Depois calcula qual é a chave que o cliente vai usar para pedir cancel. Se é sub-run, herda a do pai. Cancelar o pai cancela os filhos automaticamente. Por último, faz um &lt;code&gt;await&lt;/code&gt; no serviço de feature flag para descobrir se o modo agressivo está ligado. Esse modo interrompe um nó no meio da execução, não só entre nós. É o único I/O deste passo inteiro. Se o feature flag service ficar lento, atrasa toda execução de agente."><strong>In summary.</strong> The backend wires up the execution's emergency button. First it asks whether it is worth listening for cancel for this run type. Sub-runs do not listen. The parent does. Then it computes which key the client will use to request cancel. If it is a sub-run, it inherits the parent's key. Cancelling the parent cancels children automatically. Finally, it <code>await</code>s the feature flag service to find out whether aggressive mode is on. This mode interrupts a node mid-execution, not just between nodes. It is the only I/O of this entire step. If the feature flag service is slow, every agent execution is delayed.</span>
       </div>
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
             <div class="box-title"><span class="badge step">E1</span> <code>shouldWatchCancellation({ runType, isNestedRun })</code></div>
             <div class="box-desc">
-              Retorna <code>false</code> se é sub-run (<code>fluxBox</code> ou <code>libraryNode</code> dentro de outra execução) ou se o <code>runType</code> não suporta cancel. Sub-runs herdam o watch do pai.
+              <span data-en="Returns &lt;code&gt;false&lt;/code&gt; if it is a sub-run (&lt;code&gt;fluxBox&lt;/code&gt; or &lt;code&gt;libraryNode&lt;/code&gt; inside another execution) or if the &lt;code&gt;runType&lt;/code&gt; does not support cancel. Sub-runs inherit the parent's watch." data-pt="Retorna &lt;code&gt;false&lt;/code&gt; se é sub-run (&lt;code&gt;fluxBox&lt;/code&gt; ou &lt;code&gt;libraryNode&lt;/code&gt; dentro de outra execução) ou se o &lt;code&gt;runType&lt;/code&gt; não suporta cancel. Sub-runs herdam o watch do pai.">Returns <code>false</code> if it is a sub-run (<code>fluxBox</code> or <code>libraryNode</code> inside another execution) or if the <code>runType</code> does not support cancel. Sub-runs inherit the parent's watch.</span>
             </div>
             <div class="box-file">flux.service.ts:3184-3187</div>
           </div>
@@ -504,7 +520,7 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">E2</span> <code>resolveCancelRunKey({ runLogProcessId, parentRunId })</code></div>
             <div class="box-desc">
-              Se é sub-run, herda a key do pai (<code>parentCancelRunKey</code>). Cancel do pai cancela filhos. Se é top-level, usa o próprio <code>runLogProcessId</code> como key.
+              <span data-en="If it is a sub-run, inherits the parent's key (&lt;code&gt;parentCancelRunKey&lt;/code&gt;). Parent cancel cancels children. If top-level, uses its own &lt;code&gt;runLogProcessId&lt;/code&gt; as the key." data-pt="Se é sub-run, herda a key do pai (&lt;code&gt;parentCancelRunKey&lt;/code&gt;). Cancel do pai cancela filhos. Se é top-level, usa o próprio &lt;code&gt;runLogProcessId&lt;/code&gt; como key.">If it is a sub-run, inherits the parent's key (<code>parentCancelRunKey</code>). Parent cancel cancels children. If top-level, uses its own <code>runLogProcessId</code> as the key.</span>
             </div>
             <div class="box-file">flux.service.ts:3188-3191</div>
           </div>
@@ -512,7 +528,7 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">E3</span> <code>await featureFlagsService.isEnabled(NODE_CANCEL_IN_FLIGHT_FLAG)</code></div>
             <div class="box-desc">
-              Único <code>await</code> de I/O em toda 2.2. Consulta o service de feature flags. Se <code>true</code>, o cancel pode interromper um nó no meio da execução. Se <code>false</code>, só entre nós.
+              <span data-en="Only I/O &lt;code&gt;await&lt;/code&gt; in the whole 2.2. Queries the feature flags service. If &lt;code&gt;true&lt;/code&gt;, cancel can interrupt a node mid-execution. If &lt;code&gt;false&lt;/code&gt;, only between nodes." data-pt="Único &lt;code&gt;await&lt;/code&gt; de I/O em toda 2.2. Consulta o service de feature flags. Se &lt;code&gt;true&lt;/code&gt;, o cancel pode interromper um nó no meio da execução. Se &lt;code&gt;false&lt;/code&gt;, só entre nós.">Only I/O <code>await</code> in the whole 2.2. Queries the feature flags service. If <code>true</code>, cancel can interrupt a node mid-execution. If <code>false</code>, only between nodes.</span>
             </div>
             <div class="box-file">flux.service.ts:3192-3194</div>
           </div>
@@ -520,15 +536,15 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">🎯 <code>NODE_CANCEL_IN_FLIGHT_FLAG</code></div>
-            Feature flag experimental que ativa o <code>cancelWatch</code> por nó. Sem ela, o cancel só é checado entre iterações do <code>while</code>. Não interrompe um nó em execução. Com ela, cada nó ganha um <code>cancelWatch</code> que verifica periodicamente e pode abortar.
+            <span data-en="Experimental feature flag that turns on the per-node &lt;code&gt;cancelWatch&lt;/code&gt;. Without it, cancel is only checked between &lt;code&gt;while&lt;/code&gt; iterations. Does not interrupt a running node. With it, each node gets a &lt;code&gt;cancelWatch&lt;/code&gt; that checks periodically and can abort." data-pt="Feature flag experimental que ativa o &lt;code&gt;cancelWatch&lt;/code&gt; por nó. Sem ela, o cancel só é checado entre iterações do &lt;code&gt;while&lt;/code&gt;. Não interrompe um nó em execução. Com ela, cada nó ganha um &lt;code&gt;cancelWatch&lt;/code&gt; que verifica periodicamente e pode abortar.">Experimental feature flag that turns on the per-node <code>cancelWatch</code>. Without it, cancel is only checked between <code>while</code> iterations. Does not interrupt a running node. With it, each node gets a <code>cancelWatch</code> that checks periodically and can abort.</span>
           </div>
           <div class="aside warn">
-            <div class="aside-title">⚠️ Fetch de feature flag é blocking</div>
-            É um <code>await</code> no meio do setup do loop. Se o serviço de feature flag ficar lento, atrasa toda execução de agente. Vale cachear o valor por curta janela ou pré-resolver no boot.
+            <div class="aside-title">⚠️ <span data-en="Feature flag fetch is blocking" data-pt="Fetch de feature flag é blocking">Feature flag fetch is blocking</span></div>
+            <span data-en="It is an &lt;code&gt;await&lt;/code&gt; in the middle of the loop setup. If the feature flag service is slow, every agent execution is delayed. Worth caching the value for a short window or pre-resolving at boot." data-pt="É um &lt;code&gt;await&lt;/code&gt; no meio do setup do loop. Se o serviço de feature flag ficar lento, atrasa toda execução de agente. Vale cachear o valor por curta janela ou pré-resolver no boot.">It is an <code>await</code> in the middle of the loop setup. If the feature flag service is slow, every agent execution is delayed. Worth caching the value for a short window or pre-resolving at boot.</span>
           </div>
           <div class="aside helper">
-            <div class="aside-title">🔧 Herança de cancel</div>
-            <code>fluxBox</code> e <code>libraryNode</code> passam <code>parentCancelRunKey</code> ao chamar <code>apiV2()</code> para o sub-flow. Cancel do pai equivale ao cancel do filho porque compartilham a mesma key.
+            <div class="aside-title">🔧 <span data-en="Cancel inheritance" data-pt="Herança de cancel">Cancel inheritance</span></div>
+            <span data-en="&lt;code&gt;fluxBox&lt;/code&gt; and &lt;code&gt;libraryNode&lt;/code&gt; pass &lt;code&gt;parentCancelRunKey&lt;/code&gt; when calling &lt;code&gt;apiV2()&lt;/code&gt; for the sub-flow. Parent cancel is equivalent to child cancel because they share the same key." data-pt="&lt;code&gt;fluxBox&lt;/code&gt; e &lt;code&gt;libraryNode&lt;/code&gt; passam &lt;code&gt;parentCancelRunKey&lt;/code&gt; ao chamar &lt;code&gt;apiV2()&lt;/code&gt; para o sub-flow. Cancel do pai equivale ao cancel do filho porque compartilham a mesma key."><code>fluxBox</code> and <code>libraryNode</code> pass <code>parentCancelRunKey</code> when calling <code>apiV2()</code> for the sub-flow. Parent cancel is equivalent to child cancel because they share the same key.</span>
           </div>
         </div>
       </div>
@@ -536,27 +552,27 @@
   </div>
 
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo — o que sai de 2.2.</strong>
-    <br>• <code>myUpdatedNodes</code>, <code>myTexts</code>, <code>nodeSubstitutionSchema</code>. Estado central do domínio.
-    <br>• <code>object</code>. Mensagem do usuário formatada para chat.
-    <br>• <code>processedNodeIds</code>, <code>lastExecutedNodeId</code>, <code>idx</code>, <code>scheduledId</code>. Progresso.
-    <br>• Três flags de stop.
-    <br>• <code>cancelWatchEnabled</code>, <code>cancelRunKey</code>, <code>inFlightEnabled</code>. Cancelamento.
-    <br>• I/O. Um <code>await</code> (feature flag).
+    <span data-en="&lt;strong&gt;Summary — what 2.2 outputs.&lt;/strong&gt;" data-pt="&lt;strong&gt;Resumo — o que sai de 2.2.&lt;/strong&gt;"><strong>Summary — what 2.2 outputs.</strong></span>
+    <br>• <span data-en="&lt;code&gt;myUpdatedNodes&lt;/code&gt;, &lt;code&gt;myTexts&lt;/code&gt;, &lt;code&gt;nodeSubstitutionSchema&lt;/code&gt;. Central domain state." data-pt="&lt;code&gt;myUpdatedNodes&lt;/code&gt;, &lt;code&gt;myTexts&lt;/code&gt;, &lt;code&gt;nodeSubstitutionSchema&lt;/code&gt;. Estado central do domínio."><code>myUpdatedNodes</code>, <code>myTexts</code>, <code>nodeSubstitutionSchema</code>. Central domain state.</span>
+    <br>• <span data-en="&lt;code&gt;object&lt;/code&gt;. User message formatted for chat." data-pt="&lt;code&gt;object&lt;/code&gt;. Mensagem do usuário formatada para chat."><code>object</code>. User message formatted for chat.</span>
+    <br>• <span data-en="&lt;code&gt;processedNodeIds&lt;/code&gt;, &lt;code&gt;lastExecutedNodeId&lt;/code&gt;, &lt;code&gt;idx&lt;/code&gt;, &lt;code&gt;scheduledId&lt;/code&gt;. Progress." data-pt="&lt;code&gt;processedNodeIds&lt;/code&gt;, &lt;code&gt;lastExecutedNodeId&lt;/code&gt;, &lt;code&gt;idx&lt;/code&gt;, &lt;code&gt;scheduledId&lt;/code&gt;. Progresso."><code>processedNodeIds</code>, <code>lastExecutedNodeId</code>, <code>idx</code>, <code>scheduledId</code>. Progress.</span>
+    <br>• <span data-en="Three stop flags." data-pt="Três flags de stop.">Three stop flags.</span>
+    <br>• <span data-en="&lt;code&gt;cancelWatchEnabled&lt;/code&gt;, &lt;code&gt;cancelRunKey&lt;/code&gt;, &lt;code&gt;inFlightEnabled&lt;/code&gt;. Cancellation." data-pt="&lt;code&gt;cancelWatchEnabled&lt;/code&gt;, &lt;code&gt;cancelRunKey&lt;/code&gt;, &lt;code&gt;inFlightEnabled&lt;/code&gt;. Cancelamento."><code>cancelWatchEnabled</code>, <code>cancelRunKey</code>, <code>inFlightEnabled</code>. Cancellation.</span>
+    <br>• <span data-en="I/O. One &lt;code&gt;await&lt;/code&gt; (feature flag)." data-pt="I/O. Um &lt;code&gt;await&lt;/code&gt; (feature flag).">I/O. One <code>await</code> (feature flag).</span>
   </div>
 
   <div class="note">
-    <strong>Observações para migração.</strong>
-    <br>• Este é o maior blocker para o worker. Quase tudo aqui é estado mutado por closure. O worker precisa receber cada nó pré-substituído e devolver output puro. <code>myUpdatedNodes</code>, <code>nodeSubstitutionSchema</code> e <code>myTexts</code> ficam obrigatoriamente no backend.
-    <br>• O <code>myUpdatedNodes</code> é o principal driver da pressão de RAM em execuções grandes (ver [[project_jsonb_fat_fields]]). Migrar handlers pesados (<code>textGenerator</code>, <code>imageGenerator</code>, <code>sqlQuerier</code>) para o worker não resolve. O problema é o schema in-memory, não o handler.
-    <br>• <code>onUpdateTokens</code>, <code>onMutateSchema</code> e <code>onMutateObjectCallerData</code> são callbacks que dependem de closure. No worker, isso vira <code>await http.post('/worker/charge-tokens', ...)</code>. Um round-trip por evento.
-    <br>• Idealmente, o 2.2 vira uma classe <code>RunState</code> encapsulada. Handlers recebem e retornam via métodos explícitos em vez de mutar variáveis livres. Trabalho grande. Destrava o worker.
-    <br>• <code>inFlightEnabled</code> deveria ser buscado antes do loop (já é) com cache. Não é caso de latência crítica hoje.
-    <br>• As flags de stop viram um enum <code>runStatus</code> em um refactor futuro. Semântica melhor e tie-break explícito.
+    <span data-en="&lt;strong&gt;Migration notes.&lt;/strong&gt;" data-pt="&lt;strong&gt;Observações para migração.&lt;/strong&gt;"><strong>Migration notes.</strong></span>
+    <br>• <span data-en="This is the biggest blocker for the worker. Almost everything here is closure-mutated state. The worker needs to receive each pre-substituted node and return pure output. &lt;code&gt;myUpdatedNodes&lt;/code&gt;, &lt;code&gt;nodeSubstitutionSchema&lt;/code&gt; and &lt;code&gt;myTexts&lt;/code&gt; have to stay on the backend." data-pt="Este é o maior blocker para o worker. Quase tudo aqui é estado mutado por closure. O worker precisa receber cada nó pré-substituído e devolver output puro. &lt;code&gt;myUpdatedNodes&lt;/code&gt;, &lt;code&gt;nodeSubstitutionSchema&lt;/code&gt; e &lt;code&gt;myTexts&lt;/code&gt; ficam obrigatoriamente no backend.">This is the biggest blocker for the worker. Almost everything here is closure-mutated state. The worker needs to receive each pre-substituted node and return pure output. <code>myUpdatedNodes</code>, <code>nodeSubstitutionSchema</code> and <code>myTexts</code> have to stay on the backend.</span>
+    <br>• <span data-en="&lt;code&gt;myUpdatedNodes&lt;/code&gt; is the main driver of RAM pressure in large executions (see [[project_jsonb_fat_fields]]). Migrating heavy handlers (&lt;code&gt;textGenerator&lt;/code&gt;, &lt;code&gt;imageGenerator&lt;/code&gt;, &lt;code&gt;sqlQuerier&lt;/code&gt;) to the worker does not solve it. The problem is the in-memory schema, not the handler." data-pt="O &lt;code&gt;myUpdatedNodes&lt;/code&gt; é o principal driver da pressão de RAM em execuções grandes (ver [[project_jsonb_fat_fields]]). Migrar handlers pesados (&lt;code&gt;textGenerator&lt;/code&gt;, &lt;code&gt;imageGenerator&lt;/code&gt;, &lt;code&gt;sqlQuerier&lt;/code&gt;) para o worker não resolve. O problema é o schema in-memory, não o handler."><code>myUpdatedNodes</code> is the main driver of RAM pressure in large executions (see [[project_jsonb_fat_fields]]). Migrating heavy handlers (<code>textGenerator</code>, <code>imageGenerator</code>, <code>sqlQuerier</code>) to the worker does not solve it. The problem is the in-memory schema, not the handler.</span>
+    <br>• <span data-en="&lt;code&gt;onUpdateTokens&lt;/code&gt;, &lt;code&gt;onMutateSchema&lt;/code&gt; and &lt;code&gt;onMutateObjectCallerData&lt;/code&gt; are callbacks that depend on closure. On the worker, this becomes &lt;code&gt;await http.post('/worker/charge-tokens', ...)&lt;/code&gt;. One round-trip per event." data-pt="&lt;code&gt;onUpdateTokens&lt;/code&gt;, &lt;code&gt;onMutateSchema&lt;/code&gt; e &lt;code&gt;onMutateObjectCallerData&lt;/code&gt; são callbacks que dependem de closure. No worker, isso vira &lt;code&gt;await http.post('/worker/charge-tokens', ...)&lt;/code&gt;. Um round-trip por evento."><code>onUpdateTokens</code>, <code>onMutateSchema</code> and <code>onMutateObjectCallerData</code> are callbacks that depend on closure. On the worker, this becomes <code>await http.post('/worker/charge-tokens', ...)</code>. One round-trip per event.</span>
+    <br>• <span data-en="Ideally, 2.2 becomes an encapsulated &lt;code&gt;RunState&lt;/code&gt; class. Handlers receive and return via explicit methods instead of mutating free variables. Big work. Unblocks the worker." data-pt="Idealmente, o 2.2 vira uma classe &lt;code&gt;RunState&lt;/code&gt; encapsulada. Handlers recebem e retornam via métodos explícitos em vez de mutar variáveis livres. Trabalho grande. Destrava o worker.">Ideally, 2.2 becomes an encapsulated <code>RunState</code> class. Handlers receive and return via explicit methods instead of mutating free variables. Big work. Unblocks the worker.</span>
+    <br>• <span data-en="&lt;code&gt;inFlightEnabled&lt;/code&gt; should be fetched before the loop (it already is) with caching. Not a critical latency case today." data-pt="&lt;code&gt;inFlightEnabled&lt;/code&gt; deveria ser buscado antes do loop (já é) com cache. Não é caso de latência crítica hoje."><code>inFlightEnabled</code> should be fetched before the loop (it already is) with caching. Not a critical latency case today.</span>
+    <br>• <span data-en="Stop flags become a &lt;code&gt;runStatus&lt;/code&gt; enum in a future refactor. Better semantics and explicit tie-break." data-pt="As flags de stop viram um enum &lt;code&gt;runStatus&lt;/code&gt; em um refactor futuro. Semântica melhor e tie-break explícito.">Stop flags become a <code>runStatus</code> enum in a future refactor. Better semantics and explicit tie-break.</span>
   </div>
 
   <div class="page-footer-nav">
-    <a href="../index.html#step-2-2" class="back-btn">← Voltar ao diagrama principal</a>
+    <a href="../index.html#step-2-2" class="back-btn"><span data-en="← Back to main diagram" data-pt="← Voltar ao diagrama principal">← Back to main diagram</span></a>
   </div>
 
 </div>
@@ -590,5 +606,6 @@
   });
 })();
 </script>
+<script src="../_assets/i18n.js" defer></script>
 </body>
 </html>

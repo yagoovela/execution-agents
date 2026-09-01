@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Passo 2.2a — Setup de cancellation antes do loop | Detalhamento</title>
+<link rel="stylesheet" href="../_assets/i18n.css">
+<link rel="stylesheet" href="../_assets/header.css">
+<title>Step 2.2a — Cancellation setup before the loop | Detail</title>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -264,45 +266,59 @@
 </head>
 <body>
 <div class="container">
+<div class="doc-nav">
+  <nav class="doc-tabs" aria-label="Documentation sections">
+    <a href="../index.html" class="doc-tab is-active"><span data-en="Current architecture" data-pt="Arquitetura atual">Current architecture</span></a>
+    <a href="../arquitetura-v2.html" class="doc-tab"><span data-en="v2 architecture" data-pt="Arquitetura v2">v2 architecture</span></a>
+    <a href="../arquitetura-v2-complemento.html" class="doc-tab"><span data-en="Plan as tasks" data-pt="Plano em tarefas">Plan as tasks</span></a>
+    <a href="../timeline/index.html" class="doc-tab"><span data-en="Timeline" data-pt="Timeline">Timeline</span></a>
+  </nav>
+  <div class="lang-sw" role="group" aria-label="Language">
+    <button type="button" data-lang="en" aria-pressed="true">EN-US</button>
+    <button type="button" data-lang="pt" aria-pressed="false">PT-BR</button>
+  </div>
+</div>
+
+
+
 
   <!-- TOP NAV -->
   <div class="page-nav">
     <div class="breadcrumb">
-      <a href="../index.html">📋 Execução de Agente</a>
+      <a href="../index.html"><span data-en="📋 Agent execution" data-pt="📋 Execução de Agente">📋 Agent execution</span></a>
       <span class="sep">›</span>
-      <span>Passo 2.2a — Detalhamento</span>
+      <span data-en="Step 2.2a — Detail" data-pt="Passo 2.2a — Detalhamento">Step 2.2a — Detail</span>
     </div>
-    <a href="../index.html#step-2-2a" class="back-btn">← Voltar ao diagrama</a>
+    <a href="../index.html#step-2-2a" class="back-btn"><span data-en="← Back to diagram" data-pt="← Voltar ao diagrama">← Back to diagram</span></a>
+    
   </div>
 
   <!-- PAGE HEADER -->
-  <div class="page-header">
-    <span class="icon">🛑</span>
-    <h1>Passo 2.2a — Setup de cancellation antes do loop</h1>
-  </div>
-  <div class="page-sub">
-    Bloco em <code>flux.service.ts:3239-3249</code>. Antes do loop principal iniciar, o backend decide se arma o botão de Cancelar para a execução. Passa por três gates independentes (tipo da execução, feature flag global e resolução da chave de cancelamento). Se tudo bate, cada nó do loop ganha um <code>AbortSignal</code> próprio quando executar.
+  <div class="hero">
+    <div class="kicker"><span class="ico">🛑</span></div>
+    <h1><span data-en="Step 2.2a — Cancellation setup before the loop" data-pt="Passo 2.2a — Setup de cancellation antes do loop">Step 2.2a — Cancellation setup before the loop</span></h1>
+    <div class="goal"><span data-en="Block at &lt;code&gt;flux.service.ts:3239-3249&lt;/code&gt;. Before the main loop starts, the backend decides whether to arm the Cancel button for this execution. It goes through three independent gates (run type, global feature flag and cancel key resolution). If all match, each node in the loop gets its own &lt;code&gt;AbortSignal&lt;/code&gt; when it runs." data-pt="Bloco em &lt;code&gt;flux.service.ts:3239-3249&lt;/code&gt;. Antes do loop principal iniciar, o backend decide se arma o botão de Cancelar para a execução. Passa por três gates independentes (tipo da execução, feature flag global e resolução da chave de cancelamento). Se tudo bate, cada nó do loop ganha um &lt;code&gt;AbortSignal&lt;/code&gt; próprio quando executar.">Block at <code>flux.service.ts:3239-3249</code>. Before the main loop starts, the backend decides whether to arm the Cancel button for this execution. It goes through three independent gates (run type, global feature flag and cancel key resolution). If all match, each node in the loop gets its own <code>AbortSignal</code> when it runs.</span></div>
   </div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
-    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <div class="step-friendly-title"><span data-en="In summary — what this step does" data-pt="Em resumo — o que esse passo faz">In summary — what this step does</span></div>
     <ul>
-      <li><strong>Decide se vale armar cancelamento.</strong> <code>shouldWatchCancellation</code> só liga o watch quando <code>runType</code> é <code>canvas</code> (execução manual pelo editor) ou quando é sub-run aninhado (chamado por <code>fluxBox</code>/<code>libraryNode</code>). Cronjobs, webhooks, MCP e outros disparos automáticos não podem ser cancelados.</li>
-      <li><strong>Resolve a chave da execução para cancelamento.</strong> <code>resolveCancelRunKey</code> devolve o <code>parentRunId</code> se veio um (sub-run), senão o próprio <code>runLogProcessId</code>. Isso garante que cancelar o run pai propaga para os filhos aninhados sem exigir que esses filhos conheçam o próprio ID de cancelamento.</li>
-      <li><strong>Verifica feature flag global.</strong> <code>featureFlagsService.isEnabled(NODE_CANCEL_IN_FLIGHT_FLAG)</code> lê a tabela <code>feature_flags</code>. É um kill switch single-row (chave <code>node_cancel_in_flight</code>). Global. Sem escopo de user ou space. Erro na query retorna <code>false</code> (fail-closed).</li>
-      <li><strong>Nada de AbortController aqui ainda.</strong> Neste ponto só calcula os três booleans (<code>cancelWatchEnabled</code>, <code>cancelRunKey</code>, <code>inFlightEnabled</code>). O <code>AbortController</code> real e o timer de polling só nascem dentro do loop, na linha 3304-3314, por nó, via <code>startNodeCancelWatch</code>.</li>
-      <li><strong>Saída.</strong> Três variáveis prontas no escopo do <code>apiV2()</code>. <code>cancelWatchEnabled</code>, <code>cancelRunKey</code>, <code>inFlightEnabled</code>. O loop consulta <code>shouldStartNodeCancelWatch({ watchEnabled, inFlightEnabled })</code> por iteração para decidir se cria o watch do nó.</li>
+      <li><span data-en="&lt;strong&gt;Decides whether to arm cancellation.&lt;/strong&gt; &lt;code&gt;shouldWatchCancellation&lt;/code&gt; only turns on the watch when &lt;code&gt;runType&lt;/code&gt; is &lt;code&gt;canvas&lt;/code&gt; (manual execution from the editor) or when it is a nested sub-run (called by &lt;code&gt;fluxBox&lt;/code&gt;/&lt;code&gt;libraryNode&lt;/code&gt;). Cronjobs, webhooks, MCP and other automatic triggers cannot be cancelled." data-pt="&lt;strong&gt;Decide se vale armar cancelamento.&lt;/strong&gt; &lt;code&gt;shouldWatchCancellation&lt;/code&gt; só liga o watch quando &lt;code&gt;runType&lt;/code&gt; é &lt;code&gt;canvas&lt;/code&gt; (execução manual pelo editor) ou quando é sub-run aninhado (chamado por &lt;code&gt;fluxBox&lt;/code&gt;/&lt;code&gt;libraryNode&lt;/code&gt;). Cronjobs, webhooks, MCP e outros disparos automáticos não podem ser cancelados."><strong>Decides whether to arm cancellation.</strong> <code>shouldWatchCancellation</code> only turns on the watch when <code>runType</code> is <code>canvas</code> (manual execution from the editor) or when it is a nested sub-run (called by <code>fluxBox</code>/<code>libraryNode</code>). Cronjobs, webhooks, MCP and other automatic triggers cannot be cancelled.</span></li>
+      <li><span data-en="&lt;strong&gt;Resolves the execution key for cancellation.&lt;/strong&gt; &lt;code&gt;resolveCancelRunKey&lt;/code&gt; returns &lt;code&gt;parentRunId&lt;/code&gt; if one was passed (sub-run), otherwise the own &lt;code&gt;runLogProcessId&lt;/code&gt;. This ensures that cancelling the parent run propagates to nested children without requiring those children to know their own cancel ID." data-pt="&lt;strong&gt;Resolve a chave da execução para cancelamento.&lt;/strong&gt; &lt;code&gt;resolveCancelRunKey&lt;/code&gt; devolve o &lt;code&gt;parentRunId&lt;/code&gt; se veio um (sub-run), senão o próprio &lt;code&gt;runLogProcessId&lt;/code&gt;. Isso garante que cancelar o run pai propaga para os filhos aninhados sem exigir que esses filhos conheçam o próprio ID de cancelamento."><strong>Resolves the execution key for cancellation.</strong> <code>resolveCancelRunKey</code> returns <code>parentRunId</code> if one was passed (sub-run), otherwise the own <code>runLogProcessId</code>. This ensures that cancelling the parent run propagates to nested children without requiring those children to know their own cancel ID.</span></li>
+      <li><span data-en="&lt;strong&gt;Checks global feature flag.&lt;/strong&gt; &lt;code&gt;featureFlagsService.isEnabled(NODE_CANCEL_IN_FLIGHT_FLAG)&lt;/code&gt; reads the &lt;code&gt;feature_flags&lt;/code&gt; table. It is a single-row kill switch (key &lt;code&gt;node_cancel_in_flight&lt;/code&gt;). Global. No user or space scope. Query error returns &lt;code&gt;false&lt;/code&gt; (fail-closed)." data-pt="&lt;strong&gt;Verifica feature flag global.&lt;/strong&gt; &lt;code&gt;featureFlagsService.isEnabled(NODE_CANCEL_IN_FLIGHT_FLAG)&lt;/code&gt; lê a tabela &lt;code&gt;feature_flags&lt;/code&gt;. É um kill switch single-row (chave &lt;code&gt;node_cancel_in_flight&lt;/code&gt;). Global. Sem escopo de user ou space. Erro na query retorna &lt;code&gt;false&lt;/code&gt; (fail-closed)."><strong>Checks global feature flag.</strong> <code>featureFlagsService.isEnabled(NODE_CANCEL_IN_FLIGHT_FLAG)</code> reads the <code>feature_flags</code> table. It is a single-row kill switch (key <code>node_cancel_in_flight</code>). Global. No user or space scope. Query error returns <code>false</code> (fail-closed).</span></li>
+      <li><span data-en="&lt;strong&gt;No AbortController here yet.&lt;/strong&gt; At this point it only computes the three booleans (&lt;code&gt;cancelWatchEnabled&lt;/code&gt;, &lt;code&gt;cancelRunKey&lt;/code&gt;, &lt;code&gt;inFlightEnabled&lt;/code&gt;). The real &lt;code&gt;AbortController&lt;/code&gt; and the polling timer are only born inside the loop, at line 3304-3314, per node, via &lt;code&gt;startNodeCancelWatch&lt;/code&gt;." data-pt="&lt;strong&gt;Nada de AbortController aqui ainda.&lt;/strong&gt; Neste ponto só calcula os três booleans (&lt;code&gt;cancelWatchEnabled&lt;/code&gt;, &lt;code&gt;cancelRunKey&lt;/code&gt;, &lt;code&gt;inFlightEnabled&lt;/code&gt;). O &lt;code&gt;AbortController&lt;/code&gt; real e o timer de polling só nascem dentro do loop, na linha 3304-3314, por nó, via &lt;code&gt;startNodeCancelWatch&lt;/code&gt;."><strong>No AbortController here yet.</strong> At this point it only computes the three booleans (<code>cancelWatchEnabled</code>, <code>cancelRunKey</code>, <code>inFlightEnabled</code>). The real <code>AbortController</code> and the polling timer are only born inside the loop, at line 3304-3314, per node, via <code>startNodeCancelWatch</code>.</span></li>
+      <li><span data-en="&lt;strong&gt;Output.&lt;/strong&gt; Three variables ready in the &lt;code&gt;apiV2()&lt;/code&gt; scope. &lt;code&gt;cancelWatchEnabled&lt;/code&gt;, &lt;code&gt;cancelRunKey&lt;/code&gt;, &lt;code&gt;inFlightEnabled&lt;/code&gt;. The loop calls &lt;code&gt;shouldStartNodeCancelWatch({ watchEnabled, inFlightEnabled })&lt;/code&gt; per iteration to decide whether to create the node's watch." data-pt="&lt;strong&gt;Saída.&lt;/strong&gt; Três variáveis prontas no escopo do &lt;code&gt;apiV2()&lt;/code&gt;. &lt;code&gt;cancelWatchEnabled&lt;/code&gt;, &lt;code&gt;cancelRunKey&lt;/code&gt;, &lt;code&gt;inFlightEnabled&lt;/code&gt;. O loop consulta &lt;code&gt;shouldStartNodeCancelWatch({ watchEnabled, inFlightEnabled })&lt;/code&gt; por iteração para decidir se cria o watch do nó."><strong>Output.</strong> Three variables ready in the <code>apiV2()</code> scope. <code>cancelWatchEnabled</code>, <code>cancelRunKey</code>, <code>inFlightEnabled</code>. The loop calls <code>shouldStartNodeCancelWatch({ watchEnabled, inFlightEnabled })</code> per iteration to decide whether to create the node's watch.</span></li>
     </ul>
   </div>
 
   <div class="note">
-    <strong>⚠️ Cuidado com os 3 gates.</strong> Se qualquer um dos três falhar (<code>runType</code> não cancelável, feature flag desligada, ou algum bug em <code>resolveCancelRunKey</code> retornando string vazia, o que hoje não acontece), o watch não arma. O usuário pode clicar em cancelar 20 vezes. A linha em <code>flow_run_states</code> é criada, mas o loop nunca a lê. A execução prossegue em silêncio até o fim como se nada tivesse sido solicitado.
+    <span data-en="&lt;strong&gt;⚠️ Careful with the 3 gates.&lt;/strong&gt; If any of the three fails (&lt;code&gt;runType&lt;/code&gt; not cancellable, feature flag off, or some bug in &lt;code&gt;resolveCancelRunKey&lt;/code&gt; returning empty string, which does not happen today), the watch does not arm. The user can click cancel 20 times. The row in &lt;code&gt;flow_run_states&lt;/code&gt; is created but the loop never reads it. Execution proceeds silently to the end as if nothing was requested." data-pt="&lt;strong&gt;⚠️ Cuidado com os 3 gates.&lt;/strong&gt; Se qualquer um dos três falhar (&lt;code&gt;runType&lt;/code&gt; não cancelável, feature flag desligada, ou algum bug em &lt;code&gt;resolveCancelRunKey&lt;/code&gt; retornando string vazia, o que hoje não acontece), o watch não arma. O usuário pode clicar em cancelar 20 vezes. A linha em &lt;code&gt;flow_run_states&lt;/code&gt; é criada, mas o loop nunca a lê. A execução prossegue em silêncio até o fim como se nada tivesse sido solicitado."><strong>⚠️ Careful with the 3 gates.</strong> If any of the three fails (<code>runType</code> not cancellable, feature flag off, or some bug in <code>resolveCancelRunKey</code> returning empty string, which does not happen today), the watch does not arm. The user can click cancel 20 times. The row in <code>flow_run_states</code> is created but the loop never reads it. Execution proceeds silently to the end as if nothing was requested.</span>
   </div>
 
   <!-- Overview chain -->
   <div class="overview-mini">
-    <div class="overview-mini-title">Cadeia de chamadas em 2.2a</div>
+    <div class="overview-mini-title"><span data-en="Call chain in 2.2a" data-pt="Cadeia de chamadas em 2.2a">Call chain in 2.2a</span></div>
     <div class="overview-chain">
       <a href="#fn-a" class="overview-chip"><span class="lbl">A</span>shouldWatchCancellation</a>
       <span class="overview-sep">→</span>
@@ -310,10 +326,10 @@
       <span class="overview-sep">→</span>
       <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>featureFlagsService.isEnabled</a>
       <span class="overview-sep">→</span>
-      <a href="#fn-d" class="overview-chip"><span class="lbl">D · dentro do loop</span>startNodeCancelWatch</a>
+      <a href="#fn-d" class="overview-chip"><span class="lbl"><span data-en="D · inside the loop" data-pt="D · dentro do loop">D · inside the loop</span></span>startNodeCancelWatch</a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado final. Os três gates ficam prontos como booleans e string. O <code>AbortSignal</code> em si nasce por nó dentro do loop (linha 3304-3314) quando <code>shouldStartNodeCancelWatch</code> confirma que <code>watchEnabled</code> e <code>inFlightEnabled</code> são <code>true</code>.
+      <span data-en="Final result. The three gates are ready as booleans and a string. The &lt;code&gt;AbortSignal&lt;/code&gt; itself is born per node inside the loop (line 3304-3314) when &lt;code&gt;shouldStartNodeCancelWatch&lt;/code&gt; confirms &lt;code&gt;watchEnabled&lt;/code&gt; and &lt;code&gt;inFlightEnabled&lt;/code&gt; are &lt;code&gt;true&lt;/code&gt;." data-pt="Resultado final. Os três gates ficam prontos como booleans e string. O &lt;code&gt;AbortSignal&lt;/code&gt; em si nasce por nó dentro do loop (linha 3304-3314) quando &lt;code&gt;shouldStartNodeCancelWatch&lt;/code&gt; confirma que &lt;code&gt;watchEnabled&lt;/code&gt; e &lt;code&gt;inFlightEnabled&lt;/code&gt; são &lt;code&gt;true&lt;/code&gt;.">Final result. The three gates are ready as booleans and a string. The <code>AbortSignal</code> itself is born per node inside the loop (line 3304-3314) when <code>shouldStartNodeCancelWatch</code> confirms <code>watchEnabled</code> and <code>inFlightEnabled</code> are <code>true</code>.</span>
     </div>
   </div>
 
@@ -333,19 +349,19 @@
         function shouldWatchCancellation(params: { runType: string | null | undefined; isNestedRun: boolean }): boolean
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Primeiro gate. Decide se a execução é do tipo que pode ser cancelada pelo usuário. Retorna <code>true</code> só para execuções canceláveis do editor ou para sub-runs aninhados. Para qualquer outra execução (webhook, cronjob, MCP, batch, etc.), retorna <code>false</code>. Nenhum watch é armado depois.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; First gate. Decides whether the execution is of a type the user can cancel. Returns &lt;code&gt;true&lt;/code&gt; only for cancellable editor executions or nested sub-runs. For any other execution (webhook, cronjob, MCP, batch, etc.), returns &lt;code&gt;false&lt;/code&gt;. No watch is armed afterwards." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Primeiro gate. Decide se a execução é do tipo que pode ser cancelada pelo usuário. Retorna &lt;code&gt;true&lt;/code&gt; só para execuções canceláveis do editor ou para sub-runs aninhados. Para qualquer outra execução (webhook, cronjob, MCP, batch, etc.), retorna &lt;code&gt;false&lt;/code&gt;. Nenhum watch é armado depois."><strong>Purpose.</strong> First gate. Decides whether the execution is of a type the user can cancel. Returns <code>true</code> only for cancellable editor executions or nested sub-runs. For any other execution (webhook, cronjob, MCP, batch, etc.), returns <code>false</code>. No watch is armed afterwards.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Este gate é o porteiro do botão Cancelar. Verifica duas condições. Primeira. A execução foi disparada pelo editor (<code>canvas</code>)? Se sim, existe botão. O usuário pode clicar. Segunda. É sub-run aninhado dentro de outra execução? Se sim, o pai já é canvas, então o cancelamento tem que descer para o filho. Se ambas as respostas são "não" (cronjob, webhook, MCP, chamada de API pública, email, etc.), o porteiro fecha a porta. O botão de cancelar não existe para este tipo de execução. Faz sentido. Um cronjob não tem UI durante a execução.
+        <span data-en="&lt;strong&gt;In summary.&lt;/strong&gt; This gate is the doorman of the Cancel button. It checks two conditions. First. Was the execution fired from the editor (&lt;code&gt;canvas&lt;/code&gt;)? If yes, there is a button. The user can click. Second. Is it a sub-run nested inside another execution? If yes, the parent is already canvas, so cancellation has to reach the child too. If both answers are &quot;no&quot; (cronjob, webhook, MCP, public API call, email, etc.), the doorman closes the door. The cancel button does not exist for this execution type. Makes sense. A cronjob has no UI during execution." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Este gate é o porteiro do botão Cancelar. Verifica duas condições. Primeira. A execução foi disparada pelo editor (&lt;code&gt;canvas&lt;/code&gt;)? Se sim, existe botão. O usuário pode clicar. Segunda. É sub-run aninhado dentro de outra execução? Se sim, o pai já é canvas, então o cancelamento tem que descer para o filho. Se ambas as respostas são &quot;não&quot; (cronjob, webhook, MCP, chamada de API pública, email, etc.), o porteiro fecha a porta. O botão de cancelar não existe para este tipo de execução. Faz sentido. Um cronjob não tem UI durante a execução."><strong>In summary.</strong> This gate is the doorman of the Cancel button. It checks two conditions. First. Was the execution fired from the editor (<code>canvas</code>)? If yes, there is a button. The user can click. Second. Is it a sub-run nested inside another execution? If yes, the parent is already canvas, so cancellation has to reach the child too. If both answers are "no" (cronjob, webhook, MCP, public API call, email, etc.), the doorman closes the door. The cancel button does not exist for this execution type. Makes sense. A cronjob has no UI during execution.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">A1</span> Fórmula de decisão</div>
+            <div class="box-title"><span class="badge step">A1</span> <span data-en="Decision formula" data-pt="Fórmula de decisão">Decision formula</span></div>
             <div class="box-desc">
               <code>isCancellableRunType(runType) || isNestedRun</code>
-              <br><br>OR simples. Basta uma condição bater.
+              <br><br><span data-en="Simple OR. One condition is enough." data-pt="OR simples. Basta uma condição bater.">Simple OR. One condition is enough.</span>
             </div>
             <div class="box-file">run-cancellation.service.ts:22-23</div>
           </div>
@@ -354,7 +370,7 @@
           <div class="nested-flow">
             <div class="nested-flow-title">↳ isCancellableRunType(runType) — run-cancellation.service.ts:15-17</div>
             <div class="box decision" style="margin-top:6px">
-              <div class="box-title">Lista fechada</div>
+              <div class="box-title"><span data-en="Closed list" data-pt="Lista fechada">Closed list</span></div>
               <div class="code-block">
 <span class="k">const</span> <span class="t">CANCELLABLE_RUN_TYPES</span> = [<span class="s">'canvas'</span>];
 
@@ -363,7 +379,7 @@
 }
               </div>
               <div class="box-desc">
-                Hoje só <code>canvas</code>. Execução manual pelo editor. Todos os outros tipos (<code>api</code>, <code>batch</code>, <code>chatbot</code>, <code>cronjob</code>, <code>email</code>, <code>formapi</code>, <code>public-api</code>, <code>mcp</code>, <code>webhook</code>, <code>flow-caller-node</code>, <code>library-node</code>) ficam de fora.
+                <span data-en="Today only &lt;code&gt;canvas&lt;/code&gt;. Manual editor execution. All other types (&lt;code&gt;api&lt;/code&gt;, &lt;code&gt;batch&lt;/code&gt;, &lt;code&gt;chatbot&lt;/code&gt;, &lt;code&gt;cronjob&lt;/code&gt;, &lt;code&gt;email&lt;/code&gt;, &lt;code&gt;formapi&lt;/code&gt;, &lt;code&gt;public-api&lt;/code&gt;, &lt;code&gt;mcp&lt;/code&gt;, &lt;code&gt;webhook&lt;/code&gt;, &lt;code&gt;flow-caller-node&lt;/code&gt;, &lt;code&gt;library-node&lt;/code&gt;) are out." data-pt="Hoje só &lt;code&gt;canvas&lt;/code&gt;. Execução manual pelo editor. Todos os outros tipos (&lt;code&gt;api&lt;/code&gt;, &lt;code&gt;batch&lt;/code&gt;, &lt;code&gt;chatbot&lt;/code&gt;, &lt;code&gt;cronjob&lt;/code&gt;, &lt;code&gt;email&lt;/code&gt;, &lt;code&gt;formapi&lt;/code&gt;, &lt;code&gt;public-api&lt;/code&gt;, &lt;code&gt;mcp&lt;/code&gt;, &lt;code&gt;webhook&lt;/code&gt;, &lt;code&gt;flow-caller-node&lt;/code&gt;, &lt;code&gt;library-node&lt;/code&gt;) ficam de fora.">Today only <code>canvas</code>. Manual editor execution. All other types (<code>api</code>, <code>batch</code>, <code>chatbot</code>, <code>cronjob</code>, <code>email</code>, <code>formapi</code>, <code>public-api</code>, <code>mcp</code>, <code>webhook</code>, <code>flow-caller-node</code>, <code>library-node</code>) are out.</span>
               </div>
               <div class="box-file">run-cancellation.service.ts:9-17</div>
             </div>
@@ -372,9 +388,9 @@
           <div class="arrow">↓</div>
 
           <div class="box decision">
-            <div class="box-title">isNestedRun. Como chega até aqui</div>
+            <div class="box-title"><span data-en="isNestedRun. How it gets here" data-pt="isNestedRun. Como chega até aqui">isNestedRun. How it gets here</span></div>
             <div class="box-desc">
-              No call-site. <code>isNestedRunLog || Boolean(parentProcessId)</code>. É nested se veio <code>injectedRunLogCollector</code> (<code>fluxBox</code>/<code>libraryNode</code> passa o dele para o filho) ou se veio um <code>parentProcessId</code> explícito.
+              <span data-en="At the call-site. &lt;code&gt;isNestedRunLog || Boolean(parentProcessId)&lt;/code&gt;. It is nested if &lt;code&gt;injectedRunLogCollector&lt;/code&gt; was passed (&lt;code&gt;fluxBox&lt;/code&gt;/&lt;code&gt;libraryNode&lt;/code&gt; passes its own to the child) or if an explicit &lt;code&gt;parentProcessId&lt;/code&gt; was passed." data-pt="No call-site. &lt;code&gt;isNestedRunLog || Boolean(parentProcessId)&lt;/code&gt;. É nested se veio &lt;code&gt;injectedRunLogCollector&lt;/code&gt; (&lt;code&gt;fluxBox&lt;/code&gt;/&lt;code&gt;libraryNode&lt;/code&gt; passa o dele para o filho) ou se veio um &lt;code&gt;parentProcessId&lt;/code&gt; explícito.">At the call-site. <code>isNestedRunLog || Boolean(parentProcessId)</code>. It is nested if <code>injectedRunLogCollector</code> was passed (<code>fluxBox</code>/<code>libraryNode</code> passes its own to the child) or if an explicit <code>parentProcessId</code> was passed.</span>
             </div>
             <div class="box-file">flux.service.ts:2337, 3241</div>
           </div>
@@ -382,20 +398,20 @@
 
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Por que só canvas?</div>
-            É o único tipo de execução com UI visível para o usuário enquanto roda. Só ali existe botão de Cancelar clicável. Cronjobs, webhooks e MCP rodam server-side sem UI ativa.
-            <br><br>Um cronjob que chame outro flow via <code>flow-caller-node</code> propaga a execução pai para o filho. Mas o pai não é canvas. Nada é cancelável nessa cadeia.
+            <div class="aside-title">🎯 <span data-en="Why only canvas?" data-pt="Por que só canvas?">Why only canvas?</span></div>
+            <span data-en="It is the only execution type with a visible UI while running. Only there is a clickable Cancel button. Cronjobs, webhooks and MCP run server-side without active UI." data-pt="É o único tipo de execução com UI visível para o usuário enquanto roda. Só ali existe botão de Cancelar clicável. Cronjobs, webhooks e MCP rodam server-side sem UI ativa.">It is the only execution type with a visible UI while running. Only there is a clickable Cancel button. Cronjobs, webhooks and MCP run server-side without active UI.</span>
+            <br><br><span data-en="A cronjob that calls another flow via &lt;code&gt;flow-caller-node&lt;/code&gt; propagates the parent execution to the child. But the parent is not canvas. Nothing in that chain is cancellable." data-pt="Um cronjob que chame outro flow via &lt;code&gt;flow-caller-node&lt;/code&gt; propaga a execução pai para o filho. Mas o pai não é canvas. Nada é cancelável nessa cadeia.">A cronjob that calls another flow via <code>flow-caller-node</code> propagates the parent execution to the child. But the parent is not canvas. Nothing in that chain is cancellable.</span>
           </div>
 
           <div class="aside">
-            <div class="aside-title">📎 Nested run herda cancellability</div>
-            Um <code>fluxBox</code> executado dentro de um canvas run vira sub-run. Nele, <code>isNestedRunLog = true</code>. O watch arma no filho também.
-            <br><br>É essencial para o cancel propagar. O pai lê a mesma linha em <code>flow_run_states</code> via <code>cancelRunKey</code> resolvido em B.
+            <div class="aside-title">📎 <span data-en="Nested run inherits cancellability" data-pt="Nested run herda cancellability">Nested run inherits cancellability</span></div>
+            <span data-en="A &lt;code&gt;fluxBox&lt;/code&gt; executed inside a canvas run becomes a sub-run. In it, &lt;code&gt;isNestedRunLog = true&lt;/code&gt;. The watch arms in the child too." data-pt="Um &lt;code&gt;fluxBox&lt;/code&gt; executado dentro de um canvas run vira sub-run. Nele, &lt;code&gt;isNestedRunLog = true&lt;/code&gt;. O watch arma no filho também.">A <code>fluxBox</code> executed inside a canvas run becomes a sub-run. In it, <code>isNestedRunLog = true</code>. The watch arms in the child too.</span>
+            <br><br><span data-en="Essential for cancel to propagate. The parent reads the same row in &lt;code&gt;flow_run_states&lt;/code&gt; via the &lt;code&gt;cancelRunKey&lt;/code&gt; resolved in B." data-pt="É essencial para o cancel propagar. O pai lê a mesma linha em &lt;code&gt;flow_run_states&lt;/code&gt; via &lt;code&gt;cancelRunKey&lt;/code&gt; resolvido em B.">Essential for cancel to propagate. The parent reads the same row in <code>flow_run_states</code> via the <code>cancelRunKey</code> resolved in B.</span>
           </div>
 
           <div class="aside warn">
-            <div class="aside-title">⚠️ Lista fechada, não configurável</div>
-            <code>CANCELLABLE_RUN_TYPES</code> é constante hardcoded no arquivo. Adicionar <code>chatbot</code> ou <code>batch</code> como canceláveis exige mudança de código e deploy. Não há feature flag por tipo.
+            <div class="aside-title">⚠️ <span data-en="Closed list, not configurable" data-pt="Lista fechada, não configurável">Closed list, not configurable</span></div>
+            <span data-en="&lt;code&gt;CANCELLABLE_RUN_TYPES&lt;/code&gt; is a hardcoded constant in the file. Adding &lt;code&gt;chatbot&lt;/code&gt; or &lt;code&gt;batch&lt;/code&gt; as cancellable requires code change and deploy. There is no per-type feature flag." data-pt="&lt;code&gt;CANCELLABLE_RUN_TYPES&lt;/code&gt; é constante hardcoded no arquivo. Adicionar &lt;code&gt;chatbot&lt;/code&gt; ou &lt;code&gt;batch&lt;/code&gt; como canceláveis exige mudança de código e deploy. Não há feature flag por tipo."><code>CANCELLABLE_RUN_TYPES</code> is a hardcoded constant in the file. Adding <code>chatbot</code> or <code>batch</code> as cancellable requires code change and deploy. There is no per-type feature flag.</span>
           </div>
         </div>
       </div>
@@ -418,30 +434,30 @@
         function resolveCancelRunKey(params: { runLogProcessId: string; parentRunId: string | null }): string
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Define qual ID é usado para ler a intenção de cancelamento no banco. Em um run raiz, é o próprio <code>runLogProcessId</code>. Em um sub-run, é o <code>parentRunId</code>. Quando o usuário cancela o run pai, o filho aninhado também é interrompido, sem comunicação explícita entre eles.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Defines which ID is used to read the cancellation intent from the database. In a root run, it is the &lt;code&gt;runLogProcessId&lt;/code&gt; itself. In a sub-run, it is the &lt;code&gt;parentRunId&lt;/code&gt;. When the user cancels the parent run, the nested child is also interrupted, without explicit communication between them." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Define qual ID é usado para ler a intenção de cancelamento no banco. Em um run raiz, é o próprio &lt;code&gt;runLogProcessId&lt;/code&gt;. Em um sub-run, é o &lt;code&gt;parentRunId&lt;/code&gt;. Quando o usuário cancela o run pai, o filho aninhado também é interrompido, sem comunicação explícita entre eles."><strong>Purpose.</strong> Defines which ID is used to read the cancellation intent from the database. In a root run, it is the <code>runLogProcessId</code> itself. In a sub-run, it is the <code>parentRunId</code>. When the user cancels the parent run, the nested child is also interrupted, without explicit communication between them.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Este mecanismo faz cada nó, mesmo dentro de sub-runs aninhados a 3 níveis de profundidade, olhar para a mesma linha em <code>flow_run_states</code>. A linha do run raiz. Quando o usuário clica em Cancelar no editor, uma única linha é criada com o ID do run pai. Os filhos aninhados não têm linhas próprias. Consultam a do pai. Se cada sub-run criasse a própria linha, seria necessário propagar cancel manualmente. Aqui não. O parentesco é resolvido no início e todos leem do mesmo lugar.
+        <span data-en="&lt;strong&gt;In summary.&lt;/strong&gt; This mechanism makes every node, even inside sub-runs nested 3 levels deep, look at the same row in &lt;code&gt;flow_run_states&lt;/code&gt;. The root run's row. When the user clicks Cancel in the editor, a single row is created with the parent run's ID. Nested children have no rows of their own. They query the parent's. If each sub-run created its own row, cancel would have to be propagated manually. Not here. Parentage is resolved up front and everyone reads from the same place." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Este mecanismo faz cada nó, mesmo dentro de sub-runs aninhados a 3 níveis de profundidade, olhar para a mesma linha em &lt;code&gt;flow_run_states&lt;/code&gt;. A linha do run raiz. Quando o usuário clica em Cancelar no editor, uma única linha é criada com o ID do run pai. Os filhos aninhados não têm linhas próprias. Consultam a do pai. Se cada sub-run criasse a própria linha, seria necessário propagar cancel manualmente. Aqui não. O parentesco é resolvido no início e todos leem do mesmo lugar."><strong>In summary.</strong> This mechanism makes every node, even inside sub-runs nested 3 levels deep, look at the same row in <code>flow_run_states</code>. The root run's row. When the user clicks Cancel in the editor, a single row is created with the parent run's ID. Nested children have no rows of their own. They query the parent's. If each sub-run created its own row, cancel would have to be propagated manually. Not here. Parentage is resolved up front and everyone reads from the same place.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">B1</span> Fórmula</div>
+            <div class="box-title"><span class="badge step">B1</span> <span data-en="Formula" data-pt="Fórmula">Formula</span></div>
             <div class="code-block">
 <span class="k">return</span> params.parentRunId || params.runLogProcessId;
             </div>
             <div class="box-desc">
-              Uma linha só. Se <code>parentRunId</code> existir (não nulo, não vazio), usa. Senão, cai para <code>runLogProcessId</code>. Sem transformação, sem namespace, sem prefixo.
+              <span data-en="One line only. If &lt;code&gt;parentRunId&lt;/code&gt; exists (not null, not empty), use it. Otherwise, fall back to &lt;code&gt;runLogProcessId&lt;/code&gt;. No transformation, no namespace, no prefix." data-pt="Uma linha só. Se &lt;code&gt;parentRunId&lt;/code&gt; existir (não nulo, não vazio), usa. Senão, cai para &lt;code&gt;runLogProcessId&lt;/code&gt;. Sem transformação, sem namespace, sem prefixo.">One line only. If <code>parentRunId</code> exists (not null, not empty), use it. Otherwise, fall back to <code>runLogProcessId</code>. No transformation, no namespace, no prefix.</span>
             </div>
             <div class="box-file">cancel-run-key.ts:1-7</div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box db">
-            <div class="box-title"><span class="badge step">B2</span> Como o valor é usado</div>
+            <div class="box-title"><span class="badge step">B2</span> <span data-en="How the value is used" data-pt="Como o valor é usado">How the value is used</span></div>
             <div class="box-desc">
-              Em <code>startNodeCancelWatch({ runId: cancelRunKey, ... })</code>, o timer chama <code>runCancellationService.isCancelRequested(cancelRunKey)</code>. A função executa <code>SELECT ... FROM flow_run_states WHERE runId = $1 AND deletedAt IS NULL</code>. O run raiz e todos os aninhados usam o mesmo valor de <code>runId</code>.
+              <span data-en="In &lt;code&gt;startNodeCancelWatch({ runId: cancelRunKey, ... })&lt;/code&gt;, the timer calls &lt;code&gt;runCancellationService.isCancelRequested(cancelRunKey)&lt;/code&gt;. The function runs &lt;code&gt;SELECT ... FROM flow_run_states WHERE runId = $1 AND deletedAt IS NULL&lt;/code&gt;. The root run and all nested ones use the same &lt;code&gt;runId&lt;/code&gt; value." data-pt="Em &lt;code&gt;startNodeCancelWatch({ runId: cancelRunKey, ... })&lt;/code&gt;, o timer chama &lt;code&gt;runCancellationService.isCancelRequested(cancelRunKey)&lt;/code&gt;. A função executa &lt;code&gt;SELECT ... FROM flow_run_states WHERE runId = $1 AND deletedAt IS NULL&lt;/code&gt;. O run raiz e todos os aninhados usam o mesmo valor de &lt;code&gt;runId&lt;/code&gt;.">In <code>startNodeCancelWatch({ runId: cancelRunKey, ... })</code>, the timer calls <code>runCancellationService.isCancelRequested(cancelRunKey)</code>. The function runs <code>SELECT ... FROM flow_run_states WHERE runId = $1 AND deletedAt IS NULL</code>. The root run and all nested ones use the same <code>runId</code> value.</span>
             </div>
             <div class="box-file">flux.service.ts:3308-3313</div>
           </div>
@@ -449,20 +465,20 @@
 
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">📎 Não é Redis, é Postgres</div>
-            Apesar do nome sugerir chave de pub/sub, não há Redis envolvido. O cancel é armazenado como linha em <code>flow_run_states</code> (Postgres) e lido por polling a cada 2s (<code>CANCEL_POLL_MS</code> em <code>node-cancel-watch.ts:3</code>).
-            <br><br>O nome "key" refere-se a "chave lógica do run", não a "chave Redis".
+            <div class="aside-title">📎 <span data-en="Not Redis, it's Postgres" data-pt="Não é Redis, é Postgres">Not Redis, it's Postgres</span></div>
+            <span data-en="Although the name suggests a pub/sub key, no Redis is involved. Cancel is stored as a row in &lt;code&gt;flow_run_states&lt;/code&gt; (Postgres) and read by polling every 2s (&lt;code&gt;CANCEL_POLL_MS&lt;/code&gt; at &lt;code&gt;node-cancel-watch.ts:3&lt;/code&gt;)." data-pt="Apesar do nome sugerir chave de pub/sub, não há Redis envolvido. O cancel é armazenado como linha em &lt;code&gt;flow_run_states&lt;/code&gt; (Postgres) e lido por polling a cada 2s (&lt;code&gt;CANCEL_POLL_MS&lt;/code&gt; em &lt;code&gt;node-cancel-watch.ts:3&lt;/code&gt;).">Although the name suggests a pub/sub key, no Redis is involved. Cancel is stored as a row in <code>flow_run_states</code> (Postgres) and read by polling every 2s (<code>CANCEL_POLL_MS</code> at <code>node-cancel-watch.ts:3</code>).</span>
+            <br><br><span data-en="The name &quot;key&quot; refers to &quot;logical key of the run&quot;, not to &quot;Redis key&quot;." data-pt="O nome &quot;key&quot; refere-se a &quot;chave lógica do run&quot;, não a &quot;chave Redis&quot;.">The name "key" refers to "logical key of the run", not to "Redis key".</span>
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 parentCancelRunKey também existe</div>
-            O parâmetro <code>parentCancelRunKey</code> chega no <code>apiV2()</code> quando um <code>fluxBox</code> ou <code>libraryNode</code> chama outro flow. Mesmo em cadeias profundas (canvas → fluxBox → fluxBox aninhado), a chave continua sendo a do canvas raiz.
-            <br><br>Ver call. <code>parentRunId: parentCancelRunKey ?? null</code> em <code>flux.service.ts:3245</code>.
+            <div class="aside-title">🔧 <span data-en="parentCancelRunKey also exists" data-pt="parentCancelRunKey também existe">parentCancelRunKey also exists</span></div>
+            <span data-en="The &lt;code&gt;parentCancelRunKey&lt;/code&gt; parameter arrives at &lt;code&gt;apiV2()&lt;/code&gt; when a &lt;code&gt;fluxBox&lt;/code&gt; or &lt;code&gt;libraryNode&lt;/code&gt; calls another flow. Even in deep chains (canvas → fluxBox → nested fluxBox), the key stays as the root canvas one." data-pt="O parâmetro &lt;code&gt;parentCancelRunKey&lt;/code&gt; chega no &lt;code&gt;apiV2()&lt;/code&gt; quando um &lt;code&gt;fluxBox&lt;/code&gt; ou &lt;code&gt;libraryNode&lt;/code&gt; chama outro flow. Mesmo em cadeias profundas (canvas → fluxBox → fluxBox aninhado), a chave continua sendo a do canvas raiz.">The <code>parentCancelRunKey</code> parameter arrives at <code>apiV2()</code> when a <code>fluxBox</code> or <code>libraryNode</code> calls another flow. Even in deep chains (canvas → fluxBox → nested fluxBox), the key stays as the root canvas one.</span>
+            <br><br><span data-en="See call. &lt;code&gt;parentRunId: parentCancelRunKey ?? null&lt;/code&gt; at &lt;code&gt;flux.service.ts:3245&lt;/code&gt;." data-pt="Ver call. &lt;code&gt;parentRunId: parentCancelRunKey ?? null&lt;/code&gt; em &lt;code&gt;flux.service.ts:3245&lt;/code&gt;.">See call. <code>parentRunId: parentCancelRunKey ?? null</code> at <code>flux.service.ts:3245</code>.</span>
           </div>
 
           <div class="aside warn">
-            <div class="aside-title">⚠️ Sem namespace. Risco de colisão</div>
-            A chave é UUID cru (do <code>runLogProcessId</code>). Duas features do sistema poderiam teoricamente colidir se usassem UUIDs iguais em outros contextos. Na prática, UUIDs são únicos. Não há prefixo (<code>run:</code>, <code>cancel:</code>, etc.). A tabela é dedicada a runs, então funciona. Em Redis isso seria má prática.
+            <div class="aside-title">⚠️ <span data-en="No namespace. Collision risk" data-pt="Sem namespace. Risco de colisão">No namespace. Collision risk</span></div>
+            <span data-en="The key is a raw UUID (from &lt;code&gt;runLogProcessId&lt;/code&gt;). Two system features could theoretically collide if they used the same UUIDs in other contexts. In practice, UUIDs are unique. There is no prefix (&lt;code&gt;run:&lt;/code&gt;, &lt;code&gt;cancel:&lt;/code&gt;, etc.). The table is dedicated to runs, so it works. In Redis this would be bad practice." data-pt="A chave é UUID cru (do &lt;code&gt;runLogProcessId&lt;/code&gt;). Duas features do sistema poderiam teoricamente colidir se usassem UUIDs iguais em outros contextos. Na prática, UUIDs são únicos. Não há prefixo (&lt;code&gt;run:&lt;/code&gt;, &lt;code&gt;cancel:&lt;/code&gt;, etc.). A tabela é dedicada a runs, então funciona. Em Redis isso seria má prática.">The key is a raw UUID (from <code>runLogProcessId</code>). Two system features could theoretically collide if they used the same UUIDs in other contexts. In practice, UUIDs are unique. There is no prefix (<code>run:</code>, <code>cancel:</code>, etc.). The table is dedicated to runs, so it works. In Redis this would be bad practice.</span>
           </div>
         </div>
       </div>
@@ -485,16 +501,16 @@
         async isEnabled(key: string): Promise&lt;boolean&gt;
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Kill switch global. Lê a tabela <code>feature_flags</code> procurando a chave <code>'node_cancel_in_flight'</code>. Se a linha existir e <code>enabled === true</code>, o cancel em pleno voo (interromper LLM streaming, HTTP calls, etc.) fica ligado. Qualquer outra situação, incluindo erro na query, devolve <code>false</code> (fail-closed).
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Global kill switch. Reads the &lt;code&gt;feature_flags&lt;/code&gt; table looking for the &lt;code&gt;'node_cancel_in_flight'&lt;/code&gt; key. If the row exists and &lt;code&gt;enabled === true&lt;/code&gt;, in-flight cancel (interrupt LLM streaming, HTTP calls, etc.) is on. Any other situation, including query error, returns &lt;code&gt;false&lt;/code&gt; (fail-closed)." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Kill switch global. Lê a tabela &lt;code&gt;feature_flags&lt;/code&gt; procurando a chave &lt;code&gt;'node_cancel_in_flight'&lt;/code&gt;. Se a linha existir e &lt;code&gt;enabled === true&lt;/code&gt;, o cancel em pleno voo (interromper LLM streaming, HTTP calls, etc.) fica ligado. Qualquer outra situação, incluindo erro na query, devolve &lt;code&gt;false&lt;/code&gt; (fail-closed)."><strong>Purpose.</strong> Global kill switch. Reads the <code>feature_flags</code> table looking for the <code>'node_cancel_in_flight'</code> key. If the row exists and <code>enabled === true</code>, in-flight cancel (interrupt LLM streaming, HTTP calls, etc.) is on. Any other situation, including query error, returns <code>false</code> (fail-closed).</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> É um disjuntor global. Se um bug começar a interromper execuções por engano em produção, um admin desliga esse disjuntor no banco. Ninguém mais consegue cancelar em pleno voo. O pior caso é o cancel só funcionar entre nós (após um nó terminar naturalmente), não durante. Útil para debugar sem precisar de deploy. A chave é global. Não é por user, space ou tenant. Vale para a plataforma inteira. Se falhar a leitura do banco por qualquer motivo, o comportamento é desligar por segurança em vez de assumir ligado. Política de fail-closed clássica.
+        <span data-en="&lt;strong&gt;In summary.&lt;/strong&gt; It is a global breaker. If a bug starts interrupting executions by mistake in production, an admin flips this breaker in the database. Nobody can cancel in-flight anymore. Worst case is cancel only working between nodes (after a node naturally ends), not during. Handy for debugging without needing a deploy. The key is global. Not per user, space or tenant. It applies to the whole platform. If the database read fails for any reason, behavior is to turn off for safety instead of assuming it is on. Classic fail-closed policy." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; É um disjuntor global. Se um bug começar a interromper execuções por engano em produção, um admin desliga esse disjuntor no banco. Ninguém mais consegue cancelar em pleno voo. O pior caso é o cancel só funcionar entre nós (após um nó terminar naturalmente), não durante. Útil para debugar sem precisar de deploy. A chave é global. Não é por user, space ou tenant. Vale para a plataforma inteira. Se falhar a leitura do banco por qualquer motivo, o comportamento é desligar por segurança em vez de assumir ligado. Política de fail-closed clássica."><strong>In summary.</strong> It is a global breaker. If a bug starts interrupting executions by mistake in production, an admin flips this breaker in the database. Nobody can cancel in-flight anymore. Worst case is cancel only working between nodes (after a node naturally ends), not during. Handy for debugging without needing a deploy. The key is global. Not per user, space or tenant. It applies to the whole platform. If the database read fails for any reason, behavior is to turn off for safety instead of assuming it is on. Classic fail-closed policy.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">C1</span> Constante da chave</div>
+            <div class="box-title"><span class="badge step">C1</span> <span data-en="Key constant" data-pt="Constante da chave">Key constant</span></div>
             <div class="code-block">
 <span class="k">export const</span> <span class="t">NODE_CANCEL_IN_FLIGHT_FLAG</span> = <span class="s">'node_cancel_in_flight'</span>;
             </div>
@@ -503,36 +519,36 @@
           <div class="arrow">↓</div>
 
           <div class="box db">
-            <div class="box-title"><span class="badge step">C2</span> Query direta na entity</div>
+            <div class="box-title"><span class="badge step">C2</span> <span data-en="Direct query on the entity" data-pt="Query direta na entity">Direct query on the entity</span></div>
             <div class="box-desc">
               <code>this.featureFlagRepository.findOne({ where: { key } })</code>
-              <br><br>Sem cache, sem batching. Cada execução faz uma query nova. Não é problema em volume moderado. É um <code>SELECT</code> extra por execução.
+              <br><br><span data-en="No cache, no batching. Every execution makes a new query. Not a problem at moderate volume. It is one extra &lt;code&gt;SELECT&lt;/code&gt; per execution." data-pt="Sem cache, sem batching. Cada execução faz uma query nova. Não é problema em volume moderado. É um &lt;code&gt;SELECT&lt;/code&gt; extra por execução.">No cache, no batching. Every execution makes a new query. Not a problem at moderate volume. It is one extra <code>SELECT</code> per execution.</span>
             </div>
             <div class="box-file">feature-flags.service.ts:17</div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box decision">
-            <div class="box-title"><span class="badge step">C3</span> Cascata de decisão</div>
+            <div class="box-title"><span class="badge step">C3</span> <span data-en="Decision cascade" data-pt="Cascata de decisão">Decision cascade</span></div>
             <div class="cascade" style="background:white;border-color:#94A3B8">
               <div class="cascade-step">
                 <span class="cascade-num">1</span>
-                <span class="cond">flag existe e <code>enabled === true</code></span>
+                <span class="cond"><span data-en="flag exists and &lt;code&gt;enabled === true&lt;/code&gt;" data-pt="flag existe e &lt;code&gt;enabled === true&lt;/code&gt;">flag exists and <code>enabled === true</code></span></span>
                 <span class="result pass">return <code>true</code></span>
               </div>
               <div class="cascade-step">
                 <span class="cascade-num">2</span>
-                <span class="cond">flag existe mas <code>enabled === false</code></span>
+                <span class="cond"><span data-en="flag exists but &lt;code&gt;enabled === false&lt;/code&gt;" data-pt="flag existe mas &lt;code&gt;enabled === false&lt;/code&gt;">flag exists but <code>enabled === false</code></span></span>
                 <span class="result deny">return <code>false</code></span>
               </div>
               <div class="cascade-step">
                 <span class="cascade-num">3</span>
-                <span class="cond">flag não existe (linha ausente)</span>
+                <span class="cond"><span data-en="flag does not exist (row missing)" data-pt="flag não existe (linha ausente)">flag does not exist (row missing)</span></span>
                 <span class="result deny">return <code>false</code></span>
               </div>
               <div class="cascade-step">
                 <span class="cascade-num">4</span>
-                <span class="cond">query lançou erro</span>
+                <span class="cond"><span data-en="query threw an error" data-pt="query lançou erro">query threw an error</span></span>
                 <span class="result deny">catch → return <code>false</code></span>
               </div>
             </div>
@@ -541,21 +557,21 @@
 
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Escopo global. Nem user, nem space</div>
-            A tabela <code>feature_flags</code> tem apenas <code>key</code> e <code>enabled</code>. Não tem <code>userId</code>, <code>spaceId</code> ou <code>companyId</code>. É uma flag da plataforma inteira. Ligar/desligar afeta todos os usuários em todos os spaces simultaneamente.
+            <div class="aside-title">🎯 <span data-en="Global scope. Not user, not space" data-pt="Escopo global. Nem user, nem space">Global scope. Not user, not space</span></div>
+            <span data-en="The &lt;code&gt;feature_flags&lt;/code&gt; table only has &lt;code&gt;key&lt;/code&gt; and &lt;code&gt;enabled&lt;/code&gt;. No &lt;code&gt;userId&lt;/code&gt;, &lt;code&gt;spaceId&lt;/code&gt; or &lt;code&gt;companyId&lt;/code&gt;. It is a whole-platform flag. Turning it on/off affects every user in every space at the same time." data-pt="A tabela &lt;code&gt;feature_flags&lt;/code&gt; tem apenas &lt;code&gt;key&lt;/code&gt; e &lt;code&gt;enabled&lt;/code&gt;. Não tem &lt;code&gt;userId&lt;/code&gt;, &lt;code&gt;spaceId&lt;/code&gt; ou &lt;code&gt;companyId&lt;/code&gt;. É uma flag da plataforma inteira. Ligar/desligar afeta todos os usuários em todos os spaces simultaneamente.">The <code>feature_flags</code> table only has <code>key</code> and <code>enabled</code>. No <code>userId</code>, <code>spaceId</code> or <code>companyId</code>. It is a whole-platform flag. Turning it on/off affects every user in every space at the same time.</span>
           </div>
 
           <div class="aside warn">
-            <div class="aside-title">⚠️ Fail-closed silencioso</div>
-            Se a query lançar (banco fora, timeout, etc.), o <code>catch</code> loga um <code>console.error</code> e devolve <code>false</code>. A execução não sabe que a checagem falhou. Só percebe que o inflight cancel não está armado.
-            <br><br>Efeito. Em uma pane de banco, todos os cancels em pleno voo silenciosamente param de funcionar.
+            <div class="aside-title">⚠️ <span data-en="Silent fail-closed" data-pt="Fail-closed silencioso">Silent fail-closed</span></div>
+            <span data-en="If the query throws (DB down, timeout, etc.), the &lt;code&gt;catch&lt;/code&gt; logs a &lt;code&gt;console.error&lt;/code&gt; and returns &lt;code&gt;false&lt;/code&gt;. The execution does not know the check failed. It only notices that in-flight cancel is not armed." data-pt="Se a query lançar (banco fora, timeout, etc.), o &lt;code&gt;catch&lt;/code&gt; loga um &lt;code&gt;console.error&lt;/code&gt; e devolve &lt;code&gt;false&lt;/code&gt;. A execução não sabe que a checagem falhou. Só percebe que o inflight cancel não está armado.">If the query throws (DB down, timeout, etc.), the <code>catch</code> logs a <code>console.error</code> and returns <code>false</code>. The execution does not know the check failed. It only notices that in-flight cancel is not armed.</span>
+            <br><br><span data-en="Effect. In a DB outage, all in-flight cancels silently stop working." data-pt="Efeito. Em uma pane de banco, todos os cancels em pleno voo silenciosamente param de funcionar.">Effect. In a DB outage, all in-flight cancels silently stop working.</span>
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 Diferença. watch vs. inflight cancel</div>
-            <code>cancelWatchEnabled</code> (A). Dá para observar intenção de cancelar em algum ponto?
-            <br><code>inFlightEnabled</code> (C). Dá para abortar durante o nó via <code>AbortSignal</code>?
-            <br><br>Precisa dos dois iguais a <code>true</code> para <code>shouldStartNodeCancelWatch</code> retornar <code>true</code> e criar o <code>AbortController</code>.
+            <div class="aside-title">🔧 <span data-en="Difference. watch vs. inflight cancel" data-pt="Diferença. watch vs. inflight cancel">Difference. watch vs. inflight cancel</span></div>
+            <span data-en="&lt;code&gt;cancelWatchEnabled&lt;/code&gt; (A). Can we observe cancel intent at some point?" data-pt="&lt;code&gt;cancelWatchEnabled&lt;/code&gt; (A). Dá para observar intenção de cancelar em algum ponto?"><code>cancelWatchEnabled</code> (A). Can we observe cancel intent at some point?</span>
+            <br><span data-en="&lt;code&gt;inFlightEnabled&lt;/code&gt; (C). Can we abort during the node via &lt;code&gt;AbortSignal&lt;/code&gt;?" data-pt="&lt;code&gt;inFlightEnabled&lt;/code&gt; (C). Dá para abortar durante o nó via &lt;code&gt;AbortSignal&lt;/code&gt;?"><code>inFlightEnabled</code> (C). Can we abort during the node via <code>AbortSignal</code>?</span>
+            <br><br><span data-en="Both must be &lt;code&gt;true&lt;/code&gt; for &lt;code&gt;shouldStartNodeCancelWatch&lt;/code&gt; to return &lt;code&gt;true&lt;/code&gt; and create the &lt;code&gt;AbortController&lt;/code&gt;." data-pt="Precisa dos dois iguais a &lt;code&gt;true&lt;/code&gt; para &lt;code&gt;shouldStartNodeCancelWatch&lt;/code&gt; retornar &lt;code&gt;true&lt;/code&gt; e criar o &lt;code&gt;AbortController&lt;/code&gt;.">Both must be <code>true</code> for <code>shouldStartNodeCancelWatch</code> to return <code>true</code> and create the <code>AbortController</code>.</span>
           </div>
         </div>
       </div>
@@ -570,7 +586,7 @@
       <div class="fn-title">
         <span class="badge migrated" style="background:#A855F7;color:white">D</span>
         <code>startNodeCancelWatch()</code>
-        <span class="badge mixed" style="font-size:9px">dentro do loop</span>
+        <span class="badge mixed" style="font-size:9px"><span data-en="inside the loop" data-pt="dentro do loop">inside the loop</span></span>
       </div>
       <div class="fn-loc">node-cancel-watch.ts:63-93</div>
     </div>
@@ -579,23 +595,23 @@
         function startNodeCancelWatch(params: { runId; nodeId; isCancelRequested; pollMs? }): NodeCancelWatch
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Cria (por nó, dentro do loop principal) um <code>AbortController</code> novo e um <code>setInterval</code>. A cada 2s pergunta a <code>runCancellationService.isCancelRequested(runId)</code> se o usuário clicou em cancelar. Se sim, chama <code>controller.abort()</code>. Isso propaga o <code>AbortSignal</code> para o handler do nó (Anthropic, OpenAI, HTTP, MCP, etc.). É o único ponto que efetivamente arma o cancel em pleno voo.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Creates (per node, inside the main loop) a new &lt;code&gt;AbortController&lt;/code&gt; and a &lt;code&gt;setInterval&lt;/code&gt;. Every 2s asks &lt;code&gt;runCancellationService.isCancelRequested(runId)&lt;/code&gt; whether the user clicked cancel. If yes, calls &lt;code&gt;controller.abort()&lt;/code&gt;. This propagates the &lt;code&gt;AbortSignal&lt;/code&gt; to the node's handler (Anthropic, OpenAI, HTTP, MCP, etc.). This is the only place that actually arms in-flight cancel." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Cria (por nó, dentro do loop principal) um &lt;code&gt;AbortController&lt;/code&gt; novo e um &lt;code&gt;setInterval&lt;/code&gt;. A cada 2s pergunta a &lt;code&gt;runCancellationService.isCancelRequested(runId)&lt;/code&gt; se o usuário clicou em cancelar. Se sim, chama &lt;code&gt;controller.abort()&lt;/code&gt;. Isso propaga o &lt;code&gt;AbortSignal&lt;/code&gt; para o handler do nó (Anthropic, OpenAI, HTTP, MCP, etc.). É o único ponto que efetivamente arma o cancel em pleno voo."><strong>Purpose.</strong> Creates (per node, inside the main loop) a new <code>AbortController</code> and a <code>setInterval</code>. Every 2s asks <code>runCancellationService.isCancelRequested(runId)</code> whether the user clicked cancel. If yes, calls <code>controller.abort()</code>. This propagates the <code>AbortSignal</code> to the node's handler (Anthropic, OpenAI, HTTP, MCP, etc.). This is the only place that actually arms in-flight cancel.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> É um vigia que aparece no início da execução de cada nó, se o passo 2.2a autorizou. Monta um <code>AbortController</code> (o botão de aborto) e liga um cronômetro que, a cada 2 segundos, pergunta "já cancelaram esta execução?". Se a resposta é "sim", chama <code>abort()</code>. O <code>AbortSignal</code> é propagado para qualquer chamada assíncrona em andamento (chamada para Claude/OpenAI, fetch HTTP, MCP call). O SDK do provider, ao receber o abort, cancela a stream. Evita gastar tokens em resposta que ninguém verá. Quando o nó termina (naturalmente ou abortado), o vigia sai. <code>stop()</code> limpa o timer. Armado por nó, não por execução. Cada nó ganha um <code>AbortController</code> novo.
+        <span data-en="&lt;strong&gt;In summary.&lt;/strong&gt; A watchman that shows up at the start of each node's execution, if step 2.2a authorized. Sets up an &lt;code&gt;AbortController&lt;/code&gt; (the abort button) and starts a stopwatch that, every 2 seconds, asks &quot;did they cancel this execution?&quot;. If the answer is &quot;yes&quot;, calls &lt;code&gt;abort()&lt;/code&gt;. The &lt;code&gt;AbortSignal&lt;/code&gt; is propagated to any ongoing async call (call to Claude/OpenAI, HTTP fetch, MCP call). The provider's SDK, on receiving the abort, cancels the stream. Prevents spending tokens on a response nobody will see. When the node ends (naturally or aborted), the watchman leaves. &lt;code&gt;stop()&lt;/code&gt; clears the timer. Armed per node, not per execution. Each node gets a new &lt;code&gt;AbortController&lt;/code&gt;." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; É um vigia que aparece no início da execução de cada nó, se o passo 2.2a autorizou. Monta um &lt;code&gt;AbortController&lt;/code&gt; (o botão de aborto) e liga um cronômetro que, a cada 2 segundos, pergunta &quot;já cancelaram esta execução?&quot;. Se a resposta é &quot;sim&quot;, chama &lt;code&gt;abort()&lt;/code&gt;. O &lt;code&gt;AbortSignal&lt;/code&gt; é propagado para qualquer chamada assíncrona em andamento (chamada para Claude/OpenAI, fetch HTTP, MCP call). O SDK do provider, ao receber o abort, cancela a stream. Evita gastar tokens em resposta que ninguém verá. Quando o nó termina (naturalmente ou abortado), o vigia sai. &lt;code&gt;stop()&lt;/code&gt; limpa o timer. Armado por nó, não por execução. Cada nó ganha um &lt;code&gt;AbortController&lt;/code&gt; novo."><strong>In summary.</strong> A watchman that shows up at the start of each node's execution, if step 2.2a authorized. Sets up an <code>AbortController</code> (the abort button) and starts a stopwatch that, every 2 seconds, asks "did they cancel this execution?". If the answer is "yes", calls <code>abort()</code>. The <code>AbortSignal</code> is propagated to any ongoing async call (call to Claude/OpenAI, HTTP fetch, MCP call). The provider's SDK, on receiving the abort, cancels the stream. Prevents spending tokens on a response nobody will see. When the node ends (naturally or aborted), the watchman leaves. <code>stop()</code> clears the timer. Armed per node, not per execution. Each node gets a new <code>AbortController</code>.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">D1</span> Onde é chamado. No início da iteração de cada nó</div>
+            <div class="box-title"><span class="badge step">D1</span> <span data-en="Where it's called. At the start of each node's iteration" data-pt="Onde é chamado. No início da iteração de cada nó">Where it's called. At the start of each node's iteration</span></div>
             <div class="code-block">
 <span class="k">const</span> cancelWatch = <span class="t">shouldStartNodeCancelWatch</span>({
-  watchEnabled: cancelWatchEnabled,   <span class="c">// de (A)</span>
-  inFlightEnabled,                    <span class="c">// de (C)</span>
+  watchEnabled: cancelWatchEnabled,   <span class="c">// from (A)</span>
+  inFlightEnabled,                    <span class="c">// from (C)</span>
 })
   ? <span class="t">startNodeCancelWatch</span>({
-      runId: cancelRunKey,             <span class="c">// de (B)</span>
+      runId: cancelRunKey,             <span class="c">// from (B)</span>
       nodeId: node.id,
       isCancelRequested: runId =&gt;
         <span class="k">this</span>.runCancellationService.<span class="t">isCancelRequested</span>(runId),
@@ -629,18 +645,18 @@
           <div class="arrow">↓</div>
 
           <div class="box cross">
-            <div class="box-title"><span class="badge step">D3</span> Propagação via AsyncLocalStorage</div>
+            <div class="box-title"><span class="badge step">D3</span> <span data-en="Propagation via AsyncLocalStorage" data-pt="Propagação via AsyncLocalStorage">Propagation via AsyncLocalStorage</span></div>
             <div class="box-desc">
-              Antes de rodar o handler do nó, <code>nodeCancelContext.enterWith(cancelWatch.entry)</code> injeta o entry na async storage. Qualquer código abaixo na call stack pode chamar <code>currentNodeAbortSignal()</code> e receber o <code>AbortSignal</code> ativo do nó, sem passar como argumento.
+              <span data-en="Before running the node's handler, &lt;code&gt;nodeCancelContext.enterWith(cancelWatch.entry)&lt;/code&gt; injects the entry into the async storage. Any code deeper in the call stack can call &lt;code&gt;currentNodeAbortSignal()&lt;/code&gt; and receive the node's active &lt;code&gt;AbortSignal&lt;/code&gt;, without passing it as an argument." data-pt="Antes de rodar o handler do nó, &lt;code&gt;nodeCancelContext.enterWith(cancelWatch.entry)&lt;/code&gt; injeta o entry na async storage. Qualquer código abaixo na call stack pode chamar &lt;code&gt;currentNodeAbortSignal()&lt;/code&gt; e receber o &lt;code&gt;AbortSignal&lt;/code&gt; ativo do nó, sem passar como argumento.">Before running the node's handler, <code>nodeCancelContext.enterWith(cancelWatch.entry)</code> injects the entry into the async storage. Any code deeper in the call stack can call <code>currentNodeAbortSignal()</code> and receive the node's active <code>AbortSignal</code>, without passing it as an argument.</span>
             </div>
             <div class="box-file">node-cancel-watch.ts:19-32, flux.service.ts:3320-3322</div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box db">
-            <div class="box-title"><span class="badge step">D4</span> Quem publica o cancelamento</div>
+            <div class="box-title"><span class="badge step">D4</span> <span data-en="Who publishes the cancellation" data-pt="Quem publica o cancelamento">Who publishes the cancellation</span></div>
             <div class="box-desc">
-              Não é Redis pub/sub. Quando o usuário clica em cancelar, o backend chama <code>runCancellationService.requestCancel({ runId, flowId, userId })</code>. A função executa <code>INSERT INTO flow_run_states ... ON CONFLICT DO NOTHING</code>. O timer de <code>startNodeCancelWatch</code> descobre isso via polling do <code>SELECT</code>.
+              <span data-en="Not Redis pub/sub. When the user clicks cancel, the backend calls &lt;code&gt;runCancellationService.requestCancel({ runId, flowId, userId })&lt;/code&gt;. The function runs &lt;code&gt;INSERT INTO flow_run_states ... ON CONFLICT DO NOTHING&lt;/code&gt;. The &lt;code&gt;startNodeCancelWatch&lt;/code&gt; timer finds out via polling &lt;code&gt;SELECT&lt;/code&gt;." data-pt="Não é Redis pub/sub. Quando o usuário clica em cancelar, o backend chama &lt;code&gt;runCancellationService.requestCancel({ runId, flowId, userId })&lt;/code&gt;. A função executa &lt;code&gt;INSERT INTO flow_run_states ... ON CONFLICT DO NOTHING&lt;/code&gt;. O timer de &lt;code&gt;startNodeCancelWatch&lt;/code&gt; descobre isso via polling do &lt;code&gt;SELECT&lt;/code&gt;.">Not Redis pub/sub. When the user clicks cancel, the backend calls <code>runCancellationService.requestCancel({ runId, flowId, userId })</code>. The function runs <code>INSERT INTO flow_run_states ... ON CONFLICT DO NOTHING</code>. The <code>startNodeCancelWatch</code> timer finds out via polling <code>SELECT</code>.</span>
             </div>
             <div class="box-file">run-cancellation.service.ts:42-60</div>
           </div>
@@ -648,25 +664,25 @@
 
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Polling, não pub/sub</div>
-            <code>CANCEL_POLL_MS = 2000</code> (2 segundos). Cada nó ativo faz uma query a cada 2s no <code>flow_run_states</code>. Existe cache in-memory por 1.5s (<code>CANCEL_CHECK_TTL_MS</code>) para reduzir load em execuções com muitos nós paralelos.
-            <br><br>Latência do cancel. Usuário clica. Até 2s para o nó ver. <code>abort()</code> propaga para as libs. O SDK trata.
+            <div class="aside-title">🎯 <span data-en="Polling, not pub/sub" data-pt="Polling, não pub/sub">Polling, not pub/sub</span></div>
+            <span data-en="&lt;code&gt;CANCEL_POLL_MS = 2000&lt;/code&gt; (2 seconds). Each active node queries &lt;code&gt;flow_run_states&lt;/code&gt; every 2s. There is an in-memory cache for 1.5s (&lt;code&gt;CANCEL_CHECK_TTL_MS&lt;/code&gt;) to reduce load in executions with many parallel nodes." data-pt="&lt;code&gt;CANCEL_POLL_MS = 2000&lt;/code&gt; (2 segundos). Cada nó ativo faz uma query a cada 2s no &lt;code&gt;flow_run_states&lt;/code&gt;. Existe cache in-memory por 1.5s (&lt;code&gt;CANCEL_CHECK_TTL_MS&lt;/code&gt;) para reduzir load em execuções com muitos nós paralelos."><code>CANCEL_POLL_MS = 2000</code> (2 seconds). Each active node queries <code>flow_run_states</code> every 2s. There is an in-memory cache for 1.5s (<code>CANCEL_CHECK_TTL_MS</code>) to reduce load in executions with many parallel nodes.</span>
+            <br><br><span data-en="Cancel latency. User clicks. Up to 2s for the node to see. &lt;code&gt;abort()&lt;/code&gt; propagates to the libs. The SDK handles it." data-pt="Latência do cancel. Usuário clica. Até 2s para o nó ver. &lt;code&gt;abort()&lt;/code&gt; propaga para as libs. O SDK trata.">Cancel latency. User clicks. Up to 2s for the node to see. <code>abort()</code> propagates to the libs. The SDK handles it.</span>
           </div>
 
           <div class="aside">
-            <div class="aside-title">📎 Nomes de erros aceitos como abort</div>
-            <code>ABORT_ERROR_NAMES</code>. <code>'AbortError'</code>, <code>'CanceledError'</code>, <code>'McpError'</code>, <code>'APIUserAbortError'</code>. Se um provider (Anthropic SDK, axios, MCP client) lança erro com um desses nomes, é interpretado como abort, não como falha.
-            <br><br>Ver <code>node-cancel-watch.ts:7-12, 34-46</code>.
+            <div class="aside-title">📎 <span data-en="Error names accepted as abort" data-pt="Nomes de erros aceitos como abort">Error names accepted as abort</span></div>
+            <span data-en="&lt;code&gt;ABORT_ERROR_NAMES&lt;/code&gt;. &lt;code&gt;'AbortError'&lt;/code&gt;, &lt;code&gt;'CanceledError'&lt;/code&gt;, &lt;code&gt;'McpError'&lt;/code&gt;, &lt;code&gt;'APIUserAbortError'&lt;/code&gt;. If a provider (Anthropic SDK, axios, MCP client) throws an error with one of these names, it is interpreted as abort, not as a failure." data-pt="&lt;code&gt;ABORT_ERROR_NAMES&lt;/code&gt;. &lt;code&gt;'AbortError'&lt;/code&gt;, &lt;code&gt;'CanceledError'&lt;/code&gt;, &lt;code&gt;'McpError'&lt;/code&gt;, &lt;code&gt;'APIUserAbortError'&lt;/code&gt;. Se um provider (Anthropic SDK, axios, MCP client) lança erro com um desses nomes, é interpretado como abort, não como falha."><code>ABORT_ERROR_NAMES</code>. <code>'AbortError'</code>, <code>'CanceledError'</code>, <code>'McpError'</code>, <code>'APIUserAbortError'</code>. If a provider (Anthropic SDK, axios, MCP client) throws an error with one of these names, it is interpreted as abort, not as a failure.</span>
+            <br><br><span data-en="See &lt;code&gt;node-cancel-watch.ts:7-12, 34-46&lt;/code&gt;." data-pt="Ver &lt;code&gt;node-cancel-watch.ts:7-12, 34-46&lt;/code&gt;.">See <code>node-cancel-watch.ts:7-12, 34-46</code>.</span>
           </div>
 
           <div class="aside warn">
-            <div class="aside-title">⚠️ Timer sem parada. Memory leak potencial</div>
-            Se o loop principal executar <code>break</code> por qualquer motivo antes do <code>cancelWatch.stop()</code> no finally, o <code>setInterval</code> continua rodando indefinidamente naquele processo. O código atual chama <code>stop()</code> corretamente no finally. Qualquer refactor futuro precisa manter isso. Timer órfão é bug clássico com <code>setInterval</code>.
+            <div class="aside-title">⚠️ <span data-en="Timer without stop. Potential memory leak" data-pt="Timer sem parada. Memory leak potencial">Timer without stop. Potential memory leak</span></div>
+            <span data-en="If the main loop &lt;code&gt;break&lt;/code&gt;s for any reason before &lt;code&gt;cancelWatch.stop()&lt;/code&gt; in the finally, the &lt;code&gt;setInterval&lt;/code&gt; keeps running indefinitely in that process. Current code correctly calls &lt;code&gt;stop()&lt;/code&gt; in the finally. Any future refactor must keep this. Orphan timer is a classic bug with &lt;code&gt;setInterval&lt;/code&gt;." data-pt="Se o loop principal executar &lt;code&gt;break&lt;/code&gt; por qualquer motivo antes do &lt;code&gt;cancelWatch.stop()&lt;/code&gt; no finally, o &lt;code&gt;setInterval&lt;/code&gt; continua rodando indefinidamente naquele processo. O código atual chama &lt;code&gt;stop()&lt;/code&gt; corretamente no finally. Qualquer refactor futuro precisa manter isso. Timer órfão é bug clássico com &lt;code&gt;setInterval&lt;/code&gt;.">If the main loop <code>break</code>s for any reason before <code>cancelWatch.stop()</code> in the finally, the <code>setInterval</code> keeps running indefinitely in that process. Current code correctly calls <code>stop()</code> in the finally. Any future refactor must keep this. Orphan timer is a classic bug with <code>setInterval</code>.</span>
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 wasAborted() é síncrono</div>
-            <code>cancelWatch.wasAborted()</code> retorna <code>controller.signal.aborted</code>. Leitura síncrona da flag. Após o handler do nó rodar, o loop usa esse valor para decidir se ativa <code>stoppedByCancel = true</code> e faz break (linha 4583-4598).
+            <div class="aside-title">🔧 <span data-en="wasAborted() is synchronous" data-pt="wasAborted() é síncrono">wasAborted() is synchronous</span></div>
+            <span data-en="&lt;code&gt;cancelWatch.wasAborted()&lt;/code&gt; returns &lt;code&gt;controller.signal.aborted&lt;/code&gt;. Synchronous flag read. After the node's handler runs, the loop uses this value to decide whether to set &lt;code&gt;stoppedByCancel = true&lt;/code&gt; and break (line 4583-4598)." data-pt="&lt;code&gt;cancelWatch.wasAborted()&lt;/code&gt; retorna &lt;code&gt;controller.signal.aborted&lt;/code&gt;. Leitura síncrona da flag. Após o handler do nó rodar, o loop usa esse valor para decidir se ativa &lt;code&gt;stoppedByCancel = true&lt;/code&gt; e faz break (linha 4583-4598)."><code>cancelWatch.wasAborted()</code> returns <code>controller.signal.aborted</code>. Synchronous flag read. After the node's handler runs, the loop uses this value to decide whether to set <code>stoppedByCancel = true</code> and break (line 4583-4598).</span>
           </div>
         </div>
       </div>
@@ -675,25 +691,25 @@
 
   <!-- SUMMARY -->
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo — o que sai de 2.2a.</strong>
-    <br>• <code>cancelWatchEnabled</code>. Boolean. <code>true</code> se <code>runType</code> é canvas ou nested run.
-    <br>• <code>cancelRunKey</code>. String. <code>parentCancelRunKey</code> se veio, senão o próprio <code>runLogProcessId</code>.
-    <br>• <code>inFlightEnabled</code>. Boolean. Feature flag global <code>node_cancel_in_flight</code>.
-    <br>• Nenhum <code>AbortController</code> criado ainda. Só as três variáveis. O controller nasce depois, por nó, na linha 3308.
+    <span data-en="&lt;strong&gt;Summary — what 2.2a outputs.&lt;/strong&gt;" data-pt="&lt;strong&gt;Resumo — o que sai de 2.2a.&lt;/strong&gt;"><strong>Summary — what 2.2a outputs.</strong></span>
+    <br>• <span data-en="&lt;code&gt;cancelWatchEnabled&lt;/code&gt;. Boolean. &lt;code&gt;true&lt;/code&gt; if &lt;code&gt;runType&lt;/code&gt; is canvas or nested run." data-pt="&lt;code&gt;cancelWatchEnabled&lt;/code&gt;. Boolean. &lt;code&gt;true&lt;/code&gt; se &lt;code&gt;runType&lt;/code&gt; é canvas ou nested run."><code>cancelWatchEnabled</code>. Boolean. <code>true</code> if <code>runType</code> is canvas or nested run.</span>
+    <br>• <span data-en="&lt;code&gt;cancelRunKey&lt;/code&gt;. String. &lt;code&gt;parentCancelRunKey&lt;/code&gt; if provided, otherwise the &lt;code&gt;runLogProcessId&lt;/code&gt; itself." data-pt="&lt;code&gt;cancelRunKey&lt;/code&gt;. String. &lt;code&gt;parentCancelRunKey&lt;/code&gt; se veio, senão o próprio &lt;code&gt;runLogProcessId&lt;/code&gt;."><code>cancelRunKey</code>. String. <code>parentCancelRunKey</code> if provided, otherwise the <code>runLogProcessId</code> itself.</span>
+    <br>• <span data-en="&lt;code&gt;inFlightEnabled&lt;/code&gt;. Boolean. Global feature flag &lt;code&gt;node_cancel_in_flight&lt;/code&gt;." data-pt="&lt;code&gt;inFlightEnabled&lt;/code&gt;. Boolean. Feature flag global &lt;code&gt;node_cancel_in_flight&lt;/code&gt;."><code>inFlightEnabled</code>. Boolean. Global feature flag <code>node_cancel_in_flight</code>.</span>
+    <br>• <span data-en="No &lt;code&gt;AbortController&lt;/code&gt; created yet. Only the three variables. The controller is born later, per node, at line 3308." data-pt="Nenhum &lt;code&gt;AbortController&lt;/code&gt; criado ainda. Só as três variáveis. O controller nasce depois, por nó, na linha 3308.">No <code>AbortController</code> created yet. Only the three variables. The controller is born later, per node, at line 3308.</span>
   </div>
 
   <div class="note">
-    <strong>Observações para migração.</strong>
-    <br>• A resolução dos três gates é business logic pura. Replicável no worker. Precisa apenas de <code>runType</code>, <code>isNestedRun</code>, <code>parentRunId</code> e acesso à feature flag.
-    <br>• Hoje o polling do banco (2s) e o <code>setInterval</code> vivem no processo do backend. No worker (Temporal), o padrão idiomático é usar signals do Temporal em vez de polling. Mais eficiente. Sem query a cada 2s por nó ativo.
-    <br>• O <code>AsyncLocalStorage</code> (<code>nodeCancelContext</code>) que carrega o <code>AbortSignal</code> para funções filhas não funciona igual no worker. Activities do Temporal rodam em contexto próprio. Alternativas. Passar o signal explicitamente ou usar <code>Context.current().cancellationSignal</code> do Temporal.
-    <br>• A feature flag <code>node_cancel_in_flight</code> pode ser reaproveitada no worker. Mesma chave, mesma leitura via Postgres. Não precisa migrar a tabela.
-    <br>• Execuções no worker herdam cancelamento gratuitamente via mecanismo do Temporal. Não precisa duplicar a lógica de <code>flow_run_states</code>. A migração incremental exige os dois sistemas coexistindo. Backend inline usa polling. Worker usa signal.
+    <span data-en="&lt;strong&gt;Migration notes.&lt;/strong&gt;" data-pt="&lt;strong&gt;Observações para migração.&lt;/strong&gt;"><strong>Migration notes.</strong></span>
+    <br>• <span data-en="Resolving the three gates is pure business logic. Replicable in the worker. It only needs &lt;code&gt;runType&lt;/code&gt;, &lt;code&gt;isNestedRun&lt;/code&gt;, &lt;code&gt;parentRunId&lt;/code&gt; and access to the feature flag." data-pt="A resolução dos três gates é business logic pura. Replicável no worker. Precisa apenas de &lt;code&gt;runType&lt;/code&gt;, &lt;code&gt;isNestedRun&lt;/code&gt;, &lt;code&gt;parentRunId&lt;/code&gt; e acesso à feature flag.">Resolving the three gates is pure business logic. Replicable in the worker. It only needs <code>runType</code>, <code>isNestedRun</code>, <code>parentRunId</code> and access to the feature flag.</span>
+    <br>• <span data-en="Today the DB polling (2s) and the &lt;code&gt;setInterval&lt;/code&gt; live in the backend process. In the worker (Temporal), the idiomatic pattern is to use Temporal signals instead of polling. More efficient. No 2s query per active node." data-pt="Hoje o polling do banco (2s) e o &lt;code&gt;setInterval&lt;/code&gt; vivem no processo do backend. No worker (Temporal), o padrão idiomático é usar signals do Temporal em vez de polling. Mais eficiente. Sem query a cada 2s por nó ativo.">Today the DB polling (2s) and the <code>setInterval</code> live in the backend process. In the worker (Temporal), the idiomatic pattern is to use Temporal signals instead of polling. More efficient. No 2s query per active node.</span>
+    <br>• <span data-en="The &lt;code&gt;AsyncLocalStorage&lt;/code&gt; (&lt;code&gt;nodeCancelContext&lt;/code&gt;) that carries the &lt;code&gt;AbortSignal&lt;/code&gt; to child functions does not work the same in the worker. Temporal activities run in their own context. Alternatives. Pass the signal explicitly or use Temporal's &lt;code&gt;Context.current().cancellationSignal&lt;/code&gt;." data-pt="O &lt;code&gt;AsyncLocalStorage&lt;/code&gt; (&lt;code&gt;nodeCancelContext&lt;/code&gt;) que carrega o &lt;code&gt;AbortSignal&lt;/code&gt; para funções filhas não funciona igual no worker. Activities do Temporal rodam em contexto próprio. Alternativas. Passar o signal explicitamente ou usar &lt;code&gt;Context.current().cancellationSignal&lt;/code&gt; do Temporal.">The <code>AsyncLocalStorage</code> (<code>nodeCancelContext</code>) that carries the <code>AbortSignal</code> to child functions does not work the same in the worker. Temporal activities run in their own context. Alternatives. Pass the signal explicitly or use Temporal's <code>Context.current().cancellationSignal</code>.</span>
+    <br>• <span data-en="The feature flag &lt;code&gt;node_cancel_in_flight&lt;/code&gt; can be reused in the worker. Same key, same read via Postgres. No need to migrate the table." data-pt="A feature flag &lt;code&gt;node_cancel_in_flight&lt;/code&gt; pode ser reaproveitada no worker. Mesma chave, mesma leitura via Postgres. Não precisa migrar a tabela.">The feature flag <code>node_cancel_in_flight</code> can be reused in the worker. Same key, same read via Postgres. No need to migrate the table.</span>
+    <br>• <span data-en="Executions on the worker inherit cancellation for free via Temporal's mechanism. No need to duplicate the &lt;code&gt;flow_run_states&lt;/code&gt; logic. Incremental migration requires the two systems coexisting. Inline backend uses polling. Worker uses signal." data-pt="Execuções no worker herdam cancelamento gratuitamente via mecanismo do Temporal. Não precisa duplicar a lógica de &lt;code&gt;flow_run_states&lt;/code&gt;. A migração incremental exige os dois sistemas coexistindo. Backend inline usa polling. Worker usa signal.">Executions on the worker inherit cancellation for free via Temporal's mechanism. No need to duplicate the <code>flow_run_states</code> logic. Incremental migration requires the two systems coexisting. Inline backend uses polling. Worker uses signal.</span>
   </div>
 
   <!-- FOOTER NAV -->
   <div class="page-footer-nav">
-    <a href="../index.html#step-2-2a" class="back-btn">← Voltar ao diagrama principal</a>
+    <a href="../index.html#step-2-2a" class="back-btn"><span data-en="← Back to main diagram" data-pt="← Voltar ao diagrama principal">← Back to main diagram</span></a>
   </div>
 
 </div>
@@ -723,5 +739,6 @@
   });
 })();
 </script>
+<script src="../_assets/i18n.js" defer></script>
 </body>
 </html>

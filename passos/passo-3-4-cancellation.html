@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Cancellation check — feature flag NODE_CANCEL_IN_FLIGHT | Detalhamento</title>
+<title>Cancellation check — feature flag NODE_CANCEL_IN_FLIGHT | Detail</title>
+<link rel="stylesheet" href="../_assets/i18n.css">
+<link rel="stylesheet" href="../_assets/header.css">
 <style>
   * { box-sizing: border-box; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F1F5F9; color: #0F172A; margin: 0; padding: 32px 24px 80px; line-height: 1.4; }
@@ -167,48 +169,64 @@
 </head>
 <body>
 <div class="container">
+<div class="doc-nav">
+  <nav class="doc-tabs" aria-label="Documentation sections">
+    <a href="../index.html" class="doc-tab is-active"><span data-en="Current architecture" data-pt="Arquitetura atual">Current architecture</span></a>
+    <a href="../arquitetura-v2.html" class="doc-tab"><span data-en="v2 architecture" data-pt="Arquitetura v2">v2 architecture</span></a>
+    <a href="../arquitetura-v2-complemento.html" class="doc-tab"><span data-en="Plan as tasks" data-pt="Plano em tarefas">Plan as tasks</span></a>
+    <a href="../timeline/index.html" class="doc-tab"><span data-en="Timeline" data-pt="Timeline">Timeline</span></a>
+  </nav>
+  <div class="lang-sw" role="group" aria-label="Language">
+    <button type="button" data-lang="en" aria-pressed="true">EN-US</button>
+    <button type="button" data-lang="pt" aria-pressed="false">PT-BR</button>
+  </div>
+</div>
+
+
+
 
   <div class="page-nav">
     <div class="breadcrumb">
-      <a href="../index.html">📋 Execução de Agente</a>
+      <a href="../index.html">📋 <span data-en="Agent execution" data-pt="Execução de Agente">Agent execution</span></a>
       <span class="sep">›</span>
-      <span>Cancellation check — Detalhamento</span>
+      <span data-en="Cancellation check — Detail" data-pt="Cancellation check — Detalhamento">Cancellation check — Detail</span>
     </div>
-    <a href="../index.html#step-3-cancel" class="back-btn">← Voltar ao diagrama</a>
+    <div style="display:flex;gap:10px;align-items:center">
+      <a href="../index.html#step-3-cancel" class="back-btn"><span data-en="← Back to diagram" data-pt="← Voltar ao diagrama">← Back to diagram</span></a>
+      
+    </div>
   </div>
 
-  <div class="page-header">
-    <span class="icon">🛑</span>
+  <div class="hero">
+    <div class="kicker"><span class="ico">🛑</span></div>
     <h1>Cancellation check — feature flag NODE_CANCEL_IN_FLIGHT</h1>
-  </div>
-  <div class="page-sub">
-    Bloco espalhado em <code>flux.service.ts:3184-3194</code> (setup), <code>3229-3239</code> (check entre nós), <code>3251-3269</code> (start watch por nó) e <code>4516-4530</code> (finish quando abortado). Sistema que permite o usuário cancelar uma execução em andamento. Hoje só habilitado para <code>runType='canvas'</code>.
+    <div class="goal"><span data-en="Block scattered in &lt;code&gt;flux.service.ts:3184-3194&lt;/code&gt; (setup), &lt;code&gt;3229-3239&lt;/code&gt; (check between nodes), &lt;code&gt;3251-3269&lt;/code&gt; (start watch per node) and &lt;code&gt;4516-4530&lt;/code&gt; (finish when aborted). System that lets the user cancel a running execution. Today only enabled for &lt;code&gt;runType='canvas'&lt;/code&gt;." data-pt="Bloco espalhado em &lt;code&gt;flux.service.ts:3184-3194&lt;/code&gt; (setup), &lt;code&gt;3229-3239&lt;/code&gt; (check entre nós), &lt;code&gt;3251-3269&lt;/code&gt; (start watch por nó) e &lt;code&gt;4516-4530&lt;/code&gt; (finish quando abortado). Sistema que permite o usuário cancelar uma execução em andamento. Hoje só habilitado para &lt;code&gt;runType='canvas'&lt;/code&gt;.">Block scattered in <code>flux.service.ts:3184-3194</code> (setup), <code>3229-3239</code> (check between nodes), <code>3251-3269</code> (start watch per node) and <code>4516-4530</code> (finish when aborted). System that lets the user cancel a running execution. Today only enabled for <code>runType='canvas'</code>.</span></div>
   </div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
-    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <div class="step-friendly-title"><span data-en="In short — what this step does" data-pt="Em resumo — o que esse passo faz">In short — what this step does</span></div>
     <ul>
-      <li><strong>Porteiro decide se a execução é cancelável.</strong> <code>shouldWatchCancellation</code> só libera watch para <code>runType='canvas'</code> (editor) ou sub-runs que herdam do pai. API, chatbot, webhook e batch <em>não</em> são canceláveis. Semântica request-response não faz sentido interromper do servidor.</li>
-      <li><strong>Vigia entre nós, polling passivo.</strong> Antes de cada iteração do while, <code>isCancelRequested(runKey)</code> consulta <code>flow_run_states</code> (com cache in-memory de 1.5s). Se cancel pendente, seta <code>stoppedByCancel=true</code> e faz <code>break</code>. Não interrompe nada em execução. Só evita começar o próximo nó.</li>
-      <li><strong>Vigia dentro do nó (feature flag OFF em prod).</strong> Se <code>NODE_CANCEL_IN_FLIGHT_FLAG</code> estiver ligada, <code>startNodeCancelWatch</code> monta um <code>setInterval</code> de 2s por nó com <code>AbortController</code>. Quando o poll detecta cancel, chama <code>controller.abort()</code>. Custo: 100 nós = 100 timers paralelos. Provável motivo do flag ainda estar off.</li>
-      <li><strong>Aborto cooperativo via ALS.</strong> <code>nodeCancelContext</code> (outra AsyncLocalStorage) carrega o <code>AbortSignal</code> para <em>interceptors globais de fetch e axios</em>. Cada request HTTP feita pelo handler ganha o signal automaticamente. Se aborta, levanta <code>AbortError</code>. O handler nem precisa saber que existe cancel. <em>Não é preemptivo</em>. SQL síncrono ou cálculo em memória continua rodando.</li>
-      <li><strong>Encerrador limpa e persiste.</strong> Depois do <code>AbortError</code>, <code>finishCancelledNode</code> zera <code>errorMessage</code> (cancel <em>não</em> é erro. UI mostra cinza, não vermelho). Faz UPDATE em <code>node_executions</code> para <code>executionStatus='CANCELLED'</code>, dispara WebSocket, marca no scheduler e sai do loop.</li>
-      <li><strong>Saída.</strong> Caminho feliz vira 100% no-op. Se cancelou, a execução termina com status "cancelado limpo" (não erro fatal) e a Fase 4 fecha o cleanup normalmente.</li>
+      <li><span data-en="&lt;strong&gt;Gatekeeper decides if execution is cancellable.&lt;/strong&gt; &lt;code&gt;shouldWatchCancellation&lt;/code&gt; only enables watch for &lt;code&gt;runType='canvas'&lt;/code&gt; (editor) or sub-runs that inherit from parent. API, chatbot, webhook and batch are &lt;em&gt;not&lt;/em&gt; cancellable. Request-response semantics don't make sense to interrupt from the server." data-pt="&lt;strong&gt;Porteiro decide se a execução é cancelável.&lt;/strong&gt; &lt;code&gt;shouldWatchCancellation&lt;/code&gt; só libera watch para &lt;code&gt;runType='canvas'&lt;/code&gt; (editor) ou sub-runs que herdam do pai. API, chatbot, webhook e batch &lt;em&gt;não&lt;/em&gt; são canceláveis. Semântica request-response não faz sentido interromper do servidor."><strong>Gatekeeper decides if execution is cancellable.</strong> <code>shouldWatchCancellation</code> only enables watch for <code>runType='canvas'</code> (editor) or sub-runs that inherit from parent. API, chatbot, webhook and batch are <em>not</em> cancellable. Request-response semantics don't make sense to interrupt from the server.</span></li>
+      <li><span data-en="&lt;strong&gt;Watcher between nodes, passive polling.&lt;/strong&gt; Before each while iteration, &lt;code&gt;isCancelRequested(runKey)&lt;/code&gt; queries &lt;code&gt;flow_run_states&lt;/code&gt; (with 1.5s in-memory cache). If cancel pending, sets &lt;code&gt;stoppedByCancel=true&lt;/code&gt; and does &lt;code&gt;break&lt;/code&gt;. Doesn't interrupt anything in execution. Just prevents starting the next node." data-pt="&lt;strong&gt;Vigia entre nós, polling passivo.&lt;/strong&gt; Antes de cada iteração do while, &lt;code&gt;isCancelRequested(runKey)&lt;/code&gt; consulta &lt;code&gt;flow_run_states&lt;/code&gt; (com cache in-memory de 1.5s). Se cancel pendente, seta &lt;code&gt;stoppedByCancel=true&lt;/code&gt; e faz &lt;code&gt;break&lt;/code&gt;. Não interrompe nada em execução. Só evita começar o próximo nó."><strong>Watcher between nodes, passive polling.</strong> Before each while iteration, <code>isCancelRequested(runKey)</code> queries <code>flow_run_states</code> (with 1.5s in-memory cache). If cancel pending, sets <code>stoppedByCancel=true</code> and does <code>break</code>. Doesn't interrupt anything in execution. Just prevents starting the next node.</span></li>
+      <li><span data-en="&lt;strong&gt;Watcher inside node (feature flag OFF in prod).&lt;/strong&gt; If &lt;code&gt;NODE_CANCEL_IN_FLIGHT_FLAG&lt;/code&gt; is enabled, &lt;code&gt;startNodeCancelWatch&lt;/code&gt; sets up a 2s &lt;code&gt;setInterval&lt;/code&gt; per node with &lt;code&gt;AbortController&lt;/code&gt;. When poll detects cancel, calls &lt;code&gt;controller.abort()&lt;/code&gt;. Cost: 100 nodes = 100 parallel timers. Likely reason the flag is still off." data-pt="&lt;strong&gt;Vigia dentro do nó (feature flag OFF em prod).&lt;/strong&gt; Se &lt;code&gt;NODE_CANCEL_IN_FLIGHT_FLAG&lt;/code&gt; estiver ligada, &lt;code&gt;startNodeCancelWatch&lt;/code&gt; monta um &lt;code&gt;setInterval&lt;/code&gt; de 2s por nó com &lt;code&gt;AbortController&lt;/code&gt;. Quando o poll detecta cancel, chama &lt;code&gt;controller.abort()&lt;/code&gt;. Custo: 100 nós = 100 timers paralelos. Provável motivo do flag ainda estar off."><strong>Watcher inside node (feature flag OFF in prod).</strong> If <code>NODE_CANCEL_IN_FLIGHT_FLAG</code> is enabled, <code>startNodeCancelWatch</code> sets up a 2s <code>setInterval</code> per node with <code>AbortController</code>. When poll detects cancel, calls <code>controller.abort()</code>. Cost: 100 nodes = 100 parallel timers. Likely reason the flag is still off.</span></li>
+      <li><span data-en="&lt;strong&gt;Cooperative abort via ALS.&lt;/strong&gt; &lt;code&gt;nodeCancelContext&lt;/code&gt; (another AsyncLocalStorage) carries the &lt;code&gt;AbortSignal&lt;/code&gt; for &lt;em&gt;global fetch and axios interceptors&lt;/em&gt;. Every HTTP request made by the handler gets the signal automatically. If aborts, throws &lt;code&gt;AbortError&lt;/code&gt;. The handler doesn't even need to know cancel exists. &lt;em&gt;Not preemptive&lt;/em&gt;. Synchronous SQL or in-memory computation keeps running." data-pt="&lt;strong&gt;Aborto cooperativo via ALS.&lt;/strong&gt; &lt;code&gt;nodeCancelContext&lt;/code&gt; (outra AsyncLocalStorage) carrega o &lt;code&gt;AbortSignal&lt;/code&gt; para &lt;em&gt;interceptors globais de fetch e axios&lt;/em&gt;. Cada request HTTP feita pelo handler ganha o signal automaticamente. Se aborta, levanta &lt;code&gt;AbortError&lt;/code&gt;. O handler nem precisa saber que existe cancel. &lt;em&gt;Não é preemptivo&lt;/em&gt;. SQL síncrono ou cálculo em memória continua rodando."><strong>Cooperative abort via ALS.</strong> <code>nodeCancelContext</code> (another AsyncLocalStorage) carries the <code>AbortSignal</code> for <em>global fetch and axios interceptors</em>. Every HTTP request made by the handler gets the signal automatically. If aborts, throws <code>AbortError</code>. The handler doesn't even need to know cancel exists. <em>Not preemptive</em>. Synchronous SQL or in-memory computation keeps running.</span></li>
+      <li><span data-en="&lt;strong&gt;Finisher cleans up and persists.&lt;/strong&gt; After &lt;code&gt;AbortError&lt;/code&gt;, &lt;code&gt;finishCancelledNode&lt;/code&gt; nulls out &lt;code&gt;errorMessage&lt;/code&gt; (cancel is &lt;em&gt;not&lt;/em&gt; error. UI shows gray, not red). Does UPDATE on &lt;code&gt;node_executions&lt;/code&gt; to &lt;code&gt;executionStatus='CANCELLED'&lt;/code&gt;, fires WebSocket, marks in scheduler and exits the loop." data-pt="&lt;strong&gt;Encerrador limpa e persiste.&lt;/strong&gt; Depois do &lt;code&gt;AbortError&lt;/code&gt;, &lt;code&gt;finishCancelledNode&lt;/code&gt; zera &lt;code&gt;errorMessage&lt;/code&gt; (cancel &lt;em&gt;não&lt;/em&gt; é erro. UI mostra cinza, não vermelho). Faz UPDATE em &lt;code&gt;node_executions&lt;/code&gt; para &lt;code&gt;executionStatus='CANCELLED'&lt;/code&gt;, dispara WebSocket, marca no scheduler e sai do loop."><strong>Finisher cleans up and persists.</strong> After <code>AbortError</code>, <code>finishCancelledNode</code> nulls out <code>errorMessage</code> (cancel is <em>not</em> error. UI shows gray, not red). Does UPDATE on <code>node_executions</code> to <code>executionStatus='CANCELLED'</code>, fires WebSocket, marks in scheduler and exits the loop.</span></li>
+      <li><span data-en="&lt;strong&gt;Exit.&lt;/strong&gt; Happy path becomes 100% no-op. If cancelled, execution ends with &quot;clean cancelled&quot; status (not fatal error) and Phase 4 closes cleanup normally." data-pt="&lt;strong&gt;Saída.&lt;/strong&gt; Caminho feliz vira 100% no-op. Se cancelou, a execução termina com status &quot;cancelado limpo&quot; (não erro fatal) e a Fase 4 fecha o cleanup normalmente."><strong>Exit.</strong> Happy path becomes 100% no-op. If cancelled, execution ends with "clean cancelled" status (not fatal error) and Phase 4 closes cleanup normally.</span></li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto.</strong> Este é o único passo do diagrama <span class="badge new">novo pós-doc</span>. Não existia na versão original documentada. Foi adicionado depois para atender o botão "cancelar" no editor. Funciona em <strong>dois níveis</strong>. (1) Checagem <em>entre</em> nós (sempre que <code>watchEnabled=true</code>). (2) Checagem <em>durante</em> o nó via <code>AbortSignal</code> em fetch e axios (só quando feature flag <code>NODE_CANCEL_IN_FLIGHT_FLAG</code> está ligada).
+    <span data-en="&lt;strong&gt;Context.&lt;/strong&gt; This is the only step in the diagram &lt;span class=&quot;badge new&quot;&gt;new post-doc&lt;/span&gt;. Didn't exist in the original documented version. Was added later to support the &quot;cancel&quot; button in the editor. Works at &lt;strong&gt;two levels&lt;/strong&gt;. (1) Check &lt;em&gt;between&lt;/em&gt; nodes (whenever &lt;code&gt;watchEnabled=true&lt;/code&gt;). (2) Check &lt;em&gt;during&lt;/em&gt; node execution via &lt;code&gt;AbortSignal&lt;/code&gt; in fetch and axios (only when feature flag &lt;code&gt;NODE_CANCEL_IN_FLIGHT_FLAG&lt;/code&gt; is enabled)." data-pt="&lt;strong&gt;Contexto.&lt;/strong&gt; Este é o único passo do diagrama &lt;span class=&quot;badge new&quot;&gt;novo pós-doc&lt;/span&gt;. Não existia na versão original documentada. Foi adicionado depois para atender o botão &quot;cancelar&quot; no editor. Funciona em &lt;strong&gt;dois níveis&lt;/strong&gt;. (1) Checagem &lt;em&gt;entre&lt;/em&gt; nós (sempre que &lt;code&gt;watchEnabled=true&lt;/code&gt;). (2) Checagem &lt;em&gt;durante&lt;/em&gt; o nó via &lt;code&gt;AbortSignal&lt;/code&gt; em fetch e axios (só quando feature flag &lt;code&gt;NODE_CANCEL_IN_FLIGHT_FLAG&lt;/code&gt; está ligada)."><strong>Context.</strong> This is the only step in the diagram <span class="badge new">new post-doc</span>. Didn't exist in the original documented version. Was added later to support the "cancel" button in the editor. Works at <strong>two levels</strong>. (1) Check <em>between</em> nodes (whenever <code>watchEnabled=true</code>). (2) Check <em>during</em> node execution via <code>AbortSignal</code> in fetch and axios (only when feature flag <code>NODE_CANCEL_IN_FLIGHT_FLAG</code> is enabled).</span>
   </div>
 
   <!-- Overview chain -->
   <div class="overview-mini">
-    <div class="overview-mini-title">Cadeia do sistema de cancellation</div>
+    <div class="overview-mini-title"><span data-en="Cancellation system chain" data-pt="Cadeia do sistema de cancellation">Cancellation system chain</span></div>
     <div class="overview-chain">
       <a href="#fn-a" class="overview-chip"><span class="lbl">A</span>shouldWatchCancellation + runKey</a>
       <span class="overview-sep">→</span>
-      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>isCancelRequested (check entre nós)</a>
+      <a href="#fn-b" class="overview-chip"><span class="lbl">B</span><span data-en="isCancelRequested (check between nodes)" data-pt="isCancelRequested (check entre nós)">isCancelRequested (check between nodes)</span></a>
       <span class="overview-sep">→</span>
       <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>startNodeCancelWatch (in-flight)</a>
       <span class="overview-sep">→</span>
@@ -217,7 +235,7 @@
       <a href="#fn-e" class="overview-chip"><span class="lbl">E</span>finishCancelledNode</a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado quando cancelado. <code>stoppedByCancel=true</code>, break do loop, nó fica com <code>executionStatus='CANCELLED'</code> em <code>node_executions</code>, WebSocket avisa o cliente. Sem cancel, prossegue normalmente para o passo 3.5.
+      <span data-en="Result when cancelled. &lt;code&gt;stoppedByCancel=true&lt;/code&gt;, break from loop, node ends with &lt;code&gt;executionStatus='CANCELLED'&lt;/code&gt; in &lt;code&gt;node_executions&lt;/code&gt;, WebSocket notifies client. Without cancel, proceeds normally to step 3.5." data-pt="Resultado quando cancelado. &lt;code&gt;stoppedByCancel=true&lt;/code&gt;, break do loop, nó fica com &lt;code&gt;executionStatus='CANCELLED'&lt;/code&gt; em &lt;code&gt;node_executions&lt;/code&gt;, WebSocket avisa o cliente. Sem cancel, prossegue normalmente para o passo 3.5.">Result when cancelled. <code>stoppedByCancel=true</code>, break from loop, node ends with <code>executionStatus='CANCELLED'</code> in <code>node_executions</code>, WebSocket notifies client. Without cancel, proceeds normally to step 3.5.</span>
     </div>
   </div>
 
@@ -237,14 +255,22 @@
         cancelWatchEnabled = shouldWatchCancellation({ runType, isNestedRun }) · cancelRunKey = resolveCancelRunKey({ runLogProcessId, parentRunId })
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Setup <em>uma vez por execução</em>, antes do while começar. Decide se a execução é elegível para observar cancelamento e qual chave usar para consultar o status (parentRunId em execuções aninhadas, processId próprio caso contrário).
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Setup &lt;em&gt;once per execution&lt;/em&gt;, before the while starts. Decides if execution is eligible to observe cancellation and which key to use to query the status (parentRunId in nested executions, own processId otherwise)." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Setup &lt;em&gt;uma vez por execução&lt;/em&gt;, antes do while começar. Decide se a execução é elegível para observar cancelamento e qual chave usar para consultar o status (parentRunId em execuções aninhadas, processId próprio caso contrário)."><strong>Purpose.</strong> Setup <em>once per execution</em>, before the while starts. Decides if execution is eligible to observe cancellation and which key to use to query the status (parentRunId in nested executions, own processId otherwise).</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> É o <em>porteiro</em> que responde três perguntas antes da execução começar.
-        <br>(1) "Este tipo de execução permite cancelar?" Só canvas (do editor) permite. API, chatbot, form, batch e webhook não. É intencional. Request-response síncrono não faz sentido cancelar do lado servidor sem o cliente pedir.
-        <br>(2) "Este é um sub-run herdando de um pai?" Se sim, herda watch do pai. Cancelar o pai propaga para todos os filhos.
-        <br>(3) "Qual chave usar para consultar cancelamento?" Se é nested, usa o id do <em>root</em> (todos os filhos consultam a mesma chave e cancelam juntos). Se é top-level, usa o próprio processId.
-        <br>Depois vem a segunda camada. Mesmo com watch habilitado, só se a <em>feature flag</em> <code>NODE_CANCEL_IN_FLIGHT_FLAG</code> estiver ligada é que o cancel <em>durante</em> a execução do nó funciona (polling e AbortSignal). Sem a flag, só checa cancel <em>entre</em> nós. Um LLM streaming a resposta continua até terminar, mesmo se o usuário clicou "cancelar". A flag está desligada em produção hoje. Sugere duas coisas. (a) O sistema é novo e ainda não passou em bateria de testes em larga escala. (b) O custo de rodar 60 setIntervals paralelos em execuções grandes ainda está sendo avaliado.
+        <span data-en="&lt;strong&gt;In short.&lt;/strong&gt; It's the &lt;em&gt;gatekeeper&lt;/em&gt; that answers three questions before execution starts.
+        &lt;br&gt;(1) &quot;Does this execution type allow cancel?&quot; Only canvas (from editor) allows. API, chatbot, form, batch and webhook don't. Intentional. Synchronous request-response makes no sense to cancel from server side without client asking.
+        &lt;br&gt;(2) &quot;Is this a sub-run inheriting from a parent?&quot; If yes, inherits watch from parent. Cancelling parent propagates to all children.
+        &lt;br&gt;(3) &quot;Which key to use to query cancellation?&quot; If nested, uses &lt;em&gt;root&lt;/em&gt; id (all children query same key and cancel together). If top-level, uses own processId.
+        &lt;br&gt;Then comes the second layer. Even with watch enabled, only if &lt;em&gt;feature flag&lt;/em&gt; &lt;code&gt;NODE_CANCEL_IN_FLIGHT_FLAG&lt;/code&gt; is on does cancel &lt;em&gt;during&lt;/em&gt; node execution work (polling and AbortSignal). Without the flag, only checks cancel &lt;em&gt;between&lt;/em&gt; nodes. An LLM streaming the response continues to the end, even if user clicked &quot;cancel&quot;. The flag is off in production today. Suggests two things. (a) System is new and hasn't gone through large-scale test battery. (b) Cost of running 60 parallel setIntervals in large executions is still being evaluated." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; É o &lt;em&gt;porteiro&lt;/em&gt; que responde três perguntas antes da execução começar.
+        &lt;br&gt;(1) &quot;Este tipo de execução permite cancelar?&quot; Só canvas (do editor) permite. API, chatbot, form, batch e webhook não. É intencional. Request-response síncrono não faz sentido cancelar do lado servidor sem o cliente pedir.
+        &lt;br&gt;(2) &quot;Este é um sub-run herdando de um pai?&quot; Se sim, herda watch do pai. Cancelar o pai propaga para todos os filhos.
+        &lt;br&gt;(3) &quot;Qual chave usar para consultar cancelamento?&quot; Se é nested, usa o id do &lt;em&gt;root&lt;/em&gt; (todos os filhos consultam a mesma chave e cancelam juntos). Se é top-level, usa o próprio processId.
+        &lt;br&gt;Depois vem a segunda camada. Mesmo com watch habilitado, só se a &lt;em&gt;feature flag&lt;/em&gt; &lt;code&gt;NODE_CANCEL_IN_FLIGHT_FLAG&lt;/code&gt; estiver ligada é que o cancel &lt;em&gt;durante&lt;/em&gt; a execução do nó funciona (polling e AbortSignal). Sem a flag, só checa cancel &lt;em&gt;entre&lt;/em&gt; nós. Um LLM streaming a resposta continua até terminar, mesmo se o usuário clicou &quot;cancelar&quot;. A flag está desligada em produção hoje. Sugere duas coisas. (a) O sistema é novo e ainda não passou em bateria de testes em larga escala. (b) O custo de rodar 60 setIntervals paralelos em execuções grandes ainda está sendo avaliado."><strong>In short.</strong> It's the <em>gatekeeper</em> that answers three questions before execution starts.
+        <br>(1) "Does this execution type allow cancel?" Only canvas (from editor) allows. API, chatbot, form, batch and webhook don't. Intentional. Synchronous request-response makes no sense to cancel from server side without client asking.
+        <br>(2) "Is this a sub-run inheriting from a parent?" If yes, inherits watch from parent. Cancelling parent propagates to all children.
+        <br>(3) "Which key to use to query cancellation?" If nested, uses <em>root</em> id (all children query same key and cancel together). If top-level, uses own processId.
+        <br>Then comes the second layer. Even with watch enabled, only if <em>feature flag</em> <code>NODE_CANCEL_IN_FLIGHT_FLAG</code> is on does cancel <em>during</em> node execution work (polling and AbortSignal). Without the flag, only checks cancel <em>between</em> nodes. An LLM streaming the response continues to the end, even if user clicked "cancel". The flag is off in production today. Suggests two things. (a) System is new and hasn't gone through large-scale test battery. (b) Cost of running 60 parallel setIntervals in large executions is still being evaluated.</span>
       </div>
 
       <div class="fn-body-cols">
@@ -263,7 +289,7 @@
           <div class="arrow">↓</div>
 
           <div class="cascade">
-            <div class="cascade-title">🪜 Elegibilidade de watch</div>
+            <div class="cascade-title"><span data-en="🪜 Watch eligibility" data-pt="🪜 Elegibilidade de watch">🪜 Watch eligibility</span></div>
             <div class="cascade-step">
               <span class="cascade-num">1</span>
               <span class="cond">runType === 'canvas'</span>
@@ -271,13 +297,13 @@
             </div>
             <div class="cascade-step">
               <span class="cascade-num">2</span>
-              <span class="cond">isNestedRun (parent enfileirou este)</span>
-              <span class="result pass">watchEnabled = true (herda do pai)</span>
+              <span class="cond"><span data-en="isNestedRun (parent enqueued this)" data-pt="isNestedRun (parent enfileirou este)">isNestedRun (parent enqueued this)</span></span>
+              <span class="result pass"><span data-en="watchEnabled = true (inherits from parent)" data-pt="watchEnabled = true (herda do pai)">watchEnabled = true (inherits from parent)</span></span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">3</span>
               <span class="cond">runType ∈ { api, chatbot, formapi, batch, webhook }</span>
-              <span class="result deny">watchEnabled = false (não cancelável)</span>
+              <span class="result deny"><span data-en="watchEnabled = false (not cancellable)" data-pt="watchEnabled = false (não cancelável)">watchEnabled = false (not cancellable)</span></span>
             </div>
           </div>
           <div class="arrow">↓</div>
@@ -285,16 +311,16 @@
           <div class="box backend">
             <div class="box-title"><span class="badge step">A1</span> resolveCancelRunKey</div>
             <div class="box-desc">
-              <code>parentRunId || runLogProcessId</code>. Se este é um sub-run (nested), usa o id do <em>root</em>. Cancelar o pai cancela todos os filhos automaticamente. Se é top-level, usa o próprio processId.
+              <span data-en="&lt;code&gt;parentRunId || runLogProcessId&lt;/code&gt;. If this is a sub-run (nested), uses the &lt;em&gt;root&lt;/em&gt; id. Cancelling parent cancels all children automatically. If top-level, uses own processId." data-pt="&lt;code&gt;parentRunId || runLogProcessId&lt;/code&gt;. Se este é um sub-run (nested), usa o id do &lt;em&gt;root&lt;/em&gt;. Cancelar o pai cancela todos os filhos automaticamente. Se é top-level, usa o próprio processId."><code>parentRunId || runLogProcessId</code>. If this is a sub-run (nested), uses the <em>root</em> id. Cancelling parent cancels all children automatically. If top-level, uses own processId.</span>
             </div>
             <div class="box-file">flux/cancel-run-key.ts:1-6</div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box backend">
-            <div class="box-title"><span class="badge step">A2</span> Feature flag NODE_CANCEL_IN_FLIGHT_FLAG</div>
+            <div class="box-title"><span class="badge step">A2</span> <span data-en="Feature flag NODE_CANCEL_IN_FLIGHT_FLAG" data-pt="Feature flag NODE_CANCEL_IN_FLIGHT_FLAG">Feature flag NODE_CANCEL_IN_FLIGHT_FLAG</span></div>
             <div class="box-desc">
-              <code>const inFlightEnabled = await this.featureFlagsService.isEnabled('node_cancel_in_flight')</code>. Só se estiver <em>true</em>, o watch <em>durante</em> a execução do nó fica ligado. Se for false, só checa entre nós.
+              <span data-en="&lt;code&gt;const inFlightEnabled = await this.featureFlagsService.isEnabled('node_cancel_in_flight')&lt;/code&gt;. Only if &lt;em&gt;true&lt;/em&gt;, the watch &lt;em&gt;during&lt;/em&gt; node execution is enabled. If false, only checks between nodes." data-pt="&lt;code&gt;const inFlightEnabled = await this.featureFlagsService.isEnabled('node_cancel_in_flight')&lt;/code&gt;. Só se estiver &lt;em&gt;true&lt;/em&gt;, o watch &lt;em&gt;durante&lt;/em&gt; a execução do nó fica ligado. Se for false, só checa entre nós."><code>const inFlightEnabled = await this.featureFlagsService.isEnabled('node_cancel_in_flight')</code>. Only if <em>true</em>, the watch <em>during</em> node execution is enabled. If false, only checks between nodes.</span>
             </div>
             <div class="box-file">flux.service.ts:3192-3194 · flux/node-cancel-watch.ts:5</div>
           </div>
@@ -302,19 +328,21 @@
 
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Por que só canvas cancela?</div>
-            Execuções de API (<code>runType='api'</code>) têm semântica "request-response". O cliente já está esperando síncrono. Cancelar do lado servidor sem cliente pedir seria confuso.
-            <br><br>Já <em>canvas</em> é execução no editor. O usuário clica "cancelar" e espera parada real.
+            <div class="aside-title"><span data-en="🎯 Why only canvas cancels?" data-pt="🎯 Por que só canvas cancela?">🎯 Why only canvas cancels?</span></div>
+            <span data-en="API executions (&lt;code&gt;runType='api'&lt;/code&gt;) have &quot;request-response&quot; semantics. Client is already waiting synchronously. Cancelling from server side without client asking would be confusing.
+            &lt;br&gt;&lt;br&gt;&lt;em&gt;Canvas&lt;/em&gt;, on the other hand, is execution in the editor. User clicks &quot;cancel&quot; and expects a real stop." data-pt="Execuções de API (&lt;code&gt;runType='api'&lt;/code&gt;) têm semântica &quot;request-response&quot;. O cliente já está esperando síncrono. Cancelar do lado servidor sem cliente pedir seria confuso.
+            &lt;br&gt;&lt;br&gt;Já &lt;em&gt;canvas&lt;/em&gt; é execução no editor. O usuário clica &quot;cancelar&quot; e espera parada real.">API executions (<code>runType='api'</code>) have "request-response" semantics. Client is already waiting synchronously. Cancelling from server side without client asking would be confusing.
+            <br><br><em>Canvas</em>, on the other hand, is execution in the editor. User clicks "cancel" and expects a real stop.</span>
           </div>
 
           <div class="aside">
-            <div class="aside-title">📎 Nested herda watch</div>
-            Um <code>fluxBox</code> ou <code>libraryNode</code> chama <code>apiV2</code> recursivamente para o sub-flow. Como <code>isNestedRun=true</code>, o watch é habilitado no filho também. Assim, cancelar o pai propaga. O filho consulta a mesma <code>cancelRunKey</code> (pai) e vê o cancel request.
+            <div class="aside-title"><span data-en="📎 Nested inherits watch" data-pt="📎 Nested herda watch">📎 Nested inherits watch</span></div>
+            <span data-en="A &lt;code&gt;fluxBox&lt;/code&gt; or &lt;code&gt;libraryNode&lt;/code&gt; calls &lt;code&gt;apiV2&lt;/code&gt; recursively for the sub-flow. Since &lt;code&gt;isNestedRun=true&lt;/code&gt;, watch is enabled on the child too. So, cancelling parent propagates. Child queries same &lt;code&gt;cancelRunKey&lt;/code&gt; (parent) and sees the cancel request." data-pt="Um &lt;code&gt;fluxBox&lt;/code&gt; ou &lt;code&gt;libraryNode&lt;/code&gt; chama &lt;code&gt;apiV2&lt;/code&gt; recursivamente para o sub-flow. Como &lt;code&gt;isNestedRun=true&lt;/code&gt;, o watch é habilitado no filho também. Assim, cancelar o pai propaga. O filho consulta a mesma &lt;code&gt;cancelRunKey&lt;/code&gt; (pai) e vê o cancel request.">A <code>fluxBox</code> or <code>libraryNode</code> calls <code>apiV2</code> recursively for the sub-flow. Since <code>isNestedRun=true</code>, watch is enabled on the child too. So, cancelling parent propagates. Child queries same <code>cancelRunKey</code> (parent) and sees the cancel request.</span>
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 Feature flag stringly-typed</div>
-            <code>'node_cancel_in_flight'</code> como string literal em <code>NODE_CANCEL_IN_FLIGHT_FLAG</code>. Rollout gradual. Dá para ativar por espaço ou user via <code>featureFlagsService</code>. Setup padrão: OFF em produção (hoje).
+            <div class="aside-title"><span data-en="🔧 Stringly-typed feature flag" data-pt="🔧 Feature flag stringly-typed">🔧 Stringly-typed feature flag</span></div>
+            <span data-en="&lt;code&gt;'node_cancel_in_flight'&lt;/code&gt; as string literal in &lt;code&gt;NODE_CANCEL_IN_FLIGHT_FLAG&lt;/code&gt;. Gradual rollout. Can be enabled per space or user via &lt;code&gt;featureFlagsService&lt;/code&gt;. Default setup: OFF in production (today)." data-pt="&lt;code&gt;'node_cancel_in_flight'&lt;/code&gt; como string literal em &lt;code&gt;NODE_CANCEL_IN_FLIGHT_FLAG&lt;/code&gt;. Rollout gradual. Dá para ativar por espaço ou user via &lt;code&gt;featureFlagsService&lt;/code&gt;. Setup padrão: OFF em produção (hoje)."><code>'node_cancel_in_flight'</code> as string literal in <code>NODE_CANCEL_IN_FLIGHT_FLAG</code>. Gradual rollout. Can be enabled per space or user via <code>featureFlagsService</code>. Default setup: OFF in production (today).</span>
           </div>
         </div>
       </div>
@@ -334,19 +362,19 @@
     </div>
     <div class="fn-card-body">
       <div class="fn-signature">
-        async isCancelRequested(runId: string): Promise&lt;boolean&gt; · check no topo do while
+        <span data-en="async isCancelRequested(runId: string): Promise&amp;lt;boolean&amp;gt; · check at top of while" data-pt="async isCancelRequested(runId: string): Promise&amp;lt;boolean&amp;gt; · check no topo do while">async isCancelRequested(runId: string): Promise&lt;boolean&gt; · check at top of while</span>
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Checagem <em>entre nós</em>. No início de cada iteração do while, consulta se algum cliente pediu cancel. Se sim, seta <code>stoppedByCancel=true</code> e faz <code>break</code>. Não interrompe nó em execução. Só evita começar o próximo.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Check &lt;em&gt;between nodes&lt;/em&gt;. At start of each while iteration, queries if any client requested cancel. If yes, sets &lt;code&gt;stoppedByCancel=true&lt;/code&gt; and does &lt;code&gt;break&lt;/code&gt;. Doesn't interrupt node in execution. Just prevents starting the next one." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Checagem &lt;em&gt;entre nós&lt;/em&gt;. No início de cada iteração do while, consulta se algum cliente pediu cancel. Se sim, seta &lt;code&gt;stoppedByCancel=true&lt;/code&gt; e faz &lt;code&gt;break&lt;/code&gt;. Não interrompe nó em execução. Só evita começar o próximo."><strong>Purpose.</strong> Check <em>between nodes</em>. At start of each while iteration, queries if any client requested cancel. If yes, sets <code>stoppedByCancel=true</code> and does <code>break</code>. Doesn't interrupt node in execution. Just prevents starting the next one.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> É um <em>vigia</em> no batente da porta do próximo nó. Antes de deixar cada nó entrar em execução, o vigia olha na "lista de cancelamento" (tabela <code>flow_run_states</code>). Se o runId do agente atual está lá, fecha a porta. <code>stoppedByCancel = true</code> e <code>break</code>. O nó nem começa a rodar. É deliberadamente <em>polido</em>. Não interrompe nada em execução, só previne o próximo. Se o usuário clicou "cancelar" enquanto um <code>textGenerator</code> está streaming, esse vigia só age depois que o streaming terminar. Para interromper mid-execution precisa do watch in-flight (fn C). Como não vale a pena consultar Postgres a cada 100ms numa execução com 100 nós rápidos, o serviço tem um <em>cache in-memory</em> com TTL de 1500ms. Se consultou faz menos de 1.5s, retorna o resultado do cache sem hit no banco. O usuário pode ter até 1.5s de atraso entre clicar "cancelar" e ver efeito. Isso é indistinguível de latência normal de UI. Se cancel é confirmado, o cleanup vai para Fase 4 normal (não vira erro), a execução termina com status <em>cancelado</em>, e o cliente vê a mensagem apropriada.
+        <span data-en="&lt;strong&gt;In short.&lt;/strong&gt; It's a &lt;em&gt;watcher&lt;/em&gt; at the doorframe of the next node. Before letting each node enter execution, the watcher looks at the &quot;cancellation list&quot; (&lt;code&gt;flow_run_states&lt;/code&gt; table). If the current agent runId is there, closes the door. &lt;code&gt;stoppedByCancel = true&lt;/code&gt; and &lt;code&gt;break&lt;/code&gt;. The node doesn't even start running. It's deliberately &lt;em&gt;polite&lt;/em&gt;. Doesn't interrupt anything in execution, only prevents the next. If user clicked &quot;cancel&quot; while a &lt;code&gt;textGenerator&lt;/code&gt; is streaming, this watcher only acts after streaming ends. To interrupt mid-execution you need the in-flight watch (fn C). Since it's not worth querying Postgres every 100ms in an execution with 100 fast nodes, the service has an &lt;em&gt;in-memory cache&lt;/em&gt; with 1500ms TTL. If queried less than 1.5s ago, returns cached result without hitting the DB. User may have up to 1.5s delay between clicking &quot;cancel&quot; and seeing effect. This is indistinguishable from normal UI latency. If cancel is confirmed, cleanup goes to normal Phase 4 (doesn't become error), execution ends with &lt;em&gt;cancelled&lt;/em&gt; status, and client sees appropriate message." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; É um &lt;em&gt;vigia&lt;/em&gt; no batente da porta do próximo nó. Antes de deixar cada nó entrar em execução, o vigia olha na &quot;lista de cancelamento&quot; (tabela &lt;code&gt;flow_run_states&lt;/code&gt;). Se o runId do agente atual está lá, fecha a porta. &lt;code&gt;stoppedByCancel = true&lt;/code&gt; e &lt;code&gt;break&lt;/code&gt;. O nó nem começa a rodar. É deliberadamente &lt;em&gt;polido&lt;/em&gt;. Não interrompe nada em execução, só previne o próximo. Se o usuário clicou &quot;cancelar&quot; enquanto um &lt;code&gt;textGenerator&lt;/code&gt; está streaming, esse vigia só age depois que o streaming terminar. Para interromper mid-execution precisa do watch in-flight (fn C). Como não vale a pena consultar Postgres a cada 100ms numa execução com 100 nós rápidos, o serviço tem um &lt;em&gt;cache in-memory&lt;/em&gt; com TTL de 1500ms. Se consultou faz menos de 1.5s, retorna o resultado do cache sem hit no banco. O usuário pode ter até 1.5s de atraso entre clicar &quot;cancelar&quot; e ver efeito. Isso é indistinguível de latência normal de UI. Se cancel é confirmado, o cleanup vai para Fase 4 normal (não vira erro), a execução termina com status &lt;em&gt;cancelado&lt;/em&gt;, e o cliente vê a mensagem apropriada."><strong>In short.</strong> It's a <em>watcher</em> at the doorframe of the next node. Before letting each node enter execution, the watcher looks at the "cancellation list" (<code>flow_run_states</code> table). If the current agent runId is there, closes the door. <code>stoppedByCancel = true</code> and <code>break</code>. The node doesn't even start running. It's deliberately <em>polite</em>. Doesn't interrupt anything in execution, only prevents the next. If user clicked "cancel" while a <code>textGenerator</code> is streaming, this watcher only acts after streaming ends. To interrupt mid-execution you need the in-flight watch (fn C). Since it's not worth querying Postgres every 100ms in an execution with 100 fast nodes, the service has an <em>in-memory cache</em> with 1500ms TTL. If queried less than 1.5s ago, returns cached result without hitting the DB. User may have up to 1.5s delay between clicking "cancel" and seeing effect. This is indistinguishable from normal UI latency. If cancel is confirmed, cleanup goes to normal Phase 4 (doesn't become error), execution ends with <em>cancelled</em> status, and client sees appropriate message.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="code-block">
-<span class="c">// flux.service.ts:3229-3239 — dentro do while (scheduledId !== null)</span>
+<span class="c">// flux.service.ts:3229-3239 — <span data-en="inside while (scheduledId !== null)" data-pt="dentro do while (scheduledId !== null)">inside while (scheduledId !== null)</span></span>
 <span class="k">if</span> (
   stoppedByCancel ||
   (cancelWatchEnabled &&
@@ -363,12 +391,18 @@
           <div class="nested-flow">
             <div class="nested-flow-title">↳ isCancelRequested — run-cancellation.service.ts:62-79</div>
             <div class="box db">
-              <div class="box-title"><span class="badge step">B1</span> Cache in-memory + query PostgreSQL</div>
+              <div class="box-title"><span class="badge step">B1</span> <span data-en="In-memory cache + PostgreSQL query" data-pt="Cache in-memory + query PostgreSQL">In-memory cache + PostgreSQL query</span></div>
               <div class="box-desc">
-                <code>checkMemory: Map&lt;runId, { at, requested }&gt;</code> com TTL=1500ms.
-                <br>1. Se TTL vivo → retorna <code>requested</code> do cache
-                <br>2. Caso contrário: <code>this.repository.findOne({ where: { runId, deletedAt: IsNull() } })</code>
-                <br>3. Atualiza cache e retorna <code>Boolean(row)</code>
+                <span data-en="&lt;code&gt;checkMemory: Map&amp;lt;runId, { at, requested }&amp;gt;&lt;/code&gt; with TTL=1500ms.
+                &lt;br&gt;1. If TTL alive → returns &lt;code&gt;requested&lt;/code&gt; from cache
+                &lt;br&gt;2. Otherwise: &lt;code&gt;this.repository.findOne({ where: { runId, deletedAt: IsNull() } })&lt;/code&gt;
+                &lt;br&gt;3. Updates cache and returns &lt;code&gt;Boolean(row)&lt;/code&gt;" data-pt="&lt;code&gt;checkMemory: Map&amp;lt;runId, { at, requested }&amp;gt;&lt;/code&gt; com TTL=1500ms.
+                &lt;br&gt;1. Se TTL vivo → retorna &lt;code&gt;requested&lt;/code&gt; do cache
+                &lt;br&gt;2. Caso contrário: &lt;code&gt;this.repository.findOne({ where: { runId, deletedAt: IsNull() } })&lt;/code&gt;
+                &lt;br&gt;3. Atualiza cache e retorna &lt;code&gt;Boolean(row)&lt;/code&gt;"><code>checkMemory: Map&lt;runId, { at, requested }&gt;</code> with TTL=1500ms.
+                <br>1. If TTL alive → returns <code>requested</code> from cache
+                <br>2. Otherwise: <code>this.repository.findOne({ where: { runId, deletedAt: IsNull() } })</code>
+                <br>3. Updates cache and returns <code>Boolean(row)</code></span>
               </div>
               <div class="box-file">run-cancellation.service.ts:62-79</div>
             </div>
@@ -376,31 +410,39 @@
           <div class="arrow">↓</div>
 
           <div class="box db">
-            <div class="box-title"><span class="badge step">B2</span> Tabela flow_run_states</div>
+            <div class="box-title"><span class="badge step">B2</span> <span data-en="flow_run_states table" data-pt="Tabela flow_run_states">flow_run_states table</span></div>
             <div class="box-desc">
-              Linha inserida pelo endpoint <code>POST /executions_logs/runs/:runId/cancel</code> (<code>executions_logs.controller.ts:101-111</code>). Campos: <code>runId, flowId, userId, requestedAt, deletedAt</code>. Existência da linha = cancel pendente.
+              <span data-en="Row inserted by the &lt;code&gt;POST /executions_logs/runs/:runId/cancel&lt;/code&gt; endpoint (&lt;code&gt;executions_logs.controller.ts:101-111&lt;/code&gt;). Fields: &lt;code&gt;runId, flowId, userId, requestedAt, deletedAt&lt;/code&gt;. Existence of the row = cancel pending." data-pt="Linha inserida pelo endpoint &lt;code&gt;POST /executions_logs/runs/:runId/cancel&lt;/code&gt; (&lt;code&gt;executions_logs.controller.ts:101-111&lt;/code&gt;). Campos: &lt;code&gt;runId, flowId, userId, requestedAt, deletedAt&lt;/code&gt;. Existência da linha = cancel pendente.">Row inserted by the <code>POST /executions_logs/runs/:runId/cancel</code> endpoint (<code>executions_logs.controller.ts:101-111</code>). Fields: <code>runId, flowId, userId, requestedAt, deletedAt</code>. Existence of the row = cancel pending.</span>
             </div>
           </div>
         </div>
 
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Cache TTL=1500ms</div>
-            Evita hammer no Postgres em execuções longas com muitos nós. Trade-off. Pode demorar até 1.5s para o cancel ser observado. Aceitável para UX de "cancelar". O usuário não nota diferença entre 200ms e 1500ms.
+            <div class="aside-title"><span data-en="🎯 Cache TTL=1500ms" data-pt="🎯 Cache TTL=1500ms">🎯 Cache TTL=1500ms</span></div>
+            <span data-en="Avoids hammering Postgres in long executions with many nodes. Trade-off. Can take up to 1.5s for cancel to be observed. Acceptable for &quot;cancel&quot; UX. User doesn't notice difference between 200ms and 1500ms." data-pt="Evita hammer no Postgres em execuções longas com muitos nós. Trade-off. Pode demorar até 1.5s para o cancel ser observado. Aceitável para UX de &quot;cancelar&quot;. O usuário não nota diferença entre 200ms e 1500ms.">Avoids hammering Postgres in long executions with many nodes. Trade-off. Can take up to 1.5s for cancel to be observed. Acceptable for "cancel" UX. User doesn't notice difference between 200ms and 1500ms.</span>
           </div>
 
           <div class="aside warn">
-            <div class="aside-title">⚠️ Cancel entre nós ≠ abort do nó atual</div>
-            Se um <code>textGenerator</code> está streaming resposta e o usuário clica cancelar <em>durante</em> o streaming, esta checagem <em>não</em> interrompe. Só evita começar o próximo nó. Para interromper mid-execution, precisa do watch in-flight (fn C) e dos interceptors de fetch e axios (fn D).
+            <div class="aside-title"><span data-en="⚠️ Cancel between nodes ≠ abort of current node" data-pt="⚠️ Cancel entre nós ≠ abort do nó atual">⚠️ Cancel between nodes ≠ abort of current node</span></div>
+            <span data-en="If a &lt;code&gt;textGenerator&lt;/code&gt; is streaming response and user clicks cancel &lt;em&gt;during&lt;/em&gt; streaming, this check does &lt;em&gt;not&lt;/em&gt; interrupt. Just prevents starting the next node. To interrupt mid-execution, you need the in-flight watch (fn C) and the fetch and axios interceptors (fn D)." data-pt="Se um &lt;code&gt;textGenerator&lt;/code&gt; está streaming resposta e o usuário clica cancelar &lt;em&gt;durante&lt;/em&gt; o streaming, esta checagem &lt;em&gt;não&lt;/em&gt; interrompe. Só evita começar o próximo nó. Para interromper mid-execution, precisa do watch in-flight (fn C) e dos interceptors de fetch e axios (fn D).">If a <code>textGenerator</code> is streaming response and user clicks cancel <em>during</em> streaming, this check does <em>not</em> interrupt. Just prevents starting the next node. To interrupt mid-execution, you need the in-flight watch (fn C) and the fetch and axios interceptors (fn D).</span>
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 Como o cancel é setado</div>
-            <code>POST /executions_logs/runs/:runId/cancel</code> chama <code>executionsLogsService.requestRunCancellation(user, runId)</code>, que:
-            <br>• Valida permissões e status (só canvas, execução precisa estar running)
-            <br>• Chama <code>runCancellationService.requestCancel({ runId, flowId, userId })</code>
-            <br>• INSERT em <code>flow_run_states</code>
-            <br>• <code>interruptStepsInFlight(runId)</code> para abort imediato
+            <div class="aside-title"><span data-en="🔧 How cancel is set" data-pt="🔧 Como o cancel é setado">🔧 How cancel is set</span></div>
+            <span data-en="&lt;code&gt;POST /executions_logs/runs/:runId/cancel&lt;/code&gt; calls &lt;code&gt;executionsLogsService.requestRunCancellation(user, runId)&lt;/code&gt;, which:
+            &lt;br&gt;• Validates permissions and status (only canvas, execution must be running)
+            &lt;br&gt;• Calls &lt;code&gt;runCancellationService.requestCancel({ runId, flowId, userId })&lt;/code&gt;
+            &lt;br&gt;• INSERT into &lt;code&gt;flow_run_states&lt;/code&gt;
+            &lt;br&gt;• &lt;code&gt;interruptStepsInFlight(runId)&lt;/code&gt; for immediate abort" data-pt="&lt;code&gt;POST /executions_logs/runs/:runId/cancel&lt;/code&gt; chama &lt;code&gt;executionsLogsService.requestRunCancellation(user, runId)&lt;/code&gt;, que:
+            &lt;br&gt;• Valida permissões e status (só canvas, execução precisa estar running)
+            &lt;br&gt;• Chama &lt;code&gt;runCancellationService.requestCancel({ runId, flowId, userId })&lt;/code&gt;
+            &lt;br&gt;• INSERT em &lt;code&gt;flow_run_states&lt;/code&gt;
+            &lt;br&gt;• &lt;code&gt;interruptStepsInFlight(runId)&lt;/code&gt; para abort imediato"><code>POST /executions_logs/runs/:runId/cancel</code> calls <code>executionsLogsService.requestRunCancellation(user, runId)</code>, which:
+            <br>• Validates permissions and status (only canvas, execution must be running)
+            <br>• Calls <code>runCancellationService.requestCancel({ runId, flowId, userId })</code>
+            <br>• INSERT into <code>flow_run_states</code>
+            <br>• <code>interruptStepsInFlight(runId)</code> for immediate abort</span>
           </div>
         </div>
       </div>
@@ -423,20 +465,28 @@
         shouldStartNodeCancelWatch({ watchEnabled, inFlightEnabled }) ? startNodeCancelWatch({...}) : null
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Se ambos watchEnabled e inFlightEnabled forem true, cria um watcher POR NÓ que faz polling a cada 2s (<code>CANCEL_POLL_MS=2000</code>) para <code>isCancelRequested</code>. Quando detectar cancel, chama <code>controller.abort()</code> no <code>AbortController</code> que foi entregue via <code>cancelWatch.entry</code>.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; If both watchEnabled and inFlightEnabled are true, creates a watcher PER NODE that polls every 2s (&lt;code&gt;CANCEL_POLL_MS=2000&lt;/code&gt;) for &lt;code&gt;isCancelRequested&lt;/code&gt;. When it detects cancel, calls &lt;code&gt;controller.abort()&lt;/code&gt; on the &lt;code&gt;AbortController&lt;/code&gt; delivered via &lt;code&gt;cancelWatch.entry&lt;/code&gt;." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Se ambos watchEnabled e inFlightEnabled forem true, cria um watcher POR NÓ que faz polling a cada 2s (&lt;code&gt;CANCEL_POLL_MS=2000&lt;/code&gt;) para &lt;code&gt;isCancelRequested&lt;/code&gt;. Quando detectar cancel, chama &lt;code&gt;controller.abort()&lt;/code&gt; no &lt;code&gt;AbortController&lt;/code&gt; que foi entregue via &lt;code&gt;cancelWatch.entry&lt;/code&gt;."><strong>Purpose.</strong> If both watchEnabled and inFlightEnabled are true, creates a watcher PER NODE that polls every 2s (<code>CANCEL_POLL_MS=2000</code>) for <code>isCancelRequested</code>. When it detects cancel, calls <code>controller.abort()</code> on the <code>AbortController</code> delivered via <code>cancelWatch.entry</code>.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Se o vigia da porta (fn B) é passivo, este é o <em>vigia dentro da sala</em>. Durante o nó rodar, esse watcher bate no relógio a cada 2 segundos perguntando "e agora, cancelaram?". Quando a resposta é sim, puxa a corda do sino: <code>controller.abort()</code>. Um <code>AbortSignal</code> corre por todos os <code>fetch</code> e <code>axios</code> em andamento dentro daquele nó. Cada um levanta <code>AbortError</code>. É como um <em>alarme cooperativo</em>. As chamadas HTTP <em>escolhem</em> respeitar o signal (padrão web moderno). O watcher devolve 3 coisas ao loop.
-        <br>• <code>entry</code>: o AbortSignal e metadata para ser injetado na ALS <code>nodeCancelContext</code>.
-        <br>• <code>wasAborted()</code>: função que o loop chama depois para saber se ocorreu abort.
-        <br>• <code>stop()</code>: para limpar o setInterval quando o nó termina. Sem isso, timers vazam.
-        <br>Ponto crítico de perf. Um agente com 100 nós tem 100 setIntervals rodando ao mesmo tempo, cada um consultando Postgres. Com cache 1.5s ainda dá ~66 queries por segundo. É por isso que a feature flag está OFF em prod hoje. Solução real e definitiva vai vir com Temporal. <code>WorkflowHandle.cancel()</code> nativo, sem polling, sem timer, sem custo constante.
+        <span data-en="&lt;strong&gt;In short.&lt;/strong&gt; If the door watcher (fn B) is passive, this is the &lt;em&gt;watcher inside the room&lt;/em&gt;. While the node runs, this watcher taps the clock every 2 seconds asking &quot;so now, did they cancel?&quot;. When the answer is yes, pulls the bell rope: &lt;code&gt;controller.abort()&lt;/code&gt;. An &lt;code&gt;AbortSignal&lt;/code&gt; runs through all &lt;code&gt;fetch&lt;/code&gt; and &lt;code&gt;axios&lt;/code&gt; in progress inside that node. Each throws &lt;code&gt;AbortError&lt;/code&gt;. It's like a &lt;em&gt;cooperative alarm&lt;/em&gt;. HTTP calls &lt;em&gt;choose&lt;/em&gt; to respect the signal (modern web standard). The watcher returns 3 things to the loop.
+        &lt;br&gt;• &lt;code&gt;entry&lt;/code&gt;: the AbortSignal and metadata to be injected into ALS &lt;code&gt;nodeCancelContext&lt;/code&gt;.
+        &lt;br&gt;• &lt;code&gt;wasAborted()&lt;/code&gt;: function the loop calls later to know if abort occurred.
+        &lt;br&gt;• &lt;code&gt;stop()&lt;/code&gt;: to clean up the setInterval when node ends. Without it, timers leak.
+        &lt;br&gt;Critical perf point. An agent with 100 nodes has 100 setIntervals running simultaneously, each querying Postgres. With 1.5s cache still yields ~66 queries per second. That's why the feature flag is OFF in prod today. Real and definitive solution will come with Temporal. Native &lt;code&gt;WorkflowHandle.cancel()&lt;/code&gt;, no polling, no timer, no constant cost." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Se o vigia da porta (fn B) é passivo, este é o &lt;em&gt;vigia dentro da sala&lt;/em&gt;. Durante o nó rodar, esse watcher bate no relógio a cada 2 segundos perguntando &quot;e agora, cancelaram?&quot;. Quando a resposta é sim, puxa a corda do sino: &lt;code&gt;controller.abort()&lt;/code&gt;. Um &lt;code&gt;AbortSignal&lt;/code&gt; corre por todos os &lt;code&gt;fetch&lt;/code&gt; e &lt;code&gt;axios&lt;/code&gt; em andamento dentro daquele nó. Cada um levanta &lt;code&gt;AbortError&lt;/code&gt;. É como um &lt;em&gt;alarme cooperativo&lt;/em&gt;. As chamadas HTTP &lt;em&gt;escolhem&lt;/em&gt; respeitar o signal (padrão web moderno). O watcher devolve 3 coisas ao loop.
+        &lt;br&gt;• &lt;code&gt;entry&lt;/code&gt;: o AbortSignal e metadata para ser injetado na ALS &lt;code&gt;nodeCancelContext&lt;/code&gt;.
+        &lt;br&gt;• &lt;code&gt;wasAborted()&lt;/code&gt;: função que o loop chama depois para saber se ocorreu abort.
+        &lt;br&gt;• &lt;code&gt;stop()&lt;/code&gt;: para limpar o setInterval quando o nó termina. Sem isso, timers vazam.
+        &lt;br&gt;Ponto crítico de perf. Um agente com 100 nós tem 100 setIntervals rodando ao mesmo tempo, cada um consultando Postgres. Com cache 1.5s ainda dá ~66 queries por segundo. É por isso que a feature flag está OFF em prod hoje. Solução real e definitiva vai vir com Temporal. &lt;code&gt;WorkflowHandle.cancel()&lt;/code&gt; nativo, sem polling, sem timer, sem custo constante."><strong>In short.</strong> If the door watcher (fn B) is passive, this is the <em>watcher inside the room</em>. While the node runs, this watcher taps the clock every 2 seconds asking "so now, did they cancel?". When the answer is yes, pulls the bell rope: <code>controller.abort()</code>. An <code>AbortSignal</code> runs through all <code>fetch</code> and <code>axios</code> in progress inside that node. Each throws <code>AbortError</code>. It's like a <em>cooperative alarm</em>. HTTP calls <em>choose</em> to respect the signal (modern web standard). The watcher returns 3 things to the loop.
+        <br>• <code>entry</code>: the AbortSignal and metadata to be injected into ALS <code>nodeCancelContext</code>.
+        <br>• <code>wasAborted()</code>: function the loop calls later to know if abort occurred.
+        <br>• <code>stop()</code>: to clean up the setInterval when node ends. Without it, timers leak.
+        <br>Critical perf point. An agent with 100 nodes has 100 setIntervals running simultaneously, each querying Postgres. With 1.5s cache still yields ~66 queries per second. That's why the feature flag is OFF in prod today. Real and definitive solution will come with Temporal. Native <code>WorkflowHandle.cancel()</code>, no polling, no timer, no constant cost.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="code-block">
-<span class="c">// flux/node-cancel-watch.ts:56-93 — resumo</span>
+<span class="c">// flux/node-cancel-watch.ts:56-93 — <span data-en="summary" data-pt="resumo">summary</span></span>
 <span class="k">export function</span> <span class="t">shouldStartNodeCancelWatch</span>(params) {
   <span class="k">return</span> params.watchEnabled && params.inFlightEnabled;
 }
@@ -461,13 +511,13 @@
           <div class="arrow">↓</div>
 
           <div class="box backend">
-            <div class="box-title"><span class="badge step">C1</span> Retorno tripleto: entry / wasAborted / stop</div>
+            <div class="box-title"><span class="badge step">C1</span> <span data-en="Triple return: entry / wasAborted / stop" data-pt="Retorno tripleto: entry / wasAborted / stop">Triple return: entry / wasAborted / stop</span></div>
             <div class="box-desc">
               <table class="field-table">
-                <tr><th>Campo</th><th>Uso</th></tr>
-                <tr><td>entry</td><td><code>NodeCancelEntry { signal, runId, nodeId }</code>. Injetado em <code>nodeCancelContext.enterWith(entry)</code>.</td></tr>
-                <tr><td>wasAborted()</td><td>Consultado em 4516: <code>if (cancelWatch?.wasAborted()) finishCancelledNode(...)</code></td></tr>
-                <tr><td>stop()</td><td>Limpa o setInterval. Chamado no finally do try do nó, para não vazar timer.</td></tr>
+                <tr><th><span data-en="Field" data-pt="Campo">Field</span></th><th><span data-en="Use" data-pt="Uso">Use</span></th></tr>
+                <tr><td>entry</td><td><span data-en="&lt;code&gt;NodeCancelEntry { signal, runId, nodeId }&lt;/code&gt;. Injected in &lt;code&gt;nodeCancelContext.enterWith(entry)&lt;/code&gt;." data-pt="&lt;code&gt;NodeCancelEntry { signal, runId, nodeId }&lt;/code&gt;. Injetado em &lt;code&gt;nodeCancelContext.enterWith(entry)&lt;/code&gt;."><code>NodeCancelEntry { signal, runId, nodeId }</code>. Injected in <code>nodeCancelContext.enterWith(entry)</code>.</span></td></tr>
+                <tr><td>wasAborted()</td><td><span data-en="Queried at 4516: &lt;code&gt;if (cancelWatch?.wasAborted()) finishCancelledNode(...)&lt;/code&gt;" data-pt="Consultado em 4516: &lt;code&gt;if (cancelWatch?.wasAborted()) finishCancelledNode(...)&lt;/code&gt;">Queried at 4516: <code>if (cancelWatch?.wasAborted()) finishCancelledNode(...)</code></span></td></tr>
+                <tr><td>stop()</td><td><span data-en="Clears the setInterval. Called in the node's try/finally, to avoid leaking timer." data-pt="Limpa o setInterval. Chamado no finally do try do nó, para não vazar timer.">Clears the setInterval. Called in the node's try/finally, to avoid leaking timer.</span></td></tr>
               </table>
             </div>
           </div>
@@ -475,19 +525,21 @@
 
         <div class="fn-asides">
           <div class="aside warn">
-            <div class="aside-title">⚠️ setInterval por nó = memory footprint</div>
-            Se um agente tem 100 nós, isso é 100 setIntervals de 2s executando em paralelo. Cada um chama <code>isCancelRequested</code>. Com cache de 1500ms, ainda assim vira 66 queries por segundo no Postgres.
-            <br><br>Talvez seja um dos motivos da feature flag estar OFF em prod hoje.
+            <div class="aside-title"><span data-en="⚠️ setInterval per node = memory footprint" data-pt="⚠️ setInterval por nó = memory footprint">⚠️ setInterval per node = memory footprint</span></div>
+            <span data-en="If an agent has 100 nodes, that's 100 2s setIntervals executing in parallel. Each one calls &lt;code&gt;isCancelRequested&lt;/code&gt;. With 1500ms cache, still becomes 66 queries per second on Postgres.
+            &lt;br&gt;&lt;br&gt;Maybe one of the reasons the feature flag is OFF in prod today." data-pt="Se um agente tem 100 nós, isso é 100 setIntervals de 2s executando em paralelo. Cada um chama &lt;code&gt;isCancelRequested&lt;/code&gt;. Com cache de 1500ms, ainda assim vira 66 queries por segundo no Postgres.
+            &lt;br&gt;&lt;br&gt;Talvez seja um dos motivos da feature flag estar OFF em prod hoje.">If an agent has 100 nodes, that's 100 2s setIntervals executing in parallel. Each one calls <code>isCancelRequested</code>. With 1500ms cache, still becomes 66 queries per second on Postgres.
+            <br><br>Maybe one of the reasons the feature flag is OFF in prod today.</span>
           </div>
 
           <div class="aside info">
-            <div class="aside-title">🎯 Watch é PER-NODE, não per-run</div>
-            Cada iteração do while cria um <em>novo</em> watcher com um novo AbortController. Cada nó tem seu próprio async chain e precisa do próprio AbortSignal para os interceptors de fetch e axios.
+            <div class="aside-title"><span data-en="🎯 Watch is PER-NODE, not per-run" data-pt="🎯 Watch é PER-NODE, não per-run">🎯 Watch is PER-NODE, not per-run</span></div>
+            <span data-en="Each while iteration creates a &lt;em&gt;new&lt;/em&gt; watcher with a new AbortController. Each node has its own async chain and needs its own AbortSignal for the fetch and axios interceptors." data-pt="Cada iteração do while cria um &lt;em&gt;novo&lt;/em&gt; watcher com um novo AbortController. Cada nó tem seu próprio async chain e precisa do próprio AbortSignal para os interceptors de fetch e axios.">Each while iteration creates a <em>new</em> watcher with a new AbortController. Each node has its own async chain and needs its own AbortSignal for the fetch and axios interceptors.</span>
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 CANCEL_POLL_MS</div>
-            Constante em <code>node-cancel-watch.ts</code>. Valor 2000ms. Customizável via param <code>pollMs</code> do <code>startNodeCancelWatch</code>. Backend hardcoda 2s no call-site.
+            <span data-en="Constant in &lt;code&gt;node-cancel-watch.ts&lt;/code&gt;. Value 2000ms. Customizable via &lt;code&gt;pollMs&lt;/code&gt; param of &lt;code&gt;startNodeCancelWatch&lt;/code&gt;. Backend hardcodes 2s at the call site." data-pt="Constante em &lt;code&gt;node-cancel-watch.ts&lt;/code&gt;. Valor 2000ms. Customizável via param &lt;code&gt;pollMs&lt;/code&gt; do &lt;code&gt;startNodeCancelWatch&lt;/code&gt;. Backend hardcoda 2s no call-site.">Constant in <code>node-cancel-watch.ts</code>. Value 2000ms. Customizable via <code>pollMs</code> param of <code>startNodeCancelWatch</code>. Backend hardcodes 2s at the call site.</span>
           </div>
         </div>
       </div>
@@ -510,10 +562,10 @@
         export const nodeCancelContext = new AsyncLocalStorage&lt;NodeCancelEntry | undefined&gt;()
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Mesmo padrão de <code>chargeContext</code>. ALS que carrega o <code>AbortSignal</code> do nó atual. Wrappers globais de <code>fetch</code> e <code>axios</code> leem essa ALS e injetam o signal em <em>toda</em> chamada HTTP feita pelo handler do nó. Cooperativa via <code>AbortController</code>.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Same pattern as &lt;code&gt;chargeContext&lt;/code&gt;. ALS that carries the &lt;code&gt;AbortSignal&lt;/code&gt; of the current node. Global wrappers of &lt;code&gt;fetch&lt;/code&gt; and &lt;code&gt;axios&lt;/code&gt; read this ALS and inject the signal into &lt;em&gt;every&lt;/em&gt; HTTP call made by the node handler. Cooperative via &lt;code&gt;AbortController&lt;/code&gt;." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Mesmo padrão de &lt;code&gt;chargeContext&lt;/code&gt;. ALS que carrega o &lt;code&gt;AbortSignal&lt;/code&gt; do nó atual. Wrappers globais de &lt;code&gt;fetch&lt;/code&gt; e &lt;code&gt;axios&lt;/code&gt; leem essa ALS e injetam o signal em &lt;em&gt;toda&lt;/em&gt; chamada HTTP feita pelo handler do nó. Cooperativa via &lt;code&gt;AbortController&lt;/code&gt;."><strong>Purpose.</strong> Same pattern as <code>chargeContext</code>. ALS that carries the <code>AbortSignal</code> of the current node. Global wrappers of <code>fetch</code> and <code>axios</code> read this ALS and inject the signal into <em>every</em> HTTP call made by the node handler. Cooperative via <code>AbortController</code>.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Se o <code>chargeContext</code> é um crachá invisível de "quem está cobrando", o <code>nodeCancelContext</code> é um crachá invisível de "quem tem alarme de cancelamento". Mesma mecânica. <code>AsyncLocalStorage</code> injetada antes do handler rodar. A diferença é <em>quem consome</em>. Em vez de serviço de billing, são <strong>interceptors globais de fetch e axios</strong>. Funções que envolvem <code>window.fetch</code> e o instance do axios. Antes de cada request HTTP feito pelo handler, leem o signal da ALS e o injetam no <code>init.signal</code> da chamada. Fetch e axios nativos respeitam AbortSignal. Se aborta, levanta <code>AbortError</code>. Elegância. O handler nem precisa saber que existe cancel. Chama <code>fetch('https://api.openai.com/...')</code> normalmente. Se o watch abortou, esse fetch levanta AbortError como se fosse timeout. O try do loop pega isso em <code>if (cancelWatch?.wasAborted())</code> e chama <code>finishCancelledNode</code>. Fragilidade. É <em>cooperativa</em>. Se o handler fizer <em>SQL síncrono pesado</em> ou <em>cálculo em memória</em> sem I/O, o abort não interrompe nada. Só a próxima chamada HTTP. Não é preemptivo. Em sub-runs, o loop faz <code>nodeCancelContext.run(undefined, ...)</code> para desligar o contexto do parent. Se algo escapar desse escopo, um handler pode ver <code>undefined</code> e o abort silencia.
+        <span data-en="&lt;strong&gt;In short.&lt;/strong&gt; If &lt;code&gt;chargeContext&lt;/code&gt; is an invisible badge of &quot;who's being charged&quot;, &lt;code&gt;nodeCancelContext&lt;/code&gt; is an invisible badge of &quot;who has cancellation alarm&quot;. Same mechanic. &lt;code&gt;AsyncLocalStorage&lt;/code&gt; injected before the handler runs. The difference is &lt;em&gt;who consumes it&lt;/em&gt;. Instead of billing service, it's &lt;strong&gt;global fetch and axios interceptors&lt;/strong&gt;. Functions wrapping &lt;code&gt;window.fetch&lt;/code&gt; and the axios instance. Before each HTTP request made by the handler, they read the signal from ALS and inject it into the call's &lt;code&gt;init.signal&lt;/code&gt;. Native fetch and axios respect AbortSignal. If aborts, throws &lt;code&gt;AbortError&lt;/code&gt;. Elegance. Handler doesn't even need to know cancel exists. Calls &lt;code&gt;fetch('https://api.openai.com/...')&lt;/code&gt; normally. If watch aborted, this fetch throws AbortError as if it were timeout. The loop's try catches this at &lt;code&gt;if (cancelWatch?.wasAborted())&lt;/code&gt; and calls &lt;code&gt;finishCancelledNode&lt;/code&gt;. Fragility. It's &lt;em&gt;cooperative&lt;/em&gt;. If the handler does &lt;em&gt;heavy synchronous SQL&lt;/em&gt; or &lt;em&gt;in-memory computation&lt;/em&gt; without I/O, the abort interrupts nothing. Only the next HTTP call. Not preemptive. In sub-runs, the loop does &lt;code&gt;nodeCancelContext.run(undefined, ...)&lt;/code&gt; to disable the parent context. If something escapes this scope, a handler may see &lt;code&gt;undefined&lt;/code&gt; and the abort silences." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Se o &lt;code&gt;chargeContext&lt;/code&gt; é um crachá invisível de &quot;quem está cobrando&quot;, o &lt;code&gt;nodeCancelContext&lt;/code&gt; é um crachá invisível de &quot;quem tem alarme de cancelamento&quot;. Mesma mecânica. &lt;code&gt;AsyncLocalStorage&lt;/code&gt; injetada antes do handler rodar. A diferença é &lt;em&gt;quem consome&lt;/em&gt;. Em vez de serviço de billing, são &lt;strong&gt;interceptors globais de fetch e axios&lt;/strong&gt;. Funções que envolvem &lt;code&gt;window.fetch&lt;/code&gt; e o instance do axios. Antes de cada request HTTP feito pelo handler, leem o signal da ALS e o injetam no &lt;code&gt;init.signal&lt;/code&gt; da chamada. Fetch e axios nativos respeitam AbortSignal. Se aborta, levanta &lt;code&gt;AbortError&lt;/code&gt;. Elegância. O handler nem precisa saber que existe cancel. Chama &lt;code&gt;fetch('https://api.openai.com/...')&lt;/code&gt; normalmente. Se o watch abortou, esse fetch levanta AbortError como se fosse timeout. O try do loop pega isso em &lt;code&gt;if (cancelWatch?.wasAborted())&lt;/code&gt; e chama &lt;code&gt;finishCancelledNode&lt;/code&gt;. Fragilidade. É &lt;em&gt;cooperativa&lt;/em&gt;. Se o handler fizer &lt;em&gt;SQL síncrono pesado&lt;/em&gt; ou &lt;em&gt;cálculo em memória&lt;/em&gt; sem I/O, o abort não interrompe nada. Só a próxima chamada HTTP. Não é preemptivo. Em sub-runs, o loop faz &lt;code&gt;nodeCancelContext.run(undefined, ...)&lt;/code&gt; para desligar o contexto do parent. Se algo escapar desse escopo, um handler pode ver &lt;code&gt;undefined&lt;/code&gt; e o abort silencia."><strong>In short.</strong> If <code>chargeContext</code> is an invisible badge of "who's being charged", <code>nodeCancelContext</code> is an invisible badge of "who has cancellation alarm". Same mechanic. <code>AsyncLocalStorage</code> injected before the handler runs. The difference is <em>who consumes it</em>. Instead of billing service, it's <strong>global fetch and axios interceptors</strong>. Functions wrapping <code>window.fetch</code> and the axios instance. Before each HTTP request made by the handler, they read the signal from ALS and inject it into the call's <code>init.signal</code>. Native fetch and axios respect AbortSignal. If aborts, throws <code>AbortError</code>. Elegance. Handler doesn't even need to know cancel exists. Calls <code>fetch('https://api.openai.com/...')</code> normally. If watch aborted, this fetch throws AbortError as if it were timeout. The loop's try catches this at <code>if (cancelWatch?.wasAborted())</code> and calls <code>finishCancelledNode</code>. Fragility. It's <em>cooperative</em>. If the handler does <em>heavy synchronous SQL</em> or <em>in-memory computation</em> without I/O, the abort interrupts nothing. Only the next HTTP call. Not preemptive. In sub-runs, the loop does <code>nodeCancelContext.run(undefined, ...)</code> to disable the parent context. If something escapes this scope, a handler may see <code>undefined</code> and the abort silences.</span>
       </div>
 
       <div class="fn-body-cols">
@@ -531,24 +583,32 @@
           <div class="arrow">↓</div>
 
           <div class="nested-flow">
-            <div class="nested-flow-title">↳ Consumo: node-cancel-fetch.ts:17-35 (wrapper global de fetch)</div>
+            <div class="nested-flow-title"><span data-en="↳ Consumption: node-cancel-fetch.ts:17-35 (global fetch wrapper)" data-pt="↳ Consumo: node-cancel-fetch.ts:17-35 (wrapper global de fetch)">↳ Consumption: node-cancel-fetch.ts:17-35 (global fetch wrapper)</span></div>
             <div class="box backend">
               <div class="box-desc">
-                Wrapper registrado globalmente. Cada <code>fetch(url, init)</code> feito por handler do nó:
-                <br>1. Lê <code>nodeCancelContext.getStore()</code>
-                <br>2. Se tem signal, compõe com o signal existente do init (via <code>AbortSignal.any()</code> ou similar)
-                <br>3. Encaminha para o <code>fetch</code> nativo
-                <br><br>Quando o watcher aborta, o signal dispara. Fetch levanta <code>AbortError</code>.
+                <span data-en="Globally registered wrapper. Every &lt;code&gt;fetch(url, init)&lt;/code&gt; done by node handler:
+                &lt;br&gt;1. Reads &lt;code&gt;nodeCancelContext.getStore()&lt;/code&gt;
+                &lt;br&gt;2. If has signal, composes with existing signal from init (via &lt;code&gt;AbortSignal.any()&lt;/code&gt; or similar)
+                &lt;br&gt;3. Forwards to native &lt;code&gt;fetch&lt;/code&gt;
+                &lt;br&gt;&lt;br&gt;When watcher aborts, signal fires. Fetch throws &lt;code&gt;AbortError&lt;/code&gt;." data-pt="Wrapper registrado globalmente. Cada &lt;code&gt;fetch(url, init)&lt;/code&gt; feito por handler do nó:
+                &lt;br&gt;1. Lê &lt;code&gt;nodeCancelContext.getStore()&lt;/code&gt;
+                &lt;br&gt;2. Se tem signal, compõe com o signal existente do init (via &lt;code&gt;AbortSignal.any()&lt;/code&gt; ou similar)
+                &lt;br&gt;3. Encaminha para o &lt;code&gt;fetch&lt;/code&gt; nativo
+                &lt;br&gt;&lt;br&gt;Quando o watcher aborta, o signal dispara. Fetch levanta &lt;code&gt;AbortError&lt;/code&gt;.">Globally registered wrapper. Every <code>fetch(url, init)</code> done by node handler:
+                <br>1. Reads <code>nodeCancelContext.getStore()</code>
+                <br>2. If has signal, composes with existing signal from init (via <code>AbortSignal.any()</code> or similar)
+                <br>3. Forwards to native <code>fetch</code>
+                <br><br>When watcher aborts, signal fires. Fetch throws <code>AbortError</code>.</span>
               </div>
             </div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="nested-flow">
-            <div class="nested-flow-title">↳ Consumo: node-cancel-interceptor.ts:21-30 (axios interceptor)</div>
+            <div class="nested-flow-title"><span data-en="↳ Consumption: node-cancel-interceptor.ts:21-30 (axios interceptor)" data-pt="↳ Consumo: node-cancel-interceptor.ts:21-30 (axios interceptor)">↳ Consumption: node-cancel-interceptor.ts:21-30 (axios interceptor)</span></div>
             <div class="box backend">
               <div class="box-desc">
-                Interceptor do axios (request). Lê <code>currentNodeAbortSignal()</code> (helper que faz <code>nodeCancelContext.getStore()?.signal</code>), injeta em <code>config.signal</code>. Mesmo mecanismo.
+                <span data-en="Axios request interceptor. Reads &lt;code&gt;currentNodeAbortSignal()&lt;/code&gt; (helper that does &lt;code&gt;nodeCancelContext.getStore()?.signal&lt;/code&gt;), injects into &lt;code&gt;config.signal&lt;/code&gt;. Same mechanism." data-pt="Interceptor do axios (request). Lê &lt;code&gt;currentNodeAbortSignal()&lt;/code&gt; (helper que faz &lt;code&gt;nodeCancelContext.getStore()?.signal&lt;/code&gt;), injeta em &lt;code&gt;config.signal&lt;/code&gt;. Mesmo mecanismo.">Axios request interceptor. Reads <code>currentNodeAbortSignal()</code> (helper that does <code>nodeCancelContext.getStore()?.signal</code>), injects into <code>config.signal</code>. Same mechanism.</span>
               </div>
             </div>
           </div>
@@ -556,19 +616,21 @@
 
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Cooperativa, não hard-kill</div>
-            AbortSignal <em>sinaliza</em>. Fetch e axios respeitam e levantam <code>AbortError</code>. Se um handler fizer <em>SQL query direto</em> ou <em>cálculo síncrono pesado</em>, o abort <em>não</em> interrompe. Só a próxima chamada HTTP.
-            <br><br>Não é preemptivo. É o que Node.js single-threaded pode oferecer sem worker_threads.
+            <div class="aside-title"><span data-en="🎯 Cooperative, not hard-kill" data-pt="🎯 Cooperativa, não hard-kill">🎯 Cooperative, not hard-kill</span></div>
+            <span data-en="AbortSignal &lt;em&gt;signals&lt;/em&gt;. Fetch and axios respect it and throw &lt;code&gt;AbortError&lt;/code&gt;. If a handler does &lt;em&gt;direct SQL query&lt;/em&gt; or &lt;em&gt;heavy synchronous computation&lt;/em&gt;, the abort does &lt;em&gt;not&lt;/em&gt; interrupt. Only the next HTTP call.
+            &lt;br&gt;&lt;br&gt;Not preemptive. It's what single-threaded Node.js can offer without worker_threads." data-pt="AbortSignal &lt;em&gt;sinaliza&lt;/em&gt;. Fetch e axios respeitam e levantam &lt;code&gt;AbortError&lt;/code&gt;. Se um handler fizer &lt;em&gt;SQL query direto&lt;/em&gt; ou &lt;em&gt;cálculo síncrono pesado&lt;/em&gt;, o abort &lt;em&gt;não&lt;/em&gt; interrompe. Só a próxima chamada HTTP.
+            &lt;br&gt;&lt;br&gt;Não é preemptivo. É o que Node.js single-threaded pode oferecer sem worker_threads.">AbortSignal <em>signals</em>. Fetch and axios respect it and throw <code>AbortError</code>. If a handler does <em>direct SQL query</em> or <em>heavy synchronous computation</em>, the abort does <em>not</em> interrupt. Only the next HTTP call.
+            <br><br>Not preemptive. It's what single-threaded Node.js can offer without worker_threads.</span>
           </div>
 
           <div class="aside warn">
-            <div class="aside-title">⚠️ Nested reseta para undefined</div>
-            Em execuções aninhadas, o loop faz <code>nodeCancelContext.run(undefined, ...)</code> em alguns call-sites (flux.service.ts:5612, 5977). É intencional. Sub-run tem seu próprio watcher. Se algo escapar desse escopo, um handler pode ver <code>undefined</code> e desligar o abort. Fragilidade que precisa de teste.
+            <div class="aside-title"><span data-en="⚠️ Nested resets to undefined" data-pt="⚠️ Nested reseta para undefined">⚠️ Nested resets to undefined</span></div>
+            <span data-en="In nested executions, the loop does &lt;code&gt;nodeCancelContext.run(undefined, ...)&lt;/code&gt; at some call sites (flux.service.ts:5612, 5977). Intentional. Sub-run has its own watcher. If something escapes this scope, a handler may see &lt;code&gt;undefined&lt;/code&gt; and disable the abort. Fragility that needs testing." data-pt="Em execuções aninhadas, o loop faz &lt;code&gt;nodeCancelContext.run(undefined, ...)&lt;/code&gt; em alguns call-sites (flux.service.ts:5612, 5977). É intencional. Sub-run tem seu próprio watcher. Se algo escapar desse escopo, um handler pode ver &lt;code&gt;undefined&lt;/code&gt; e desligar o abort. Fragilidade que precisa de teste.">In nested executions, the loop does <code>nodeCancelContext.run(undefined, ...)</code> at some call sites (flux.service.ts:5612, 5977). Intentional. Sub-run has its own watcher. If something escapes this scope, a handler may see <code>undefined</code> and disable the abort. Fragility that needs testing.</span>
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 currentNodeAbortSignal helper</div>
-            <code>node-cancel-watch.ts:30</code>. Retorna <code>nodeCancelContext.getStore()?.signal ?? undefined</code>. Usado pelos interceptors.
+            <span data-en="&lt;code&gt;node-cancel-watch.ts:30&lt;/code&gt;. Returns &lt;code&gt;nodeCancelContext.getStore()?.signal ?? undefined&lt;/code&gt;. Used by the interceptors." data-pt="&lt;code&gt;node-cancel-watch.ts:30&lt;/code&gt;. Retorna &lt;code&gt;nodeCancelContext.getStore()?.signal ?? undefined&lt;/code&gt;. Usado pelos interceptors."><code>node-cancel-watch.ts:30</code>. Returns <code>nodeCancelContext.getStore()?.signal ?? undefined</code>. Used by the interceptors.</span>
           </div>
         </div>
       </div>
@@ -591,22 +653,34 @@
         await this.finishCancelledNode({ execId, node, flowId, myUpdatedNodes, schedState, userId, runType, elapsedMs, abortObserved, inFlightEnabled });
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Cleanup e persistência do estado cancelado. Chamado depois do handler retornar (após <code>AbortError</code>). Limpa erros que possam ter sido setados pelo abort, marca <code>executionStatus='CANCELLED'</code> em <code>node_executions</code>, dispara WebSocket avisando o cliente e marca no scheduler para parar o loop.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Cleanup and persistence of the cancelled state. Called after the handler returns (after &lt;code&gt;AbortError&lt;/code&gt;). Clears errors that may have been set by the abort, marks &lt;code&gt;executionStatus='CANCELLED'&lt;/code&gt; in &lt;code&gt;node_executions&lt;/code&gt;, fires WebSocket to notify the client and marks in the scheduler to stop the loop." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Cleanup e persistência do estado cancelado. Chamado depois do handler retornar (após &lt;code&gt;AbortError&lt;/code&gt;). Limpa erros que possam ter sido setados pelo abort, marca &lt;code&gt;executionStatus='CANCELLED'&lt;/code&gt; em &lt;code&gt;node_executions&lt;/code&gt;, dispara WebSocket avisando o cliente e marca no scheduler para parar o loop."><strong>Purpose.</strong> Cleanup and persistence of the cancelled state. Called after the handler returns (after <code>AbortError</code>). Clears errors that may have been set by the abort, marks <code>executionStatus='CANCELLED'</code> in <code>node_executions</code>, fires WebSocket to notify the client and marks in the scheduler to stop the loop.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> É o <em>encerrador</em> que faz o cleanup depois que o alarme tocou. Quando o watch aborta e fetch ou axios levanta <code>AbortError</code>, o handler retorna deixando o nó num estado meio confuso. Pode ter escrito <code>errorMessage</code> em node.data ("network error"), pode ter saída parcial, pode ter deixado sujeira. Esta função vem depois para limpar.
-        <br>(1) <em>Zera os campos de erro</em>. Cancel <strong>não é erro</strong> para UX. Tem que ser tratado como estado próprio (cinza, não vermelho).
-        <br>(2) UPDATE em <code>node_executions</code> setando <code>executionStatus='CANCELLED'</code> e <code>cancelledAt=NOW()</code>. Audit trail preciso.
-        <br>(3) Dispara WebSocket para o cliente atualizar a UI em tempo real ("esse nó foi cancelado").
-        <br>(4) Marca o nó no scheduler para a Fase 4 não achar como "não processado".
-        <br>(5) Seta <code>stoppedByCancel = true</code> e <code>break</code>. Sai do while imediatamente.
-        <br>A Fase 4 então fecha a execução com status "cancelado limpo", não com erro. Também guarda métricas. <code>elapsedMs</code> (quanto o nó rodou antes de ser cancelado) e <code>abortObserved</code> (se o cancel foi observado pelo in-flight ou só entre nós). Servem para telemetria e para medir a eficácia do sistema em produção. Só quebra o loop <em>deste nível</em>. Se é sub-run, o parent precisa também detectar o cancel na sua próxima iteração.
+        <span data-en="&lt;strong&gt;In short.&lt;/strong&gt; It's the &lt;em&gt;finisher&lt;/em&gt; that does cleanup after the alarm rang. When watch aborts and fetch or axios throws &lt;code&gt;AbortError&lt;/code&gt;, the handler returns leaving the node in a somewhat confusing state. It may have written &lt;code&gt;errorMessage&lt;/code&gt; to node.data (&quot;network error&quot;), may have partial output, may have left leftovers. This function comes after to clean up.
+        &lt;br&gt;(1) &lt;em&gt;Nulls out error fields&lt;/em&gt;. Cancel is &lt;strong&gt;not error&lt;/strong&gt; for UX. Must be handled as its own state (gray, not red).
+        &lt;br&gt;(2) UPDATE on &lt;code&gt;node_executions&lt;/code&gt; setting &lt;code&gt;executionStatus='CANCELLED'&lt;/code&gt; and &lt;code&gt;cancelledAt=NOW()&lt;/code&gt;. Precise audit trail.
+        &lt;br&gt;(3) Fires WebSocket so client can update UI in real time (&quot;this node was cancelled&quot;).
+        &lt;br&gt;(4) Marks the node in the scheduler so Phase 4 doesn't find it as &quot;unprocessed&quot;.
+        &lt;br&gt;(5) Sets &lt;code&gt;stoppedByCancel = true&lt;/code&gt; and &lt;code&gt;break&lt;/code&gt;. Exits while immediately.
+        &lt;br&gt;Phase 4 then closes execution with &quot;clean cancelled&quot; status, not error. Also stores metrics. &lt;code&gt;elapsedMs&lt;/code&gt; (how long the node ran before being cancelled) and &lt;code&gt;abortObserved&lt;/code&gt; (whether cancel was observed by in-flight or only between nodes). Serve telemetry and measure system effectiveness in production. Only breaks the loop at &lt;em&gt;this level&lt;/em&gt;. If it's sub-run, parent also needs to detect cancel on its next iteration." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; É o &lt;em&gt;encerrador&lt;/em&gt; que faz o cleanup depois que o alarme tocou. Quando o watch aborta e fetch ou axios levanta &lt;code&gt;AbortError&lt;/code&gt;, o handler retorna deixando o nó num estado meio confuso. Pode ter escrito &lt;code&gt;errorMessage&lt;/code&gt; em node.data (&quot;network error&quot;), pode ter saída parcial, pode ter deixado sujeira. Esta função vem depois para limpar.
+        &lt;br&gt;(1) &lt;em&gt;Zera os campos de erro&lt;/em&gt;. Cancel &lt;strong&gt;não é erro&lt;/strong&gt; para UX. Tem que ser tratado como estado próprio (cinza, não vermelho).
+        &lt;br&gt;(2) UPDATE em &lt;code&gt;node_executions&lt;/code&gt; setando &lt;code&gt;executionStatus='CANCELLED'&lt;/code&gt; e &lt;code&gt;cancelledAt=NOW()&lt;/code&gt;. Audit trail preciso.
+        &lt;br&gt;(3) Dispara WebSocket para o cliente atualizar a UI em tempo real (&quot;esse nó foi cancelado&quot;).
+        &lt;br&gt;(4) Marca o nó no scheduler para a Fase 4 não achar como &quot;não processado&quot;.
+        &lt;br&gt;(5) Seta &lt;code&gt;stoppedByCancel = true&lt;/code&gt; e &lt;code&gt;break&lt;/code&gt;. Sai do while imediatamente.
+        &lt;br&gt;A Fase 4 então fecha a execução com status &quot;cancelado limpo&quot;, não com erro. Também guarda métricas. &lt;code&gt;elapsedMs&lt;/code&gt; (quanto o nó rodou antes de ser cancelado) e &lt;code&gt;abortObserved&lt;/code&gt; (se o cancel foi observado pelo in-flight ou só entre nós). Servem para telemetria e para medir a eficácia do sistema em produção. Só quebra o loop &lt;em&gt;deste nível&lt;/em&gt;. Se é sub-run, o parent precisa também detectar o cancel na sua próxima iteração."><strong>In short.</strong> It's the <em>finisher</em> that does cleanup after the alarm rang. When watch aborts and fetch or axios throws <code>AbortError</code>, the handler returns leaving the node in a somewhat confusing state. It may have written <code>errorMessage</code> to node.data ("network error"), may have partial output, may have left leftovers. This function comes after to clean up.
+        <br>(1) <em>Nulls out error fields</em>. Cancel is <strong>not error</strong> for UX. Must be handled as its own state (gray, not red).
+        <br>(2) UPDATE on <code>node_executions</code> setting <code>executionStatus='CANCELLED'</code> and <code>cancelledAt=NOW()</code>. Precise audit trail.
+        <br>(3) Fires WebSocket so client can update UI in real time ("this node was cancelled").
+        <br>(4) Marks the node in the scheduler so Phase 4 doesn't find it as "unprocessed".
+        <br>(5) Sets <code>stoppedByCancel = true</code> and <code>break</code>. Exits while immediately.
+        <br>Phase 4 then closes execution with "clean cancelled" status, not error. Also stores metrics. <code>elapsedMs</code> (how long the node ran before being cancelled) and <code>abortObserved</code> (whether cancel was observed by in-flight or only between nodes). Serve telemetry and measure system effectiveness in production. Only breaks the loop at <em>this level</em>. If it's sub-run, parent also needs to detect cancel on its next iteration.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="code-block">
-<span class="c">// flux.service.ts:4516-4530 — call site</span>
+<span class="c">// flux.service.ts:4516-4530 — <span data-en="call site" data-pt="call site">call site</span></span>
 <span class="k">if</span> (cancelWatch?.<span class="t">wasAborted</span>()) {
   <span class="k">await</span> <span class="k">this</span>.<span class="t">finishCancelledNode</span>({
     execId: runLogProcessId,
@@ -627,11 +701,11 @@
           <div class="arrow">↓</div>
 
           <div class="cascade">
-            <div class="cascade-title">🪜 finishCancelledNode faz</div>
+            <div class="cascade-title"><span data-en="🪜 finishCancelledNode does" data-pt="🪜 finishCancelledNode faz">🪜 finishCancelledNode does</span></div>
             <div class="cascade-step">
               <span class="cascade-num">1</span>
-              <span class="cond">Limpa errorMessage / errorStatusCode em node.data</span>
-              <span class="result pass">nulls out — cancel não é erro</span>
+              <span class="cond"><span data-en="Clears errorMessage / errorStatusCode in node.data" data-pt="Limpa errorMessage / errorStatusCode em node.data">Clears errorMessage / errorStatusCode in node.data</span></span>
+              <span class="result pass"><span data-en="nulls out — cancel is not error" data-pt="nulls out — cancel não é erro">nulls out — cancel is not error</span></span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">2</span>
@@ -641,41 +715,43 @@
             <div class="cascade-step">
               <span class="cascade-num">3</span>
               <span class="cond">emitNodeStatus (WebSocket)</span>
-              <span class="result call">notifica cliente com status cancelado</span>
+              <span class="result call"><span data-en="notifies client with cancelled status" data-pt="notifica cliente com status cancelado">notifies client with cancelled status</span></span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">4</span>
-              <span class="cond">Marca no scheduler</span>
-              <span class="result pass">completed/dead pra Fase 4 não achar como pending</span>
+              <span class="cond"><span data-en="Marks in scheduler" data-pt="Marca no scheduler">Marks in scheduler</span></span>
+              <span class="result pass"><span data-en="completed/dead so Phase 4 doesn't find as pending" data-pt="completed/dead pra Fase 4 não achar como pending">completed/dead so Phase 4 doesn't find as pending</span></span>
             </div>
             <div class="cascade-step">
               <span class="cascade-num">5</span>
               <span class="cond">stoppedByCancel = true; break</span>
-              <span class="result deny">sai do while imediatamente</span>
+              <span class="result deny"><span data-en="exits while immediately" data-pt="sai do while imediatamente">exits while immediately</span></span>
             </div>
           </div>
         </div>
 
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Cancel ≠ erro</div>
-            Um nó cancelado <em>não</em> vira nó com <code>errorMessage</code>. A Fase 4.5 (preparação de erro amigável) NÃO deve reportar "execution failed at node X" quando o motivo foi cancel. Por isso <code>finishCancelledNode</code> explicitamente <em>limpa</em> os campos de erro antes de persistir.
-            <br><br>UI diferencia visualmente. Cancelado = cinza / grayed out. Erro = vermelho.
+            <div class="aside-title"><span data-en="🎯 Cancel ≠ error" data-pt="🎯 Cancel ≠ erro">🎯 Cancel ≠ error</span></div>
+            <span data-en="A cancelled node does &lt;em&gt;not&lt;/em&gt; become a node with &lt;code&gt;errorMessage&lt;/code&gt;. Phase 4.5 (friendly error preparation) MUST NOT report &quot;execution failed at node X&quot; when the reason was cancel. That's why &lt;code&gt;finishCancelledNode&lt;/code&gt; explicitly &lt;em&gt;clears&lt;/em&gt; error fields before persisting.
+            &lt;br&gt;&lt;br&gt;UI visually differentiates. Cancelled = gray / grayed out. Error = red." data-pt="Um nó cancelado &lt;em&gt;não&lt;/em&gt; vira nó com &lt;code&gt;errorMessage&lt;/code&gt;. A Fase 4.5 (preparação de erro amigável) NÃO deve reportar &quot;execution failed at node X&quot; quando o motivo foi cancel. Por isso &lt;code&gt;finishCancelledNode&lt;/code&gt; explicitamente &lt;em&gt;limpa&lt;/em&gt; os campos de erro antes de persistir.
+            &lt;br&gt;&lt;br&gt;UI diferencia visualmente. Cancelado = cinza / grayed out. Erro = vermelho.">A cancelled node does <em>not</em> become a node with <code>errorMessage</code>. Phase 4.5 (friendly error preparation) MUST NOT report "execution failed at node X" when the reason was cancel. That's why <code>finishCancelledNode</code> explicitly <em>clears</em> error fields before persisting.
+            <br><br>UI visually differentiates. Cancelled = gray / grayed out. Error = red.</span>
           </div>
 
           <div class="aside">
-            <div class="aside-title">📎 elapsedMs vai pra telemetria</div>
-            <code>elapsedMs = Date.now() - nodeStartedAtMs</code>. Usa o timer marcado em 3.2. Vai para o log de cancelamento como métrica ("quanto tempo o nó rodou antes de ser cancelado").
+            <div class="aside-title"><span data-en="📎 elapsedMs goes to telemetry" data-pt="📎 elapsedMs vai pra telemetria">📎 elapsedMs goes to telemetry</span></div>
+            <span data-en="&lt;code&gt;elapsedMs = Date.now() - nodeStartedAtMs&lt;/code&gt;. Uses the timer marked at 3.2. Goes to the cancellation log as a metric (&quot;how long the node ran before being cancelled&quot;)." data-pt="&lt;code&gt;elapsedMs = Date.now() - nodeStartedAtMs&lt;/code&gt;. Usa o timer marcado em 3.2. Vai para o log de cancelamento como métrica (&quot;quanto tempo o nó rodou antes de ser cancelado&quot;)."><code>elapsedMs = Date.now() - nodeStartedAtMs</code>. Uses the timer marked at 3.2. Goes to the cancellation log as a metric ("how long the node ran before being cancelled").</span>
           </div>
 
           <div class="aside warn">
-            <div class="aside-title">⚠️ Só quebra o loop deste nível</div>
-            Se este é um sub-run (nested), o break só sai do while do sub-run. O caller (handler do fluxBox no parent) recebe o retorno e precisa lidar com o cancel também. Hoje o parent ainda checa <code>isCancelRequested</code> na próxima iteração e cancela também.
+            <div class="aside-title"><span data-en="⚠️ Only breaks the loop at this level" data-pt="⚠️ Só quebra o loop deste nível">⚠️ Only breaks the loop at this level</span></div>
+            <span data-en="If this is a sub-run (nested), the break only exits the sub-run's while. The caller (fluxBox handler in parent) receives the return and needs to handle the cancel too. Today parent still checks &lt;code&gt;isCancelRequested&lt;/code&gt; on the next iteration and cancels too." data-pt="Se este é um sub-run (nested), o break só sai do while do sub-run. O caller (handler do fluxBox no parent) recebe o retorno e precisa lidar com o cancel também. Hoje o parent ainda checa &lt;code&gt;isCancelRequested&lt;/code&gt; na próxima iteração e cancela também.">If this is a sub-run (nested), the break only exits the sub-run's while. The caller (fluxBox handler in parent) receives the return and needs to handle the cancel too. Today parent still checks <code>isCancelRequested</code> on the next iteration and cancels too.</span>
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 abortObserved param</div>
-            Diferencia cancel <em>observado</em> pelo watch in-flight (fetch ou axios levantou AbortError) versus cancel só <em>detectado</em> entre nós. Vai para telemetria. Mede a eficácia do in-flight.
+            <div class="aside-title"><span data-en="🔧 abortObserved param" data-pt="🔧 abortObserved param">🔧 abortObserved param</span></div>
+            <span data-en="Differentiates cancel &lt;em&gt;observed&lt;/em&gt; by in-flight watch (fetch or axios threw AbortError) versus cancel only &lt;em&gt;detected&lt;/em&gt; between nodes. Goes to telemetry. Measures effectiveness of in-flight." data-pt="Diferencia cancel &lt;em&gt;observado&lt;/em&gt; pelo watch in-flight (fetch ou axios levantou AbortError) versus cancel só &lt;em&gt;detectado&lt;/em&gt; entre nós. Vai para telemetria. Mede a eficácia do in-flight.">Differentiates cancel <em>observed</em> by in-flight watch (fetch or axios threw AbortError) versus cancel only <em>detected</em> between nodes. Goes to telemetry. Measures effectiveness of in-flight.</span>
           </div>
         </div>
       </div>
@@ -684,25 +760,45 @@
 
   <!-- SUMMARY -->
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo — o que sai do Cancellation check:</strong>
-    <br>• Caminho feliz (sem cancel): 100% no-op. Passa direto para o passo 3.5.
-    <br>• Cancel entre nós detectado: <code>stoppedByCancel=true</code>, <code>break</code>. Sem executar nó.
-    <br>• Cancel durante nó: <code>AbortError</code> propaga, handler retorna, <code>finishCancelledNode</code> registra em <code>node_executions</code>, WebSocket, break.
-    <br>• Fase 4 depois vê: <code>stoppedByCancel</code> não vira erro fatal. A execução termina "cancelado" limpo.
+    <span data-en="&lt;strong&gt;Summary — what comes out of the Cancellation check:&lt;/strong&gt;
+    &lt;br&gt;• Happy path (no cancel): 100% no-op. Goes straight to step 3.5.
+    &lt;br&gt;• Cancel between nodes detected: &lt;code&gt;stoppedByCancel=true&lt;/code&gt;, &lt;code&gt;break&lt;/code&gt;. Without executing node.
+    &lt;br&gt;• Cancel during node: &lt;code&gt;AbortError&lt;/code&gt; propagates, handler returns, &lt;code&gt;finishCancelledNode&lt;/code&gt; records in &lt;code&gt;node_executions&lt;/code&gt;, WebSocket, break.
+    &lt;br&gt;• Phase 4 then sees: &lt;code&gt;stoppedByCancel&lt;/code&gt; does not become fatal error. Execution ends &quot;cancelled&quot; clean." data-pt="&lt;strong&gt;Resumo — o que sai do Cancellation check:&lt;/strong&gt;
+    &lt;br&gt;• Caminho feliz (sem cancel): 100% no-op. Passa direto para o passo 3.5.
+    &lt;br&gt;• Cancel entre nós detectado: &lt;code&gt;stoppedByCancel=true&lt;/code&gt;, &lt;code&gt;break&lt;/code&gt;. Sem executar nó.
+    &lt;br&gt;• Cancel durante nó: &lt;code&gt;AbortError&lt;/code&gt; propaga, handler retorna, &lt;code&gt;finishCancelledNode&lt;/code&gt; registra em &lt;code&gt;node_executions&lt;/code&gt;, WebSocket, break.
+    &lt;br&gt;• Fase 4 depois vê: &lt;code&gt;stoppedByCancel&lt;/code&gt; não vira erro fatal. A execução termina &quot;cancelado&quot; limpo."><strong>Summary — what comes out of the Cancellation check:</strong>
+    <br>• Happy path (no cancel): 100% no-op. Goes straight to step 3.5.
+    <br>• Cancel between nodes detected: <code>stoppedByCancel=true</code>, <code>break</code>. Without executing node.
+    <br>• Cancel during node: <code>AbortError</code> propagates, handler returns, <code>finishCancelledNode</code> records in <code>node_executions</code>, WebSocket, break.
+    <br>• Phase 4 then sees: <code>stoppedByCancel</code> does not become fatal error. Execution ends "cancelled" clean.</span>
   </div>
 
   <div class="note">
-    <strong>Observações para migração:</strong>
-    <br>• Sistema é <span class="badge new">novo</span>. Foi adicionado depois do doc original. Ainda tem partes marcadas com feature flag OFF (<code>NODE_CANCEL_IN_FLIGHT_FLAG</code>). Pode não estar totalmente estável para produção. Validar antes de migrar.
-    <br>• <strong>Base do cancel (via Postgres poll + WebSocket + status column)</strong> é portável. <code>nodeCancelContext</code> é ALS. Não funciona quando o handler roda no worker (outro processo). O worker teria que ter seu próprio mecanismo. Temporal já suporta workflow cancel nativamente via <code>WorkflowHandle.cancel()</code>.
-    <br>• Ideal na migração: <strong>alinhar cancel do backend com cancel nativo do Temporal</strong>. Backend chama <code>handle.cancel()</code> quando <code>isCancelRequested=true</code>. O worker respeita via <code>Context.current().cancelled</code>. Muito mais robusto que polling + AbortSignal.
-    <br>• setInterval por nó (60 nós = 60 timers × 500ms cada, hoje 2s) é fonte de CPU e BD. Se ficar ligado por padrão sem otimização, vira ofensor de perf.
-    <br>• É <strong>cross-cutting e opt-in</strong>. Pode ficar para depois no plano de migração. A migração para o Temporal por si só dá cancel semântica quase de graça via <code>workflowHandle.cancel()</code>. Priorizar isso <em>depois</em> do worker migrar.
-    <br>• Cache de 1500ms mais poll de 2000ms tem race condition latente. Pode ter até 3.5s de delay entre o clique e o cancel efetivo. Aceitável, mas documentar.
+    <span data-en="&lt;strong&gt;Migration notes:&lt;/strong&gt;
+    &lt;br&gt;• System is &lt;span class=&quot;badge new&quot;&gt;new&lt;/span&gt;. Was added after the original doc. Still has parts marked with feature flag OFF (&lt;code&gt;NODE_CANCEL_IN_FLIGHT_FLAG&lt;/code&gt;). May not be fully stable for production. Validate before migrating.
+    &lt;br&gt;• &lt;strong&gt;Cancel base (via Postgres poll + WebSocket + status column)&lt;/strong&gt; is portable. &lt;code&gt;nodeCancelContext&lt;/code&gt; is ALS. Doesn't work when handler runs in the worker (different process). The worker would have to have its own mechanism. Temporal already supports workflow cancel natively via &lt;code&gt;WorkflowHandle.cancel()&lt;/code&gt;.
+    &lt;br&gt;• Ideal for migration: &lt;strong&gt;align backend cancel with native Temporal cancel&lt;/strong&gt;. Backend calls &lt;code&gt;handle.cancel()&lt;/code&gt; when &lt;code&gt;isCancelRequested=true&lt;/code&gt;. Worker respects via &lt;code&gt;Context.current().cancelled&lt;/code&gt;. Much more robust than polling + AbortSignal.
+    &lt;br&gt;• setInterval per node (60 nodes = 60 timers × 500ms each, today 2s) is CPU and DB source. If left on by default without optimization, becomes perf offender.
+    &lt;br&gt;• It's &lt;strong&gt;cross-cutting and opt-in&lt;/strong&gt;. Can wait for later in the migration plan. Temporal migration itself gives cancel semantics almost for free via &lt;code&gt;workflowHandle.cancel()&lt;/code&gt;. Prioritize this &lt;em&gt;after&lt;/em&gt; worker migrates.
+    &lt;br&gt;• 1500ms cache plus 2000ms poll has latent race condition. Can have up to 3.5s delay between click and effective cancel. Acceptable, but document." data-pt="&lt;strong&gt;Observações para migração:&lt;/strong&gt;
+    &lt;br&gt;• Sistema é &lt;span class=&quot;badge new&quot;&gt;novo&lt;/span&gt;. Foi adicionado depois do doc original. Ainda tem partes marcadas com feature flag OFF (&lt;code&gt;NODE_CANCEL_IN_FLIGHT_FLAG&lt;/code&gt;). Pode não estar totalmente estável para produção. Validar antes de migrar.
+    &lt;br&gt;• &lt;strong&gt;Base do cancel (via Postgres poll + WebSocket + status column)&lt;/strong&gt; é portável. &lt;code&gt;nodeCancelContext&lt;/code&gt; é ALS. Não funciona quando o handler roda no worker (outro processo). O worker teria que ter seu próprio mecanismo. Temporal já suporta workflow cancel nativamente via &lt;code&gt;WorkflowHandle.cancel()&lt;/code&gt;.
+    &lt;br&gt;• Ideal na migração: &lt;strong&gt;alinhar cancel do backend com cancel nativo do Temporal&lt;/strong&gt;. Backend chama &lt;code&gt;handle.cancel()&lt;/code&gt; quando &lt;code&gt;isCancelRequested=true&lt;/code&gt;. O worker respeita via &lt;code&gt;Context.current().cancelled&lt;/code&gt;. Muito mais robusto que polling + AbortSignal.
+    &lt;br&gt;• setInterval por nó (60 nós = 60 timers × 500ms cada, hoje 2s) é fonte de CPU e BD. Se ficar ligado por padrão sem otimização, vira ofensor de perf.
+    &lt;br&gt;• É &lt;strong&gt;cross-cutting e opt-in&lt;/strong&gt;. Pode ficar para depois no plano de migração. A migração para o Temporal por si só dá cancel semântica quase de graça via &lt;code&gt;workflowHandle.cancel()&lt;/code&gt;. Priorizar isso &lt;em&gt;depois&lt;/em&gt; do worker migrar.
+    &lt;br&gt;• Cache de 1500ms mais poll de 2000ms tem race condition latente. Pode ter até 3.5s de delay entre o clique e o cancel efetivo. Aceitável, mas documentar."><strong>Migration notes:</strong>
+    <br>• System is <span class="badge new">new</span>. Was added after the original doc. Still has parts marked with feature flag OFF (<code>NODE_CANCEL_IN_FLIGHT_FLAG</code>). May not be fully stable for production. Validate before migrating.
+    <br>• <strong>Cancel base (via Postgres poll + WebSocket + status column)</strong> is portable. <code>nodeCancelContext</code> is ALS. Doesn't work when handler runs in the worker (different process). The worker would have to have its own mechanism. Temporal already supports workflow cancel natively via <code>WorkflowHandle.cancel()</code>.
+    <br>• Ideal for migration: <strong>align backend cancel with native Temporal cancel</strong>. Backend calls <code>handle.cancel()</code> when <code>isCancelRequested=true</code>. Worker respects via <code>Context.current().cancelled</code>. Much more robust than polling + AbortSignal.
+    <br>• setInterval per node (60 nodes = 60 timers × 500ms each, today 2s) is CPU and DB source. If left on by default without optimization, becomes perf offender.
+    <br>• It's <strong>cross-cutting and opt-in</strong>. Can wait for later in the migration plan. Temporal migration itself gives cancel semantics almost for free via <code>workflowHandle.cancel()</code>. Prioritize this <em>after</em> worker migrates.
+    <br>• 1500ms cache plus 2000ms poll has latent race condition. Can have up to 3.5s delay between click and effective cancel. Acceptable, but document.</span>
   </div>
 
   <div class="page-footer-nav">
-    <a href="../index.html#step-3-cancel" class="back-btn">← Voltar ao diagrama principal</a>
+    <a href="../index.html#step-3-cancel" class="back-btn"><span data-en="← Back to main diagram" data-pt="← Voltar ao diagrama principal">← Back to main diagram</span></a>
   </div>
 
 </div>
@@ -736,5 +832,6 @@
   });
 })();
 </script>
+<script src="../_assets/i18n.js" defer></script>
 </body>
 </html>

@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Passo 4.1a — Publicação de status cancelado | Detalhamento</title>
+<link rel="stylesheet" href="../_assets/i18n.css">
+<link rel="stylesheet" href="../_assets/header.css">
+<title>Step 4.1a — Cancelled status publication | Detail</title>
 <style>
   * { box-sizing: border-box; }
   body {
@@ -232,41 +234,55 @@
 </head>
 <body>
 <div class="container">
+<div class="doc-nav">
+  <nav class="doc-tabs" aria-label="Documentation sections">
+    <a href="../index.html" class="doc-tab is-active"><span data-en="Current architecture" data-pt="Arquitetura atual">Current architecture</span></a>
+    <a href="../arquitetura-v2.html" class="doc-tab"><span data-en="v2 architecture" data-pt="Arquitetura v2">v2 architecture</span></a>
+    <a href="../arquitetura-v2-complemento.html" class="doc-tab"><span data-en="Plan as tasks" data-pt="Plano em tarefas">Plan as tasks</span></a>
+    <a href="../timeline/index.html" class="doc-tab"><span data-en="Timeline" data-pt="Timeline">Timeline</span></a>
+  </nav>
+  <div class="lang-sw" role="group" aria-label="Language">
+    <button type="button" data-lang="en" aria-pressed="true">EN-US</button>
+    <button type="button" data-lang="pt" aria-pressed="false">PT-BR</button>
+  </div>
+</div>
+
+
+
 
   <!-- TOP NAV -->
   <div class="page-nav">
     <div class="breadcrumb">
-      <a href="../index.html">📋 Execução de Agente</a>
+      <a href="../index.html"><span data-en="📋 Agent execution" data-pt="📋 Execução de Agente">📋 Agent execution</span></a>
       <span class="sep">›</span>
-      <span>Passo 4.1a — Detalhamento</span>
+      <span data-en="Step 4.1a — Detail" data-pt="Passo 4.1a — Detalhamento">Step 4.1a — Detail</span>
     </div>
-    <a href="../index.html#step-4-1a" class="back-btn">← Voltar ao diagrama</a>
+    <a href="../index.html#step-4-1a" class="back-btn"><span data-en="← Back to diagram" data-pt="← Voltar ao diagrama">← Back to diagram</span></a>
+    
   </div>
 
   <!-- PAGE HEADER -->
-  <div class="page-header">
-    <span class="icon">🛑</span>
-    <h1>Passo 4.1a — Publicação de status cancelado</h1>
-  </div>
-  <div class="page-sub">
-    Bloco em <code>flux.service.ts:4805-4825</code>. Depois que o loop principal fez <code>break</code> por causa de cancel, este bloco executa três ações. Primeiro, calcula quais nós não foram executados. Segundo, grava esse resultado em <code>flow_run_states</code> como registro definitivo do cancelamento. Terceiro, emite um evento WebSocket para a UI marcar todos esses nós como <code>CANCELLED</code>.
+  <div class="hero">
+    <div class="kicker"><span class="ico">🛑</span></div>
+    <h1><span data-en="Step 4.1a — Cancelled status publication" data-pt="Passo 4.1a — Publicação de status cancelado">Step 4.1a — Cancelled status publication</span></h1>
+    <div class="goal"><span data-en="Block in &lt;code&gt;flux.service.ts:4805-4825&lt;/code&gt;. After the main loop did &lt;code&gt;break&lt;/code&gt; because of cancel, this block runs three actions. First, computes which nodes were not executed. Second, writes that result in &lt;code&gt;flow_run_states&lt;/code&gt; as the definitive record of the cancellation. Third, emits a WebSocket event for the UI to mark all those nodes as &lt;code&gt;CANCELLED&lt;/code&gt;." data-pt="Bloco em &lt;code&gt;flux.service.ts:4805-4825&lt;/code&gt;. Depois que o loop principal fez &lt;code&gt;break&lt;/code&gt; por causa de cancel, este bloco executa três ações. Primeiro, calcula quais nós não foram executados. Segundo, grava esse resultado em &lt;code&gt;flow_run_states&lt;/code&gt; como registro definitivo do cancelamento. Terceiro, emite um evento WebSocket para a UI marcar todos esses nós como &lt;code&gt;CANCELLED&lt;/code&gt;.">Block in <code>flux.service.ts:4805-4825</code>. After the main loop did <code>break</code> because of cancel, this block runs three actions. First, computes which nodes were not executed. Second, writes that result in <code>flow_run_states</code> as the definitive record of the cancellation. Third, emits a WebSocket event for the UI to mark all those nodes as <code>CANCELLED</code>.</span></div>
   </div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
-    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <div class="step-friendly-title"><span data-en="In summary — what this step does" data-pt="Em resumo — o que esse passo faz">In summary — what this step does</span></div>
     <ul>
-      <li><strong>Gate simples.</strong> Só entra se <code>stoppedByCancel === true</code>. A flag é definida no loop quando <code>cancelWatch?.wasAborted()</code> devolveu <code>true</code> (linha 4596) ou em outros 3 pontos de detecção (3290, 3877, 4716).</li>
-      <li><strong>Calcula o footprint.</strong> A função <code>resolveCancelledRunFootprint</code> filtra os <code>schedState.nodeIds</code>. Remove quem já completou ou morreu (dead-scheduled). Sobram os não executados. Cada um vira <code>{ nodeId, label, type }</code>. O <code>stoppedAtNodeId</code> é o último nó que chegou a começar (<code>lastExecutedNodeId</code>).</li>
-      <li><strong>Persiste no banco.</strong> A função <code>runCancellationService.markCancelled</code> executa <code>UPDATE flow_run_states SET cancelledAt = now(), stoppedAtNodeId = $2, notExecutedNodeIds = $3::jsonb</code>. Em caso de falha, retenta até 3 vezes com 200ms entre elas. Não propaga erro ao fim (fire-and-forget definitivo).</li>
-      <li><strong>Emite WebSocket.</strong> A função <code>emitCancelledRunStatuses</code> chama <code>notificationsGateway.sendToUser</code>. Envia <code>{ runId, flowId, userId, flowVersionHistoryId, nodes: { [nodeId]: { status: 'CANCELLED' } } }</code> no evento <code>room_status_updated</code>. A UI escuta esse evento e pinta os nós como cancelado.</li>
-      <li><strong>Diferenciação de erro.</strong> A linha em <code>flow_run_states</code> não guarda status <code>cancelled</code> nem <code>error</code>. O discriminador é a presença de <code>cancelledAt</code>. Execuções com erro têm essa coluna nula. Execuções canceladas têm timestamp. O mesmo <code>UPDATE</code> exige <code>WHERE cancelledAt IS NULL</code>. É idempotente.</li>
+      <li><span data-en="&lt;strong&gt;Simple gate.&lt;/strong&gt; Only enters if &lt;code&gt;stoppedByCancel === true&lt;/code&gt;. The flag is set in the loop when &lt;code&gt;cancelWatch?.wasAborted()&lt;/code&gt; returned &lt;code&gt;true&lt;/code&gt; (line 4596) or in 3 other detection points (3290, 3877, 4716)." data-pt="&lt;strong&gt;Gate simples.&lt;/strong&gt; Só entra se &lt;code&gt;stoppedByCancel === true&lt;/code&gt;. A flag é definida no loop quando &lt;code&gt;cancelWatch?.wasAborted()&lt;/code&gt; devolveu &lt;code&gt;true&lt;/code&gt; (linha 4596) ou em outros 3 pontos de detecção (3290, 3877, 4716)."><strong>Simple gate.</strong> Only enters if <code>stoppedByCancel === true</code>. The flag is set in the loop when <code>cancelWatch?.wasAborted()</code> returned <code>true</code> (line 4596) or in 3 other detection points (3290, 3877, 4716).</span></li>
+      <li><span data-en="&lt;strong&gt;Computes the footprint.&lt;/strong&gt; The function &lt;code&gt;resolveCancelledRunFootprint&lt;/code&gt; filters the &lt;code&gt;schedState.nodeIds&lt;/code&gt;. Removes those that already completed or died (dead-scheduled). The non-executed remain. Each becomes &lt;code&gt;{ nodeId, label, type }&lt;/code&gt;. The &lt;code&gt;stoppedAtNodeId&lt;/code&gt; is the last node that got to start (&lt;code&gt;lastExecutedNodeId&lt;/code&gt;)." data-pt="&lt;strong&gt;Calcula o footprint.&lt;/strong&gt; A função &lt;code&gt;resolveCancelledRunFootprint&lt;/code&gt; filtra os &lt;code&gt;schedState.nodeIds&lt;/code&gt;. Remove quem já completou ou morreu (dead-scheduled). Sobram os não executados. Cada um vira &lt;code&gt;{ nodeId, label, type }&lt;/code&gt;. O &lt;code&gt;stoppedAtNodeId&lt;/code&gt; é o último nó que chegou a começar (&lt;code&gt;lastExecutedNodeId&lt;/code&gt;)."><strong>Computes the footprint.</strong> The function <code>resolveCancelledRunFootprint</code> filters the <code>schedState.nodeIds</code>. Removes those that already completed or died (dead-scheduled). The non-executed remain. Each becomes <code>{ nodeId, label, type }</code>. The <code>stoppedAtNodeId</code> is the last node that got to start (<code>lastExecutedNodeId</code>).</span></li>
+      <li><span data-en="&lt;strong&gt;Persists to the database.&lt;/strong&gt; The function &lt;code&gt;runCancellationService.markCancelled&lt;/code&gt; runs &lt;code&gt;UPDATE flow_run_states SET cancelledAt = now(), stoppedAtNodeId = $2, notExecutedNodeIds = $3::jsonb&lt;/code&gt;. On failure, retries up to 3 times with 200ms between them. Doesn't propagate error at the end (definitive fire-and-forget)." data-pt="&lt;strong&gt;Persiste no banco.&lt;/strong&gt; A função &lt;code&gt;runCancellationService.markCancelled&lt;/code&gt; executa &lt;code&gt;UPDATE flow_run_states SET cancelledAt = now(), stoppedAtNodeId = $2, notExecutedNodeIds = $3::jsonb&lt;/code&gt;. Em caso de falha, retenta até 3 vezes com 200ms entre elas. Não propaga erro ao fim (fire-and-forget definitivo)."><strong>Persists to the database.</strong> The function <code>runCancellationService.markCancelled</code> runs <code>UPDATE flow_run_states SET cancelledAt = now(), stoppedAtNodeId = $2, notExecutedNodeIds = $3::jsonb</code>. On failure, retries up to 3 times with 200ms between them. Doesn't propagate error at the end (definitive fire-and-forget).</span></li>
+      <li><span data-en="&lt;strong&gt;Emits WebSocket.&lt;/strong&gt; The function &lt;code&gt;emitCancelledRunStatuses&lt;/code&gt; calls &lt;code&gt;notificationsGateway.sendToUser&lt;/code&gt;. Sends &lt;code&gt;{ runId, flowId, userId, flowVersionHistoryId, nodes: { [nodeId]: { status: 'CANCELLED' } } }&lt;/code&gt; in the &lt;code&gt;room_status_updated&lt;/code&gt; event. The UI listens to this event and paints the nodes as cancelled." data-pt="&lt;strong&gt;Emite WebSocket.&lt;/strong&gt; A função &lt;code&gt;emitCancelledRunStatuses&lt;/code&gt; chama &lt;code&gt;notificationsGateway.sendToUser&lt;/code&gt;. Envia &lt;code&gt;{ runId, flowId, userId, flowVersionHistoryId, nodes: { [nodeId]: { status: 'CANCELLED' } } }&lt;/code&gt; no evento &lt;code&gt;room_status_updated&lt;/code&gt;. A UI escuta esse evento e pinta os nós como cancelado."><strong>Emits WebSocket.</strong> The function <code>emitCancelledRunStatuses</code> calls <code>notificationsGateway.sendToUser</code>. Sends <code>{ runId, flowId, userId, flowVersionHistoryId, nodes: { [nodeId]: { status: 'CANCELLED' } } }</code> in the <code>room_status_updated</code> event. The UI listens to this event and paints the nodes as cancelled.</span></li>
+      <li><span data-en="&lt;strong&gt;Error differentiation.&lt;/strong&gt; The row in &lt;code&gt;flow_run_states&lt;/code&gt; doesn't hold status &lt;code&gt;cancelled&lt;/code&gt; nor &lt;code&gt;error&lt;/code&gt;. The discriminator is the presence of &lt;code&gt;cancelledAt&lt;/code&gt;. Failed executions have that column null. Cancelled executions have a timestamp. The same &lt;code&gt;UPDATE&lt;/code&gt; requires &lt;code&gt;WHERE cancelledAt IS NULL&lt;/code&gt;. It's idempotent." data-pt="&lt;strong&gt;Diferenciação de erro.&lt;/strong&gt; A linha em &lt;code&gt;flow_run_states&lt;/code&gt; não guarda status &lt;code&gt;cancelled&lt;/code&gt; nem &lt;code&gt;error&lt;/code&gt;. O discriminador é a presença de &lt;code&gt;cancelledAt&lt;/code&gt;. Execuções com erro têm essa coluna nula. Execuções canceladas têm timestamp. O mesmo &lt;code&gt;UPDATE&lt;/code&gt; exige &lt;code&gt;WHERE cancelledAt IS NULL&lt;/code&gt;. É idempotente."><strong>Error differentiation.</strong> The row in <code>flow_run_states</code> doesn't hold status <code>cancelled</code> nor <code>error</code>. The discriminator is the presence of <code>cancelledAt</code>. Failed executions have that column null. Cancelled executions have a timestamp. The same <code>UPDATE</code> requires <code>WHERE cancelledAt IS NULL</code>. It's idempotent.</span></li>
     </ul>
   </div>
 
   <!-- Overview chain -->
   <div class="overview-mini">
-    <div class="overview-mini-title">Cadeia de chamadas em 4.1a</div>
+    <div class="overview-mini-title"><span data-en="Call chain in 4.1a" data-pt="Cadeia de chamadas em 4.1a">Call chain in 4.1a</span></div>
     <div class="overview-chain">
       <a href="#fn-a" class="overview-chip"><span class="lbl">A · gate</span>if (stoppedByCancel)</a>
       <span class="overview-sep">→</span>
@@ -277,7 +293,7 @@
       <a href="#fn-d" class="overview-chip"><span class="lbl">D</span>emitCancelledRunStatuses</a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado final. A linha em <code>flow_run_states</code> fica marcada como cancelada. Eventos WebSocket são enviados ao browser marcando os nós não executados como <code>CANCELLED</code>.
+      <span data-en="Final result. The row in &lt;code&gt;flow_run_states&lt;/code&gt; is marked as cancelled. WebSocket events are sent to the browser marking non-executed nodes as &lt;code&gt;CANCELLED&lt;/code&gt;." data-pt="Resultado final. A linha em &lt;code&gt;flow_run_states&lt;/code&gt; fica marcada como cancelada. Eventos WebSocket são enviados ao browser marcando os nós não executados como &lt;code&gt;CANCELLED&lt;/code&gt;.">Final result. The row in <code>flow_run_states</code> is marked as cancelled. WebSocket events are sent to the browser marking non-executed nodes as <code>CANCELLED</code>.</span>
     </div>
   </div>
 
@@ -297,36 +313,36 @@
         let stoppedByCancel = false; // ... if (stoppedByCancel) { ... }
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Distinguir cancelamento intencional dos outros modos de término (sucesso, erro de nó, <code>loopBehavior</code>). O bloco de persistência e notificação só faz sentido quando essa flag foi definida.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Distinguish intentional cancellation from the other termination modes (success, node error, &lt;code&gt;loopBehavior&lt;/code&gt;). The persistence and notification block only makes sense when this flag has been set." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Distinguir cancelamento intencional dos outros modos de término (sucesso, erro de nó, &lt;code&gt;loopBehavior&lt;/code&gt;). O bloco de persistência e notificação só faz sentido quando essa flag foi definida."><strong>Purpose.</strong> Distinguish intentional cancellation from the other termination modes (success, node error, <code>loopBehavior</code>). The persistence and notification block only makes sense when this flag has been set.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> A flag funciona como marcador de interrupção intencional. Ao longo do loop principal existem 4 pontos que detectam o cancel do usuário e definem a flag como <code>true</code>. O primeiro é a linha 3290, na entrada de <code>idx=0</code>. O segundo é a linha 3877, quando algum sub-loop de sub-run pega o abort. O terceiro é a linha 4596, o principal. Faz a checagem <code>cancelWatch?.wasAborted()</code> depois do handler do nó rodar. O quarto é a linha 4716, outro branch de saída de sub-run. Todos causam <code>break</code>. Depois de sair do loop, este <code>if</code> distingue término natural (<code>stoppedByCancel = false</code>) de parada solicitada pelo usuário (<code>true</code>). Apenas no segundo caso o bloco de persistência e emit dispara.
+        <span data-en="&lt;strong&gt;In summary.&lt;/strong&gt; The flag works as a marker of intentional interruption. Along the main loop there are 4 points that detect the user's cancel and set the flag to &lt;code&gt;true&lt;/code&gt;. The first is line 3290, on entry at &lt;code&gt;idx=0&lt;/code&gt;. The second is line 3877, when some sub-run sub-loop catches the abort. The third is line 4596, the main one. Does the &lt;code&gt;cancelWatch?.wasAborted()&lt;/code&gt; check after the node handler runs. The fourth is line 4716, another sub-run exit branch. All cause &lt;code&gt;break&lt;/code&gt;. After exiting the loop, this &lt;code&gt;if&lt;/code&gt; distinguishes natural termination (&lt;code&gt;stoppedByCancel = false&lt;/code&gt;) from user-requested stop (&lt;code&gt;true&lt;/code&gt;). Only in the second case does the persistence and emit block fire." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; A flag funciona como marcador de interrupção intencional. Ao longo do loop principal existem 4 pontos que detectam o cancel do usuário e definem a flag como &lt;code&gt;true&lt;/code&gt;. O primeiro é a linha 3290, na entrada de &lt;code&gt;idx=0&lt;/code&gt;. O segundo é a linha 3877, quando algum sub-loop de sub-run pega o abort. O terceiro é a linha 4596, o principal. Faz a checagem &lt;code&gt;cancelWatch?.wasAborted()&lt;/code&gt; depois do handler do nó rodar. O quarto é a linha 4716, outro branch de saída de sub-run. Todos causam &lt;code&gt;break&lt;/code&gt;. Depois de sair do loop, este &lt;code&gt;if&lt;/code&gt; distingue término natural (&lt;code&gt;stoppedByCancel = false&lt;/code&gt;) de parada solicitada pelo usuário (&lt;code&gt;true&lt;/code&gt;). Apenas no segundo caso o bloco de persistência e emit dispara."><strong>In summary.</strong> The flag works as a marker of intentional interruption. Along the main loop there are 4 points that detect the user's cancel and set the flag to <code>true</code>. The first is line 3290, on entry at <code>idx=0</code>. The second is line 3877, when some sub-run sub-loop catches the abort. The third is line 4596, the main one. Does the <code>cancelWatch?.wasAborted()</code> check after the node handler runs. The fourth is line 4716, another sub-run exit branch. All cause <code>break</code>. After exiting the loop, this <code>if</code> distinguishes natural termination (<code>stoppedByCancel = false</code>) from user-requested stop (<code>true</code>). Only in the second case does the persistence and emit block fire.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box decision">
-            <div class="box-title"><span class="badge step">A1</span> 4 pontos que definem a flag no loop</div>
+            <div class="box-title"><span class="badge step">A1</span> <span data-en="4 points that set the flag in the loop" data-pt="4 pontos que definem a flag no loop">4 points that set the flag in the loop</span></div>
             <div class="box-desc">
-              <code>stoppedByCancel = true</code> aparece em:
-              <br>• <code>flux.service.ts:3290</code>. Cancel detectado no prefetch ou em <code>idx=0</code>.
-              <br>• <code>flux.service.ts:3877</code>. Cancel detectado num handler de sub-run.
-              <br>• <code>flux.service.ts:4596</code>. Principal. <code>if (cancelWatch?.wasAborted())</code> após handler.
-              <br>• <code>flux.service.ts:4716</code>. Saída de sub-run com abort observado.
-              <br><br>Todos causam <code>break</code> do loop.
+              <span data-en="&lt;code&gt;stoppedByCancel = true&lt;/code&gt; appears in:&lt;br&gt;• &lt;code&gt;flux.service.ts:3290&lt;/code&gt;. Cancel detected in prefetch or at &lt;code&gt;idx=0&lt;/code&gt;.&lt;br&gt;• &lt;code&gt;flux.service.ts:3877&lt;/code&gt;. Cancel detected in a sub-run handler.&lt;br&gt;• &lt;code&gt;flux.service.ts:4596&lt;/code&gt;. Main one. &lt;code&gt;if (cancelWatch?.wasAborted())&lt;/code&gt; after handler.&lt;br&gt;• &lt;code&gt;flux.service.ts:4716&lt;/code&gt;. Sub-run exit with observed abort.&lt;br&gt;&lt;br&gt;All cause &lt;code&gt;break&lt;/code&gt; from the loop." data-pt="&lt;code&gt;stoppedByCancel = true&lt;/code&gt; aparece em:&lt;br&gt;• &lt;code&gt;flux.service.ts:3290&lt;/code&gt;. Cancel detectado no prefetch ou em &lt;code&gt;idx=0&lt;/code&gt;.&lt;br&gt;• &lt;code&gt;flux.service.ts:3877&lt;/code&gt;. Cancel detectado num handler de sub-run.&lt;br&gt;• &lt;code&gt;flux.service.ts:4596&lt;/code&gt;. Principal. &lt;code&gt;if (cancelWatch?.wasAborted())&lt;/code&gt; após handler.&lt;br&gt;• &lt;code&gt;flux.service.ts:4716&lt;/code&gt;. Saída de sub-run com abort observado.&lt;br&gt;&lt;br&gt;Todos causam &lt;code&gt;break&lt;/code&gt; do loop."><code>stoppedByCancel = true</code> appears in:
+              <br>• <code>flux.service.ts:3290</code>. Cancel detected in prefetch or at <code>idx=0</code>.
+              <br>• <code>flux.service.ts:3877</code>. Cancel detected in a sub-run handler.
+              <br>• <code>flux.service.ts:4596</code>. Main one. <code>if (cancelWatch?.wasAborted())</code> after handler.
+              <br>• <code>flux.service.ts:4716</code>. Sub-run exit with observed abort.
+              <br><br>All cause <code>break</code> from the loop.</span>
             </div>
             <div class="box-file">flux.service.ts (grep stoppedByCancel = true)</div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box backend">
-            <div class="box-title"><span class="badge step">A2</span> Discriminador global depois do loop</div>
+            <div class="box-title"><span class="badge step">A2</span> <span data-en="Global discriminator after the loop" data-pt="Discriminador global depois do loop">Global discriminator after the loop</span></div>
             <div class="box-desc">
-              A flag é usada em:
-              <br>• Linha 4805 (este passo).
-              <br>• Linha 4830. Evita gravar <code>flow_truncated</code> quando o cancel foi intencional.
-              <br>• Linha 4858. Passa para <code>resolveRunLogStatus</code> decidir o status final.
-              <br>• Linha 4859. Mesma coisa em outro branch.
+              <span data-en="The flag is used in:&lt;br&gt;• Line 4805 (this step).&lt;br&gt;• Line 4830. Avoids logging &lt;code&gt;flow_truncated&lt;/code&gt; when cancel was intentional.&lt;br&gt;• Line 4858. Passes to &lt;code&gt;resolveRunLogStatus&lt;/code&gt; to decide the final status.&lt;br&gt;• Line 4859. Same thing in another branch." data-pt="A flag é usada em:&lt;br&gt;• Linha 4805 (este passo).&lt;br&gt;• Linha 4830. Evita gravar &lt;code&gt;flow_truncated&lt;/code&gt; quando o cancel foi intencional.&lt;br&gt;• Linha 4858. Passa para &lt;code&gt;resolveRunLogStatus&lt;/code&gt; decidir o status final.&lt;br&gt;• Linha 4859. Mesma coisa em outro branch.">The flag is used in:
+              <br>• Line 4805 (this step).
+              <br>• Line 4830. Avoids logging <code>flow_truncated</code> when cancel was intentional.
+              <br>• Line 4858. Passes to <code>resolveRunLogStatus</code> to decide the final status.
+              <br>• Line 4859. Same thing in another branch.</span>
             </div>
             <div class="box-file">flux.service.ts:4805, 4830, 4858, 4859</div>
           </div>
@@ -334,18 +350,18 @@
 
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Por que uma flag e não um retorno estruturado</div>
-            O loop tem múltiplos pontos de saída (<code>loopBehavior</code>, erro de nó, cancel, término natural). As flags <code>stoppedByCancel</code>, <code>stoppedByLoopBehavior</code> e <code>stoppedByNodeFailure</code> permitem ao código pós-loop decidir a intenção sem precisar de <code>return</code> antecipado.
+            <div class="aside-title"><span data-en="🎯 Why a flag and not a structured return" data-pt="🎯 Por que uma flag e não um retorno estruturado">🎯 Why a flag and not a structured return</span></div>
+            <span data-en="The loop has multiple exit points (&lt;code&gt;loopBehavior&lt;/code&gt;, node error, cancel, natural termination). The flags &lt;code&gt;stoppedByCancel&lt;/code&gt;, &lt;code&gt;stoppedByLoopBehavior&lt;/code&gt; and &lt;code&gt;stoppedByNodeFailure&lt;/code&gt; allow the post-loop code to decide the intent without needing an early &lt;code&gt;return&lt;/code&gt;." data-pt="O loop tem múltiplos pontos de saída (&lt;code&gt;loopBehavior&lt;/code&gt;, erro de nó, cancel, término natural). As flags &lt;code&gt;stoppedByCancel&lt;/code&gt;, &lt;code&gt;stoppedByLoopBehavior&lt;/code&gt; e &lt;code&gt;stoppedByNodeFailure&lt;/code&gt; permitem ao código pós-loop decidir a intenção sem precisar de &lt;code&gt;return&lt;/code&gt; antecipado.">The loop has multiple exit points (<code>loopBehavior</code>, node error, cancel, natural termination). The flags <code>stoppedByCancel</code>, <code>stoppedByLoopBehavior</code> and <code>stoppedByNodeFailure</code> allow the post-loop code to decide the intent without needing an early <code>return</code>.</span>
           </div>
 
           <div class="aside warn">
-            <div class="aside-title">⚠️ 4 pontos de definição, 4 lugares para bug</div>
-            Se um novo caminho de saída for adicionado ao loop sem definir <code>stoppedByCancel</code>, o cancel do usuário vira término natural. Não há persistência nem WebSocket. A UI fica com nós pendentes para sempre.
+            <div class="aside-title"><span data-en="⚠️ 4 setting points, 4 places for bugs" data-pt="⚠️ 4 pontos de definição, 4 lugares para bug">⚠️ 4 setting points, 4 places for bugs</span></div>
+            <span data-en="If a new exit path is added to the loop without setting &lt;code&gt;stoppedByCancel&lt;/code&gt;, the user's cancel turns into natural termination. There's no persistence or WebSocket. The UI is left with pending nodes forever." data-pt="Se um novo caminho de saída for adicionado ao loop sem definir &lt;code&gt;stoppedByCancel&lt;/code&gt;, o cancel do usuário vira término natural. Não há persistência nem WebSocket. A UI fica com nós pendentes para sempre.">If a new exit path is added to the loop without setting <code>stoppedByCancel</code>, the user's cancel turns into natural termination. There's no persistence or WebSocket. The UI is left with pending nodes forever.</span>
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 Fluxo em cascata das flags</div>
-            A flag <code>stoppedByCancel</code> tem precedência sobre <code>stoppedByNodeFailure</code> em <code>resolveRunLogStatus</code>. Se o cancel foi definido, o status final é <code>cancelled</code> mesmo que algum nó anterior tenha errado.
+            <div class="aside-title"><span data-en="🔧 Flag cascade flow" data-pt="🔧 Fluxo em cascata das flags">🔧 Flag cascade flow</span></div>
+            <span data-en="The &lt;code&gt;stoppedByCancel&lt;/code&gt; flag takes precedence over &lt;code&gt;stoppedByNodeFailure&lt;/code&gt; in &lt;code&gt;resolveRunLogStatus&lt;/code&gt;. If cancel was set, the final status is &lt;code&gt;cancelled&lt;/code&gt; even if some prior node errored." data-pt="A flag &lt;code&gt;stoppedByCancel&lt;/code&gt; tem precedência sobre &lt;code&gt;stoppedByNodeFailure&lt;/code&gt; em &lt;code&gt;resolveRunLogStatus&lt;/code&gt;. Se o cancel foi definido, o status final é &lt;code&gt;cancelled&lt;/code&gt; mesmo que algum nó anterior tenha errado.">The <code>stoppedByCancel</code> flag takes precedence over <code>stoppedByNodeFailure</code> in <code>resolveRunLogStatus</code>. If cancel was set, the final status is <code>cancelled</code> even if some prior node errored.</span>
           </div>
         </div>
       </div>
@@ -368,16 +384,16 @@
         function resolveCancelledRunFootprint(params: { nodeIds; completed; dead; lastExecutedNodeId; nodes }): CancelledRunFootprint
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Função pura, sem I/O. Classifica cada nó da execução em duas categorias. Executado (<code>completed</code> ou <code>dead</code>) ou não executado (o resto). Devolve o footprint para ser persistido e emitido. Contém o último nó que começou (<code>stoppedAtNodeId</code>) e a lista completa de nós que ficaram na fila sem rodar.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Pure function, no I/O. Classifies each node of the execution into two categories. Executed (&lt;code&gt;completed&lt;/code&gt; or &lt;code&gt;dead&lt;/code&gt;) or not executed (the rest). Returns the footprint to be persisted and emitted. Contains the last node that started (&lt;code&gt;stoppedAtNodeId&lt;/code&gt;) and the complete list of nodes that stayed in the queue without running." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Função pura, sem I/O. Classifica cada nó da execução em duas categorias. Executado (&lt;code&gt;completed&lt;/code&gt; ou &lt;code&gt;dead&lt;/code&gt;) ou não executado (o resto). Devolve o footprint para ser persistido e emitido. Contém o último nó que começou (&lt;code&gt;stoppedAtNodeId&lt;/code&gt;) e a lista completa de nós que ficaram na fila sem rodar."><strong>Purpose.</strong> Pure function, no I/O. Classifies each node of the execution into two categories. Executed (<code>completed</code> or <code>dead</code>) or not executed (the rest). Returns the footprint to be persisted and emitted. Contains the last node that started (<code>stoppedAtNodeId</code>) and the complete list of nodes that stayed in the queue without running.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> A função recebe 5 informações. Todos os nós agendados (<code>schedState.nodeIds</code>). Os que terminaram com sucesso (<code>schedState.completed</code>). Os marcados como mortos por dependência falhar (<code>schedState.dead</code>). O último que chegou a começar (<code>lastExecutedNodeId</code>). A lista atual de nós com seus <code>data.label</code> e <code>type</code>. O filtro seleciona quem não está em <code>completed</code> nem em <code>dead</code>. Sobra o que ficou para trás. Cada nó é mapeado para <code>{ nodeId, label, type }</code>. É o registro que a UI e o banco vão manter como "nós não executados por cancelamento". O <code>stoppedAtNodeId</code> aponta para o último nó que começou. Ele pode ter completado ou ter sido abortado no meio. De qualquer forma, foi o ponto onde a coisa parou.
+        <span data-en="&lt;strong&gt;In summary.&lt;/strong&gt; The function receives 5 pieces of info. All scheduled nodes (&lt;code&gt;schedState.nodeIds&lt;/code&gt;). Those that ended successfully (&lt;code&gt;schedState.completed&lt;/code&gt;). Those marked as dead due to a failed dependency (&lt;code&gt;schedState.dead&lt;/code&gt;). The last one that got to start (&lt;code&gt;lastExecutedNodeId&lt;/code&gt;). The current node list with their &lt;code&gt;data.label&lt;/code&gt; and &lt;code&gt;type&lt;/code&gt;. The filter selects those not in &lt;code&gt;completed&lt;/code&gt; nor in &lt;code&gt;dead&lt;/code&gt;. What's left behind remains. Each node is mapped to &lt;code&gt;{ nodeId, label, type }&lt;/code&gt;. It's the record the UI and database will keep as &quot;nodes not executed due to cancellation&quot;. The &lt;code&gt;stoppedAtNodeId&lt;/code&gt; points to the last node that started. It may have completed or been aborted midway. Either way, it was the point where things stopped." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; A função recebe 5 informações. Todos os nós agendados (&lt;code&gt;schedState.nodeIds&lt;/code&gt;). Os que terminaram com sucesso (&lt;code&gt;schedState.completed&lt;/code&gt;). Os marcados como mortos por dependência falhar (&lt;code&gt;schedState.dead&lt;/code&gt;). O último que chegou a começar (&lt;code&gt;lastExecutedNodeId&lt;/code&gt;). A lista atual de nós com seus &lt;code&gt;data.label&lt;/code&gt; e &lt;code&gt;type&lt;/code&gt;. O filtro seleciona quem não está em &lt;code&gt;completed&lt;/code&gt; nem em &lt;code&gt;dead&lt;/code&gt;. Sobra o que ficou para trás. Cada nó é mapeado para &lt;code&gt;{ nodeId, label, type }&lt;/code&gt;. É o registro que a UI e o banco vão manter como &quot;nós não executados por cancelamento&quot;. O &lt;code&gt;stoppedAtNodeId&lt;/code&gt; aponta para o último nó que começou. Ele pode ter completado ou ter sido abortado no meio. De qualquer forma, foi o ponto onde a coisa parou."><strong>In summary.</strong> The function receives 5 pieces of info. All scheduled nodes (<code>schedState.nodeIds</code>). Those that ended successfully (<code>schedState.completed</code>). Those marked as dead due to a failed dependency (<code>schedState.dead</code>). The last one that got to start (<code>lastExecutedNodeId</code>). The current node list with their <code>data.label</code> and <code>type</code>. The filter selects those not in <code>completed</code> nor in <code>dead</code>. What's left behind remains. Each node is mapped to <code>{ nodeId, label, type }</code>. It's the record the UI and database will keep as "nodes not executed due to cancellation". The <code>stoppedAtNodeId</code> points to the last node that started. It may have completed or been aborted midway. Either way, it was the point where things stopped.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">B1</span> Índice dos nodes por id</div>
+            <div class="box-title"><span class="badge step">B1</span> <span data-en="Node index by id" data-pt="Índice dos nodes por id">Node index by id</span></div>
             <div class="code-block">
 <span class="k">const</span> nodeById = <span class="k">new</span> <span class="t">Map</span>(
   params.nodes.<span class="t">map</span>(node =&gt; [node.id, node])
@@ -388,7 +404,7 @@
           <div class="arrow">↓</div>
 
           <div class="box backend">
-            <div class="box-title"><span class="badge step">B2</span> Filtro: não completed e não dead</div>
+            <div class="box-title"><span class="badge step">B2</span> <span data-en="Filter: not completed and not dead" data-pt="Filtro: não completed e não dead">Filter: not completed and not dead</span></div>
             <div class="code-block">
 <span class="k">const</span> notExecutedNodeIds = [...params.nodeIds]
   .<span class="t">filter</span>(nodeId =&gt;
@@ -408,7 +424,7 @@
           <div class="arrow">↓</div>
 
           <div class="box decision">
-            <div class="box-title"><span class="badge step">B3</span> Retorno — CancelledRunFootprint</div>
+            <div class="box-title"><span class="badge step">B3</span> <span data-en="Return — CancelledRunFootprint" data-pt="Retorno — CancelledRunFootprint">Return — CancelledRunFootprint</span></div>
             <div class="code-block">
 <span class="k">return</span> {
   stoppedAtNodeId: params.lastExecutedNodeId ?? <span class="k">null</span>,
@@ -416,7 +432,7 @@
 };
             </div>
             <div class="box-desc">
-              O <code>notExecutedNodeIds</code> é <code>NotExecutedNode[]</code>. Array de <code>{ nodeId, label, type }</code> definido em <code>flow_run_state.entity.ts:5-9</code>.
+              <span data-en="The &lt;code&gt;notExecutedNodeIds&lt;/code&gt; is &lt;code&gt;NotExecutedNode[]&lt;/code&gt;. Array of &lt;code&gt;{ nodeId, label, type }&lt;/code&gt; defined in &lt;code&gt;flow_run_state.entity.ts:5-9&lt;/code&gt;." data-pt="O &lt;code&gt;notExecutedNodeIds&lt;/code&gt; é &lt;code&gt;NotExecutedNode[]&lt;/code&gt;. Array de &lt;code&gt;{ nodeId, label, type }&lt;/code&gt; definido em &lt;code&gt;flow_run_state.entity.ts:5-9&lt;/code&gt;.">The <code>notExecutedNodeIds</code> is <code>NotExecutedNode[]</code>. Array of <code>{ nodeId, label, type }</code> defined in <code>flow_run_state.entity.ts:5-9</code>.</span>
             </div>
             <div class="box-file">cancelled-run-footprint.ts:32-35</div>
           </div>
@@ -424,21 +440,21 @@
 
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Três estados no scheduler</div>
-            O <code>schedState</code> classifica cada nó em um de três buckets:
-            <br>• <strong>completed</strong>. Rodou até o fim com sucesso.
-            <br>• <strong>dead</strong>. Não vai rodar porque uma dependência anterior falhou. Não é cancelado, ficou sem entrada.
-            <br>• <strong>pendente</strong> (implícito). O resto, incluindo cancelados.
+            <div class="aside-title"><span data-en="🎯 Three scheduler states" data-pt="🎯 Três estados no scheduler">🎯 Three scheduler states</span></div>
+            <span data-en="The &lt;code&gt;schedState&lt;/code&gt; classifies each node in one of three buckets:&lt;br&gt;• &lt;strong&gt;completed&lt;/strong&gt;. Ran to the end successfully.&lt;br&gt;• &lt;strong&gt;dead&lt;/strong&gt;. Won't run because a prior dependency failed. Not cancelled, has no input.&lt;br&gt;• &lt;strong&gt;pending&lt;/strong&gt; (implicit). The rest, including cancelled." data-pt="O &lt;code&gt;schedState&lt;/code&gt; classifica cada nó em um de três buckets:&lt;br&gt;• &lt;strong&gt;completed&lt;/strong&gt;. Rodou até o fim com sucesso.&lt;br&gt;• &lt;strong&gt;dead&lt;/strong&gt;. Não vai rodar porque uma dependência anterior falhou. Não é cancelado, ficou sem entrada.&lt;br&gt;• &lt;strong&gt;pendente&lt;/strong&gt; (implícito). O resto, incluindo cancelados.">The <code>schedState</code> classifies each node in one of three buckets:
+            <br>• <strong>completed</strong>. Ran to the end successfully.
+            <br>• <strong>dead</strong>. Won't run because a prior dependency failed. Not cancelled, has no input.
+            <br>• <strong>pending</strong> (implicit). The rest, including cancelled.</span>
           </div>
 
           <div class="aside">
-            <div class="aside-title">📎 Semântica do stoppedAtNodeId</div>
-            É o último nó que começou. Pode ter completado com sucesso e o cancel ter acontecido entre ele e o próximo. Ou pode ter sido abortado no meio da execução via <code>AbortSignal</code>. A função não distingue os dois casos.
+            <div class="aside-title"><span data-en="📎 stoppedAtNodeId semantics" data-pt="📎 Semântica do stoppedAtNodeId">📎 stoppedAtNodeId semantics</span></div>
+            <span data-en="It's the last node that started. It may have completed successfully and cancel happened between it and the next. Or it may have been aborted mid-execution via &lt;code&gt;AbortSignal&lt;/code&gt;. The function doesn't distinguish the two cases." data-pt="É o último nó que começou. Pode ter completado com sucesso e o cancel ter acontecido entre ele e o próximo. Ou pode ter sido abortado no meio da execução via &lt;code&gt;AbortSignal&lt;/code&gt;. A função não distingue os dois casos.">It's the last node that started. It may have completed successfully and cancel happened between it and the next. Or it may have been aborted mid-execution via <code>AbortSignal</code>. The function doesn't distinguish the two cases.</span>
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 Função pura e testada</div>
-            Sem I/O, sem side effect. Recebe tudo por parâmetro. Retorna um objeto. Tem spec dedicado (<code>cancelled-run-footprint.spec.ts</code>). Adequada para reuso no worker.
+            <div class="aside-title"><span data-en="🔧 Pure and tested function" data-pt="🔧 Função pura e testada">🔧 Pure and tested function</span></div>
+            <span data-en="No I/O, no side effect. Receives everything by parameter. Returns an object. Has a dedicated spec (&lt;code&gt;cancelled-run-footprint.spec.ts&lt;/code&gt;). Suitable for reuse in the worker." data-pt="Sem I/O, sem side effect. Recebe tudo por parâmetro. Retorna um objeto. Tem spec dedicado (&lt;code&gt;cancelled-run-footprint.spec.ts&lt;/code&gt;). Adequada para reuso no worker.">No I/O, no side effect. Receives everything by parameter. Returns an object. Has a dedicated spec (<code>cancelled-run-footprint.spec.ts</code>). Suitable for reuse in the worker.</span>
           </div>
         </div>
       </div>
@@ -461,16 +477,16 @@
         async markCancelled(params: { runId; stoppedAtNodeId; notExecutedNodeIds }): Promise&lt;void&gt;
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Gravar em <code>flow_run_states</code> o momento oficial do cancelamento (<code>cancelledAt = now()</code>) e os campos de contexto (onde parou, o que ficou para trás). Tem retry de 3 tentativas com 200ms de delay. Se todas falharem, o método retorna <code>void</code> sem propagar erro.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Write in &lt;code&gt;flow_run_states&lt;/code&gt; the official cancellation moment (&lt;code&gt;cancelledAt = now()&lt;/code&gt;) and the context fields (where it stopped, what was left behind). Has retry of 3 attempts with 200ms delay. If all fail, the method returns &lt;code&gt;void&lt;/code&gt; without propagating error." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Gravar em &lt;code&gt;flow_run_states&lt;/code&gt; o momento oficial do cancelamento (&lt;code&gt;cancelledAt = now()&lt;/code&gt;) e os campos de contexto (onde parou, o que ficou para trás). Tem retry de 3 tentativas com 200ms de delay. Se todas falharem, o método retorna &lt;code&gt;void&lt;/code&gt; sem propagar erro."><strong>Purpose.</strong> Write in <code>flow_run_states</code> the official cancellation moment (<code>cancelledAt = now()</code>) and the context fields (where it stopped, what was left behind). Has retry of 3 attempts with 200ms delay. If all fail, the method returns <code>void</code> without propagating error.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> A linha em <code>flow_run_states</code> foi criada quando o usuário clicou em "Cancelar". Chega via <code>requestCancel</code> com <code>INSERT ... ON CONFLICT DO NOTHING</code>. Nesse momento a linha só tem <code>runId</code>, <code>flowId</code>, <code>requestedByUserId</code> e <code>requestedAt</code>. Agora que o loop parou, este método atualiza a mesma linha e preenche três campos. O <code>cancelledAt</code> é o timestamp de conclusão do cancel. O <code>stoppedAtNodeId</code> é o endereço onde parou. O <code>notExecutedNodeIds</code> é o JSONB com a lista de nós que ficaram para trás. O <code>WHERE cancelledAt IS NULL</code> garante idempotência. Se o método rodar duas vezes para a mesma execução, a segunda vez é no-op. Em caso de erro no <code>UPDATE</code> (deadlock, banco caído), retenta até 3 vezes. Se todas falharem, apenas registra log e desiste. A execução não trava por causa disso.
+        <span data-en="&lt;strong&gt;In summary.&lt;/strong&gt; The row in &lt;code&gt;flow_run_states&lt;/code&gt; was created when the user clicked &quot;Cancel&quot;. It arrives via &lt;code&gt;requestCancel&lt;/code&gt; with &lt;code&gt;INSERT ... ON CONFLICT DO NOTHING&lt;/code&gt;. At that moment the row only has &lt;code&gt;runId&lt;/code&gt;, &lt;code&gt;flowId&lt;/code&gt;, &lt;code&gt;requestedByUserId&lt;/code&gt; and &lt;code&gt;requestedAt&lt;/code&gt;. Now that the loop has stopped, this method updates the same row and fills in three fields. The &lt;code&gt;cancelledAt&lt;/code&gt; is the cancel completion timestamp. The &lt;code&gt;stoppedAtNodeId&lt;/code&gt; is the address where it stopped. The &lt;code&gt;notExecutedNodeIds&lt;/code&gt; is the JSONB with the list of nodes left behind. The &lt;code&gt;WHERE cancelledAt IS NULL&lt;/code&gt; guarantees idempotency. If the method runs twice for the same execution, the second time is a no-op. On error in the &lt;code&gt;UPDATE&lt;/code&gt; (deadlock, database down), retries up to 3 times. If all fail, only logs and gives up. The execution doesn't hang because of it." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; A linha em &lt;code&gt;flow_run_states&lt;/code&gt; foi criada quando o usuário clicou em &quot;Cancelar&quot;. Chega via &lt;code&gt;requestCancel&lt;/code&gt; com &lt;code&gt;INSERT ... ON CONFLICT DO NOTHING&lt;/code&gt;. Nesse momento a linha só tem &lt;code&gt;runId&lt;/code&gt;, &lt;code&gt;flowId&lt;/code&gt;, &lt;code&gt;requestedByUserId&lt;/code&gt; e &lt;code&gt;requestedAt&lt;/code&gt;. Agora que o loop parou, este método atualiza a mesma linha e preenche três campos. O &lt;code&gt;cancelledAt&lt;/code&gt; é o timestamp de conclusão do cancel. O &lt;code&gt;stoppedAtNodeId&lt;/code&gt; é o endereço onde parou. O &lt;code&gt;notExecutedNodeIds&lt;/code&gt; é o JSONB com a lista de nós que ficaram para trás. O &lt;code&gt;WHERE cancelledAt IS NULL&lt;/code&gt; garante idempotência. Se o método rodar duas vezes para a mesma execução, a segunda vez é no-op. Em caso de erro no &lt;code&gt;UPDATE&lt;/code&gt; (deadlock, banco caído), retenta até 3 vezes. Se todas falharem, apenas registra log e desiste. A execução não trava por causa disso."><strong>In summary.</strong> The row in <code>flow_run_states</code> was created when the user clicked "Cancel". It arrives via <code>requestCancel</code> with <code>INSERT ... ON CONFLICT DO NOTHING</code>. At that moment the row only has <code>runId</code>, <code>flowId</code>, <code>requestedByUserId</code> and <code>requestedAt</code>. Now that the loop has stopped, this method updates the same row and fills in three fields. The <code>cancelledAt</code> is the cancel completion timestamp. The <code>stoppedAtNodeId</code> is the address where it stopped. The <code>notExecutedNodeIds</code> is the JSONB with the list of nodes left behind. The <code>WHERE cancelledAt IS NULL</code> guarantees idempotency. If the method runs twice for the same execution, the second time is a no-op. On error in the <code>UPDATE</code> (deadlock, database down), retries up to 3 times. If all fail, only logs and gives up. The execution doesn't hang because of it.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box db">
-            <div class="box-title"><span class="badge step">C1</span> Query UPDATE idempotente</div>
+            <div class="box-title"><span class="badge step">C1</span> <span data-en="Idempotent UPDATE query" data-pt="Query UPDATE idempotente">Idempotent UPDATE query</span></div>
             <div class="code-block">
 <span class="t">UPDATE</span> <span class="s">"flow_run_states"</span>
 <span class="t">SET</span> <span class="s">"cancelledAt"</span> = <span class="t">now</span>(),
@@ -485,7 +501,7 @@
           <div class="arrow">↓</div>
 
           <div class="box backend">
-            <div class="box-title"><span class="badge step">C2</span> Retry loop. 3 tentativas, 200ms de delay</div>
+            <div class="box-title"><span class="badge step">C2</span> <span data-en="Retry loop. 3 attempts, 200ms delay" data-pt="Retry loop. 3 tentativas, 200ms de delay">Retry loop. 3 attempts, 200ms delay</span></div>
             <div class="code-block">
 <span class="k">for</span> (<span class="k">let</span> attempt = 1; attempt &lt;= <span class="s">MARK_CANCELLED_ATTEMPTS</span>; attempt++) {
   <span class="k">try</span> {
@@ -494,7 +510,7 @@
   } <span class="k">catch</span> (error) {
     <span class="k">const</span> isLastAttempt = attempt === <span class="s">MARK_CANCELLED_ATTEMPTS</span>;
     <span class="t">console.error</span>(<span class="s">'Failed to record the cancelled run'</span>, ...);
-    <span class="k">if</span> (isLastAttempt) <span class="k">return</span>; <span class="c">// suprime erro</span>
+    <span class="k">if</span> (isLastAttempt) <span class="k">return</span>; <span class="c">// swallow error</span>
     <span class="k">await</span> <span class="t">wait</span>(<span class="s">MARK_CANCELLED_RETRY_DELAY_MS</span>); <span class="c">// 200ms</span>
   }
 }
@@ -504,15 +520,15 @@
           <div class="arrow">↓</div>
 
           <div class="box db">
-            <div class="box-title"><span class="badge step">C3</span> Estrutura da tabela flow_run_states</div>
+            <div class="box-title"><span class="badge step">C3</span> <span data-en="flow_run_states table structure" data-pt="Estrutura da tabela flow_run_states">flow_run_states table structure</span></div>
             <table class="field-table">
-              <tr><th>Campo</th><th>Descrição</th></tr>
-              <tr><td>runId</td><td>PK. Mesmo <code>runLogProcessId</code> ou <code>cancelRunKey</code></td></tr>
-              <tr><td>flowId</td><td>Referência ao flow</td></tr>
-              <tr><td>requestedByUserId</td><td>Quem clicou em cancelar</td></tr>
-              <tr><td>requestedAt</td><td>Timestamp do clique (INSERT)</td></tr>
-              <tr><td>cancelledAt</td><td>Timestamp da confirmação (UPDATE). Nullable</td></tr>
-              <tr><td>stoppedAtNodeId</td><td>Último nó que começou. Varchar nullable</td></tr>
+              <tr><th><span data-en="Field" data-pt="Campo">Field</span></th><th><span data-en="Description" data-pt="Descrição">Description</span></th></tr>
+              <tr><td>runId</td><td><span data-en="PK. Same as &lt;code&gt;runLogProcessId&lt;/code&gt; or &lt;code&gt;cancelRunKey&lt;/code&gt;" data-pt="PK. Mesmo &lt;code&gt;runLogProcessId&lt;/code&gt; ou &lt;code&gt;cancelRunKey&lt;/code&gt;">PK. Same as <code>runLogProcessId</code> or <code>cancelRunKey</code></span></td></tr>
+              <tr><td>flowId</td><td><span data-en="Reference to the flow" data-pt="Referência ao flow">Reference to the flow</span></td></tr>
+              <tr><td>requestedByUserId</td><td><span data-en="Who clicked cancel" data-pt="Quem clicou em cancelar">Who clicked cancel</span></td></tr>
+              <tr><td>requestedAt</td><td><span data-en="Click timestamp (INSERT)" data-pt="Timestamp do clique (INSERT)">Click timestamp (INSERT)</span></td></tr>
+              <tr><td>cancelledAt</td><td><span data-en="Confirmation timestamp (UPDATE). Nullable" data-pt="Timestamp da confirmação (UPDATE). Nullable">Confirmation timestamp (UPDATE). Nullable</span></td></tr>
+              <tr><td>stoppedAtNodeId</td><td><span data-en="Last node that started. Varchar nullable" data-pt="Último nó que começou. Varchar nullable">Last node that started. Varchar nullable</span></td></tr>
               <tr><td>notExecutedNodeIds</td><td>JSONB. <code>NotExecutedNode[]</code></td></tr>
             </table>
             <div class="box-file">flow_run_state.entity.ts:1-41</div>
@@ -521,22 +537,22 @@
 
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Discriminação entre cancel e erro</div>
-            A tabela <code>flow_run_states</code> só existe para execuções canceladas. Se uma execução terminou com erro sem cancel, não existe linha. O status "execução com erro" é derivado de <code>flow_logs</code>. O status "execução cancelada" exige linha em <code>flow_run_states</code> com <code>cancelledAt</code> preenchido.
+            <div class="aside-title"><span data-en="🎯 Distinguishing cancel from error" data-pt="🎯 Discriminação entre cancel e erro">🎯 Distinguishing cancel from error</span></div>
+            <span data-en="The &lt;code&gt;flow_run_states&lt;/code&gt; table only exists for cancelled executions. If an execution ended with error without cancel, no row exists. The &quot;errored execution&quot; status is derived from &lt;code&gt;flow_logs&lt;/code&gt;. The &quot;cancelled execution&quot; status requires a row in &lt;code&gt;flow_run_states&lt;/code&gt; with &lt;code&gt;cancelledAt&lt;/code&gt; filled." data-pt="A tabela &lt;code&gt;flow_run_states&lt;/code&gt; só existe para execuções canceladas. Se uma execução terminou com erro sem cancel, não existe linha. O status &quot;execução com erro&quot; é derivado de &lt;code&gt;flow_logs&lt;/code&gt;. O status &quot;execução cancelada&quot; exige linha em &lt;code&gt;flow_run_states&lt;/code&gt; com &lt;code&gt;cancelledAt&lt;/code&gt; preenchido.">The <code>flow_run_states</code> table only exists for cancelled executions. If an execution ended with error without cancel, no row exists. The "errored execution" status is derived from <code>flow_logs</code>. The "cancelled execution" status requires a row in <code>flow_run_states</code> with <code>cancelledAt</code> filled.</span>
           </div>
 
           <div class="aside warn">
-            <div class="aside-title">⚠️ Fail-open no retry final</div>
-            Se as 3 tentativas falharem, o método retorna sem propagar erro. A execução segue para o emit de WebSocket (D) mesmo sem o cancelamento persistido. Pode gerar inconsistência. O browser vê nós cancelados, o banco nunca soube.
-            <br><br>Fica só o <code>console.error</code>.
+            <div class="aside-title"><span data-en="⚠️ Fail-open on final retry" data-pt="⚠️ Fail-open no retry final">⚠️ Fail-open on final retry</span></div>
+            <span data-en="If the 3 attempts fail, the method returns without propagating error. The execution proceeds to the WebSocket emit (D) even without the cancellation persisted. It can create inconsistency. The browser sees cancelled nodes, the database never knew.&lt;br&gt;&lt;br&gt;Only the &lt;code&gt;console.error&lt;/code&gt; remains." data-pt="Se as 3 tentativas falharem, o método retorna sem propagar erro. A execução segue para o emit de WebSocket (D) mesmo sem o cancelamento persistido. Pode gerar inconsistência. O browser vê nós cancelados, o banco nunca soube.&lt;br&gt;&lt;br&gt;Fica só o &lt;code&gt;console.error&lt;/code&gt;.">If the 3 attempts fail, the method returns without propagating error. The execution proceeds to the WebSocket emit (D) even without the cancellation persisted. It can create inconsistency. The browser sees cancelled nodes, the database never knew.
+            <br><br>Only the <code>console.error</code> remains.</span>
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 Constantes de retry</div>
-            <code>MARK_CANCELLED_ATTEMPTS = 3</code>
+            <div class="aside-title"><span data-en="🔧 Retry constants" data-pt="🔧 Constantes de retry">🔧 Retry constants</span></div>
+            <span data-en="&lt;code&gt;MARK_CANCELLED_ATTEMPTS = 3&lt;/code&gt;&lt;br&gt;&lt;code&gt;MARK_CANCELLED_RETRY_DELAY_MS = 200&lt;/code&gt;&lt;br&gt;&lt;code&gt;CANCEL_CHECK_TTL_MS = 1500&lt;/code&gt;&lt;br&gt;All hardcoded in &lt;code&gt;run-cancellation.service.ts:9-13&lt;/code&gt;." data-pt="&lt;code&gt;MARK_CANCELLED_ATTEMPTS = 3&lt;/code&gt;&lt;br&gt;&lt;code&gt;MARK_CANCELLED_RETRY_DELAY_MS = 200&lt;/code&gt;&lt;br&gt;&lt;code&gt;CANCEL_CHECK_TTL_MS = 1500&lt;/code&gt;&lt;br&gt;Todos hardcoded em &lt;code&gt;run-cancellation.service.ts:9-13&lt;/code&gt;."><code>MARK_CANCELLED_ATTEMPTS = 3</code>
             <br><code>MARK_CANCELLED_RETRY_DELAY_MS = 200</code>
             <br><code>CANCEL_CHECK_TTL_MS = 1500</code>
-            <br>Todos hardcoded em <code>run-cancellation.service.ts:9-13</code>.
+            <br>All hardcoded in <code>run-cancellation.service.ts:9-13</code>.</span>
           </div>
         </div>
       </div>
@@ -559,16 +575,16 @@
         private emitCancelledRunStatuses({ runId, flowId, userId, flowVersionHistoryId, nodeIds }): void
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Notificar a UI via WebSocket ou Socket.io de que N nós ficaram com status <code>CANCELLED</code>. Sem esse emit, o browser não sabe que a execução parou. Continua mostrando os nós como pendentes ou em loading indefinidamente, mesmo com o banco já atualizado.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Notify the UI via WebSocket or Socket.io that N nodes ended up with status &lt;code&gt;CANCELLED&lt;/code&gt;. Without this emit, the browser doesn't know the execution stopped. Keeps showing the nodes as pending or loading indefinitely, even though the database is already updated." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Notificar a UI via WebSocket ou Socket.io de que N nós ficaram com status &lt;code&gt;CANCELLED&lt;/code&gt;. Sem esse emit, o browser não sabe que a execução parou. Continua mostrando os nós como pendentes ou em loading indefinidamente, mesmo com o banco já atualizado."><strong>Purpose.</strong> Notify the UI via WebSocket or Socket.io that N nodes ended up with status <code>CANCELLED</code>. Without this emit, the browser doesn't know the execution stopped. Keeps showing the nodes as pending or loading indefinitely, even though the database is already updated.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> A função monta um payload com todos os nós que ficaram para trás. Cada um marcado como <code>{ status: 'CANCELLED' }</code>. Envia tudo num único evento WebSocket via <code>NotificationsGateway.sendToUser</code>. O gateway roteia via Socket.io com a fórmula <code>room_user_{userId}_flow_{flowId}</code>. Apenas quem está no editor daquele flow, logado como aquele usuário, recebe. O evento é <code>room_status_updated</code>. O frontend escuta e atualiza a UI dos nós. Se o emit falhar por broker Socket.io indisponível ou gateway não pronto, há <code>try/catch</code> externo que registra com <code>error_type: 'node_status_emit_failed'</code>. Se <code>userId</code> ou <code>flowId</code> não vier, ou se <code>nodeIds</code> vier vazio, faz early return silencioso.
+        <span data-en="&lt;strong&gt;In summary.&lt;/strong&gt; The function builds a payload with all the nodes left behind. Each one marked as &lt;code&gt;{ status: 'CANCELLED' }&lt;/code&gt;. Sends it all in a single WebSocket event via &lt;code&gt;NotificationsGateway.sendToUser&lt;/code&gt;. The gateway routes via Socket.io with the formula &lt;code&gt;room_user_{userId}_flow_{flowId}&lt;/code&gt;. Only those in that flow's editor, logged in as that user, receive it. The event is &lt;code&gt;room_status_updated&lt;/code&gt;. The frontend listens and updates the nodes' UI. If the emit fails because the Socket.io broker is unavailable or the gateway is not ready, there's an outer &lt;code&gt;try/catch&lt;/code&gt; that logs with &lt;code&gt;error_type: 'node_status_emit_failed'&lt;/code&gt;. If &lt;code&gt;userId&lt;/code&gt; or &lt;code&gt;flowId&lt;/code&gt; is missing, or if &lt;code&gt;nodeIds&lt;/code&gt; comes empty, does a silent early return." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; A função monta um payload com todos os nós que ficaram para trás. Cada um marcado como &lt;code&gt;{ status: 'CANCELLED' }&lt;/code&gt;. Envia tudo num único evento WebSocket via &lt;code&gt;NotificationsGateway.sendToUser&lt;/code&gt;. O gateway roteia via Socket.io com a fórmula &lt;code&gt;room_user_{userId}_flow_{flowId}&lt;/code&gt;. Apenas quem está no editor daquele flow, logado como aquele usuário, recebe. O evento é &lt;code&gt;room_status_updated&lt;/code&gt;. O frontend escuta e atualiza a UI dos nós. Se o emit falhar por broker Socket.io indisponível ou gateway não pronto, há &lt;code&gt;try/catch&lt;/code&gt; externo que registra com &lt;code&gt;error_type: 'node_status_emit_failed'&lt;/code&gt;. Se &lt;code&gt;userId&lt;/code&gt; ou &lt;code&gt;flowId&lt;/code&gt; não vier, ou se &lt;code&gt;nodeIds&lt;/code&gt; vier vazio, faz early return silencioso."><strong>In summary.</strong> The function builds a payload with all the nodes left behind. Each one marked as <code>{ status: 'CANCELLED' }</code>. Sends it all in a single WebSocket event via <code>NotificationsGateway.sendToUser</code>. The gateway routes via Socket.io with the formula <code>room_user_{userId}_flow_{flowId}</code>. Only those in that flow's editor, logged in as that user, receive it. The event is <code>room_status_updated</code>. The frontend listens and updates the nodes' UI. If the emit fails because the Socket.io broker is unavailable or the gateway is not ready, there's an outer <code>try/catch</code> that logs with <code>error_type: 'node_status_emit_failed'</code>. If <code>userId</code> or <code>flowId</code> is missing, or if <code>nodeIds</code> comes empty, does a silent early return.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">D1</span> Guards de entrada</div>
+            <div class="box-title"><span class="badge step">D1</span> <span data-en="Input guards" data-pt="Guards de entrada">Input guards</span></div>
             <div class="code-block">
 <span class="k">if</span> (!userId || !flowId || nodeIds.length === 0) <span class="k">return</span>;
             </div>
@@ -577,7 +593,7 @@
           <div class="arrow">↓</div>
 
           <div class="box cross">
-            <div class="box-title"><span class="badge step">D2</span> Monta payload. Nodes como Record</div>
+            <div class="box-title"><span class="badge step">D2</span> <span data-en="Builds payload. Nodes as Record" data-pt="Monta payload. Nodes como Record">Builds payload. Nodes as Record</span></div>
             <div class="code-block">
 <span class="k">this</span>.notificationsGateway.<span class="t">sendToUser</span>({
   runId,
@@ -591,14 +607,14 @@
 });
             </div>
             <div class="box-desc">
-              Formato flat: <code>{ nodeA: { status: 'CANCELLED' }, nodeB: { status: 'CANCELLED' }, ... }</code>. Um único emit contempla todos os nós.
+              <span data-en="Flat format: &lt;code&gt;{ nodeA: { status: 'CANCELLED' }, nodeB: { status: 'CANCELLED' }, ... }&lt;/code&gt;. A single emit covers all nodes." data-pt="Formato flat: &lt;code&gt;{ nodeA: { status: 'CANCELLED' }, nodeB: { status: 'CANCELLED' }, ... }&lt;/code&gt;. Um único emit contempla todos os nós.">Flat format: <code>{ nodeA: { status: 'CANCELLED' }, nodeB: { status: 'CANCELLED' }, ... }</code>. A single emit covers all nodes.</span>
             </div>
             <div class="box-file">flux.service.ts:2169-2177</div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box cross">
-            <div class="box-title"><span class="badge step">D3</span> NotificationsGateway.sendToUser. Rota por sala</div>
+            <div class="box-title"><span class="badge step">D3</span> <span data-en="NotificationsGateway.sendToUser. Routes by room" data-pt="NotificationsGateway.sendToUser. Rota por sala">NotificationsGateway.sendToUser. Routes by room</span></div>
             <div class="code-block">
 <span class="k">sendToUser</span>(data) {
   <span class="k">this</span>.server
@@ -607,17 +623,17 @@
 }
             </div>
             <div class="box-desc">
-              Convenção da sala: <code>room_user_{userId}_flow_{flowId}</code>. O cliente entra na sala automaticamente em <code>handleConnection</code> ou explicitamente via <code>@SubscribeMessage('subscribe_to_flow')</code>.
-              <br><br>Evento no browser: <code>room_status_updated</code>.
+              <span data-en="Room convention: &lt;code&gt;room_user_{userId}_flow_{flowId}&lt;/code&gt;. The client joins the room automatically in &lt;code&gt;handleConnection&lt;/code&gt; or explicitly via &lt;code&gt;@SubscribeMessage('subscribe_to_flow')&lt;/code&gt;.&lt;br&gt;&lt;br&gt;Event in the browser: &lt;code&gt;room_status_updated&lt;/code&gt;." data-pt="Convenção da sala: &lt;code&gt;room_user_{userId}_flow_{flowId}&lt;/code&gt;. O cliente entra na sala automaticamente em &lt;code&gt;handleConnection&lt;/code&gt; ou explicitamente via &lt;code&gt;@SubscribeMessage('subscribe_to_flow')&lt;/code&gt;.&lt;br&gt;&lt;br&gt;Evento no browser: &lt;code&gt;room_status_updated&lt;/code&gt;.">Room convention: <code>room_user_{userId}_flow_{flowId}</code>. The client joins the room automatically in <code>handleConnection</code> or explicitly via <code>@SubscribeMessage('subscribe_to_flow')</code>.
+              <br><br>Event in the browser: <code>room_status_updated</code>.</span>
             </div>
             <div class="box-file">temporal/notifications.gateway.ts:36-40</div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box backend">
-            <div class="box-title"><span class="badge step">D4</span> Fallback de erro</div>
+            <div class="box-title"><span class="badge step">D4</span> <span data-en="Error fallback" data-pt="Fallback de erro">Error fallback</span></div>
             <div class="box-desc">
-              Todo o emit está em <code>try/catch</code>. Se falhar, chama <code>loggerService.error</code> com <code>error_type: 'node_status_emit_failed'</code>, <code>status: 500</code> e <code>other: { runId, flowId, nodeIds: nodeIds.slice(0, 20) }</code>. Não propaga. A execução finaliza normalmente.
+              <span data-en="The whole emit is in a &lt;code&gt;try/catch&lt;/code&gt;. If it fails, calls &lt;code&gt;loggerService.error&lt;/code&gt; with &lt;code&gt;error_type: 'node_status_emit_failed'&lt;/code&gt;, &lt;code&gt;status: 500&lt;/code&gt; and &lt;code&gt;other: { runId, flowId, nodeIds: nodeIds.slice(0, 20) }&lt;/code&gt;. Doesn't propagate. The execution finalizes normally." data-pt="Todo o emit está em &lt;code&gt;try/catch&lt;/code&gt;. Se falhar, chama &lt;code&gt;loggerService.error&lt;/code&gt; com &lt;code&gt;error_type: 'node_status_emit_failed'&lt;/code&gt;, &lt;code&gt;status: 500&lt;/code&gt; e &lt;code&gt;other: { runId, flowId, nodeIds: nodeIds.slice(0, 20) }&lt;/code&gt;. Não propaga. A execução finaliza normalmente.">The whole emit is in a <code>try/catch</code>. If it fails, calls <code>loggerService.error</code> with <code>error_type: 'node_status_emit_failed'</code>, <code>status: 500</code> and <code>other: { runId, flowId, nodeIds: nodeIds.slice(0, 20) }</code>. Doesn't propagate. The execution finalizes normally.</span>
             </div>
             <div class="box-file">flux.service.ts:2178-2188</div>
           </div>
@@ -625,24 +641,24 @@
 
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 Socket.io como transport</div>
-            <code>@WebSocketGateway({ cors: { origin: '*' } })</code>. Socket.io por baixo. Salas são identificadas por string. O cliente se conecta com <code>?userId=X&flowId=Y</code> na query string.
-            <br><br>Ver <code>notifications.gateway.ts:11-24</code>.
+            <div class="aside-title"><span data-en="🎯 Socket.io as transport" data-pt="🎯 Socket.io como transport">🎯 Socket.io as transport</span></div>
+            <span data-en="&lt;code&gt;@WebSocketGateway({ cors: { origin: '*' } })&lt;/code&gt;. Socket.io underneath. Rooms are identified by string. The client connects with &lt;code&gt;?userId=X&amp;flowId=Y&lt;/code&gt; in the query string.&lt;br&gt;&lt;br&gt;See &lt;code&gt;notifications.gateway.ts:11-24&lt;/code&gt;." data-pt="&lt;code&gt;@WebSocketGateway({ cors: { origin: '*' } })&lt;/code&gt;. Socket.io por baixo. Salas são identificadas por string. O cliente se conecta com &lt;code&gt;?userId=X&amp;flowId=Y&lt;/code&gt; na query string.&lt;br&gt;&lt;br&gt;Ver &lt;code&gt;notifications.gateway.ts:11-24&lt;/code&gt;."><code>@WebSocketGateway({ cors: { origin: '*' } })</code>. Socket.io underneath. Rooms are identified by string. The client connects with <code>?userId=X&flowId=Y</code> in the query string.
+            <br><br>See <code>notifications.gateway.ts:11-24</code>.</span>
           </div>
 
           <div class="aside">
-            <div class="aside-title">📎 Sem flowVersionHistoryId, ainda funciona</div>
-            O payload inclui <code>flowVersionHistoryId</code>. O gateway usa só <code>userId</code> e <code>flowId</code> para montar a sala. Se estiver <code>null</code>, o emit acontece mesmo assim. É apenas dado auxiliar para o frontend.
+            <div class="aside-title"><span data-en="📎 Without flowVersionHistoryId, still works" data-pt="📎 Sem flowVersionHistoryId, ainda funciona">📎 Without flowVersionHistoryId, still works</span></div>
+            <span data-en="The payload includes &lt;code&gt;flowVersionHistoryId&lt;/code&gt;. The gateway uses only &lt;code&gt;userId&lt;/code&gt; and &lt;code&gt;flowId&lt;/code&gt; to build the room. If it's &lt;code&gt;null&lt;/code&gt;, the emit happens anyway. It's just auxiliary data for the frontend." data-pt="O payload inclui &lt;code&gt;flowVersionHistoryId&lt;/code&gt;. O gateway usa só &lt;code&gt;userId&lt;/code&gt; e &lt;code&gt;flowId&lt;/code&gt; para montar a sala. Se estiver &lt;code&gt;null&lt;/code&gt;, o emit acontece mesmo assim. É apenas dado auxiliar para o frontend.">The payload includes <code>flowVersionHistoryId</code>. The gateway uses only <code>userId</code> and <code>flowId</code> to build the room. If it's <code>null</code>, the emit happens anyway. It's just auxiliary data for the frontend.</span>
           </div>
 
           <div class="aside warn">
-            <div class="aside-title">⚠️ Sem confirmação de entrega</div>
-            O emit Socket.io é fire-and-forget. Se o cliente estiver desconectado (fechou o browser, perdeu rede), o evento é descartado. Não há retry nem queueing. O usuário só descobre que cancelou consultando de novo, via GET no runlog ou reload da UI.
+            <div class="aside-title"><span data-en="⚠️ No delivery confirmation" data-pt="⚠️ Sem confirmação de entrega">⚠️ No delivery confirmation</span></div>
+            <span data-en="The Socket.io emit is fire-and-forget. If the client is disconnected (closed the browser, lost network), the event is discarded. There's no retry or queueing. The user only finds out that they cancelled by querying again, via GET on the runlog or a UI reload." data-pt="O emit Socket.io é fire-and-forget. Se o cliente estiver desconectado (fechou o browser, perdeu rede), o evento é descartado. Não há retry nem queueing. O usuário só descobre que cancelou consultando de novo, via GET no runlog ou reload da UI.">The Socket.io emit is fire-and-forget. If the client is disconnected (closed the browser, lost network), the event is discarded. There's no retry or queueing. The user only finds out that they cancelled by querying again, via GET on the runlog or a UI reload.</span>
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 Contraste com emitNodeStatus</div>
-            O <code>emitNodeStatus</code> (linha 2191) envia status por nó individualmente durante a execução (<code>RUNNING</code>, <code>COMPLETED</code>, <code>FAILED</code>, <code>CANCELLED</code>). O <code>emitCancelledRunStatuses</code> é a versão em batch. Um único emit com N nós de uma vez, no fim.
+            <div class="aside-title"><span data-en="🔧 Contrast with emitNodeStatus" data-pt="🔧 Contraste com emitNodeStatus">🔧 Contrast with emitNodeStatus</span></div>
+            <span data-en="&lt;code&gt;emitNodeStatus&lt;/code&gt; (line 2191) sends status per node individually during execution (&lt;code&gt;RUNNING&lt;/code&gt;, &lt;code&gt;COMPLETED&lt;/code&gt;, &lt;code&gt;FAILED&lt;/code&gt;, &lt;code&gt;CANCELLED&lt;/code&gt;). &lt;code&gt;emitCancelledRunStatuses&lt;/code&gt; is the batch version. A single emit with N nodes at once, at the end." data-pt="O &lt;code&gt;emitNodeStatus&lt;/code&gt; (linha 2191) envia status por nó individualmente durante a execução (&lt;code&gt;RUNNING&lt;/code&gt;, &lt;code&gt;COMPLETED&lt;/code&gt;, &lt;code&gt;FAILED&lt;/code&gt;, &lt;code&gt;CANCELLED&lt;/code&gt;). O &lt;code&gt;emitCancelledRunStatuses&lt;/code&gt; é a versão em batch. Um único emit com N nós de uma vez, no fim."><code>emitNodeStatus</code> (line 2191) sends status per node individually during execution (<code>RUNNING</code>, <code>COMPLETED</code>, <code>FAILED</code>, <code>CANCELLED</code>). <code>emitCancelledRunStatuses</code> is the batch version. A single emit with N nodes at once, at the end.</span>
           </div>
         </div>
       </div>
@@ -651,28 +667,29 @@
 
   <!-- SUMMARY -->
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo — o que sai de 4.1a.</strong>
-    <br>• Linha em <code>flow_run_states</code> com <code>cancelledAt</code>, <code>stoppedAtNodeId</code> e <code>notExecutedNodeIds</code> preenchidos.
-    <br>• Evento <code>room_status_updated</code> emitido no Socket.io. Todos os nós não-executados marcados como <code>CANCELLED</code>.
-    <br>• O loop principal já saiu antes. Este bloco só documenta e comunica.
-    <br>• Se qualquer step falhar (retry esgotado ou emit em crash), a execução não aborta. Segue para a criação normal do <code>flow_logs</code>.
+    <span data-en="&lt;strong&gt;Summary — what comes out of 4.1a.&lt;/strong&gt;&lt;br&gt;• Row in &lt;code&gt;flow_run_states&lt;/code&gt; with &lt;code&gt;cancelledAt&lt;/code&gt;, &lt;code&gt;stoppedAtNodeId&lt;/code&gt; and &lt;code&gt;notExecutedNodeIds&lt;/code&gt; filled.&lt;br&gt;• &lt;code&gt;room_status_updated&lt;/code&gt; event emitted on Socket.io. All non-executed nodes marked as &lt;code&gt;CANCELLED&lt;/code&gt;.&lt;br&gt;• The main loop already exited before. This block only documents and communicates.&lt;br&gt;• If any step fails (retry exhausted or emit crashes), the execution doesn't abort. Proceeds to the normal &lt;code&gt;flow_logs&lt;/code&gt; creation." data-pt="&lt;strong&gt;Resumo — o que sai de 4.1a.&lt;/strong&gt;&lt;br&gt;• Linha em &lt;code&gt;flow_run_states&lt;/code&gt; com &lt;code&gt;cancelledAt&lt;/code&gt;, &lt;code&gt;stoppedAtNodeId&lt;/code&gt; e &lt;code&gt;notExecutedNodeIds&lt;/code&gt; preenchidos.&lt;br&gt;• Evento &lt;code&gt;room_status_updated&lt;/code&gt; emitido no Socket.io. Todos os nós não-executados marcados como &lt;code&gt;CANCELLED&lt;/code&gt;.&lt;br&gt;• O loop principal já saiu antes. Este bloco só documenta e comunica.&lt;br&gt;• Se qualquer step falhar (retry esgotado ou emit em crash), a execução não aborta. Segue para a criação normal do &lt;code&gt;flow_logs&lt;/code&gt;."><strong>Summary — what comes out of 4.1a.</strong>
+    <br>• Row in <code>flow_run_states</code> with <code>cancelledAt</code>, <code>stoppedAtNodeId</code> and <code>notExecutedNodeIds</code> filled.
+    <br>• <code>room_status_updated</code> event emitted on Socket.io. All non-executed nodes marked as <code>CANCELLED</code>.
+    <br>• The main loop already exited before. This block only documents and communicates.
+    <br>• If any step fails (retry exhausted or emit crashes), the execution doesn't abort. Proceeds to the normal <code>flow_logs</code> creation.</span>
   </div>
 
   <div class="note">
-    <strong>Observações para migração.</strong>
-    <br>• A função <code>resolveCancelledRunFootprint</code> é pura, sem I/O, com spec. Reutilizável direto no worker.
-    <br>• A função <code>runCancellationService.markCancelled</code> depende do Postgres e do retry. Pode ser chamada de dentro do worker via injection ou virar activity. O retry (3x, 200ms) é razoável para activity Temporal com custom retry policy.
-    <br>• A função <code>emitCancelledRunStatuses</code> exige <code>NotificationsGateway</code> (Socket.io do backend). No worker esse gateway não existe. A activity precisa devolver o payload e o backend chamar o emit. Como alternativa, usar o padrão do <code>temporal.controller.ts:90</code> que já faz o relay quando a activity termina.
-    <br>• A ordem importa. Persist antes do emit. Se inverter, o browser pode receber <code>cancelled</code> enquanto o banco ainda não sabe. O usuário faz refresh e vê <code>pendente</code>.
-    <br>• Prioridade baixa. Se o worker rodar, o cancelamento é nativo via Temporal signal. Esse caminho pode virar código morto depois da migração completa.
+    <span data-en="&lt;strong&gt;Notes for migration.&lt;/strong&gt;&lt;br&gt;• The &lt;code&gt;resolveCancelledRunFootprint&lt;/code&gt; function is pure, no I/O, with a spec. Reusable directly in the worker.&lt;br&gt;• The &lt;code&gt;runCancellationService.markCancelled&lt;/code&gt; function depends on Postgres and the retry. Can be called from inside the worker via injection or become an activity. The retry (3x, 200ms) is reasonable for a Temporal activity with custom retry policy.&lt;br&gt;• The &lt;code&gt;emitCancelledRunStatuses&lt;/code&gt; function requires &lt;code&gt;NotificationsGateway&lt;/code&gt; (backend Socket.io). In the worker that gateway doesn't exist. The activity needs to return the payload and the backend calls the emit. As an alternative, use the &lt;code&gt;temporal.controller.ts:90&lt;/code&gt; pattern which already does the relay when the activity ends.&lt;br&gt;• Order matters. Persist before emit. If reversed, the browser might receive &lt;code&gt;cancelled&lt;/code&gt; while the database still doesn't know. The user does a refresh and sees &lt;code&gt;pending&lt;/code&gt;.&lt;br&gt;• Low priority. If the worker runs, cancellation is native via Temporal signal. This path may become dead code after the complete migration." data-pt="&lt;strong&gt;Observações para migração.&lt;/strong&gt;&lt;br&gt;• A função &lt;code&gt;resolveCancelledRunFootprint&lt;/code&gt; é pura, sem I/O, com spec. Reutilizável direto no worker.&lt;br&gt;• A função &lt;code&gt;runCancellationService.markCancelled&lt;/code&gt; depende do Postgres e do retry. Pode ser chamada de dentro do worker via injection ou virar activity. O retry (3x, 200ms) é razoável para activity Temporal com custom retry policy.&lt;br&gt;• A função &lt;code&gt;emitCancelledRunStatuses&lt;/code&gt; exige &lt;code&gt;NotificationsGateway&lt;/code&gt; (Socket.io do backend). No worker esse gateway não existe. A activity precisa devolver o payload e o backend chamar o emit. Como alternativa, usar o padrão do &lt;code&gt;temporal.controller.ts:90&lt;/code&gt; que já faz o relay quando a activity termina.&lt;br&gt;• A ordem importa. Persist antes do emit. Se inverter, o browser pode receber &lt;code&gt;cancelled&lt;/code&gt; enquanto o banco ainda não sabe. O usuário faz refresh e vê &lt;code&gt;pendente&lt;/code&gt;.&lt;br&gt;• Prioridade baixa. Se o worker rodar, o cancelamento é nativo via Temporal signal. Esse caminho pode virar código morto depois da migração completa."><strong>Notes for migration.</strong>
+    <br>• The <code>resolveCancelledRunFootprint</code> function is pure, no I/O, with a spec. Reusable directly in the worker.
+    <br>• The <code>runCancellationService.markCancelled</code> function depends on Postgres and the retry. Can be called from inside the worker via injection or become an activity. The retry (3x, 200ms) is reasonable for a Temporal activity with custom retry policy.
+    <br>• The <code>emitCancelledRunStatuses</code> function requires <code>NotificationsGateway</code> (backend Socket.io). In the worker that gateway doesn't exist. The activity needs to return the payload and the backend calls the emit. As an alternative, use the <code>temporal.controller.ts:90</code> pattern which already does the relay when the activity ends.
+    <br>• Order matters. Persist before emit. If reversed, the browser might receive <code>cancelled</code> while the database still doesn't know. The user does a refresh and sees <code>pending</code>.
+    <br>• Low priority. If the worker runs, cancellation is native via Temporal signal. This path may become dead code after the complete migration.</span>
   </div>
 
   <!-- FOOTER NAV -->
   <div class="page-footer-nav">
-    <a href="../index.html#step-4-1a" class="back-btn">← Voltar ao diagrama principal</a>
+    <a href="../index.html#step-4-1a" class="back-btn"><span data-en="← Back to main diagram" data-pt="← Voltar ao diagrama principal">← Back to main diagram</span></a>
   </div>
 
 </div>
+<script src="../_assets/i18n.js" defer></script>
 <script>
 (function() {
   function toggle(card) { if (card) card.classList.toggle('collapsed'); }

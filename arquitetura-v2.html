@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Flux — Execução de Agente (REVISANDO)</title>
+<title>Flux — Agent execution (v2 architecture)</title>
+<link rel="stylesheet" href="_assets/i18n.css">
+<link rel="stylesheet" href="_assets/header.css">
 <style>
   * { box-sizing: border-box; }
   body {
@@ -819,48 +821,76 @@
     font-size: 11px;
     font-weight: 600;
   }
+
+  /* Unified top tabs (shared across the 4 top-level docs) */
+  .doc-nav { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+  .doc-tabs {
+    display: flex; gap: 4px; background: #fff; padding: 5px; border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(15,23,42,0.08); flex-wrap: wrap;
+    border: 1px solid #E2E8F0; flex: 1 1 auto; min-width: 0;
+  }
+  .doc-tabs .doc-tab {
+    flex: 1 1 auto; text-align: center; padding: 9px 16px; border-radius: 8px;
+    text-decoration: none; color: #475569; font-size: 13px; font-weight: 600;
+    letter-spacing: -0.1px; transition: background 0.15s, color 0.15s; white-space: nowrap;
+  }
+  .doc-tabs .doc-tab:hover { background: #F1F5F9; color: #0F172A; }
+  .doc-tabs .doc-tab.is-active {
+    background: #0F172A; color: #fff; box-shadow: 0 1px 2px rgba(15,23,42,0.15);
+  }
+  .doc-tabs .doc-tab.is-active:hover { background: #0F172A; color: #fff; }
+  .doc-nav .proposal-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 12px; border-radius: 8px;
+    background: linear-gradient(90deg,#FEF3C7,#FDE68A);
+    color: #78350F; font-size: 11.5px; font-weight: 700; letter-spacing: 0.2px;
+    border: 1px solid #FCD34D;
+  }
 </style>
 </head>
 <body>
 <div class="container">
+<div class="doc-nav">
+  <nav class="doc-tabs" aria-label="Documentation sections">
+    <a href="index.html" class="doc-tab"><span data-en="Current architecture" data-pt="Arquitetura atual">Current architecture</span></a>
+    <a href="arquitetura-v2.html" class="doc-tab is-active"><span data-en="v2 architecture" data-pt="Arquitetura v2">v2 architecture</span></a>
+    <a href="arquitetura-v2-complemento.html" class="doc-tab"><span data-en="Plan as tasks" data-pt="Plano em tarefas">Plan as tasks</span></a>
+    <a href="timeline/index.html" class="doc-tab"><span data-en="Timeline" data-pt="Timeline">Timeline</span></a>
+    <a href="progresso-refatoracao.html" class="doc-tab"><span data-en="Progress" data-pt="Progresso">Progresso</span></a>
+  </nav>
+  <div class="lang-sw" role="group" aria-label="Language">
+    <button type="button" data-lang="en" aria-pressed="true">EN-US</button>
+    <button type="button" data-lang="pt" aria-pressed="false">PT-BR</button>
+  </div>
+</div>
+
+
+
 
   <!-- TOP NAV -->
-  <div class="top-nav">
-    <a href="index.html" class="back-btn">
-      <span>←</span>
-      <span>Ver arquitetura atual</span>
-    </a>
-    <a href="arquitetura-v2-complemento.html" class="back-btn" style="background:#EFF6FF;border-color:#BFDBFE;color:#1E40AF">
-      <span>🧩</span>
-      <span>Complemento — o plano em tarefas</span>
-      <span>→</span>
-    </a>
-    <span class="proposal-badge">
-      <span>✦</span>
-      <span>Proposta v2 — REVISANDO</span>
-    </span>
-  </div>
+  
 
-  <h1>Execução de Agente — REVISANDO</h1>
-  <div class="subtitle">
-    Proposta de refatoração: mover toda a execução do agente para dentro do workflow <code>processAgent</code> no worker Temporal, usando o <a href="algoritmo-dag.html">DAG documentado</a>. Backend fica só como fachada.
+  <div class="hero">
+    <div class="kicker"><span class="ico">🎯</span></div>
+    <h1><span data-en="v2 architecture — the proposal" data-pt="Arquitetura v2 — a proposta">v2 architecture — the proposal</span></h1>
+    <div class="goal"><span data-en="Proposal for the new architecture: bootstrap in Temporal, an &lt;strong&gt;immutable DAG&lt;/strong&gt;, a parallel wave loop, lanes for the special nodes, cancellation by signal and retry by policy. Companion to &lt;code&gt;index.html&lt;/code&gt;, which shows how it works today." data-pt="Proposta da nova arquitetura: bootstrap no Temporal, &lt;strong&gt;DAG imutável&lt;/strong&gt;, loop de ondas paralelas, lanes para os nós especiais, cancelamento por signal e retry por política. Companheiro de &lt;code&gt;index.html&lt;/code&gt;, que mostra como funciona hoje.">Proposal for the new architecture: bootstrap in Temporal, an <strong>immutable DAG</strong>, a parallel wave loop, lanes for the special nodes, cancellation by signal and retry by policy. Companion to <code>index.html</code>, which shows how it works today.</span></div>
   </div>
 
   <!-- ================================================== -->
-  <!-- FASE 1 — RECEPÇÃO E AGENDAMENTO -->
+  <!-- PHASE 1 — INTAKE AND SCHEDULING -->
   <!-- ================================================== -->
   <div class="section">
     <div class="section-header">
       <div class="section-number">1</div>
       <div class="section-title">
-        FASE 1 — Recepção e agendamento
+        <span data-en="PHASE 1 — Intake and scheduling" data-pt="FASE 1 — Recepção e agendamento">PHASE 1 — Intake and scheduling</span>
       </div>
     </div>
 
     <div class="flow-column">
       <div class="box external">
-        <div class="box-title">Cliente faz requisição</div>
-        <div class="box-desc">Execução do agente completo ou de um nó individual (debug/preview no editor).</div>
+        <div class="box-title"><span data-en="Client sends a request" data-pt="Cliente faz requisição">Client sends a request</span></div>
+        <div class="box-desc"><span data-en="Full-agent execution or a single-node run (debug/preview in the editor)." data-pt="Execução do agente completo ou de um nó individual (debug/preview no editor).">Full-agent execution or a single-node run (debug/preview in the editor).</span></div>
       </div>
       <div class="arrow">↓</div>
     </div>
@@ -868,38 +898,38 @@
     <div class="endpoints-grid" style="grid-template-columns:repeat(2, minmax(260px, 1fr));max-width:900px">
       <a href="endpoint-api-v2.html" class="endpoint-box" style="border-left-color:#3B82F6;text-decoration:none;color:inherit;display:block;position:relative;padding-right:28px">
         <code>POST /flux/api-v2</code>
-        <span class="kind">Dispara <code>processAgent</code> (agente completo) — <em>3 modos de resposta →</em></span>
+        <span class="kind"><span data-en="Fires &lt;code&gt;processAgent&lt;/code&gt; (full agent) — &lt;em&gt;3 response modes →&lt;/em&gt;" data-pt="Dispara &lt;code&gt;processAgent&lt;/code&gt; (agente completo) — &lt;em&gt;3 modos de resposta →&lt;/em&gt;">Fires <code>processAgent</code> (full agent) — <em>3 response modes →</em></span></span>
         <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#3B82F6;font-size:20px;font-weight:300">›</span>
       </a>
       <a href="single-node.html" class="endpoint-box" style="border-left-color:#A855F7;text-decoration:none;color:inherit;display:block;position:relative;padding-right:28px">
         <code>POST /flux/execute-single-node</code>
-        <span class="kind">Dispara <code>SingleNodeWorkflow</code> (1 nó só) — <em>doc separada →</em></span>
+        <span class="kind"><span data-en="Fires &lt;code&gt;SingleNodeWorkflow&lt;/code&gt; (one node only) — &lt;em&gt;separate doc →&lt;/em&gt;" data-pt="Dispara &lt;code&gt;SingleNodeWorkflow&lt;/code&gt; (1 nó só) — &lt;em&gt;doc separada →&lt;/em&gt;">Fires <code>SingleNodeWorkflow</code> (one node only) — <em>separate doc →</em></span></span>
         <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);color:#A855F7;font-size:20px;font-weight:300">›</span>
       </a>
     </div>
 
     <div class="annotation todo" style="max-width:900px;margin:12px auto 0">
       <span class="annotation-tag">TODO</span>
-      Documentar o <strong>payload</strong> aceito por cada endpoint (body, headers, auth, query params). Inclui os 6 endpoints legados que convergem em <code>FluxService.apiV2()</code>. Verificar quais são os tradeoff de ter apenas duas rotas.
+      <span data-en="Document the &lt;strong&gt;payload&lt;/strong&gt; each endpoint accepts (body, headers, auth, query params). Includes the 6 legacy endpoints that converge into &lt;code&gt;FluxService.apiV2()&lt;/code&gt;. Verify the tradeoffs of having only two routes." data-pt="Documentar o &lt;strong&gt;payload&lt;/strong&gt; aceito por cada endpoint (body, headers, auth, query params). Inclui os 6 endpoints legados que convergem em &lt;code&gt;FluxService.apiV2()&lt;/code&gt;. Verificar quais são os tradeoff de ter apenas duas rotas.">Document the <strong>payload</strong> each endpoint accepts (body, headers, auth, query params). Includes the 6 legacy endpoints that converge into <code>FluxService.apiV2()</code>. Verify the tradeoffs of having only two routes.</span>
     </div>
 
     <div class="arrow">↓</div>
 
     <div class="flow-column">
       <div class="box backend">
-        <div class="box-title"><span class="badge step">1.1</span> Autenticação + validação de usuário <span class="badge ess">essencial</span></div>
-        <div class="box-desc"><code>userService.findOne()</code> + verificação de API-key/sessão</div>
+        <div class="box-title"><span class="badge step">1.1</span> <span data-en="Authentication + user validation" data-pt="Autenticação + validação de usuário">Authentication + user validation</span> <span class="badge ess" data-en="essential" data-pt="essencial">essential</span></div>
+        <div class="box-desc"><code>userService.findOne()</code> <span data-en="+ API-key/session verification" data-pt="+ verificação de API-key/sessão">+ API-key/session verification</span></div>
       </div>
       <div class="arrow">↓</div>
 
       <div class="box backend">
-        <div class="box-title"><span class="badge step">1.2</span> Verificação de créditos e permissões <span class="badge ess">essencial</span></div>
-        <div class="box-desc"><code>checkIfUserCanRunFlow()</code> · <code>assertOwnerCanRunFlow()</code>. Falha rápida antes de qualquer trabalho.</div>
+        <div class="box-title"><span class="badge step">1.2</span> <span data-en="Credits and permissions check" data-pt="Verificação de créditos e permissões">Credits and permissions check</span> <span class="badge ess" data-en="essential" data-pt="essencial">essential</span></div>
+        <div class="box-desc"><code>checkIfUserCanRunFlow()</code> · <code>assertOwnerCanRunFlow()</code>. <span data-en="Fail fast before any work." data-pt="Falha rápida antes de qualquer trabalho.">Fail fast before any work.</span></div>
       </div>
 
       <div class="box annotation doubt">
-          <span class="annotation-tag">Dúvida 1.2</span>
-          Já aqui, validar se o usuário tem <strong>acesso aos nodes</strong> que estão no agente e aos <strong>modelos</strong> que estão sendo usados? (falha rápida no enqueue vs. descobrir só quando o nó for executado).
+          <span class="annotation-tag"><span data-en="Question 1.2" data-pt="Dúvida 1.2">Question 1.2</span></span>
+          <span data-en="Right here, should we validate that the user has &lt;strong&gt;access to the nodes&lt;/strong&gt; used in the agent and to the &lt;strong&gt;models&lt;/strong&gt; being used? (fail fast on enqueue vs. only find out when the node runs)." data-pt="Já aqui, validar se o usuário tem &lt;strong&gt;acesso aos nodes&lt;/strong&gt; que estão no agente e aos &lt;strong&gt;modelos&lt;/strong&gt; que estão sendo usados? (falha rápida no enqueue vs. descobrir só quando o nó for executado).">Right here, should we validate that the user has <strong>access to the nodes</strong> used in the agent and to the <strong>models</strong> being used? (fail fast on enqueue vs. only find out when the node runs).</span>
         </div>
 
       <div class="arrow">↓</div>
@@ -907,25 +937,25 @@
       <a href="flow-version-atual.html" class="box db" id="step-1-3" style="text-decoration:none;color:inherit;display:block;position:relative;padding-right:32px;cursor:pointer">
         <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#F59E0B;font-size:26px;font-weight:300;line-height:1">›</span>
         <div class="box-title">
-          <span class="badge step">1.3</span> Cria linha <code>flow_executions</code> + congela snapshot + persiste trigger inputs
-          <span class="badge immutable">imutável</span>
-          <span class="badge proposal">4 tabelas novas</span>
+          <span class="badge step">1.3</span> <span data-en="Insert &lt;code&gt;flow_executions&lt;/code&gt; row + freeze snapshot + persist trigger inputs" data-pt="Cria linha &lt;code&gt;flow_executions&lt;/code&gt; + congela snapshot + persiste trigger inputs">Insert <code>flow_executions</code> row + freeze snapshot + persist trigger inputs</span>
+          <span class="badge immutable" data-en="immutable" data-pt="imutável">immutable</span>
+          <span class="badge proposal" data-en="4 new tables" data-pt="4 tabelas novas">4 new tables</span>
         </div>
         <div class="box-desc">
-          Em uma <strong>única transação</strong>:
-          <br>• INSERT <code>flow_executions</code> <span class="badge proposal">nova</span> (status=<code>queued</code>). Gera <code>flowExecutionId</code>.
-          <br>• INSERT bulk em <code>flow_execution_snapshots(execution_id, node_id, node_data)</code> <span class="badge proposal">nova</span>. Copia a config atual de cada nó no <em>momento exato do enqueue</em>.
-          <br>• INSERT bulk em <code>flow_execution_edge_snapshots</code> <span class="badge proposal">nova</span>. Mesma ideia para arestas.
-          <br>• INSERT em <code>flow_execution_trigger_inputs(execution_id, raw_body)</code> <span class="badge proposal">nova</span>. Payload cru: <code>variableInputs[]</code> (com base64/links/isExtraction/typeOCR) + atalho <code>dataInput</code>. <strong>Não</strong> faz upload S3 nem OCR aqui. Só persiste raw.
+          <span data-en="In a &lt;strong&gt;single transaction&lt;/strong&gt;:" data-pt="Em uma &lt;strong&gt;única transação&lt;/strong&gt;:">In a <strong>single transaction</strong>:</span>
+          <br>• INSERT <code>flow_executions</code> <span class="badge proposal" data-en="new" data-pt="nova">new</span> (status=<code>queued</code>). <span data-en="Generates &lt;code&gt;flowExecutionId&lt;/code&gt;." data-pt="Gera &lt;code&gt;flowExecutionId&lt;/code&gt;.">Generates <code>flowExecutionId</code>.</span>
+          <br>• <span data-en="Bulk INSERT into &lt;code&gt;flow_execution_snapshots(execution_id, node_id, node_data)&lt;/code&gt;" data-pt="INSERT bulk em &lt;code&gt;flow_execution_snapshots(execution_id, node_id, node_data)&lt;/code&gt;">Bulk INSERT into <code>flow_execution_snapshots(execution_id, node_id, node_data)</code></span> <span class="badge proposal" data-en="new" data-pt="nova">new</span>. <span data-en="Copies each node's current config at the &lt;em&gt;exact moment of enqueue&lt;/em&gt;." data-pt="Copia a config atual de cada nó no &lt;em&gt;momento exato do enqueue&lt;/em&gt;.">Copies each node's current config at the <em>exact moment of enqueue</em>.</span>
+          <br>• <span data-en="Bulk INSERT into &lt;code&gt;flow_execution_edge_snapshots&lt;/code&gt;" data-pt="INSERT bulk em &lt;code&gt;flow_execution_edge_snapshots&lt;/code&gt;">Bulk INSERT into <code>flow_execution_edge_snapshots</code></span> <span class="badge proposal" data-en="new" data-pt="nova">new</span>. <span data-en="Same idea for edges." data-pt="Mesma ideia para arestas.">Same idea for edges.</span>
+          <br>• <span data-en="INSERT into &lt;code&gt;flow_execution_trigger_inputs(execution_id, raw_body)&lt;/code&gt;" data-pt="INSERT em &lt;code&gt;flow_execution_trigger_inputs(execution_id, raw_body)&lt;/code&gt;">INSERT into <code>flow_execution_trigger_inputs(execution_id, raw_body)</code></span> <span class="badge proposal" data-en="new" data-pt="nova">new</span>. <span data-en="Raw payload: &lt;code&gt;variableInputs[]&lt;/code&gt; (with base64/links/isExtraction/typeOCR) + &lt;code&gt;dataInput&lt;/code&gt; shortcut. &lt;strong&gt;No&lt;/strong&gt; S3 upload or OCR here. Just persist raw." data-pt="Payload cru: &lt;code&gt;variableInputs[]&lt;/code&gt; (com base64/links/isExtraction/typeOCR) + atalho &lt;code&gt;dataInput&lt;/code&gt;. &lt;strong&gt;Não&lt;/strong&gt; faz upload S3 nem OCR aqui. Só persiste raw.">Raw payload: <code>variableInputs[]</code> (with base64/links/isExtraction/typeOCR) + <code>dataInput</code> shortcut. <strong>No</strong> S3 upload or OCR here. Just persist raw.</span>
           <br><br>
-          <em style="font-size:11px;color:#991B1B">⚠ Hoje só existe <code>flow_execution_status</code> (linha leve com callback_url/output/tokens). As 4 tabelas acima fazem parte da proposta e precisam de migration.</em>
+          <em style="font-size:11px;color:#991B1B"><span data-en="⚠ Today only &lt;code&gt;flow_execution_status&lt;/code&gt; exists (light row with callback_url/output/tokens). The 4 tables above are part of the proposal and need a migration." data-pt="⚠ Hoje só existe &lt;code&gt;flow_execution_status&lt;/code&gt; (linha leve com callback_url/output/tokens). As 4 tabelas acima fazem parte da proposta e precisam de migration.">⚠ Today only <code>flow_execution_status</code> exists (light row with callback_url/output/tokens). The 4 tables above are part of the proposal and need a migration.</span></em>
           <br><br>
-          <strong>Por que agora, no backend?</strong> Se o usuário editar o flow depois (às 12h32), o snapshot da execução de 12h30 permanece congelado. Edits não vazam para a execução em curso.
+          <strong><span data-en="Why now, in the backend?" data-pt="Por que agora, no backend?">Why now, in the backend?</span></strong> <span data-en="If the user edits the flow later (at 12:32), the 12:30 execution snapshot stays frozen. Edits do not leak into the running execution." data-pt="Se o usuário editar o flow depois (às 12h32), o snapshot da execução de 12h30 permanece congelado. Edits não vazam para a execução em curso.">If the user edits the flow later (at 12:32), the 12:30 execution snapshot stays frozen. Edits do not leak into the running execution.</span>
           <br>
-          <strong>Por que separar OCR para a Fase 2?</strong> Extração de PDF/imagem pode levar dezenas de segundos. Fazer aqui bloqueia o retorno de <code>flowExecutionId</code>. Cliente ficaria esperando. Ao deixar para a activity <code>resolveTriggerInputs</code> (2.4), a API responde em milissegundos. O OCR corre dentro do workflow com retry/cancel nativos.
+          <strong><span data-en="Why defer OCR to Phase 2?" data-pt="Por que separar OCR para a Fase 2?">Why defer OCR to Phase 2?</span></strong> <span data-en="PDF/image extraction can take tens of seconds. Doing it here blocks returning &lt;code&gt;flowExecutionId&lt;/code&gt;. The client would wait. Deferring it to the &lt;code&gt;resolveTriggerInputs&lt;/code&gt; activity (2.4) makes the API respond in milliseconds. OCR runs inside the workflow with native retry/cancel." data-pt="Extração de PDF/imagem pode levar dezenas de segundos. Fazer aqui bloqueia o retorno de &lt;code&gt;flowExecutionId&lt;/code&gt;. Cliente ficaria esperando. Ao deixar para a activity &lt;code&gt;resolveTriggerInputs&lt;/code&gt; (2.4), a API responde em milissegundos. O OCR corre dentro do workflow com retry/cancel nativos.">PDF/image extraction can take tens of seconds. Doing it here blocks returning <code>flowExecutionId</code>. The client would wait. Deferring it to the <code>resolveTriggerInputs</code> activity (2.4) makes the API respond in milliseconds. OCR runs inside the workflow with native retry/cancel.</span>
           <div style="display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:4px 10px;background:linear-gradient(90deg,#FEF3C7,#FEF9C3);border:1px solid #FDE68A;border-radius:12px;font-size:11px;font-weight:600;color:#78350F">
             <span>🕰️</span>
-            <span>Clique para ver como o versionamento funciona <em>hoje</em> (e por que precisa mudar)</span>
+            <span><span data-en="Click to see how versioning works &lt;em&gt;today&lt;/em&gt; (and why it needs to change)" data-pt="Clique para ver como o versionamento funciona &lt;em&gt;hoje&lt;/em&gt; (e por que precisa mudar)">Click to see how versioning works <em>today</em> (and why it needs to change)</span></span>
             <span style="font-weight:700">→</span>
           </div>
         </div>
@@ -936,18 +966,18 @@
         <div class="box-title">
           <span class="badge step">1.4</span> temporal.start('processAgent', { flowExecutionId })
           <span class="badge temporal">temporal</span>
-          <span class="badge immutable">idempotente</span>
+          <span class="badge immutable" data-en="idempotent" data-pt="idempotente">idempotent</span>
         </div>
         <div class="box-desc">
           <code>WorkflowId = flowExecutionId</code> · <code>WorkflowIdReusePolicy = REJECT_DUPLICATE</code>.
-          <br>Passa <strong>só o ID</strong>. Workflow lê topologia e config do snapshot congelado. Sem payload na entrada.
+          <br><span data-en="Passes &lt;strong&gt;only the ID&lt;/strong&gt;. Workflow reads topology and config from the frozen snapshot. No payload on entry." data-pt="Passa &lt;strong&gt;só o ID&lt;/strong&gt;. Workflow lê topologia e config do snapshot congelado. Sem payload na entrada.">Passes <strong>only the ID</strong>. Workflow reads topology and config from the frozen snapshot. No payload on entry.</span>
         </div>
       </div>
       <div class="arrow">↓</div>
 
       <div class="box backend">
-        <div class="box-title"><span class="badge step">1.5</span> Retorna <code>flowExecutionId</code> ao caller</div>
-        <div class="box-desc">Fire-and-forget. Cliente pode escutar status via WebSocket ou polling em <code>flow_executions</code>.</div>
+        <div class="box-title"><span class="badge step">1.5</span> <span data-en="Return &lt;code&gt;flowExecutionId&lt;/code&gt; to the caller" data-pt="Retorna &lt;code&gt;flowExecutionId&lt;/code&gt; ao caller">Return <code>flowExecutionId</code> to the caller</span></div>
+        <div class="box-desc"><span data-en="Fire-and-forget. Client can listen for status via WebSocket or poll &lt;code&gt;flow_executions&lt;/code&gt;." data-pt="Fire-and-forget. Cliente pode escutar status via WebSocket ou polling em &lt;code&gt;flow_executions&lt;/code&gt;.">Fire-and-forget. Client can listen for status via WebSocket or poll <code>flow_executions</code>.</span></div>
       </div>
     </div>
   </div>
@@ -955,44 +985,44 @@
  
 
   <!-- ================================================== -->
-  <!-- FASE 2 — BOOTSTRAP DO WORKFLOW -->
+  <!-- PHASE 2 — WORKFLOW BOOTSTRAP -->
   <!-- ================================================== -->
   <div class="section">
     <div class="section-header">
       <div class="section-number">2</div>
       <div class="section-title">
-        FASE 2 — Bootstrap do workflow
-        <span class="badge temporal">dentro do Temporal</span>
+        <span data-en="PHASE 2 — Workflow bootstrap" data-pt="FASE 2 — Bootstrap do workflow">PHASE 2 — Workflow bootstrap</span>
+        <span class="badge temporal" data-en="inside Temporal" data-pt="dentro do Temporal">inside Temporal</span>
       </div>
-      <div class="section-desc">Carrega snapshot, constrói DAG imutável, prepara OutputStore</div>
+      <div class="section-desc"><span data-en="Loads snapshot, builds immutable DAG, prepares OutputStore" data-pt="Carrega snapshot, constrói DAG imutável, prepara OutputStore">Loads snapshot, builds immutable DAG, prepares OutputStore</span></div>
     </div>
 
     <div class="flow-column">
       <div class="box temporal">
         <div class="box-title">
-          <span class="badge step">2.1</span> Activity <code>loadFlowTopology(flowExecutionId)</code>
-          <span class="badge ess">essencial</span>
-          <span class="badge immutable">só topologia</span>
+          <span class="badge step">2.1</span> <span data-en="Activity" data-pt="Activity">Activity</span> <code>loadFlowTopology(flowExecutionId)</code>
+          <span class="badge ess" data-en="essential" data-pt="essencial">essential</span>
+          <span class="badge immutable" data-en="topology only" data-pt="só topologia">topology only</span>
         </div>
         <div class="box-desc">
-          Lê de <code>flow_execution_snapshots</code> <strong>apenas</strong>: <code>nodeIds</code>, <code>nodeType</code> por id, adjacency list, <code>edgeIds</code> + tipo de aresta.
-          <br><strong>Nunca</strong> carrega <code>node_data</code> (config pesada: prompts, scripts, textData). Fica no snapshot e é lido on-demand pela activity de cada nó.
-          <br>Idempotente (query pura, retryable).
+          <span data-en="Reads from &lt;code&gt;flow_execution_snapshots&lt;/code&gt; &lt;strong&gt;only&lt;/strong&gt;: &lt;code&gt;nodeIds&lt;/code&gt;, per-id &lt;code&gt;nodeType&lt;/code&gt;, adjacency list, &lt;code&gt;edgeIds&lt;/code&gt; + edge type." data-pt="Lê de &lt;code&gt;flow_execution_snapshots&lt;/code&gt; &lt;strong&gt;apenas&lt;/strong&gt;: &lt;code&gt;nodeIds&lt;/code&gt;, &lt;code&gt;nodeType&lt;/code&gt; por id, adjacency list, &lt;code&gt;edgeIds&lt;/code&gt; + tipo de aresta.">Reads from <code>flow_execution_snapshots</code> <strong>only</strong>: <code>nodeIds</code>, per-id <code>nodeType</code>, adjacency list, <code>edgeIds</code> + edge type.</span>
+          <br><span data-en="&lt;strong&gt;Never&lt;/strong&gt; loads &lt;code&gt;node_data&lt;/code&gt; (heavy config: prompts, scripts, textData). It stays in the snapshot and is read on-demand by each node's activity." data-pt="&lt;strong&gt;Nunca&lt;/strong&gt; carrega &lt;code&gt;node_data&lt;/code&gt; (config pesada: prompts, scripts, textData). Fica no snapshot e é lido on-demand pela activity de cada nó.">&lt;strong&gt;Never&lt;/strong&gt; loads &lt;code&gt;node_data&lt;/code&gt; (heavy config: prompts, scripts, textData). It stays in the snapshot and is read on-demand by each node's activity.</span>
+          <br><span data-en="Idempotent (pure query, retryable)." data-pt="Idempotente (query pura, retryable).">Idempotent (pure query, retryable).</span>
         </div>
       </div>
       <div class="arrow">↓</div>
 
       <a href="algoritmo-dag.html" class="box worker" style="text-decoration:none;color:inherit;display:block;position:relative;padding-right:32px;cursor:pointer">
         <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#10B981;font-size:26px;font-weight:300;line-height:1">›</span>
-        <div class="box-title"><span class="badge step">2.2</span> <code>buildDag(snapshot)</code> — puro, in-workflow <span class="badge ess">essencial</span></div>
+        <div class="box-title"><span class="badge step">2.2</span> <code>buildDag(snapshot)</code> — <span data-en="pure, in-workflow" data-pt="puro, in-workflow">pure, in-workflow</span> <span class="badge ess" data-en="essential" data-pt="essencial">essential</span></div>
         <div class="box-desc">
-          Adjacency list · in-degree por nó · classifica arestas (control/condition/data/side-effect) · <strong>scan de refs <code>{{...}}</code></strong> para criar deps implícitas · detecta e remove back-edges · calcula unreachable.
-          <br><strong>Poda nós puramente visuais</strong> (<code>comment</code>, <code>label</code>, <code>group</code>). Nunca entram em <code>pending</code>/<code>readySet</code>. Hoje (v1) eles atravessam o loop como no-op silencioso, gastando ciclo de dispatch.
-          <br><strong>Poda também <code>varInputNode</code></strong> do set de dispatch. Já foram materializados como outputs em 2.4 (<code>resolveTriggerInputs</code>). No DAG figuram só como <em>fonte</em> de arestas, sem in-degree.
-          <br><strong>DAG resultante é imutável para o resto da execução.</strong>
+          <span data-en="Adjacency list · in-degree per node · classifies edges (control/condition/data/side-effect) · &lt;strong&gt;scan for &lt;code&gt;{{...}}&lt;/code&gt; refs&lt;/strong&gt; to create implicit deps · detects and removes back-edges · computes unreachable." data-pt="Adjacency list · in-degree por nó · classifica arestas (control/condition/data/side-effect) · &lt;strong&gt;scan de refs &lt;code&gt;{{...}}&lt;/code&gt;&lt;/strong&gt; para criar deps implícitas · detecta e remove back-edges · calcula unreachable.">Adjacency list · in-degree per node · classifies edges (control/condition/data/side-effect) · <strong>scan for <code>{{...}}</code> refs</strong> to create implicit deps · detects and removes back-edges · computes unreachable.</span>
+          <br><span data-en="&lt;strong&gt;Prunes purely visual nodes&lt;/strong&gt; (&lt;code&gt;comment&lt;/code&gt;, &lt;code&gt;label&lt;/code&gt;, &lt;code&gt;group&lt;/code&gt;). They never enter &lt;code&gt;pending&lt;/code&gt;/&lt;code&gt;readySet&lt;/code&gt;. Today (v1) they traverse the loop as a silent no-op, burning a dispatch cycle." data-pt="&lt;strong&gt;Poda nós puramente visuais&lt;/strong&gt; (&lt;code&gt;comment&lt;/code&gt;, &lt;code&gt;label&lt;/code&gt;, &lt;code&gt;group&lt;/code&gt;). Nunca entram em &lt;code&gt;pending&lt;/code&gt;/&lt;code&gt;readySet&lt;/code&gt;. Hoje (v1) eles atravessam o loop como no-op silencioso, gastando ciclo de dispatch.">&lt;strong&gt;Prunes purely visual nodes&lt;/strong&gt; (&lt;code&gt;comment&lt;/code&gt;, &lt;code&gt;label&lt;/code&gt;, &lt;code&gt;group&lt;/code&gt;). They never enter &lt;code&gt;pending&lt;/code&gt;/&lt;code&gt;readySet&lt;/code&gt;. Today (v1) they traverse the loop as a silent no-op, burning a dispatch cycle.</span>
+          <br><span data-en="&lt;strong&gt;Also prunes &lt;code&gt;varInputNode&lt;/code&gt;&lt;/strong&gt; from the dispatch set. They were already materialised as outputs in 2.4 (&lt;code&gt;resolveTriggerInputs&lt;/code&gt;). In the DAG they only appear as edge &lt;em&gt;sources&lt;/em&gt;, with no in-degree." data-pt="&lt;strong&gt;Poda também &lt;code&gt;varInputNode&lt;/code&gt;&lt;/strong&gt; do set de dispatch. Já foram materializados como outputs em 2.4 (&lt;code&gt;resolveTriggerInputs&lt;/code&gt;). No DAG figuram só como &lt;em&gt;fonte&lt;/em&gt; de arestas, sem in-degree.">&lt;strong&gt;Also prunes &lt;code&gt;varInputNode&lt;/code&gt;&lt;/strong&gt; from the dispatch set. They were already materialised as outputs in 2.4 (&lt;code&gt;resolveTriggerInputs&lt;/code&gt;). In the DAG they only appear as edge &lt;em&gt;sources&lt;/em&gt;, with no in-degree.</span>
+          <br><strong><span data-en="The resulting DAG is immutable for the rest of the execution." data-pt="DAG resultante é imutável para o resto da execução.">The resulting DAG is immutable for the rest of the execution.</span></strong>
           <div style="display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:4px 10px;background:linear-gradient(90deg,#ECFDF5,#F0FDF4);border:1px solid #A7F3D0;border-radius:12px;font-size:11px;font-weight:600;color:#065F46">
             <span>🔍</span>
-            <span>Clique para ver o algoritmo passo a passo + exemplo com ondas paralelas</span>
+            <span data-en="Click to see the algorithm step by step + example with parallel waves" data-pt="Clique para ver o algoritmo passo a passo + exemplo com ondas paralelas">Click to see the algorithm step by step + example with parallel waves</span>
             <span style="font-weight:700">→</span>
           </div>
         </div>
@@ -1001,13 +1031,13 @@
 
       <a href="validacao-dag.html" class="box worker" style="text-decoration:none;color:inherit;display:block;position:relative;padding-right:32px;cursor:pointer">
         <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#10B981;font-size:26px;font-weight:300;line-height:1">›</span>
-        <div class="box-title"><span class="badge step">2.3</span> <code>validateDag()</code> — falha rápida <span class="badge ess">essencial</span></div>
+        <div class="box-title"><span class="badge step">2.3</span> <code>validateDag()</code> — <span data-en="fail fast" data-pt="falha rápida">fail fast</span> <span class="badge ess" data-en="essential" data-pt="essencial">essential</span></div>
         <div class="box-desc">
-          Portão entre "montar o grafo" (2.2) e "começar a gastar recursos" (Fase 3). Valida: ciclos remanescentes · refs (<code>{{...}}</code>) apontando para nós inexistentes · tipos incompatíveis · nós órfãos essenciais.
-          <br>Falha aqui significa flow inválido. Não roda nada. Sustenta o invariante do deadlock guard 3.2.
+          <span data-en="Gate between &quot;assemble the graph&quot; (2.2) and &quot;start spending resources&quot; (Phase 3). Validates: remaining cycles · &lt;code&gt;{{...}}&lt;/code&gt; refs pointing to non-existent nodes · incompatible types · essential orphan nodes." data-pt="Portão entre &quot;montar o grafo&quot; (2.2) e &quot;começar a gastar recursos&quot; (Fase 3). Valida: ciclos remanescentes · refs (&lt;code&gt;{{...}}&lt;/code&gt;) apontando para nós inexistentes · tipos incompatíveis · nós órfãos essenciais.">Gate between &quot;assemble the graph&quot; (2.2) and &quot;start spending resources&quot; (Phase 3). Validates: remaining cycles · <code>{{...}}</code> refs pointing to non-existent nodes · incompatible types · essential orphan nodes.</span>
+          <br><span data-en="A failure here means the flow is invalid. Nothing runs. Sustains the invariant behind the 3.2 deadlock guard." data-pt="Falha aqui significa flow inválido. Não roda nada. Sustenta o invariante do deadlock guard 3.2.">A failure here means the flow is invalid. Nothing runs. Sustains the invariant behind the 3.2 deadlock guard.</span>
           <div style="display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:4px 10px;background:linear-gradient(90deg,#ECFDF5,#F0FDF4);border:1px solid #A7F3D0;border-radius:12px;font-size:11px;font-weight:600;color:#065F46">
             <span>🔍</span>
-            <span>Clique para ver cada check em detalhe + custo evitado com exemplo real</span>
+            <span data-en="Click to see each check in detail + cost avoided with a real example" data-pt="Clique para ver cada check em detalhe + custo evitado com exemplo real">Click to see each check in detail + cost avoided with a real example</span>
             <span style="font-weight:700">→</span>
           </div>
         </div>
@@ -1016,17 +1046,17 @@
 
       <div class="box worker">
         <div class="box-title">
-          <span class="badge step">2.4</span> Activity <code>resolveTriggerInputs(flowExecutionId)</code>
-          <span class="badge ess">essencial</span>
+          <span class="badge step">2.4</span> <span data-en="Activity" data-pt="Activity">Activity</span> <code>resolveTriggerInputs(flowExecutionId)</code>
+          <span class="badge ess" data-en="essential" data-pt="essencial">essential</span>
         </div>
         <div class="box-desc">
-          Lê <code>flow_execution_trigger_inputs.raw_body</code> persistido em 1.3. Traduz em <code>data</code> resolvido para cada <code>varInputNode</code>. Por varInput no request:
-          <br>• Se <code>dataInput</code> string veio sozinho, injeta no primeiro <code>varInputNode</code> do snapshot (atalho do chatbot/API pública).
-          <br>• Se <code>isExtraction === true</code> e tem <code>links</code>/<code>files</code>: sub-activity <strong><code>extractTextFromFile</code></strong> por fonte. Faz upload S3 para os base64. Chama <code>ExtractionService.extractTextFromLink</code> com <code>typeOCR ∈ { mistral_ocr | mistral_vision | google_ocr }</code>. Cada extração é uma sub-activity separada (retryable, cancelável, isolada).
-          <br>• Se <code>isExtraction === false</code>: só upload S3 para os base64, sem OCR. Só armazena URLs.
-          <br>• Sem arquivos: <code>data</code> mínimo só com <code>text</code>.
+          <span data-en="Reads &lt;code&gt;flow_execution_trigger_inputs.raw_body&lt;/code&gt; persisted in 1.3. Translates it into resolved &lt;code&gt;data&lt;/code&gt; for each &lt;code&gt;varInputNode&lt;/code&gt;. Per varInput in the request:" data-pt="Lê &lt;code&gt;flow_execution_trigger_inputs.raw_body&lt;/code&gt; persistido em 1.3. Traduz em &lt;code&gt;data&lt;/code&gt; resolvido para cada &lt;code&gt;varInputNode&lt;/code&gt;. Por varInput no request:">Reads <code>flow_execution_trigger_inputs.raw_body</code> persisted in 1.3. Translates it into resolved <code>data</code> for each <code>varInputNode</code>. Per varInput in the request:</span>
+          <br>• <span data-en="If &lt;code&gt;dataInput&lt;/code&gt; string came alone, injects it into the first &lt;code&gt;varInputNode&lt;/code&gt; of the snapshot (chatbot/public API shortcut)." data-pt="Se &lt;code&gt;dataInput&lt;/code&gt; string veio sozinho, injeta no primeiro &lt;code&gt;varInputNode&lt;/code&gt; do snapshot (atalho do chatbot/API pública).">If &lt;code&gt;dataInput&lt;/code&gt; string came alone, injects it into the first &lt;code&gt;varInputNode&lt;/code&gt; of the snapshot (chatbot/public API shortcut).</span>
+          <br>• <span data-en="If &lt;code&gt;isExtraction === true&lt;/code&gt; and there are &lt;code&gt;links&lt;/code&gt;/&lt;code&gt;files&lt;/code&gt;: one &lt;strong&gt;&lt;code&gt;extractTextFromFile&lt;/code&gt;&lt;/strong&gt; sub-activity per source. Uploads base64 to S3. Calls &lt;code&gt;ExtractionService.extractTextFromLink&lt;/code&gt; with &lt;code&gt;typeOCR ∈ { mistral_ocr | mistral_vision | google_ocr }&lt;/code&gt;. Each extraction is a separate sub-activity (retryable, cancellable, isolated)." data-pt="Se &lt;code&gt;isExtraction === true&lt;/code&gt; e tem &lt;code&gt;links&lt;/code&gt;/&lt;code&gt;files&lt;/code&gt;: sub-activity &lt;strong&gt;&lt;code&gt;extractTextFromFile&lt;/code&gt;&lt;/strong&gt; por fonte. Faz upload S3 para os base64. Chama &lt;code&gt;ExtractionService.extractTextFromLink&lt;/code&gt; com &lt;code&gt;typeOCR ∈ { mistral_ocr | mistral_vision | google_ocr }&lt;/code&gt;. Cada extração é uma sub-activity separada (retryable, cancelável, isolada).">If &lt;code&gt;isExtraction === true&lt;/code&gt; and there are &lt;code&gt;links&lt;/code&gt;/&lt;code&gt;files&lt;/code&gt;: one &lt;strong&gt;&lt;code&gt;extractTextFromFile&lt;/code&gt;&lt;/strong&gt; sub-activity per source. Uploads base64 to S3. Calls &lt;code&gt;ExtractionService.extractTextFromLink&lt;/code&gt; with &lt;code&gt;typeOCR ∈ { mistral_ocr | mistral_vision | google_ocr }&lt;/code&gt;. Each extraction is a separate sub-activity (retryable, cancellable, isolated).</span>
+          <br>• <span data-en="If &lt;code&gt;isExtraction === false&lt;/code&gt;: only S3 upload for the base64, no OCR. Only stores URLs." data-pt="Se &lt;code&gt;isExtraction === false&lt;/code&gt;: só upload S3 para os base64, sem OCR. Só armazena URLs.">If &lt;code&gt;isExtraction === false&lt;/code&gt;: only S3 upload for the base64, no OCR. Only stores URLs.</span>
+          <br>• <span data-en="No files: minimal &lt;code&gt;data&lt;/code&gt; with only &lt;code&gt;text&lt;/code&gt;." data-pt="Sem arquivos: &lt;code&gt;data&lt;/code&gt; mínimo só com &lt;code&gt;text&lt;/code&gt;.">No files: minimal &lt;code&gt;data&lt;/code&gt; with only &lt;code&gt;text&lt;/code&gt;.</span>
           <br><br>
-          Escreve o resultado em <code>node_executions</code> com <code>executor='trigger-input'</code> (uma linha por varInput). O <code>outputData</code> vira a saída desses nós para o OutputStore. O <code>varInputNode</code> nunca precisa ser dispatched no loop de ondas.
+          <span data-en="Writes the result to &lt;code&gt;node_executions&lt;/code&gt; with &lt;code&gt;executor='trigger-input'&lt;/code&gt; (one row per varInput). The &lt;code&gt;outputData&lt;/code&gt; becomes each node's output in the OutputStore. &lt;code&gt;varInputNode&lt;/code&gt; never needs to be dispatched in the wave loop." data-pt="Escreve o resultado em &lt;code&gt;node_executions&lt;/code&gt; com &lt;code&gt;executor='trigger-input'&lt;/code&gt; (uma linha por varInput). O &lt;code&gt;outputData&lt;/code&gt; vira a saída desses nós para o OutputStore. O &lt;code&gt;varInputNode&lt;/code&gt; nunca precisa ser dispatched no loop de ondas.">Writes the result to <code>node_executions</code> with <code>executor='trigger-input'</code> (one row per varInput). The <code>outputData</code> becomes each node's output in the OutputStore. <code>varInputNode</code> never needs to be dispatched in the wave loop.</span>
         </div>
       </div>
       <div class="arrow">↓</div>
@@ -1037,49 +1067,49 @@
           <span class="badge immutable">append-only</span>
         </div>
         <div class="box-desc">
-          Estrutura <code>Map&lt;nodeId, ReadonlyOutput&gt;</code> versionada por wave. Seed com os outputs dos <code>varInputNode</code>s <strong>já resolvidos</strong> em 2.4 (lê de <code>node_executions</code> onde <code>executor='trigger-input'</code>).
-          <br><strong>Substitui</strong> o <code>nodeSubstitutionSchema</code> mutável. Nunca é modificado, só cresce com <code>.append()</code>.
+          <span data-en="A &lt;code&gt;Map&amp;lt;nodeId, ReadonlyOutput&amp;gt;&lt;/code&gt; structure versioned by wave. Seeded with the outputs of the &lt;code&gt;varInputNode&lt;/code&gt;s &lt;strong&gt;already resolved&lt;/strong&gt; in 2.4 (reads from &lt;code&gt;node_executions&lt;/code&gt; where &lt;code&gt;executor='trigger-input'&lt;/code&gt;)." data-pt="Estrutura &lt;code&gt;Map&amp;lt;nodeId, ReadonlyOutput&amp;gt;&lt;/code&gt; versionada por wave. Seed com os outputs dos &lt;code&gt;varInputNode&lt;/code&gt;s &lt;strong&gt;já resolvidos&lt;/strong&gt; em 2.4 (lê de &lt;code&gt;node_executions&lt;/code&gt; onde &lt;code&gt;executor='trigger-input'&lt;/code&gt;).">A <code>Map&lt;nodeId, ReadonlyOutput&gt;</code> structure versioned by wave. Seeded with the outputs of the <code>varInputNode</code>s <strong>already resolved</strong> in 2.4 (reads from <code>node_executions</code> where <code>executor='trigger-input'</code>).</span>
+          <br><strong><span data-en="Replaces" data-pt="Substitui">Replaces</span></strong> <span data-en="the mutable &lt;code&gt;nodeSubstitutionSchema&lt;/code&gt;. It is never modified, only grows via &lt;code&gt;.append()&lt;/code&gt;." data-pt="o &lt;code&gt;nodeSubstitutionSchema&lt;/code&gt; mutável. Nunca é modificado, só cresce com &lt;code&gt;.append()&lt;/code&gt;.">the mutable <code>nodeSubstitutionSchema</code>. It is never modified, only grows via <code>.append()</code>.</span>
         </div>
       </div>
       <div class="arrow">↓</div>
 
       <div class="box cross">
         <div class="box-title">
-          <span class="badge step">2.6</span> <code>initRunLog</code> via signal
+          <span class="badge step">2.6</span> <code>initRunLog</code> <span data-en="via signal" data-pt="via signal">via signal</span>
           <span class="badge signal">signal</span>
           <span class="badge cross">cross</span>
         </div>
         <div class="box-desc">
-          <code>runLogCollector.createRoot()</code> disparado como <strong>signal assíncrono</strong>. Não bloqueia o dispatch da primeira wave.
+          <span data-en="&lt;code&gt;runLogCollector.createRoot()&lt;/code&gt; fired as an &lt;strong&gt;async signal&lt;/strong&gt;. Does not block the first wave's dispatch." data-pt="&lt;code&gt;runLogCollector.createRoot()&lt;/code&gt; disparado como &lt;strong&gt;signal assíncrono&lt;/strong&gt;. Não bloqueia o dispatch da primeira wave.">&lt;code&gt;runLogCollector.createRoot()&lt;/code&gt; fired as an &lt;strong&gt;async signal&lt;/strong&gt;. Does not block the first wave's dispatch.</span>
         </div>
       </div>
       <div class="arrow">↓</div>
 
       <div class="box redis">
-        <div class="box-title"><span class="badge step">2.7</span> Emit "flow started"</div>
-        <div class="box-desc">Publica em Redis + WebSocket. Cliente recebe <code>flowExecutionId</code> em modo running.</div>
+        <div class="box-title"><span class="badge step">2.7</span> <span data-en="Emit &quot;flow started&quot;" data-pt="Emit &quot;flow started&quot;">Emit "flow started"</span></div>
+        <div class="box-desc"><span data-en="Publishes to Redis + WebSocket. Client receives &lt;code&gt;flowExecutionId&lt;/code&gt; in running mode." data-pt="Publica em Redis + WebSocket. Cliente recebe &lt;code&gt;flowExecutionId&lt;/code&gt; em modo running.">Publishes to Redis + WebSocket. Client receives <code>flowExecutionId</code> in running mode.</span></div>
       </div>
     </div>
 
     <div class="note temporal">
-      <strong>Por que dentro do workflow?</strong> Se o worker cair no meio, Temporal reexecuta o workflow do zero. Todas essas activities são idempotentes (query, não escrita). Nenhum estado in-memory sobrevive fora do workflow. Recuperação é grátis.
+      <strong><span data-en="Why inside the workflow?" data-pt="Por que dentro do workflow?">Why inside the workflow?</span></strong> <span data-en="If the worker crashes mid-flight, Temporal re-executes the workflow from zero. All these activities are idempotent (query, not write). No in-memory state survives outside the workflow. Recovery is free." data-pt="Se o worker cair no meio, Temporal reexecuta o workflow do zero. Todas essas activities são idempotentes (query, não escrita). Nenhum estado in-memory sobrevive fora do workflow. Recuperação é grátis.">If the worker crashes mid-flight, Temporal re-executes the workflow from zero. All these activities are idempotent (query, not write). No in-memory state survives outside the workflow. Recovery is free.</span>
     </div>
   </div>
 
  
 
   <!-- ================================================== -->
-  <!-- FASE 3 — LOOP DE ONDAS PARALELAS -->
+  <!-- PHASE 3 — PARALLEL WAVE LOOP -->
   <!-- ================================================== -->
   <div class="section">
     <div class="section-header">
       <div class="section-number">3</div>
       <div class="section-title">
-        FASE 3 — Loop de ondas paralelas
-        <span class="badge parallel">paralelo</span>
+        <span data-en="PHASE 3 — Parallel wave loop" data-pt="FASE 3 — Loop de ondas paralelas">PHASE 3 — Parallel wave loop</span>
+        <span class="badge parallel" data-en="parallel" data-pt="paralelo">parallel</span>
         <span class="badge temporal">temporal</span>
       </div>
-      <div class="section-desc">Coração da nova arquitetura · substitui o <code>while (scheduledId !== null)</code> serial</div>
+      <div class="section-desc"><span data-en="Heart of the new architecture · replaces the serial &lt;code&gt;while (scheduledId !== null)&lt;/code&gt;" data-pt="Coração da nova arquitetura · substitui o &lt;code&gt;while (scheduledId !== null)&lt;/code&gt; serial">Heart of the new architecture · replaces the serial <code>while (scheduledId !== null)</code></span></div>
     </div>
 
     <div class="wave-container">
@@ -1087,45 +1117,45 @@
 
       <div class="flow-column">
         <div class="box worker">
-          <div class="box-title"><span class="badge step">3.1</span> Compute <code>readySet</code> <span class="badge ess">essencial</span></div>
-          <div class="box-desc"><code>readySet = { n ∈ pending | in-degree(n) === 0 }</code>. Snapshot atômico do DAG.</div>
+          <div class="box-title"><span class="badge step">3.1</span> <span data-en="Compute" data-pt="Compute">Compute</span> <code>readySet</code> <span class="badge ess" data-en="essential" data-pt="essencial">essential</span></div>
+          <div class="box-desc"><code>readySet = { n ∈ pending | in-degree(n) === 0 }</code>. <span data-en="Atomic DAG snapshot." data-pt="Snapshot atômico do DAG.">Atomic DAG snapshot.</span></div>
         </div>
         <div class="arrow">↓</div>
 
         <div class="box decision">
-          <div class="box-title"><span class="badge step">3.2</span> Guard: <code>readySet.size === 0 && pending.size &gt; 0</code>?</div>
+          <div class="box-title"><span class="badge step">3.2</span> <span data-en="Guard" data-pt="Guard">Guard</span>: <code>readySet.size === 0 && pending.size &gt; 0</code>?</div>
           <div class="box-desc">
-            <strong>Deadlock</strong>. DAG inválido ou branch travado por condition dead. Falha o workflow com <code>DeadlockError</code>.
-            <br>(Não deve acontecer com <code>validateDag</code> passando.)
+            <strong>Deadlock</strong>. <span data-en="Invalid DAG or a branch stuck by a dead condition. Fails the workflow with &lt;code&gt;DeadlockError&lt;/code&gt;." data-pt="DAG inválido ou branch travado por condition dead. Falha o workflow com &lt;code&gt;DeadlockError&lt;/code&gt;.">Invalid DAG or a branch stuck by a dead condition. Fails the workflow with <code>DeadlockError</code>.</span>
+            <br><span data-en="(Should not happen if &lt;code&gt;validateDag&lt;/code&gt; passed.)" data-pt="(Não deve acontecer com &lt;code&gt;validateDag&lt;/code&gt; passando.)">(Should not happen if <code>validateDag</code> passed.)</span>
           </div>
         </div>
         <div class="arrow">↓</div>
 
         <div class="box decision">
-          <div class="box-title"><span class="badge step">3.3</span> Guard: <code>pending.size === 0</code>?</div>
-          <div class="box-desc"><strong>Sucesso</strong>. Todos os nós resolvidos. Sai do loop → FASE 4.</div>
+          <div class="box-title"><span class="badge step">3.3</span> <span data-en="Guard" data-pt="Guard">Guard</span>: <code>pending.size === 0</code>?</div>
+          <div class="box-desc"><strong><span data-en="Success" data-pt="Sucesso">Success</span></strong>. <span data-en="All nodes resolved. Exit the loop → PHASE 4." data-pt="Todos os nós resolvidos. Sai do loop → FASE 4.">All nodes resolved. Exit the loop → PHASE 4.</span></div>
         </div>
         <div class="arrow">↓</div>
 
         <div class="box parallel">
           <div class="box-title">
-            <span class="badge step">3.4</span> Dispatch paralelo — <code>await Promise.all(readySet.map(dispatchNode))</code>
-            <span class="badge parallel">paralelo</span>
+            <span class="badge step">3.4</span> <span data-en="Parallel dispatch" data-pt="Dispatch paralelo">Parallel dispatch</span> — <code>await Promise.all(readySet.map(dispatchNode))</code>
+            <span class="badge parallel" data-en="parallel" data-pt="paralelo">parallel</span>
           </div>
-          <div class="box-desc">Cada nó do <code>readySet</code> executa em paralelo. Sub-passos abaixo rodam <em>por nó</em>, isolados entre si.</div>
+          <div class="box-desc"><span data-en="Each node in &lt;code&gt;readySet&lt;/code&gt; runs in parallel. Sub-steps below run &lt;em&gt;per node&lt;/em&gt;, isolated from each other." data-pt="Cada nó do &lt;code&gt;readySet&lt;/code&gt; executa em paralelo. Sub-passos abaixo rodam &lt;em&gt;por nó&lt;/em&gt;, isolados entre si.">Each node in <code>readySet</code> runs in parallel. Sub-steps below run <em>per node</em>, isolated from each other.</span></div>
 
         </div>
 
         <div class="substep-group">
-          <div class="substep-group-title">Sub-passos por nó (executam em paralelo entre nós)</div>
+          <div class="substep-group-title"><span data-en="Per-node sub-steps (run in parallel across nodes)" data-pt="Sub-passos por nó (executam em paralelo entre nós)">Per-node sub-steps (run in parallel across nodes)</span></div>
 
           <!-- ============================================================ -->
-          <!-- FASE A — PREPARAR: montar input + registrar início            -->
+          <!-- PHASE A — PREPARE: build input + record start                 -->
           <!-- ============================================================ -->
           <div class="substep-phase">
             <div class="substep-phase-header">
               <span class="substep-phase-num">A</span>
-              <span>Preparar entrada e registrar início do nó</span>
+              <span data-en="Prepare input and record the node's start" data-pt="Preparar entrada e registrar início do nó">Prepare input and record the node's start</span>
             </div>
             <div class="substep-list">
 
@@ -1134,23 +1164,23 @@
                 <div class="substep-content">
                   <strong>Fetch dirigido + substitutePlaceholders(node, outputStore.snapshot())</strong>
                   <span class="step-kind activity">⚡ activity</span>
-                  <br>Activity faz 2 queries pequenas:
-                  <br>• <code>SELECT node_data FROM flow_execution_snapshots WHERE execution_id = ? AND node_id = ?</code>. Só a config <em>deste</em> nó.
-                  <br>• Para cada <code>{{X.output}}</code> referenciado, <code>SELECT output_data FROM node_executions WHERE id = outputStore.get(X)</code>. Só os outputs referenciados.
-                  <br>Depois roda a substituição pura, isolada. Nenhum estado global é tocado.
-                  <br><span style="color:#065F46"><strong>Isso é, nativamente, o modo prefetch atual. Sem opt-in, sem whitelist.</strong></span>
+                  <br><span data-en="Activity runs 2 small queries:" data-pt="Activity faz 2 queries pequenas:">Activity runs 2 small queries:</span>
+                  <br>• <code>SELECT node_data FROM flow_execution_snapshots WHERE execution_id = ? AND node_id = ?</code>. <span data-en="Only &lt;em&gt;this&lt;/em&gt; node's config." data-pt="Só a config &lt;em&gt;deste&lt;/em&gt; nó.">Only <em>this</em> node's config.</span>
+                  <br>• <span data-en="For each &lt;code&gt;{{X.output}}&lt;/code&gt; referenced, &lt;code&gt;SELECT output_data FROM node_executions WHERE id = outputStore.get(X)&lt;/code&gt;. Only the referenced outputs." data-pt="Para cada &lt;code&gt;{{X.output}}&lt;/code&gt; referenciado, &lt;code&gt;SELECT output_data FROM node_executions WHERE id = outputStore.get(X)&lt;/code&gt;. Só os outputs referenciados.">For each <code>{{X.output}}</code> referenced, <code>SELECT output_data FROM node_executions WHERE id = outputStore.get(X)</code>. Only the referenced outputs.</span>
+                  <br><span data-en="Then runs pure, isolated substitution. No global state is touched." data-pt="Depois roda a substituição pura, isolada. Nenhum estado global é tocado.">Then runs pure, isolated substitution. No global state is touched.</span>
+                  <br><span style="color:#065F46"><strong><span data-en="Natively, this is today's prefetch mode. No opt-in, no whitelist." data-pt="Isso é, nativamente, o modo prefetch atual. Sem opt-in, sem whitelist.">Natively, this is today's prefetch mode. No opt-in, no whitelist.</span></strong></span>
                 </div>
               </div>
 
               <div class="substep backend">
                 <span class="substep-num">3.4.2</span>
                 <div class="substep-content">
-                  <strong>chooseExecutor(node.type)</strong>. Decide a rota do 3.4.4.
+                  <strong>chooseExecutor(node.type)</strong>. <span data-en="Picks the 3.4.4 route." data-pt="Decide a rota do 3.4.4.">Picks the 3.4.4 route.</span>
                   <span class="step-kind workflow">⚙ workflow</span>
-                  <br>Puro: consulta um mapa estático <code>nodeType → executor</code> versionado com o worker, sem I/O. Devolve uma de <strong>4 rotas</strong>:
+                  <br><span data-en="Pure: looks up a static &lt;code&gt;nodeType → executor&lt;/code&gt; map versioned with the worker, no I/O. Returns one of &lt;strong&gt;4 routes&lt;/strong&gt;:" data-pt="Puro: consulta um mapa estático &lt;code&gt;nodeType → executor&lt;/code&gt; versionado com o worker, sem I/O. Devolve uma de &lt;strong&gt;4 rotas&lt;/strong&gt;:">Pure: looks up a static <code>nodeType → executor</code> map versioned with the worker, no I/O. Returns one of <strong>4 routes</strong>:</span>
                   <div class="executor-branches">
                     <div class="exec-branch fast">
-                      <strong>Activity rápida</strong>
+                      <strong data-en="Fast activity" data-pt="Activity rápida">Fast activity</strong>
                       <div class="exec-nodes">
                         <div class="exec-node"><span class="exec-node-name">counterNode</span></div>
                         <div class="exec-node"><span class="exec-node-name">mathFunction</span></div>
@@ -1160,7 +1190,7 @@
                       </div>
                     </div>
                     <div class="exec-branch slow">
-                      <strong>Activity — timeout longo</strong>
+                      <strong data-en="Activity — long timeout" data-pt="Activity — timeout longo">Activity — long timeout</strong>
                       <div class="exec-nodes">
                         <div class="exec-node"><span class="exec-node-name">commandTextNode</span></div>
                         <div class="exec-node"><span class="exec-node-name">apiCaller</span></div>
@@ -1177,31 +1207,31 @@
                       </div>
                     </div>
                     <div class="exec-branch child">
-                      <strong>Child workflow</strong>
+                      <strong data-en="Child workflow" data-pt="Child workflow">Child workflow</strong>
                       <div class="exec-nodes">
                         <div class="exec-node"><span class="exec-node-name">arrayNode</span></div>
                         <div class="exec-node"><span class="exec-node-name">fluxBox</span></div>
                         <div class="exec-node"><span class="exec-node-name">libraryNode</span></div>
                         <div class="exec-node"><span class="exec-node-name">nodesBox</span></div>
                       </div>
-                      <div style="margin-top:6px"><a href="#special-lanes" style="font-size:9.5px;color:#6B21A8;font-weight:700">Ver Fase 3.5 →</a></div>
+                      <div style="margin-top:6px"><a href="#special-lanes" style="font-size:9.5px;color:#6B21A8;font-weight:700"><span data-en="See Phase 3.5 →" data-pt="Ver Fase 3.5 →">See Phase 3.5 →</span></a></div>
                     </div>
                     <div class="exec-branch prune">
-                      <strong>Signal (sem activity)</strong>
+                      <strong data-en="Signal (no activity)" data-pt="Signal (sem activity)">Signal (no activity)</strong>
                       <div class="exec-nodes">
                         <div class="exec-node"><span class="exec-node-name">conditionNode</span></div>
                       </div>
-                      <div style="margin-top:6px;font-size:9.5px;color:#78350F">emite <code style="font-size:9.5px">pruneBranch</code> para o workflow. Marca handles dead. <em>Não</em> passa por 3.4.4.</div>
+                      <div style="margin-top:6px;font-size:9.5px;color:#78350F"><span data-en="emits &lt;code style=&quot;font-size:9.5px&quot;&gt;pruneBranch&lt;/code&gt; to the workflow. Marks dead handles. Does &lt;em&gt;not&lt;/em&gt; go through 3.4.4." data-pt="emite &lt;code style=&quot;font-size:9.5px&quot;&gt;pruneBranch&lt;/code&gt; para o workflow. Marca handles dead. &lt;em&gt;Não&lt;/em&gt; passa por 3.4.4.">emits <code style="font-size:9.5px">pruneBranch</code> to the workflow. Marks dead handles. Does <em>not</em> go through 3.4.4.</span></div>
                     </div>
                   </div>
-                  <em style="font-size:11px;color:#065F46">Na v2, <strong>todos os tipos de nó rodam no worker</strong> como activity ou child workflow</em>
+                  <em style="font-size:11px;color:#065F46"><span data-en="In v2, &lt;strong&gt;every node type runs in the worker&lt;/strong&gt; as an activity or a child workflow" data-pt="Na v2, &lt;strong&gt;todos os tipos de nó rodam no worker&lt;/strong&gt; como activity ou child workflow">In v2, &lt;strong&gt;every node type runs in the worker&lt;/strong&gt; as an activity or a child workflow</span></em>
                 </div>
               </div>
 
               <div class="substep db">
                 <span class="substep-num">3.4.3</span>
                 <div class="substep-content">
-                  <strong>INSERT <code>node_executions</code></strong> (status=<code>running</code>, <code>inputData</code> resolvido do 3.4.1, <code>waveIndex</code>)
+                  <strong>INSERT <code>node_executions</code></strong> (status=<code>running</code>, <span data-en="&lt;code&gt;inputData&lt;/code&gt; resolved in 3.4.1, &lt;code&gt;waveIndex&lt;/code&gt;" data-pt="&lt;code&gt;inputData&lt;/code&gt; resolvido do 3.4.1, &lt;code&gt;waveIndex&lt;/code&gt;">&lt;code&gt;inputData&lt;/code&gt; resolved in 3.4.1, &lt;code&gt;waveIndex&lt;/code&gt;</span>)
                   <span class="step-kind activity">⚡ activity</span>
                 </div>
               </div>
@@ -1210,27 +1240,27 @@
           </div>
 
           <!-- ============================================================ -->
-          <!-- FASE B — EXECUTAR: o momento em que o nó "roda" de verdade   -->
+          <!-- PHASE B — EXECUTE: the moment the node actually "runs"        -->
           <!-- ============================================================ -->
           <div class="substep-phase execute">
             <div class="substep-phase-header">
               <span class="substep-phase-num">B</span>
-              <span>Executar o nó — momento em que o trabalho de verdade acontece</span>
+              <span data-en="Execute the node — the moment the real work happens" data-pt="Executar o nó — momento em que o trabalho de verdade acontece">Execute the node — the moment the real work happens</span>
             </div>
             <div class="substep-list">
 
               <div class="substep temporal">
                 <span class="substep-num">3.4.4</span>
                 <div class="substep-content">
-                  <strong>Dispatch</strong>. Activity ou <code>startChild()</code>, conforme a rota escolhida em 3.4.2.
+                  <strong>Dispatch</strong>. <span data-en="Activity or &lt;code&gt;startChild()&lt;/code&gt;, per the route chosen in 3.4.2." data-pt="Activity ou &lt;code&gt;startChild()&lt;/code&gt;, conforme a rota escolhida em 3.4.2.">Activity or <code>startChild()</code>, per the route chosen in 3.4.2.</span>
                   <span class="step-kind activity">⚡ activity / startChild</span>
-                  <br>Aplica <code>StartToCloseTimeout</code> e <code>RetryPolicy</code> do tipo do nó (definidos em <a href="#" onclick="return false" style="color:#065F46;font-weight:700">Fase 6</a>).
+                  <br><span data-en="Applies the node type's &lt;code&gt;StartToCloseTimeout&lt;/code&gt; and &lt;code&gt;RetryPolicy&lt;/code&gt; (defined in" data-pt="Aplica &lt;code&gt;StartToCloseTimeout&lt;/code&gt; e &lt;code&gt;RetryPolicy&lt;/code&gt; do tipo do nó (definidos em">Applies the node type's <code>StartToCloseTimeout</code> and <code>RetryPolicy</code> (defined in</span> <a href="#" onclick="return false" style="color:#065F46;font-weight:700"><span data-en="Phase 6" data-pt="Fase 6">Phase 6</span></a>).
                   <div class="execute-callout">
                     <span>⚡</span>
-                    <span>É aqui que o LLM é chamado, o HTTP-request sai, o script roda, o sub-flow começa.</span>
+                    <span data-en="This is where the LLM is called, the HTTP request goes out, the script runs, the sub-flow begins." data-pt="É aqui que o LLM é chamado, o HTTP-request sai, o script roda, o sub-flow começa.">This is where the LLM is called, the HTTP request goes out, the script runs, the sub-flow begins.</span>
                   </div>
-                  <br><span style="color:#065F46;font-size:11px">Todos os outros sub-passos ao redor existem para deixar este momento <strong>seguro</strong> (entrada resolvida em 3.4.1, linha de tracking criada em 3.4.3) e <strong>observável</strong> (append + update + signal nos 3.4.5–3.4.7).</span>
-                  <br><span style="color:#065F46;font-size:11px">Se o nó precisa de credencial externa (ex: <code>pullData</code>/<code>pushData</code> Google), a própria activity chama a sub-activity <code>refreshCredentialsForNode(nodeId, provider)</code> como pré-step. Cache Redis TTL (~55min) por <code>{workspaceId, provider, userId}</code> evita refresh duplicado quando múltiplos nós do mesmo flow usam o mesmo provider.</span>
+                  <br><span style="color:#065F46;font-size:11px" data-en="Every other sub-step around this one exists to keep this moment &lt;strong&gt;safe&lt;/strong&gt; (input resolved in 3.4.1, tracking row created in 3.4.3) and &lt;strong&gt;observable&lt;/strong&gt; (append + update + signal in 3.4.5–3.4.7)." data-pt="Todos os outros sub-passos ao redor existem para deixar este momento &lt;strong&gt;seguro&lt;/strong&gt; (entrada resolvida em 3.4.1, linha de tracking criada em 3.4.3) e &lt;strong&gt;observável&lt;/strong&gt; (append + update + signal nos 3.4.5–3.4.7).">Every other sub-step around this one exists to keep this moment <strong>safe</strong> (input resolved in 3.4.1, tracking row created in 3.4.3) and <strong>observable</strong> (append + update + signal in 3.4.5–3.4.7).</span>
+                  <br><span style="color:#065F46;font-size:11px" data-en="If the node needs an external credential (e.g. &lt;code&gt;pullData&lt;/code&gt;/&lt;code&gt;pushData&lt;/code&gt; Google), the activity itself calls the &lt;code&gt;refreshCredentialsForNode(nodeId, provider)&lt;/code&gt; sub-activity as a pre-step. Redis cache TTL (~55min) keyed by &lt;code&gt;{workspaceId, provider, userId}&lt;/code&gt; avoids duplicate refresh when multiple nodes in the same flow use the same provider." data-pt="Se o nó precisa de credencial externa (ex: &lt;code&gt;pullData&lt;/code&gt;/&lt;code&gt;pushData&lt;/code&gt; Google), a própria activity chama a sub-activity &lt;code&gt;refreshCredentialsForNode(nodeId, provider)&lt;/code&gt; como pré-step. Cache Redis TTL (~55min) por &lt;code&gt;{workspaceId, provider, userId}&lt;/code&gt; evita refresh duplicado quando múltiplos nós do mesmo flow usam o mesmo provider.">If the node needs an external credential (e.g. <code>pullData</code>/<code>pushData</code> Google), the activity itself calls the <code>refreshCredentialsForNode(nodeId, provider)</code> sub-activity as a pre-step. Redis cache TTL (~55min) keyed by <code>{workspaceId, provider, userId}</code> avoids duplicate refresh when multiple nodes in the same flow use the same provider.</span>
                 </div>
               </div>
 
@@ -1238,12 +1268,12 @@
           </div>
 
           <!-- ============================================================ -->
-          <!-- FASE C — REGISTRAR: propagar resultado                        -->
+          <!-- PHASE C — RECORD: propagate result                            -->
           <!-- ============================================================ -->
           <div class="substep-phase">
             <div class="substep-phase-header">
               <span class="substep-phase-num">C</span>
-              <span>Registrar resultado e propagar</span>
+              <span data-en="Record result and propagate" data-pt="Registrar resultado e propagar">Record result and propagate</span>
             </div>
             <div class="substep-list">
 
@@ -1252,14 +1282,14 @@
                 <div class="substep-content">
                   <strong><code>outputStore.append(nodeId, output)</code></strong>. Append-only.
                   <span class="step-kind workflow">⚙ workflow</span>
-                  <br>Versão do store incrementa por wave. Nenhuma saída anterior é sobrescrita. Op in-memory dentro do workflow (não é activity, é determinístico e barato).
+                  <br><span data-en="Store version increments per wave. No prior output is overwritten. In-memory op inside the workflow (not an activity — deterministic and cheap)." data-pt="Versão do store incrementa por wave. Nenhuma saída anterior é sobrescrita. Op in-memory dentro do workflow (não é activity, é determinístico e barato).">Store version increments per wave. No prior output is overwritten. In-memory op inside the workflow (not an activity — deterministic and cheap).</span>
                 </div>
               </div>
 
               <div class="substep db">
                 <span class="substep-num">3.4.6</span>
                 <div class="substep-content">
-                  <strong>UPDATE <code>node_executions</code></strong> (status=<code>completed</code>/<code>failed</code>, <code>outputData</code> ou <code>claimRef</code> para payloads &gt; threshold → S3).
+                  <strong>UPDATE <code>node_executions</code></strong> (status=<code>completed</code>/<code>failed</code>, <span data-en="&lt;code&gt;outputData&lt;/code&gt; or &lt;code&gt;claimRef&lt;/code&gt; for payloads &gt; threshold → S3" data-pt="&lt;code&gt;outputData&lt;/code&gt; ou &lt;code&gt;claimRef&lt;/code&gt; para payloads &gt; threshold → S3">&lt;code&gt;outputData&lt;/code&gt; or &lt;code&gt;claimRef&lt;/code&gt; for payloads &gt; threshold → S3</span>).
                   <span class="step-kind activity">⚡ activity</span>
                 </div>
               </div>
@@ -1267,9 +1297,9 @@
               <div class="substep temporal">
                 <span class="substep-num">3.4.7</span>
                 <div class="substep-content">
-                  <strong>Emit status via signal</strong> → WS + <code>RunLogCollector</code>.
+                  <strong><span data-en="Emit status via signal" data-pt="Emit status via signal">Emit status via signal</span></strong> → WS + <code>RunLogCollector</code>.
                   <span class="step-kind signal-kind">📡 signal</span>
-                  <br>Não-bloqueante. A wave não espera o flush do WS para avançar. O próximo <code>readySet</code> em 3.7 → 3.1 já pode dispatchar os sucessores.
+                  <br><span data-en="Non-blocking. The wave does not wait for the WS flush to advance. The next &lt;code&gt;readySet&lt;/code&gt; in 3.7 → 3.1 can already dispatch the successors." data-pt="Não-bloqueante. A wave não espera o flush do WS para avançar. O próximo &lt;code&gt;readySet&lt;/code&gt; em 3.7 → 3.1 já pode dispatchar os sucessores.">Non-blocking. The wave does not wait for the WS flush to advance. The next <code>readySet</code> in 3.7 → 3.1 can already dispatch the successors.</span>
                 </div>
               </div>
 
@@ -1280,45 +1310,45 @@
         <div class="arrow">↓</div>
 
         <div class="box parallel">
-          <div class="box-title"><span class="badge step">3.5</span> <code>await Promise.all(...)</code> — barreira da wave</div>
-          <div class="box-desc">Wave só termina quando <strong>todos</strong> os nós dela terminam (ou falham). Sem stragglers escondidos.</div>
+          <div class="box-title"><span class="badge step">3.5</span> <code>await Promise.all(...)</code> — <span data-en="wave barrier" data-pt="barreira da wave">wave barrier</span></div>
+          <div class="box-desc"><span data-en="Wave only finishes when &lt;strong&gt;all&lt;/strong&gt; its nodes finish (or fail). No hidden stragglers." data-pt="Wave só termina quando &lt;strong&gt;todos&lt;/strong&gt; os nós dela terminam (ou falham). Sem stragglers escondidos.">Wave only finishes when <strong>all</strong> its nodes finish (or fail). No hidden stragglers.</span></div>
         </div>
         <div class="arrow">↓</div>
 
         <div class="box decision">
-          <div class="box-title"><span class="badge step">3.6</span> Política de falha</div>
+          <div class="box-title"><span class="badge step">3.6</span> <span data-en="Failure policy" data-pt="Política de falha">Failure policy</span></div>
           <div class="box-desc">
-            <strong>fail-fast</strong> (default): qualquer erro cancela o workflow. Propaga cancelation às activities in-flight.
-            <br><strong>best-effort</strong> (opt-in por flag no flow): marca o nó falho. Continua com os nós que não dependem dele.
+            <strong>fail-fast</strong> <span data-en="(default): any error cancels the workflow. Propagates cancellation to in-flight activities." data-pt="(default): qualquer erro cancela o workflow. Propaga cancelation às activities in-flight.">(default): any error cancels the workflow. Propagates cancellation to in-flight activities.</span>
+            <br><strong>best-effort</strong> <span data-en="(opt-in via flag on the flow): marks the failed node. Continues with the nodes that do not depend on it." data-pt="(opt-in por flag no flow): marca o nó falho. Continua com os nós que não dependem dele.">(opt-in via flag on the flow): marks the failed node. Continues with the nodes that do not depend on it.</span>
           </div>
         </div>
         <div class="arrow">↓</div>
 
         <div class="box worker">
-          <div class="box-title"><span class="badge step">3.7</span> Reduce in-degree dos sucessores</div>
-          <div class="box-desc">Para cada nó completado com sucesso, decrementa <code>in-degree</code> dos filhos no DAG. Se condition, marca handles dead antes. Volta a <strong>3.1</strong>.</div>
+          <div class="box-title"><span class="badge step">3.7</span> <span data-en="Reduce successors' in-degree" data-pt="Reduce in-degree dos sucessores">Reduce successors' in-degree</span></div>
+          <div class="box-desc"><span data-en="For each successfully completed node, decrement children's &lt;code&gt;in-degree&lt;/code&gt; in the DAG. For conditions, mark dead handles first. Go back to &lt;strong&gt;3.1&lt;/strong&gt;." data-pt="Para cada nó completado com sucesso, decrementa &lt;code&gt;in-degree&lt;/code&gt; dos filhos no DAG. Se condition, marca handles dead antes. Volta a &lt;strong&gt;3.1&lt;/strong&gt;.">For each successfully completed node, decrement children's <code>in-degree</code> in the DAG. For conditions, mark dead handles first. Go back to <strong>3.1</strong>.</span></div>
         </div>
       </div>
     </div>
 
     <div class="note">
-      <strong>Contraste com o loop atual:</strong> hoje o backend faz <code>while (scheduledId !== null)</code> serial, com blocking-wait em <code>handle.result()</code> a cada nó Temporal. Perde todo o paralelismo do worker. Aqui, a wave só termina quando <strong>todos</strong> os nós dela terminam. O worker executa cada activity de forma independente.
+      <strong><span data-en="Contrast with today's loop:" data-pt="Contraste com o loop atual:">Contrast with today's loop:</span></strong> <span data-en="the backend runs a serial &lt;code&gt;while (scheduledId !== null)&lt;/code&gt;, with a blocking-wait on &lt;code&gt;handle.result()&lt;/code&gt; per Temporal node. It loses all of the worker's parallelism. Here, the wave only finishes when &lt;strong&gt;all&lt;/strong&gt; its nodes finish. The worker runs each activity independently." data-pt="hoje o backend faz &lt;code&gt;while (scheduledId !== null)&lt;/code&gt; serial, com blocking-wait em &lt;code&gt;handle.result()&lt;/code&gt; a cada nó Temporal. Perde todo o paralelismo do worker. Aqui, a wave só termina quando &lt;strong&gt;todos&lt;/strong&gt; os nós dela terminam. O worker executa cada activity de forma independente.">the backend runs a serial <code>while (scheduledId !== null)</code>, with a blocking-wait on <code>handle.result()</code> per Temporal node. It loses all of the worker's parallelism. Here, the wave only finishes when <strong>all</strong> its nodes finish. The worker runs each activity independently.</span>
     </div>
   </div>
 
  
 
   <!-- ================================================== -->
-  <!-- FASE 3.5 — NÓS ESPECIAIS -->
+  <!-- PHASE 3.5 — COMPOSITE NODES -->
   <!-- ================================================== -->
   <div class="section">
     <div class="section-header" id="special-lanes">
       <div class="section-number">3½</div>
       <div class="section-title">
-        FASE 3.5 — Nós compostos (conditionNode · arrayNode · fluxBox/libraryNode/nodesBox)
+        <span data-en="PHASE 3.5 — Composite nodes (conditionNode · arrayNode · fluxBox/libraryNode/nodesBox)" data-pt="FASE 3.5 — Nós compostos (conditionNode · arrayNode · fluxBox/libraryNode/nodesBox)">PHASE 3.5 — Composite nodes (conditionNode · arrayNode · fluxBox/libraryNode/nodesBox)</span>
         <span class="badge temporal">child workflow</span>
       </div>
-      <div class="section-desc">MUTATING_NODE_TYPES. Quebram a semântica "1 dispatch = 1 output" e viram lanes específicas dentro da wave.</div>
+      <div class="section-desc"><span data-en="MUTATING_NODE_TYPES. They break the &quot;1 dispatch = 1 output&quot; semantics and become dedicated lanes inside the wave." data-pt="MUTATING_NODE_TYPES. Quebram a semântica &quot;1 dispatch = 1 output&quot; e viram lanes específicas dentro da wave.">MUTATING_NODE_TYPES. They break the "1 dispatch = 1 output" semantics and become dedicated lanes inside the wave.</span></div>
     </div>
 
     <div class="special-lanes">
@@ -1331,20 +1361,20 @@
         </div>
 
         <div class="box decision">
-          <div class="box-title">Activity: <code>evaluateCondition</code></div>
-          <div class="box-desc">Resolve predicado usando snapshot do <code>OutputStore</code>. Retorna handle tomado.</div>
+          <div class="box-title"><span data-en="Activity" data-pt="Activity">Activity</span>: <code>evaluateCondition</code></div>
+          <div class="box-desc"><span data-en="Resolves predicate using the &lt;code&gt;OutputStore&lt;/code&gt; snapshot. Returns the taken handle." data-pt="Resolve predicado usando snapshot do &lt;code&gt;OutputStore&lt;/code&gt;. Retorna handle tomado.">Resolves predicate using the <code>OutputStore</code> snapshot. Returns the taken handle.</span></div>
         </div>
         <div class="arrow">↓</div>
 
         <div class="box worker">
-          <div class="box-title">Signal <code>pruneBranch</code> ao workflow</div>
-          <div class="box-desc">Marca handles não-tomados como <code>dead</code>. Descendentes desses handles são removidos do <code>pending</code>.</div>
+          <div class="box-title"><span data-en="Signal &lt;code&gt;pruneBranch&lt;/code&gt; to the workflow" data-pt="Signal &lt;code&gt;pruneBranch&lt;/code&gt; ao workflow">Signal <code>pruneBranch</code> to the workflow</span></div>
+          <div class="box-desc"><span data-en="Marks non-taken handles as &lt;code&gt;dead&lt;/code&gt;. Descendants of those handles are removed from &lt;code&gt;pending&lt;/code&gt;." data-pt="Marca handles não-tomados como &lt;code&gt;dead&lt;/code&gt;. Descendentes desses handles são removidos do &lt;code&gt;pending&lt;/code&gt;.">Marks non-taken handles as <code>dead</code>. Descendants of those handles are removed from <code>pending</code>.</span></div>
         </div>
         <div class="arrow">↓</div>
 
         <div class="box worker">
-          <div class="box-title">DAG imutável, pruning só marca</div>
-          <div class="box-desc"><strong>Nunca</strong> altera arestas. Estrutura permanece igual. Apenas o set <code>pending</code> encolhe.</div>
+          <div class="box-title"><span data-en="Immutable DAG, pruning only marks" data-pt="DAG imutável, pruning só marca">Immutable DAG, pruning only marks</span></div>
+          <div class="box-desc"><strong><span data-en="Never" data-pt="Nunca">Never</span></strong> <span data-en="modifies edges. Structure stays the same. Only the &lt;code&gt;pending&lt;/code&gt; set shrinks." data-pt="altera arestas. Estrutura permanece igual. Apenas o set &lt;code&gt;pending&lt;/code&gt; encolhe.">modifies edges. Structure stays the same. Only the <code>pending</code> set shrinks.</span></div>
         </div>
       </div>
 
@@ -1357,19 +1387,19 @@
 
         <div class="box temporal">
           <div class="box-title"><code>startChild('ArrayIterationWorkflow')</code></div>
-          <div class="box-desc">Fan-out real: N iterações em paralelo (com <code>maxConcurrent</code> configurável).</div>
+          <div class="box-desc"><span data-en="Real fan-out: N iterations in parallel (with configurable &lt;code&gt;maxConcurrent&lt;/code&gt;)." data-pt="Fan-out real: N iterações em paralelo (com &lt;code&gt;maxConcurrent&lt;/code&gt; configurável).">Real fan-out: N iterations in parallel (with configurable <code>maxConcurrent</code>).</span></div>
         </div>
         <div class="arrow">↓</div>
 
         <div class="box temporal">
-          <div class="box-title">Cada iteração = sub-DAG</div>
-          <div class="box-desc">Body do array vira um sub-DAG executado por iteração. Cada uma tem seu <code>OutputStore</code> local.</div>
+          <div class="box-title"><span data-en="Each iteration = sub-DAG" data-pt="Cada iteração = sub-DAG">Each iteration = sub-DAG</span></div>
+          <div class="box-desc"><span data-en="The array body becomes a sub-DAG executed per iteration. Each one has its own local &lt;code&gt;OutputStore&lt;/code&gt;." data-pt="Body do array vira um sub-DAG executado por iteração. Cada uma tem seu &lt;code&gt;OutputStore&lt;/code&gt; local.">The array body becomes a sub-DAG executed per iteration. Each one has its own local <code>OutputStore</code>.</span></div>
         </div>
         <div class="arrow">↓</div>
 
         <div class="box worker">
-          <div class="box-title">Fan-in: agrega resultados</div>
-          <div class="box-desc">Ao terminar todas as iterações, agrega em array final e faz <code>outputStore.append()</code> no store pai.</div>
+          <div class="box-title"><span data-en="Fan-in: aggregate results" data-pt="Fan-in: agrega resultados">Fan-in: aggregate results</span></div>
+          <div class="box-desc"><span data-en="When all iterations finish, aggregates into a final array and calls &lt;code&gt;outputStore.append()&lt;/code&gt; on the parent store." data-pt="Ao terminar todas as iterações, agrega em array final e faz &lt;code&gt;outputStore.append()&lt;/code&gt; no store pai.">When all iterations finish, aggregates into a final array and calls <code>outputStore.append()</code> on the parent store.</span></div>
         </div>
       </div>
 
@@ -1382,108 +1412,108 @@
 
         <div class="box temporal">
           <div class="box-title"><code>startChild('processAgent')</code></div>
-          <div class="box-desc">Recursão explícita. Mesma engine, workflow filho com input mapping. Cria a própria linha <code>flow_executions</code> + <code>flow_execution_trigger_inputs</code> a partir de <code>callerData</code> (mapa <code>varNodeId → { text, files, links, typeOCR }</code>). <strong>Substitui</strong> os 3 handlers inline atuais (<code>flux.service.ts:5464-5533</code> nodesBox · <code>5819+</code> libraryNode/fluxBox).</div>
+          <div class="box-desc"><span data-en="Explicit recursion. Same engine, child workflow with input mapping. Creates its own &lt;code&gt;flow_executions&lt;/code&gt; + &lt;code&gt;flow_execution_trigger_inputs&lt;/code&gt; rows from &lt;code&gt;callerData&lt;/code&gt; (map &lt;code&gt;varNodeId → { text, files, links, typeOCR }&lt;/code&gt;). &lt;strong&gt;Replaces&lt;/strong&gt; the 3 current inline handlers (&lt;code&gt;flux.service.ts:5464-5533&lt;/code&gt; nodesBox · &lt;code&gt;5819+&lt;/code&gt; libraryNode/fluxBox)." data-pt="Recursão explícita. Mesma engine, workflow filho com input mapping. Cria a própria linha &lt;code&gt;flow_executions&lt;/code&gt; + &lt;code&gt;flow_execution_trigger_inputs&lt;/code&gt; a partir de &lt;code&gt;callerData&lt;/code&gt; (mapa &lt;code&gt;varNodeId → { text, files, links, typeOCR }&lt;/code&gt;). &lt;strong&gt;Substitui&lt;/strong&gt; os 3 handlers inline atuais (&lt;code&gt;flux.service.ts:5464-5533&lt;/code&gt; nodesBox · &lt;code&gt;5819+&lt;/code&gt; libraryNode/fluxBox).">Explicit recursion. Same engine, child workflow with input mapping. Creates its own <code>flow_executions</code> + <code>flow_execution_trigger_inputs</code> rows from <code>callerData</code> (map <code>varNodeId → { text, files, links, typeOCR }</code>). <strong>Replaces</strong> the 3 current inline handlers (<code>flux.service.ts:5464-5533</code> nodesBox · <code>5819+</code> libraryNode/fluxBox).</span></div>
         </div>
         <div class="arrow">↓</div>
 
         <div class="box worker">
-          <div class="box-title">Reusa <code>resolveTriggerInputs</code> (2.4) — <span style="color:#065F46">cache Redis</span></div>
+          <div class="box-title"><span data-en="Reuses &lt;code&gt;resolveTriggerInputs&lt;/code&gt; (2.4) —" data-pt="Reusa &lt;code&gt;resolveTriggerInputs&lt;/code&gt; (2.4) —">Reuses <code>resolveTriggerInputs</code> (2.4) —</span> <span style="color:#065F46"><span data-en="Redis cache" data-pt="cache Redis">Redis cache</span></span></div>
           <div class="box-desc">
-            Sub-flow passa pela Fase 2 completa, incluindo o <code>resolveTriggerInputs</code>. Se o arquivo/link já foi extraído na execução pai (ou em execução anterior), o cache <code>extract:{sha256(fileUrl)}:{typeOCR}</code> retorna direto.
-            <br><strong>Ganho vs v1:</strong> hoje cada nível de aninhamento paga OCR do zero (<code>flux.service.ts:5464-5533</code> para <code>nodesBox</code>, <code>5819+</code> para <code>libraryNode</code>/<code>fluxBox</code>). Em v2, N níveis significam 1 OCR real + N-1 cache hits.
+            <span data-en="The sub-flow goes through the entire Phase 2, including &lt;code&gt;resolveTriggerInputs&lt;/code&gt;. If the file/link was already extracted in the parent execution (or in a prior execution), the &lt;code&gt;extract:{sha256(fileUrl)}:{typeOCR}&lt;/code&gt; cache returns directly." data-pt="Sub-flow passa pela Fase 2 completa, incluindo o &lt;code&gt;resolveTriggerInputs&lt;/code&gt;. Se o arquivo/link já foi extraído na execução pai (ou em execução anterior), o cache &lt;code&gt;extract:{sha256(fileUrl)}:{typeOCR}&lt;/code&gt; retorna direto.">The sub-flow goes through the entire Phase 2, including <code>resolveTriggerInputs</code>. If the file/link was already extracted in the parent execution (or in a prior execution), the <code>extract:{sha256(fileUrl)}:{typeOCR}</code> cache returns directly.</span>
+            <br><strong><span data-en="Gain vs v1:" data-pt="Ganho vs v1:">Gain vs v1:</span></strong> <span data-en="today each nesting level pays OCR from scratch (&lt;code&gt;flux.service.ts:5464-5533&lt;/code&gt; for &lt;code&gt;nodesBox&lt;/code&gt;, &lt;code&gt;5819+&lt;/code&gt; for &lt;code&gt;libraryNode&lt;/code&gt;/&lt;code&gt;fluxBox&lt;/code&gt;). In v2, N levels mean 1 real OCR + N-1 cache hits." data-pt="hoje cada nível de aninhamento paga OCR do zero (&lt;code&gt;flux.service.ts:5464-5533&lt;/code&gt; para &lt;code&gt;nodesBox&lt;/code&gt;, &lt;code&gt;5819+&lt;/code&gt; para &lt;code&gt;libraryNode&lt;/code&gt;/&lt;code&gt;fluxBox&lt;/code&gt;). Em v2, N níveis significam 1 OCR real + N-1 cache hits.">today each nesting level pays OCR from scratch (<code>flux.service.ts:5464-5533</code> for <code>nodesBox</code>, <code>5819+</code> for <code>libraryNode</code>/<code>fluxBox</code>). In v2, N levels mean 1 real OCR + N-1 cache hits.</span>
           </div>
         </div>
         <div class="arrow">↓</div>
 
         <div class="box temporal">
-          <div class="box-title">Cancelation herdada</div>
-          <div class="box-desc">Signal <code>cancelFlow</code> no pai propaga para o filho automaticamente. Sem código extra.</div>
+          <div class="box-title"><span data-en="Inherited cancellation" data-pt="Cancelation herdada">Inherited cancellation</span></div>
+          <div class="box-desc"><span data-en="Signal &lt;code&gt;cancelFlow&lt;/code&gt; on the parent propagates to the child automatically. No extra code." data-pt="Signal &lt;code&gt;cancelFlow&lt;/code&gt; no pai propaga para o filho automaticamente. Sem código extra.">Signal <code>cancelFlow</code> on the parent propagates to the child automatically. No extra code.</span></div>
         </div>
         <div class="arrow">↓</div>
 
         <div class="box worker">
-          <div class="box-title">Saída vira entrada do nó no pai</div>
-          <div class="box-desc">Ao terminar, a saída do filho é <code>append()</code>-ada no <code>OutputStore</code> do pai como saída do nó composto (<code>fluxBox</code>/<code>libraryNode</code>/<code>nodesBox</code>).</div>
+          <div class="box-title"><span data-en="Output becomes the parent node's input" data-pt="Saída vira entrada do nó no pai">Output becomes the parent node's input</span></div>
+          <div class="box-desc"><span data-en="On completion, the child's output is &lt;code&gt;append()&lt;/code&gt;-ed to the parent's &lt;code&gt;OutputStore&lt;/code&gt; as the output of the composite node (&lt;code&gt;fluxBox&lt;/code&gt;/&lt;code&gt;libraryNode&lt;/code&gt;/&lt;code&gt;nodesBox&lt;/code&gt;)." data-pt="Ao terminar, a saída do filho é &lt;code&gt;append()&lt;/code&gt;-ada no &lt;code&gt;OutputStore&lt;/code&gt; do pai como saída do nó composto (&lt;code&gt;fluxBox&lt;/code&gt;/&lt;code&gt;libraryNode&lt;/code&gt;/&lt;code&gt;nodesBox&lt;/code&gt;).">On completion, the child's output is <code>append()</code>-ed to the parent's <code>OutputStore</code> as the output of the composite node (<code>fluxBox</code>/<code>libraryNode</code>/<code>nodesBox</code>).</span></div>
         </div>
       </div>
 
     </div>
 
-    <div class="converge">↓ resultado alimenta OutputStore da wave ↓</div>
+    <div class="converge">↓ <span data-en="result feeds the wave's OutputStore" data-pt="resultado alimenta OutputStore da wave">result feeds the wave's OutputStore</span> ↓</div>
   </div>
 
  
 
   <!-- ================================================== -->
-  <!-- FASE 4 — FINALIZAÇÃO -->
+  <!-- PHASE 4 — FINALISATION -->
   <!-- ================================================== -->
   <div class="section">
     <div class="section-header">
       <div class="section-number">4</div>
-      <div class="section-title">FASE 4 — Finalização</div>
-      <div class="section-desc">Loop de ondas terminou. Workflow monta resultado e persiste artefatos.</div>
+      <div class="section-title"><span data-en="PHASE 4 — Finalisation" data-pt="FASE 4 — Finalização">PHASE 4 — Finalisation</span></div>
+      <div class="section-desc"><span data-en="Wave loop is done. The workflow assembles the result and persists artifacts." data-pt="Loop de ondas terminou. Workflow monta resultado e persiste artefatos.">Wave loop is done. The workflow assembles the result and persists artifacts.</span></div>
     </div>
 
     <div class="flow-column">
       <div class="box worker">
-        <div class="box-title"><span class="badge step">4.1</span> Coleta de nós com erro</div>
-        <div class="box-desc">Query no <code>OutputStore</code> + <code>node_executions</code> por status=<code>failed</code>. Monta <code>errorSummary</code>.</div>
+        <div class="box-title"><span class="badge step">4.1</span> <span data-en="Collect failed nodes" data-pt="Coleta de nós com erro">Collect failed nodes</span></div>
+        <div class="box-desc"><span data-en="Query the &lt;code&gt;OutputStore&lt;/code&gt; + &lt;code&gt;node_executions&lt;/code&gt; by status=&lt;code&gt;failed&lt;/code&gt;. Builds &lt;code&gt;errorSummary&lt;/code&gt;." data-pt="Query no &lt;code&gt;OutputStore&lt;/code&gt; + &lt;code&gt;node_executions&lt;/code&gt; por status=&lt;code&gt;failed&lt;/code&gt;. Monta &lt;code&gt;errorSummary&lt;/code&gt;.">Query the <code>OutputStore</code> + <code>node_executions</code> by status=<code>failed</code>. Builds <code>errorSummary</code>.</span></div>
       </div>
       <div class="arrow">↓</div>
 
       <div class="box db">
-        <div class="box-title"><span class="badge step">4.2</span> Persist output nodes finais</div>
-        <div class="box-desc">Só campos <strong>não</strong> de execução (config, display) em <code>flows_nodes</code>. Saídas ficam em <code>node_executions</code>.</div>
+        <div class="box-title"><span class="badge step">4.2</span> <span data-en="Persist final output nodes" data-pt="Persist output nodes finais">Persist final output nodes</span></div>
+        <div class="box-desc"><span data-en="Only &lt;strong&gt;non-execution&lt;/strong&gt; fields (config, display) in &lt;code&gt;flows_nodes&lt;/code&gt;. Outputs stay in &lt;code&gt;node_executions&lt;/code&gt;." data-pt="Só campos &lt;strong&gt;não&lt;/strong&gt; de execução (config, display) em &lt;code&gt;flows_nodes&lt;/code&gt;. Saídas ficam em &lt;code&gt;node_executions&lt;/code&gt;.">Only <strong>non-execution</strong> fields (config, display) in <code>flows_nodes</code>. Outputs stay in <code>node_executions</code>.</span></div>
       </div>
       <div class="arrow">↓</div>
 
       <div class="box cross">
         <div class="box-title"><span class="badge step">4.3</span> <code>runLog.finalize</code> + <code>spaceRunLogsService.flushNow</code> <span class="badge cross">cross</span></div>
-        <div class="box-desc">Activity dedicada. Faz flush do trace hierárquico para <code>space_run_logs</code>.</div>
+        <div class="box-desc"><span data-en="Dedicated activity. Flushes the hierarchical trace to &lt;code&gt;space_run_logs&lt;/code&gt;." data-pt="Activity dedicada. Faz flush do trace hierárquico para &lt;code&gt;space_run_logs&lt;/code&gt;.">Dedicated activity. Flushes the hierarchical trace to <code>space_run_logs</code>.</span></div>
       </div>
       <div class="arrow">↓</div>
 
       <div class="box db">
-        <div class="box-title"><span class="badge step">4.4</span> INSERT <code>flow_logs</code>. Linha de summary.</div>
-        <div class="box-desc">Status, <code>total_tokens</code>, <code>total_cost</code>, <code>duration_ms</code>, <code>run_type</code>. Uma linha por execução.</div>
+        <div class="box-title"><span class="badge step">4.4</span> INSERT <code>flow_logs</code>. <span data-en="Summary row." data-pt="Linha de summary.">Summary row.</span></div>
+        <div class="box-desc"><span data-en="Status, &lt;code&gt;total_tokens&lt;/code&gt;, &lt;code&gt;total_cost&lt;/code&gt;, &lt;code&gt;duration_ms&lt;/code&gt;, &lt;code&gt;run_type&lt;/code&gt;. One row per execution." data-pt="Status, &lt;code&gt;total_tokens&lt;/code&gt;, &lt;code&gt;total_cost&lt;/code&gt;, &lt;code&gt;duration_ms&lt;/code&gt;, &lt;code&gt;run_type&lt;/code&gt;. Uma linha por execução.">Status, <code>total_tokens</code>, <code>total_cost</code>, <code>duration_ms</code>, <code>run_type</code>. One row per execution.</span></div>
       </div>
       <div class="arrow">↓</div>
 
       <div class="box external">
-        <div class="box-title"><span class="badge step">4.5</span> Callbacks (email + HTTP)</div>
-        <div class="box-desc">Activity com <code>RetryPolicy</code>. Dedup Redis dupla: runId 24h TTL + hash de conteúdo 90s.</div>
+        <div class="box-title"><span class="badge step">4.5</span> <span data-en="Callbacks (email + HTTP)" data-pt="Callbacks (email + HTTP)">Callbacks (email + HTTP)</span></div>
+        <div class="box-desc"><span data-en="Activity with &lt;code&gt;RetryPolicy&lt;/code&gt;. Double Redis dedup: runId 24h TTL + content hash 90s." data-pt="Activity com &lt;code&gt;RetryPolicy&lt;/code&gt;. Dedup Redis dupla: runId 24h TTL + hash de conteúdo 90s.">Activity with <code>RetryPolicy</code>. Double Redis dedup: runId 24h TTL + content hash 90s.</span></div>
       </div>
       <div class="arrow">↓</div>
 
       <div class="box db">
-        <div class="box-title"><span class="badge step">4.6</span> Update chat session (se chat)</div>
-        <div class="box-desc"><code>sessionStateService.appendEntries()</code> + <code>ChatLog</code>. Só se <code>runType === 'chatbot'</code>.</div>
+        <div class="box-title"><span class="badge step">4.6</span> <span data-en="Update chat session (if chat)" data-pt="Update chat session (se chat)">Update chat session (if chat)</span></div>
+        <div class="box-desc"><code>sessionStateService.appendEntries()</code> + <code>ChatLog</code>. <span data-en="Only if &lt;code&gt;runType === 'chatbot'&lt;/code&gt;." data-pt="Só se &lt;code&gt;runType === 'chatbot'&lt;/code&gt;.">Only if <code>runType === 'chatbot'</code>.</span></div>
       </div>
       <div class="arrow">↓</div>
 
       <div class="box db">
-        <div class="box-title"><span class="badge step">4.7</span> Mark <code>flow_executions</code> finished</div>
-        <div class="box-desc">Status=<code>completed</code>/<code>failed</code>/<code>cancelled</code>, tokens, cost, duration.</div>
+        <div class="box-title"><span class="badge step">4.7</span> <span data-en="Mark &lt;code&gt;flow_executions&lt;/code&gt; finished" data-pt="Mark &lt;code&gt;flow_executions&lt;/code&gt; finished">Mark <code>flow_executions</code> finished</span></div>
+        <div class="box-desc"><span data-en="Status=&lt;code&gt;completed&lt;/code&gt;/&lt;code&gt;failed&lt;/code&gt;/&lt;code&gt;cancelled&lt;/code&gt;, tokens, cost, duration." data-pt="Status=&lt;code&gt;completed&lt;/code&gt;/&lt;code&gt;failed&lt;/code&gt;/&lt;code&gt;cancelled&lt;/code&gt;, tokens, cost, duration.">Status=<code>completed</code>/<code>failed</code>/<code>cancelled</code>, tokens, cost, duration.</span></div>
       </div>
       <div class="arrow">↓</div>
 
       <div class="box redis">
-        <div class="box-title"><span class="badge step">4.8</span> Emit "flow completed"</div>
-        <div class="box-desc">WS + Redis. Cliente encerra polling.</div>
+        <div class="box-title"><span class="badge step">4.8</span> <span data-en="Emit &quot;flow completed&quot;" data-pt="Emit &quot;flow completed&quot;">Emit "flow completed"</span></div>
+        <div class="box-desc"><span data-en="WS + Redis. Client stops polling." data-pt="WS + Redis. Cliente encerra polling.">WS + Redis. Client stops polling.</span></div>
       </div>
       <div class="arrow">↓</div>
 
       <div class="box db">
         <div class="box-title">
-          <span class="badge step">4.9</span> Cleanup do snapshot da execução
-          <span class="badge new">novo</span>
+          <span class="badge step">4.9</span> <span data-en="Cleanup the execution snapshot" data-pt="Cleanup do snapshot da execução">Cleanup the execution snapshot</span>
+          <span class="badge new" data-en="new" data-pt="novo">new</span>
         </div>
         <div class="box-desc">
-          Activity <code>DELETE FROM flow_execution_snapshots WHERE execution_id = ?</code> + análogo em <code>flow_execution_edge_snapshots</code>.
+          <span data-en="Activity" data-pt="Activity">Activity</span> <code>DELETE FROM flow_execution_snapshots WHERE execution_id = ?</code> <span data-en="+ analogous on &lt;code&gt;flow_execution_edge_snapshots&lt;/code&gt;." data-pt="+ análogo em &lt;code&gt;flow_execution_edge_snapshots&lt;/code&gt;.">+ analogous on <code>flow_execution_edge_snapshots</code>.</span>
           <br><br>
-          <strong>Por que deletar:</strong> o snapshot é escafolde só da execução. Depois de concluída, tudo que foi consumido pela execução está registrado em <code>node_executions</code> (entrada <em>resolvida</em> + saída). Manter o snapshot vira dado morto.
+          <strong><span data-en="Why delete:" data-pt="Por que deletar:">Why delete:</span></strong> <span data-en="the snapshot is scaffolding only for the execution. Once it's finished, everything the execution consumed is recorded in &lt;code&gt;node_executions&lt;/code&gt; (resolved input + output). Keeping the snapshot becomes dead data." data-pt="o snapshot é escafolde só da execução. Depois de concluída, tudo que foi consumido pela execução está registrado em &lt;code&gt;node_executions&lt;/code&gt; (entrada &lt;em&gt;resolvida&lt;/em&gt; + saída). Manter o snapshot vira dado morto.">the snapshot is scaffolding only for the execution. Once it's finished, everything the execution consumed is recorded in <code>node_executions</code> (resolved input + output). Keeping the snapshot becomes dead data.</span>
           <br>
-          <strong>Trade-off aceito:</strong> perde-se o template <em>pré-substituição</em> (ex: <code>"Resuma {{X.output}}"</code>). A entrada pós-substituição está em <code>node_executions.inputData</code>, que é o que interessa para auditoria/replay.
+          <strong><span data-en="Accepted trade-off:" data-pt="Trade-off aceito:">Accepted trade-off:</span></strong> <span data-en="the &lt;em&gt;pre-substitution&lt;/em&gt; template is lost (e.g. &lt;code&gt;&quot;Summarise {{X.output}}&quot;&lt;/code&gt;). The post-substitution input lives in &lt;code&gt;node_executions.inputData&lt;/code&gt;, which is what matters for audit/replay." data-pt="perde-se o template &lt;em&gt;pré-substituição&lt;/em&gt; (ex: &lt;code&gt;&quot;Resuma {{X.output}}&quot;&lt;/code&gt;). A entrada pós-substituição está em &lt;code&gt;node_executions.inputData&lt;/code&gt;, que é o que interessa para auditoria/replay.">the <em>pre-substitution</em> template is lost (e.g. <code>"Summarise {{X.output}}"</code>). The post-substitution input lives in <code>node_executions.inputData</code>, which is what matters for audit/replay.</span>
         </div>
       </div>
     </div>
@@ -1492,17 +1522,17 @@
  
 
   <!-- ================================================== -->
-  <!-- FASE 5 — CANCELAMENTO -->
+  <!-- PHASE 5 — CANCELLATION -->
   <!-- ================================================== -->
   <div class="section">
     <div class="section-header">
       <div class="section-number">5</div>
       <div class="section-title">
-        FASE 5 — Cancelamento
-        <span class="badge cross">transversal</span>
+        <span data-en="PHASE 5 — Cancellation" data-pt="FASE 5 — Cancelamento">PHASE 5 — Cancellation</span>
+        <span class="badge cross" data-en="cross-cutting" data-pt="transversal">cross-cutting</span>
         <span class="badge signal">signal</span>
       </div>
-      <div class="section-desc">Nativo do Temporal. Substitui o polling Redis atual.</div>
+      <div class="section-desc"><span data-en="Native to Temporal. Replaces the current Redis polling." data-pt="Nativo do Temporal. Substitui o polling Redis atual.">Native to Temporal. Replaces the current Redis polling.</span></div>
     </div>
 
     <div class="cancel-container">
@@ -1510,138 +1540,139 @@
 
       <div class="flow-column">
         <div class="box redis">
-          <div class="box-title"><span class="badge step">5.1</span> Signal externo <code>cancelFlow</code></div>
-          <div class="box-desc">Cliente chama endpoint. Backend envia signal ao workflow. Sem escrever em Redis.</div>
+          <div class="box-title"><span class="badge step">5.1</span> <span data-en="External signal &lt;code&gt;cancelFlow&lt;/code&gt;" data-pt="Signal externo &lt;code&gt;cancelFlow&lt;/code&gt;">External signal <code>cancelFlow</code></span></div>
+          <div class="box-desc"><span data-en="Client calls the endpoint. Backend sends the signal to the workflow. Nothing is written to Redis." data-pt="Cliente chama endpoint. Backend envia signal ao workflow. Sem escrever em Redis.">Client calls the endpoint. Backend sends the signal to the workflow. Nothing is written to Redis.</span></div>
         </div>
         <div class="arrow">↓</div>
 
         <div class="box temporal">
-          <div class="box-title"><span class="badge step">5.2</span> Workflow entra em modo cancelling</div>
-          <div class="box-desc">Activities in-flight recebem <code>CancellationScope</code>. Abortam graceful via <code>AbortSignal</code>/deadline.</div>
+          <div class="box-title"><span class="badge step">5.2</span> <span data-en="Workflow enters cancelling mode" data-pt="Workflow entra em modo cancelling">Workflow enters cancelling mode</span></div>
+          <div class="box-desc"><span data-en="In-flight activities receive a &lt;code&gt;CancellationScope&lt;/code&gt;. They graceful-abort via &lt;code&gt;AbortSignal&lt;/code&gt;/deadline." data-pt="Activities in-flight recebem &lt;code&gt;CancellationScope&lt;/code&gt;. Abortam graceful via &lt;code&gt;AbortSignal&lt;/code&gt;/deadline.">In-flight activities receive a <code>CancellationScope</code>. They graceful-abort via <code>AbortSignal</code>/deadline.</span></div>
         </div>
         <div class="arrow">↓</div>
 
         <div class="box db">
-          <div class="box-title"><span class="badge step">5.3</span> Nós ativos → <code>node_executions.status = 'cancelled'</code></div>
-          <div class="box-desc">Bulk update. Nós pendentes (nunca dispatched) ficam com status=<code>skipped</code>.</div>
+          <div class="box-title"><span class="badge step">5.3</span> <span data-en="Active nodes → &lt;code&gt;node_executions.status = 'cancelled'&lt;/code&gt;" data-pt="Nós ativos → &lt;code&gt;node_executions.status = 'cancelled'&lt;/code&gt;">Active nodes → <code>node_executions.status = 'cancelled'</code></span></div>
+          <div class="box-desc"><span data-en="Bulk update. Pending nodes (never dispatched) go to status=&lt;code&gt;skipped&lt;/code&gt;." data-pt="Bulk update. Nós pendentes (nunca dispatched) ficam com status=&lt;code&gt;skipped&lt;/code&gt;.">Bulk update. Pending nodes (never dispatched) go to status=<code>skipped</code>.</span></div>
         </div>
         <div class="arrow">↓</div>
 
         <div class="box redis">
-          <div class="box-title"><span class="badge step">5.4</span> Emit "flow cancelled" + footprint</div>
-          <div class="box-desc">WS + registro dos <code>nodeIds</code> não executados para auditoria.</div>
+          <div class="box-title"><span class="badge step">5.4</span> <span data-en="Emit &quot;flow cancelled&quot; + footprint" data-pt="Emit &quot;flow cancelled&quot; + footprint">Emit "flow cancelled" + footprint</span></div>
+          <div class="box-desc"><span data-en="WS + record of the &lt;code&gt;nodeIds&lt;/code&gt; not executed for auditing." data-pt="WS + registro dos &lt;code&gt;nodeIds&lt;/code&gt; não executados para auditoria.">WS + record of the <code>nodeIds</code> not executed for auditing.</span></div>
         </div>
         <div class="arrow">↓</div>
 
         <div class="box worker">
-          <div class="box-title"><span class="badge step">5.5</span> Rota para FASE 4 (finalização em modo cancelled)</div>
-          <div class="box-desc">Reusa 4.3–4.9 (inclusive o cleanup do snapshot). Diferença: <code>flow_logs.status = 'cancelled'</code>. Callbacks pulam email de sucesso.</div>
+          <div class="box-title"><span class="badge step">5.5</span> <span data-en="Route to PHASE 4 (finalisation in cancelled mode)" data-pt="Rota para FASE 4 (finalização em modo cancelled)">Route to PHASE 4 (finalisation in cancelled mode)</span></div>
+          <div class="box-desc"><span data-en="Reuses 4.3–4.9 (including snapshot cleanup). Difference: &lt;code&gt;flow_logs.status = 'cancelled'&lt;/code&gt;. Callbacks skip the success email." data-pt="Reusa 4.3–4.9 (inclusive o cleanup do snapshot). Diferença: &lt;code&gt;flow_logs.status = 'cancelled'&lt;/code&gt;. Callbacks pulam email de sucesso.">Reuses 4.3–4.9 (including snapshot cleanup). Difference: <code>flow_logs.status = 'cancelled'</code>. Callbacks skip the success email.</span></div>
         </div>
       </div>
     </div>
 
     <div class="note">
-      <strong>Substitui hoje:</strong> feature flag <code>NODE_CANCEL_IN_FLIGHT_FLAG</code> + <code>runCancellationService.isCancelRequested(cancelRunKey)</code> (Redis polling dentro do <code>while</code> em <code>flux.service.ts:2938</code>) + <code>startNodeCancelWatch</code> + <code>nodeCancelContext</code> (AsyncLocalStorage por nó). Todo esse mecanismo custom desaparece. O Temporal já resolve nativamente.
+      <strong><span data-en="Replaces today:" data-pt="Substitui hoje:">Replaces today:</span></strong> <span data-en="feature flag &lt;code&gt;NODE_CANCEL_IN_FLIGHT_FLAG&lt;/code&gt; + &lt;code&gt;runCancellationService.isCancelRequested(cancelRunKey)&lt;/code&gt; (Redis polling inside the &lt;code&gt;while&lt;/code&gt; in &lt;code&gt;flux.service.ts:2938&lt;/code&gt;) + &lt;code&gt;startNodeCancelWatch&lt;/code&gt; + &lt;code&gt;nodeCancelContext&lt;/code&gt; (per-node AsyncLocalStorage). This entire custom mechanism disappears. Temporal already handles it natively." data-pt="feature flag &lt;code&gt;NODE_CANCEL_IN_FLIGHT_FLAG&lt;/code&gt; + &lt;code&gt;runCancellationService.isCancelRequested(cancelRunKey)&lt;/code&gt; (Redis polling dentro do &lt;code&gt;while&lt;/code&gt; em &lt;code&gt;flux.service.ts:2938&lt;/code&gt;) + &lt;code&gt;startNodeCancelWatch&lt;/code&gt; + &lt;code&gt;nodeCancelContext&lt;/code&gt; (AsyncLocalStorage por nó). Todo esse mecanismo custom desaparece. O Temporal já resolve nativamente.">feature flag <code>NODE_CANCEL_IN_FLIGHT_FLAG</code> + <code>runCancellationService.isCancelRequested(cancelRunKey)</code> (Redis polling inside the <code>while</code> in <code>flux.service.ts:2938</code>) + <code>startNodeCancelWatch</code> + <code>nodeCancelContext</code> (per-node AsyncLocalStorage). This entire custom mechanism disappears. Temporal already handles it natively.</span>
     </div>
   </div>
 
  
 
   <!-- ================================================== -->
-  <!-- FASE 6 — ERROS E RETRY -->
+  <!-- PHASE 6 — ERRORS AND RETRY -->
   <!-- ================================================== -->
   <div class="section">
     <div class="section-header">
       <div class="section-number">6</div>
       <div class="section-title">
-        FASE 6 — Erros e retry
-        <span class="badge cross">transversal</span>
+        <span data-en="PHASE 6 — Errors and retry" data-pt="FASE 6 — Erros e retry">PHASE 6 — Errors and retry</span>
+        <span class="badge cross" data-en="cross-cutting" data-pt="transversal">cross-cutting</span>
       </div>
-      <div class="section-desc">Uniformiza o que hoje é ad-hoc. Temporal RetryPolicy por tipo de nó.</div>
+      <div class="section-desc"><span data-en="Standardises what is ad-hoc today. Temporal RetryPolicy per node type." data-pt="Uniformiza o que hoje é ad-hoc. Temporal RetryPolicy por tipo de nó.">Standardises what is ad-hoc today. Temporal RetryPolicy per node type.</span></div>
     </div>
 
     <div class="flow-column">
       <div class="box temporal">
-        <div class="box-title"><span class="badge step">6.1</span> <code>RetryPolicy</code> por tipo de nó</div>
+        <div class="box-title"><span class="badge step">6.1</span> <code>RetryPolicy</code> <span data-en="per node type" data-pt="por tipo de nó">per node type</span></div>
         <div class="box-desc">
-          <strong>LLM</strong> (<code>textGenerator</code>): 3 tentativas, backoff exponencial 2s→8s, non-retryable em <code>context_length_exceeded</code>.
-          <br><strong>HTTP</strong> (<code>apiCaller</code>, integrações): 5 tentativas, backoff 1s→30s, non-retryable em 4xx (exceto 429).
-          <br><strong>Script</strong> (<code>scripting</code>, <code>mathFunction</code>): 1 tentativa (erros são bugs, não flakiness).
-          <br><strong>External</strong> (Elevenlabs, Ideogram, FAL): 3 tentativas com jitter.
+          <strong>LLM</strong> (<code>textGenerator</code>): <span data-en="3 attempts, exponential backoff 2s→8s, non-retryable on &lt;code&gt;context_length_exceeded&lt;/code&gt;." data-pt="3 tentativas, backoff exponencial 2s→8s, non-retryable em &lt;code&gt;context_length_exceeded&lt;/code&gt;.">3 attempts, exponential backoff 2s→8s, non-retryable on <code>context_length_exceeded</code>.</span>
+          <br><strong>HTTP</strong> (<code>apiCaller</code>, <span data-en="integrations" data-pt="integrações">integrations</span>): <span data-en="5 attempts, backoff 1s→30s, non-retryable on 4xx (except 429)." data-pt="5 tentativas, backoff 1s→30s, non-retryable em 4xx (exceto 429).">5 attempts, backoff 1s→30s, non-retryable on 4xx (except 429).</span>
+          <br><strong>Script</strong> (<code>scripting</code>, <code>mathFunction</code>): <span data-en="1 attempt (errors are bugs, not flakiness)." data-pt="1 tentativa (erros são bugs, não flakiness).">1 attempt (errors are bugs, not flakiness).</span>
+          <br><strong>External</strong> (Elevenlabs, Ideogram, FAL): <span data-en="3 attempts with jitter." data-pt="3 tentativas com jitter.">3 attempts with jitter.</span>
         </div>
       </div>
       <div class="arrow">↓</div>
 
       <div class="box decision">
-        <div class="box-title"><span class="badge step">6.2</span> Non-retryable errors</div>
+        <div class="box-title"><span class="badge step">6.2</span> <span data-en="Non-retryable errors" data-pt="Non-retryable errors">Non-retryable errors</span></div>
         <div class="box-desc">
-          Validação, permission denied, out-of-credits: marca o nó falho imediatamente, sem retry.
-          <br>Categorias explícitas em <code>errorCategory</code> (mantém compatibilidade com o campo atual).
+          <span data-en="Validation, permission denied, out-of-credits: mark the node failed immediately, no retry." data-pt="Validação, permission denied, out-of-credits: marca o nó falho imediatamente, sem retry.">Validation, permission denied, out-of-credits: mark the node failed immediately, no retry.</span>
+          <br><span data-en="Explicit categories in &lt;code&gt;errorCategory&lt;/code&gt; (keeps compatibility with the current field)." data-pt="Categorias explícitas em &lt;code&gt;errorCategory&lt;/code&gt; (mantém compatibilidade com o campo atual).">Explicit categories in <code>errorCategory</code> (keeps compatibility with the current field).</span>
         </div>
       </div>
       <div class="arrow">↓</div>
 
       <div class="box temporal">
-        <div class="box-title"><span class="badge step">6.3</span> Compensating activity (opcional)</div>
+        <div class="box-title"><span class="badge step">6.3</span> <span data-en="Compensating activity (optional)" data-pt="Compensating activity (opcional)">Compensating activity (optional)</span></div>
         <div class="box-desc">
-          Para nós com side-effect externo (push para Slack, INSERT em DB externo), há a opção de compensating activity para rollback quando o flow falhar.
-          <br>Opt-in por tipo de nó. Não é default.
+          <span data-en="For nodes with an external side-effect (push to Slack, INSERT into an external DB), there is an option for a compensating activity to roll back when the flow fails." data-pt="Para nós com side-effect externo (push para Slack, INSERT em DB externo), há a opção de compensating activity para rollback quando o flow falhar.">For nodes with an external side-effect (push to Slack, INSERT into an external DB), there is an option for a compensating activity to roll back when the flow fails.</span>
+          <br><span data-en="Opt-in per node type. Not the default." data-pt="Opt-in por tipo de nó. Não é default.">Opt-in per node type. Not the default.</span>
         </div>
       </div>
     </div>
   </div>
 
   <!-- ================================================== -->
-  <!-- FASE 7 — CROSS-CUTTING NA V2 -->
+  <!-- PHASE 7 — CROSS-CUTTING IN V2 -->
   <!-- ================================================== -->
   <div class="section">
     <div class="section-header">
       <div class="section-number">7</div>
       <div class="section-title">
-        FASE 7 — Cross-cutting na v2
-        <span class="badge cross">transversal</span>
+        <span data-en="PHASE 7 — Cross-cutting in v2" data-pt="FASE 7 — Cross-cutting na v2">PHASE 7 — Cross-cutting in v2</span>
+        <span class="badge cross" data-en="cross-cutting" data-pt="transversal">cross-cutting</span>
       </div>
-      <div class="section-desc">O que precisa migrar junto. Hoje mora no backend.</div>
+      <div class="section-desc"><span data-en="What needs to migrate along with everything else. Today it lives in the backend." data-pt="O que precisa migrar junto. Hoje mora no backend.">What needs to migrate along with everything else. Today it lives in the backend.</span></div>
     </div>
 
     <div class="cross-cutting">
-      <h3>Concerns transversais que a refatoração afeta</h3>
+      <h3><span data-en="Cross-cutting concerns the refactor touches" data-pt="Concerns transversais que a refatoração afeta">Cross-cutting concerns the refactor touches</span></h3>
       <div class="cross-grid">
         <div class="cross-item">
           <strong>MCP tracking</strong>
-          Hoje <code>mcpRunStatusService.markRunning()</code> é chamado em <code>apiV2Job.processor.ts:48</code> e <code>markFinished()</code> em <code>63-108</code>/<code>133-152</code> pelo processor da Bull queue. <strong>Na v2:</strong> vira activity dedicada <code>trackMcpRun</code> chamada no bootstrap do workflow (fase 2) e na finalização (fase 4). O processor deixa de existir junto com a queue.
+          <span data-en="Today &lt;code&gt;mcpRunStatusService.markRunning()&lt;/code&gt; is called in &lt;code&gt;apiV2Job.processor.ts:48&lt;/code&gt; and &lt;code&gt;markFinished()&lt;/code&gt; in &lt;code&gt;63-108&lt;/code&gt;/&lt;code&gt;133-152&lt;/code&gt; by the Bull queue processor. &lt;strong&gt;In v2:&lt;/strong&gt; becomes a dedicated activity &lt;code&gt;trackMcpRun&lt;/code&gt; called in the workflow bootstrap (phase 2) and finalisation (phase 4). The processor disappears along with the queue." data-pt="Hoje &lt;code&gt;mcpRunStatusService.markRunning()&lt;/code&gt; é chamado em &lt;code&gt;apiV2Job.processor.ts:48&lt;/code&gt; e &lt;code&gt;markFinished()&lt;/code&gt; em &lt;code&gt;63-108&lt;/code&gt;/&lt;code&gt;133-152&lt;/code&gt; pelo processor da Bull queue. &lt;strong&gt;Na v2:&lt;/strong&gt; vira activity dedicada &lt;code&gt;trackMcpRun&lt;/code&gt; chamada no bootstrap do workflow (fase 2) e na finalização (fase 4). O processor deixa de existir junto com a queue.">Today <code>mcpRunStatusService.markRunning()</code> is called in <code>apiV2Job.processor.ts:48</code> and <code>markFinished()</code> in <code>63-108</code>/<code>133-152</code> by the Bull queue processor. <strong>In v2:</strong> becomes a dedicated activity <code>trackMcpRun</code> called in the workflow bootstrap (phase 2) and finalisation (phase 4). The processor disappears along with the queue.</span>
         </div>
         <div class="cross-item">
           <strong>RunLogCollector · SpaceRunLogs</strong>
-          Hoje <code>runLogCollector.createRoot()</code> + <code>spaceRunLogsService.scheduleUpsert()</code> rodam inline em <code>flux.service.ts:2371-2437</code>. <strong>Na v2:</strong> signal assíncrono <code>initRunLog</code> (2.6) + activity <code>finalizeRunLog</code> (4.3). Instância do collector vive dentro do workflow, não é injetada de fora.
+          <span data-en="Today &lt;code&gt;runLogCollector.createRoot()&lt;/code&gt; + &lt;code&gt;spaceRunLogsService.scheduleUpsert()&lt;/code&gt; run inline in &lt;code&gt;flux.service.ts:2371-2437&lt;/code&gt;. &lt;strong&gt;In v2:&lt;/strong&gt; async signal &lt;code&gt;initRunLog&lt;/code&gt; (2.6) + activity &lt;code&gt;finalizeRunLog&lt;/code&gt; (4.3). The collector instance lives inside the workflow, not injected from outside." data-pt="Hoje &lt;code&gt;runLogCollector.createRoot()&lt;/code&gt; + &lt;code&gt;spaceRunLogsService.scheduleUpsert()&lt;/code&gt; rodam inline em &lt;code&gt;flux.service.ts:2371-2437&lt;/code&gt;. &lt;strong&gt;Na v2:&lt;/strong&gt; signal assíncrono &lt;code&gt;initRunLog&lt;/code&gt; (2.6) + activity &lt;code&gt;finalizeRunLog&lt;/code&gt; (4.3). Instância do collector vive dentro do workflow, não é injetada de fora.">Today <code>runLogCollector.createRoot()</code> + <code>spaceRunLogsService.scheduleUpsert()</code> run inline in <code>flux.service.ts:2371-2437</code>. <strong>In v2:</strong> async signal <code>initRunLog</code> (2.6) + activity <code>finalizeRunLog</code> (4.3). The collector instance lives inside the workflow, not injected from outside.</span>
         </div>
         <div class="cross-item">
-          <strong>Token / custo · billing</strong>
-          Hoje <code>chargeContext.enterWith({ execId, nodeId })</code> (AsyncLocalStorage) captura o custo por nó em <code>flux.service.ts:3316-3322</code>. <strong>Na v2:</strong> cada activity recebe <code>{ flowExecutionId, nodeId }</code> como input e escreve em <code>token_transactions</code> diretamente. Sem ALS.
+          <strong><span data-en="Token / cost · billing" data-pt="Token / custo · billing">Token / cost · billing</span></strong>
+          <span data-en="Today &lt;code&gt;chargeContext.enterWith({ execId, nodeId })&lt;/code&gt; (AsyncLocalStorage) captures per-node cost in &lt;code&gt;flux.service.ts:3316-3322&lt;/code&gt;. &lt;strong&gt;In v2:&lt;/strong&gt; each activity receives &lt;code&gt;{ flowExecutionId, nodeId }&lt;/code&gt; as input and writes to &lt;code&gt;token_transactions&lt;/code&gt; directly. No ALS." data-pt="Hoje &lt;code&gt;chargeContext.enterWith({ execId, nodeId })&lt;/code&gt; (AsyncLocalStorage) captura o custo por nó em &lt;code&gt;flux.service.ts:3316-3322&lt;/code&gt;. &lt;strong&gt;Na v2:&lt;/strong&gt; cada activity recebe &lt;code&gt;{ flowExecutionId, nodeId }&lt;/code&gt; como input e escreve em &lt;code&gt;token_transactions&lt;/code&gt; diretamente. Sem ALS.">Today <code>chargeContext.enterWith({ execId, nodeId })</code> (AsyncLocalStorage) captures per-node cost in <code>flux.service.ts:3316-3322</code>. <strong>In v2:</strong> each activity receives <code>{ flowExecutionId, nodeId }</code> as input and writes to <code>token_transactions</code> directly. No ALS.</span>
         </div>
         <div class="cross-item">
-          <strong>Chat / sessão</strong>
-          <code>sessionStateService.readContents()</code>/<code>appendEntries()</code> continuam iguais. Rodam via activity (dentro do workflow, fase 2.4 e 4.6). Não muda API do serviço, só de onde é chamado.
+          <strong><span data-en="Chat / session" data-pt="Chat / sessão">Chat / session</span></strong>
+          <span data-en="&lt;code&gt;sessionStateService.readContents()&lt;/code&gt;/&lt;code&gt;appendEntries()&lt;/code&gt; remain the same. Run via activity (inside the workflow, phase 2.4 and 4.6). The service's API does not change, only where it is called from." data-pt="&lt;code&gt;sessionStateService.readContents()&lt;/code&gt;/&lt;code&gt;appendEntries()&lt;/code&gt; continuam iguais. Rodam via activity (dentro do workflow, fase 2.4 e 4.6). Não muda API do serviço, só de onde é chamado.">&lt;code&gt;sessionStateService.readContents()&lt;/code&gt;/&lt;code&gt;appendEntries()&lt;/code&gt; remain the same. Run via activity (inside the workflow, phase 2.4 and 4.6). The service's API does not change, only where it is called from.</span>
         </div>
         <div class="cross-item">
-          <strong>Chatbot socket</strong>
-          Hoje <code>chatbotSocketByRun</code> em memória do backend (<code>flux.service.ts:2288</code>). <strong>Na v2:</strong> workflow emite eventos via WS gateway. Backend faz o fanout para o socket certo com base em <code>flowExecutionId</code>. Estado in-memory por processo desaparece.
+          <strong><span data-en="Chatbot socket" data-pt="Chatbot socket">Chatbot socket</span></strong>
+          <span data-en="Today &lt;code&gt;chatbotSocketByRun&lt;/code&gt; in the backend's memory (&lt;code&gt;flux.service.ts:2288&lt;/code&gt;). &lt;strong&gt;In v2:&lt;/strong&gt; the workflow emits events via the WS gateway. The backend fans them out to the right socket based on &lt;code&gt;flowExecutionId&lt;/code&gt;. Per-process in-memory state disappears." data-pt="Hoje &lt;code&gt;chatbotSocketByRun&lt;/code&gt; em memória do backend (&lt;code&gt;flux.service.ts:2288&lt;/code&gt;). &lt;strong&gt;Na v2:&lt;/strong&gt; workflow emite eventos via WS gateway. Backend faz o fanout para o socket certo com base em &lt;code&gt;flowExecutionId&lt;/code&gt;. Estado in-memory por processo desaparece.">Today <code>chatbotSocketByRun</code> in the backend's memory (<code>flux.service.ts:2288</code>). <strong>In v2:</strong> the workflow emits events via the WS gateway. The backend fans them out to the right socket based on <code>flowExecutionId</code>. Per-process in-memory state disappears.</span>
         </div>
         <div class="cross-item">
-          <strong>Refresh de credencial (Google OAuth etc.)</strong>
-          Hoje <code>flux.service.ts:2699-2722</code> (pré-loop, gate <code>pullData/pushData</code>). <strong>Na v2:</strong> a própria activity do nó chama sub-activity <code>refreshCredentialsForNode</code> com cache Redis TTL 55min (3.4.4). Deixa de ser gate global.
+          <strong><span data-en="Credential refresh (Google OAuth etc.)" data-pt="Refresh de credencial (Google OAuth etc.)">Credential refresh (Google OAuth etc.)</span></strong>
+          <span data-en="Today &lt;code&gt;flux.service.ts:2699-2722&lt;/code&gt; (pre-loop, &lt;code&gt;pullData/pushData&lt;/code&gt; gate). &lt;strong&gt;In v2:&lt;/strong&gt; the node's activity itself calls the &lt;code&gt;refreshCredentialsForNode&lt;/code&gt; sub-activity with a Redis TTL 55min cache (3.4.4). Stops being a global gate." data-pt="Hoje &lt;code&gt;flux.service.ts:2699-2722&lt;/code&gt; (pré-loop, gate &lt;code&gt;pullData/pushData&lt;/code&gt;). &lt;strong&gt;Na v2:&lt;/strong&gt; a própria activity do nó chama sub-activity &lt;code&gt;refreshCredentialsForNode&lt;/code&gt; com cache Redis TTL 55min (3.4.4). Deixa de ser gate global.">Today <code>flux.service.ts:2699-2722</code> (pre-loop, <code>pullData/pushData</code> gate). <strong>In v2:</strong> the node's activity itself calls the <code>refreshCredentialsForNode</code> sub-activity with a Redis TTL 55min cache (3.4.4). Stops being a global gate.</span>
         </div>
         <div class="cross-item">
-          <strong>Path <code>/process/single-node-legacy</code> (worker→backend). Deletar.</strong>
-          <code>SingleNodeLegacyService</code> em <code>src/temporal/single-node-legacy/</code> e o endpoint <code>POST /process/single-node-legacy</code> só existem enquanto sobrar algum tipo de nó não migrado. <strong>Pré-condição da v2:</strong> migração completa de todos os tipos para activity/child workflow no worker. Feito isso, esse módulo inteiro é removido junto com os sets <code>MIGRATED_TEMPORAL_NODE_TYPES</code> / <code>LEGACY_SINGLE_RUN_NODE_TYPES</code>.
+          <strong><span data-en="Path &lt;code&gt;/process/single-node-legacy&lt;/code&gt; (worker→backend). Delete." data-pt="Path &lt;code&gt;/process/single-node-legacy&lt;/code&gt; (worker→backend). Deletar.">Path <code>/process/single-node-legacy</code> (worker→backend). Delete.</span></strong>
+          <span data-en="&lt;code&gt;SingleNodeLegacyService&lt;/code&gt; in &lt;code&gt;src/temporal/single-node-legacy/&lt;/code&gt; and the endpoint &lt;code&gt;POST /process/single-node-legacy&lt;/code&gt; only exist while any un-migrated node type remains. &lt;strong&gt;v2 pre-condition:&lt;/strong&gt; full migration of every type to activity/child workflow in the worker. Once that is done, this whole module is removed along with the &lt;code&gt;MIGRATED_TEMPORAL_NODE_TYPES&lt;/code&gt; / &lt;code&gt;LEGACY_SINGLE_RUN_NODE_TYPES&lt;/code&gt; sets." data-pt="&lt;code&gt;SingleNodeLegacyService&lt;/code&gt; em &lt;code&gt;src/temporal/single-node-legacy/&lt;/code&gt; e o endpoint &lt;code&gt;POST /process/single-node-legacy&lt;/code&gt; só existem enquanto sobrar algum tipo de nó não migrado. &lt;strong&gt;Pré-condição da v2:&lt;/strong&gt; migração completa de todos os tipos para activity/child workflow no worker. Feito isso, esse módulo inteiro é removido junto com os sets &lt;code&gt;MIGRATED_TEMPORAL_NODE_TYPES&lt;/code&gt; / &lt;code&gt;LEGACY_SINGLE_RUN_NODE_TYPES&lt;/code&gt;.">&lt;code&gt;SingleNodeLegacyService&lt;/code&gt; in &lt;code&gt;src/temporal/single-node-legacy/&lt;/code&gt; and the endpoint &lt;code&gt;POST /process/single-node-legacy&lt;/code&gt; only exist while any un-migrated node type remains. &lt;strong&gt;v2 pre-condition:&lt;/strong&gt; full migration of every type to activity/child workflow in the worker. Once that is done, this whole module is removed along with the &lt;code&gt;MIGRATED_TEMPORAL_NODE_TYPES&lt;/code&gt; / &lt;code&gt;LEGACY_SINGLE_RUN_NODE_TYPES&lt;/code&gt; sets.</span>
         </div>
         <div class="cross-item">
-          <strong>Feature flag <code>NODE_CANCEL_IN_FLIGHT_FLAG</code></strong>
-          Deletar. Ver <a href="#" onclick="document.querySelector('.section-number:nth-of-type(6)')?.scrollIntoView();return false">Fase 5</a>. Cancel é signal nativo.
+          <strong><span data-en="Feature flag &lt;code&gt;NODE_CANCEL_IN_FLIGHT_FLAG&lt;/code&gt;" data-pt="Feature flag &lt;code&gt;NODE_CANCEL_IN_FLIGHT_FLAG&lt;/code&gt;">Feature flag <code>NODE_CANCEL_IN_FLIGHT_FLAG</code></span></strong>
+          <span data-en="Delete. See" data-pt="Deletar. Ver">Delete. See</span> <a href="#" onclick="document.querySelector('.section-number:nth-of-type(6)')?.scrollIntoView();return false"><span data-en="Phase 5" data-pt="Fase 5">Phase 5</span></a>. <span data-en="Cancel is a native signal." data-pt="Cancel é signal nativo.">Cancel is a native signal.</span>
         </div>
       </div>
     </div>
   </div>
 </div>
+<script src="_assets/i18n.js" defer></script>
 </body>
 </html>

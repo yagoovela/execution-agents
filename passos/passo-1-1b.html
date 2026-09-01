@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Passo 1.1b — Chamadores internos da fila (fire-and-forget) | Detalhamento</title>
+<title>Step 1.1b — Internal queue callers (fire-and-forget) | Detail</title>
+<link rel="stylesheet" href="../_assets/i18n.css">
+<link rel="stylesheet" href="../_assets/header.css">
 <style>
   * { box-sizing: border-box; }
   body {
@@ -567,57 +569,73 @@
 </head>
 <body>
 <div class="container">
+<div class="doc-nav">
+  <nav class="doc-tabs" aria-label="Documentation sections">
+    <a href="../index.html" class="doc-tab is-active"><span data-en="Current architecture" data-pt="Arquitetura atual">Current architecture</span></a>
+    <a href="../arquitetura-v2.html" class="doc-tab"><span data-en="v2 architecture" data-pt="Arquitetura v2">v2 architecture</span></a>
+    <a href="../arquitetura-v2-complemento.html" class="doc-tab"><span data-en="Plan as tasks" data-pt="Plano em tarefas">Plan as tasks</span></a>
+    <a href="../timeline/index.html" class="doc-tab"><span data-en="Timeline" data-pt="Timeline">Timeline</span></a>
+  </nav>
+  <div class="lang-sw" role="group" aria-label="Language">
+    <button type="button" data-lang="en" aria-pressed="true">EN-US</button>
+    <button type="button" data-lang="pt" aria-pressed="false">PT-BR</button>
+  </div>
+</div>
+
+
+
 
   <!-- TOP NAV -->
   <div class="page-nav">
     <div class="breadcrumb">
-      <a href="../index.html">📋 Execução de Agente</a>
+      <a href="../index.html">📋 <span data-en="Agent execution" data-pt="Execução de Agente">Agent execution</span></a>
       <span class="sep">›</span>
-      <span>Passo 1.1b — Detalhamento</span>
+      <span data-en="Step 1.1b — Detail" data-pt="Passo 1.1b — Detalhamento">Step 1.1b — Detail</span>
     </div>
-    <a href="../index.html#step-1-1" class="back-btn">← Voltar ao diagrama</a>
+    <div style="display:flex;gap:10px;align-items:center">
+      <a href="../index.html#step-1-1" class="back-btn"><span data-en="← Back to diagram" data-pt="← Voltar ao diagrama">← Back to diagram</span></a>
+      
+    </div>
   </div>
 
   <!-- PAGE HEADER -->
-  <div class="page-header">
-    <span class="icon">🔀</span>
-    <h1>Passo 1.1b — Chamadores internos da fila (fire-and-forget)</h1>
-  </div>
-  <div class="page-sub">
-    Dois nós dentro do próprio <code>flux.service.ts</code>. <code>flowCallerNode</code> (linhas 5593-5660) e <code>libraryNode</code> (linhas 5960-6026). Podem disparar a fila do 1.1 em vez de executar o sub-flow inline. É controlado pela flag <code>executionMode</code> do caller. <code>'triggerOnly'</code> vai para a fila. <code>'returnAfterFlow'</code> (default) executa síncrono.
+  <div class="hero">
+    <div class="kicker"><span class="ico">🔀</span></div>
+    <h1><span data-en="Step 1.1b — Internal queue callers (fire-and-forget)" data-pt="Passo 1.1b — Chamadores internos da fila (fire-and-forget)">Step 1.1b — Internal queue callers (fire-and-forget)</span></h1>
+    <div class="goal"><span data-en="Two nodes inside &lt;code&gt;flux.service.ts&lt;/code&gt; itself. &lt;code&gt;flowCallerNode&lt;/code&gt; (lines 5593-5660) and &lt;code&gt;libraryNode&lt;/code&gt; (lines 5960-6026). Can fire the 1.1 queue instead of executing the sub-flow inline. Controlled by the caller's &lt;code&gt;executionMode&lt;/code&gt; flag. &lt;code&gt;'triggerOnly'&lt;/code&gt; goes to the queue. &lt;code&gt;'returnAfterFlow'&lt;/code&gt; (default) executes synchronously." data-pt="Dois nós dentro do próprio &lt;code&gt;flux.service.ts&lt;/code&gt;. &lt;code&gt;flowCallerNode&lt;/code&gt; (linhas 5593-5660) e &lt;code&gt;libraryNode&lt;/code&gt; (linhas 5960-6026). Podem disparar a fila do 1.1 em vez de executar o sub-flow inline. É controlado pela flag &lt;code&gt;executionMode&lt;/code&gt; do caller. &lt;code&gt;'triggerOnly'&lt;/code&gt; vai para a fila. &lt;code&gt;'returnAfterFlow'&lt;/code&gt; (default) executa síncrono.">Two nodes inside <code>flux.service.ts</code> itself. <code>flowCallerNode</code> (lines 5593-5660) and <code>libraryNode</code> (lines 5960-6026). Can fire the 1.1 queue instead of executing the sub-flow inline. Controlled by the caller's <code>executionMode</code> flag. <code>'triggerOnly'</code> goes to the queue. <code>'returnAfterFlow'</code> (default) executes synchronously.</span></div>
   </div>
 
   <!-- Step friendly summary -->
   <div class="step-friendly">
-    <div class="step-friendly-title">Em resumo — o que esse passo faz</div>
+    <div class="step-friendly-title"><span data-en="In summary — what this step does" data-pt="Em resumo — o que esse passo faz">In summary — what this step does</span></div>
     <ul>
-      <li><strong>Uma flag no nó decide o caminho.</strong> <code>callerData.executionMode</code>, ou <code>libraryCallerData.executionMode</code> para o library-node. Default <code>'returnAfterFlow'</code>. Executa o sub-flow inline. Quando o usuário marca <code>'triggerOnly'</code>, o nó só dispara e segue em frente sem aguardar resultado.</li>
-      <li><strong>Fire-and-forget de fato.</strong> A chamada <code>this.apiV2Queue.enqueueApiV2Job(...)</code> não é aguardada. Usa <code>.catch(...)</code> só para registrar log. O nó considera o disparo bem-sucedido no momento em que o Redis aceitou o job. O resultado do sub-flow nunca volta para essa execução.</li>
-      <li><strong>Nó marca o próprio estado como "enqueued".</strong> Depois do disparo, <code>addConnectToNodes</code> atualiza o nó com <code>{ triggerStatus: 'enqueued', triggerMessage, lastTriggeredAt }</code>. O usuário vê "enfileirado" no editor. Não vê output porque não houve.</li>
-      <li><strong>runType prefixado indica origem.</strong> <code>'flow-caller-node (trigger-only) - flowId: X'</code> ou <code>'library-node (trigger-only) - flowId: X'</code>. O runType do trigger-only não é o mesmo do síncrono. Permite filtrar em logs por caminho.</li>
-      <li><strong>Caminho síncrono é distinto.</strong> Quando <code>executionMode !== 'triggerOnly'</code>, o nó não passa pela fila. Chama <code>this.apiV2(...)</code> direto via <code>nodeCancelContext.run</code>. Passa <code>parentProcessId</code>, <code>parentCancelRunKey</code> e <code>injectedRunLogCollector</code>. Mantém a execução como um só. Com run log unificado e cancelamento propagado.</li>
-      <li><strong>Assimetria library versus flow-caller.</strong> O <code>libraryNode</code> passa <code>billingFlowId</code> no payload (cobrança direcionada). O <code>flowCallerNode</code> não passa.</li>
+      <li><span data-en="&lt;strong&gt;A flag on the node decides the path.&lt;/strong&gt; &lt;code&gt;callerData.executionMode&lt;/code&gt;, or &lt;code&gt;libraryCallerData.executionMode&lt;/code&gt; for the library-node. Default &lt;code&gt;'returnAfterFlow'&lt;/code&gt;. Executes the sub-flow inline. When the user selects &lt;code&gt;'triggerOnly'&lt;/code&gt;, the node just fires and moves on without waiting for a result." data-pt="&lt;strong&gt;Uma flag no nó decide o caminho.&lt;/strong&gt; &lt;code&gt;callerData.executionMode&lt;/code&gt;, ou &lt;code&gt;libraryCallerData.executionMode&lt;/code&gt; para o library-node. Default &lt;code&gt;'returnAfterFlow'&lt;/code&gt;. Executa o sub-flow inline. Quando o usuário marca &lt;code&gt;'triggerOnly'&lt;/code&gt;, o nó só dispara e segue em frente sem aguardar resultado."><strong>A flag on the node decides the path.</strong> <code>callerData.executionMode</code>, or <code>libraryCallerData.executionMode</code> for the library-node. Default <code>'returnAfterFlow'</code>. Executes the sub-flow inline. When the user selects <code>'triggerOnly'</code>, the node just fires and moves on without waiting for a result.</span></li>
+      <li><span data-en="&lt;strong&gt;True fire-and-forget.&lt;/strong&gt; The &lt;code&gt;this.apiV2Queue.enqueueApiV2Job(...)&lt;/code&gt; call is not awaited. It uses &lt;code&gt;.catch(...)&lt;/code&gt; only to log. The node considers the dispatch successful the moment Redis accepts the job. The sub-flow result never comes back to this execution." data-pt="&lt;strong&gt;Fire-and-forget de fato.&lt;/strong&gt; A chamada &lt;code&gt;this.apiV2Queue.enqueueApiV2Job(...)&lt;/code&gt; não é aguardada. Usa &lt;code&gt;.catch(...)&lt;/code&gt; só para registrar log. O nó considera o disparo bem-sucedido no momento em que o Redis aceitou o job. O resultado do sub-flow nunca volta para essa execução."><strong>True fire-and-forget.</strong> The <code>this.apiV2Queue.enqueueApiV2Job(...)</code> call is not awaited. It uses <code>.catch(...)</code> only to log. The node considers the dispatch successful the moment Redis accepts the job. The sub-flow result never comes back to this execution.</span></li>
+      <li><span data-en="&lt;strong&gt;Node marks its own state as &quot;enqueued&quot;.&lt;/strong&gt; After the dispatch, &lt;code&gt;addConnectToNodes&lt;/code&gt; updates the node with &lt;code&gt;{ triggerStatus: 'enqueued', triggerMessage, lastTriggeredAt }&lt;/code&gt;. The user sees &quot;enqueued&quot; in the editor. No output shown because there wasn't one." data-pt="&lt;strong&gt;Nó marca o próprio estado como &quot;enqueued&quot;.&lt;/strong&gt; Depois do disparo, &lt;code&gt;addConnectToNodes&lt;/code&gt; atualiza o nó com &lt;code&gt;{ triggerStatus: 'enqueued', triggerMessage, lastTriggeredAt }&lt;/code&gt;. O usuário vê &quot;enfileirado&quot; no editor. Não vê output porque não houve."><strong>Node marks its own state as "enqueued".</strong> After the dispatch, <code>addConnectToNodes</code> updates the node with <code>{ triggerStatus: 'enqueued', triggerMessage, lastTriggeredAt }</code>. The user sees "enqueued" in the editor. No output shown because there wasn't one.</span></li>
+      <li><span data-en="&lt;strong&gt;Prefixed runType indicates origin.&lt;/strong&gt; &lt;code&gt;'flow-caller-node (trigger-only) - flowId: X'&lt;/code&gt; or &lt;code&gt;'library-node (trigger-only) - flowId: X'&lt;/code&gt;. The trigger-only runType is not the same as the synchronous one. Allows filtering logs by path." data-pt="&lt;strong&gt;runType prefixado indica origem.&lt;/strong&gt; &lt;code&gt;'flow-caller-node (trigger-only) - flowId: X'&lt;/code&gt; ou &lt;code&gt;'library-node (trigger-only) - flowId: X'&lt;/code&gt;. O runType do trigger-only não é o mesmo do síncrono. Permite filtrar em logs por caminho."><strong>Prefixed runType indicates origin.</strong> <code>'flow-caller-node (trigger-only) - flowId: X'</code> or <code>'library-node (trigger-only) - flowId: X'</code>. The trigger-only runType is not the same as the synchronous one. Allows filtering logs by path.</span></li>
+      <li><span data-en="&lt;strong&gt;Synchronous path is distinct.&lt;/strong&gt; When &lt;code&gt;executionMode !== 'triggerOnly'&lt;/code&gt;, the node doesn't go through the queue. It calls &lt;code&gt;this.apiV2(...)&lt;/code&gt; directly via &lt;code&gt;nodeCancelContext.run&lt;/code&gt;. Passes &lt;code&gt;parentProcessId&lt;/code&gt;, &lt;code&gt;parentCancelRunKey&lt;/code&gt; and &lt;code&gt;injectedRunLogCollector&lt;/code&gt;. Keeps the execution as one. With unified run log and propagated cancellation." data-pt="&lt;strong&gt;Caminho síncrono é distinto.&lt;/strong&gt; Quando &lt;code&gt;executionMode !== 'triggerOnly'&lt;/code&gt;, o nó não passa pela fila. Chama &lt;code&gt;this.apiV2(...)&lt;/code&gt; direto via &lt;code&gt;nodeCancelContext.run&lt;/code&gt;. Passa &lt;code&gt;parentProcessId&lt;/code&gt;, &lt;code&gt;parentCancelRunKey&lt;/code&gt; e &lt;code&gt;injectedRunLogCollector&lt;/code&gt;. Mantém a execução como um só. Com run log unificado e cancelamento propagado."><strong>Synchronous path is distinct.</strong> When <code>executionMode !== 'triggerOnly'</code>, the node doesn't go through the queue. It calls <code>this.apiV2(...)</code> directly via <code>nodeCancelContext.run</code>. Passes <code>parentProcessId</code>, <code>parentCancelRunKey</code> and <code>injectedRunLogCollector</code>. Keeps the execution as one. With unified run log and propagated cancellation.</span></li>
+      <li><span data-en="&lt;strong&gt;Library versus flow-caller asymmetry.&lt;/strong&gt; The &lt;code&gt;libraryNode&lt;/code&gt; passes &lt;code&gt;billingFlowId&lt;/code&gt; in the payload (targeted billing). The &lt;code&gt;flowCallerNode&lt;/code&gt; does not." data-pt="&lt;strong&gt;Assimetria library versus flow-caller.&lt;/strong&gt; O &lt;code&gt;libraryNode&lt;/code&gt; passa &lt;code&gt;billingFlowId&lt;/code&gt; no payload (cobrança direcionada). O &lt;code&gt;flowCallerNode&lt;/code&gt; não passa."><strong>Library versus flow-caller asymmetry.</strong> The <code>libraryNode</code> passes <code>billingFlowId</code> in the payload (targeted billing). The <code>flowCallerNode</code> does not.</span></li>
     </ul>
   </div>
 
   <div class="note info">
-    <strong>Contexto.</strong> Esses dois nós são os únicos pontos dentro do próprio motor de execução (Fase 3) que voltam a chamar a fila. Todos os outros disparos externos vêm de endpoints REST ou MCP. É recursão indireta. A execução pai passa por <code>apiV2</code>. Dentro dele, o handler de <code>flowCallerNode</code> chama a fila <code>api-v2</code> de novo. Isso executa outro <code>apiV2</code> completo (o filho).
+    <span data-en="&lt;strong&gt;Context.&lt;/strong&gt; These two nodes are the only points inside the execution engine itself (Phase 3) that call back into the queue. All other external dispatches come from REST or MCP endpoints. It's indirect recursion. The parent execution goes through &lt;code&gt;apiV2&lt;/code&gt;. Inside it, the &lt;code&gt;flowCallerNode&lt;/code&gt; handler calls the &lt;code&gt;api-v2&lt;/code&gt; queue again. This runs another full &lt;code&gt;apiV2&lt;/code&gt; (the child)." data-pt="&lt;strong&gt;Contexto.&lt;/strong&gt; Esses dois nós são os únicos pontos dentro do próprio motor de execução (Fase 3) que voltam a chamar a fila. Todos os outros disparos externos vêm de endpoints REST ou MCP. É recursão indireta. A execução pai passa por &lt;code&gt;apiV2&lt;/code&gt;. Dentro dele, o handler de &lt;code&gt;flowCallerNode&lt;/code&gt; chama a fila &lt;code&gt;api-v2&lt;/code&gt; de novo. Isso executa outro &lt;code&gt;apiV2&lt;/code&gt; completo (o filho)."><strong>Context.</strong> These two nodes are the only points inside the execution engine itself (Phase 3) that call back into the queue. All other external dispatches come from REST or MCP endpoints. It's indirect recursion. The parent execution goes through <code>apiV2</code>. Inside it, the <code>flowCallerNode</code> handler calls the <code>api-v2</code> queue again. This runs another full <code>apiV2</code> (the child).</span>
   </div>
 
   <!-- Overview chain -->
   <div class="overview-mini">
-    <div class="overview-mini-title">Cadeia de chamadas em 1.1b</div>
+    <div class="overview-mini-title"><span data-en="Call chain in 1.1b" data-pt="Cadeia de chamadas em 1.1b">Call chain in 1.1b</span></div>
     <div class="overview-chain">
-      <a href="#fn-a" class="overview-chip"><span class="lbl">A · gate</span>executionMode === 'triggerOnly'</a>
+      <a href="#fn-a" class="overview-chip"><span class="lbl"><span data-en="A · gate" data-pt="A · gate">A · gate</span></span>executionMode === 'triggerOnly'</a>
       <span class="overview-sep">→</span>
       <a href="#fn-b" class="overview-chip"><span class="lbl">B</span>flowCallerNode.enqueue(...).catch()</a>
       <span class="overview-sep">→</span>
       <a href="#fn-c" class="overview-chip"><span class="lbl">C</span>libraryNode.enqueue(...).catch()</a>
       <span class="overview-sep">→</span>
-      <a href="#fn-d" class="overview-chip"><span class="lbl">D · contraste</span>caminho síncrono (nodeCancelContext.run)</a>
+      <a href="#fn-d" class="overview-chip"><span class="lbl"><span data-en="D · contrast" data-pt="D · contraste">D · contrast</span></span><span data-en="synchronous path (nodeCancelContext.run)" data-pt="caminho síncrono (nodeCancelContext.run)">synchronous path (nodeCancelContext.run)</span></a>
     </div>
     <div style="margin-top:10px; font-size:11.5px; color:#64748B;">
-      Resultado do trigger-only. Nó do editor marcado como <code>enqueued</code>. Job novo no Redis. A execução pai continua sem esperar. Resultado do síncrono. <code>nestedFlowResult</code> preenchido com output do filho, incorporado no output do pai.
+      <span data-en="Trigger-only result. Editor node marked as &lt;code&gt;enqueued&lt;/code&gt;. New job in Redis. Parent execution continues without waiting. Synchronous result. &lt;code&gt;nestedFlowResult&lt;/code&gt; filled with child output, incorporated into the parent's output." data-pt="Resultado do trigger-only. Nó do editor marcado como &lt;code&gt;enqueued&lt;/code&gt;. Job novo no Redis. A execução pai continua sem esperar. Resultado do síncrono. &lt;code&gt;nestedFlowResult&lt;/code&gt; preenchido com output do filho, incorporado no output do pai.">Trigger-only result. Editor node marked as <code>enqueued</code>. New job in Redis. Parent execution continues without waiting. Synchronous result. <code>nestedFlowResult</code> filled with child output, incorporated into the parent's output.</span>
     </div>
   </div>
 
@@ -637,16 +655,16 @@
         const executionMode = callerData?.executionMode || 'returnAfterFlow';
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Decide, dentro do handler de cada nó, se vai enfileirar (trigger-only, fire-and-forget) ou executar inline (síncrono, com output incorporado no pai). O default é síncrono.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Decides, inside each node's handler, whether to enqueue (trigger-only, fire-and-forget) or execute inline (synchronous, with output incorporated into the parent). The default is synchronous." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Decide, dentro do handler de cada nó, se vai enfileirar (trigger-only, fire-and-forget) ou executar inline (síncrono, com output incorporado no pai). O default é síncrono."><strong>Purpose.</strong> Decides, inside each node's handler, whether to enqueue (trigger-only, fire-and-forget) or execute inline (synchronous, with output incorporated into the parent). The default is synchronous.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Antes de chamar qualquer coisa, o handler lê a configuração que o usuário colocou no nó. <code>callerData.executionMode</code> para o flow-caller. <code>libraryCallerData.executionMode</code> para o library. Se veio a string <code>'triggerOnly'</code>, segue para o trilho da fila (fire-and-forget). Se veio qualquer outra coisa (ou nada), cai no default <code>'returnAfterFlow'</code> e executa inline. Os defaults são idênticos nos dois nós. A diferença é só qual objeto tem a config. Não há enum. É comparação de string. Se alguém digitar <code>'trigger_only'</code> ou <code>'triggeronly'</code>, cai no default e vira síncrono sem aviso. É um bug latente. O frontend precisa enviar exatamente <code>'triggerOnly'</code>.
+        <span data-en="&lt;strong&gt;In summary.&lt;/strong&gt; Before calling anything, the handler reads the config the user set on the node. &lt;code&gt;callerData.executionMode&lt;/code&gt; for the flow-caller. &lt;code&gt;libraryCallerData.executionMode&lt;/code&gt; for the library. If the string &lt;code&gt;'triggerOnly'&lt;/code&gt; came through, it follows the queue rail (fire-and-forget). If anything else came (or nothing), it falls into the default &lt;code&gt;'returnAfterFlow'&lt;/code&gt; and executes inline. Defaults are identical on both nodes. The only difference is which object holds the config. There's no enum. It's a string comparison. If someone types &lt;code&gt;'trigger_only'&lt;/code&gt; or &lt;code&gt;'triggeronly'&lt;/code&gt;, it silently falls to the default and becomes synchronous. It's a latent bug. The frontend must send exactly &lt;code&gt;'triggerOnly'&lt;/code&gt;." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Antes de chamar qualquer coisa, o handler lê a configuração que o usuário colocou no nó. &lt;code&gt;callerData.executionMode&lt;/code&gt; para o flow-caller. &lt;code&gt;libraryCallerData.executionMode&lt;/code&gt; para o library. Se veio a string &lt;code&gt;'triggerOnly'&lt;/code&gt;, segue para o trilho da fila (fire-and-forget). Se veio qualquer outra coisa (ou nada), cai no default &lt;code&gt;'returnAfterFlow'&lt;/code&gt; e executa inline. Os defaults são idênticos nos dois nós. A diferença é só qual objeto tem a config. Não há enum. É comparação de string. Se alguém digitar &lt;code&gt;'trigger_only'&lt;/code&gt; ou &lt;code&gt;'triggeronly'&lt;/code&gt;, cai no default e vira síncrono sem aviso. É um bug latente. O frontend precisa enviar exatamente &lt;code&gt;'triggerOnly'&lt;/code&gt;."><strong>In summary.</strong> Before calling anything, the handler reads the config the user set on the node. <code>callerData.executionMode</code> for the flow-caller. <code>libraryCallerData.executionMode</code> for the library. If the string <code>'triggerOnly'</code> came through, it follows the queue rail (fire-and-forget). If anything else came (or nothing), it falls into the default <code>'returnAfterFlow'</code> and executes inline. Defaults are identical on both nodes. The only difference is which object holds the config. There's no enum. It's a string comparison. If someone types <code>'trigger_only'</code> or <code>'triggeronly'</code>, it silently falls to the default and becomes synchronous. It's a latent bug. The frontend must send exactly <code>'triggerOnly'</code>.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box decision">
-            <div class="box-title"><span class="badge step">A1</span> Fonte do executionMode. flow-caller</div>
+            <div class="box-title"><span class="badge step">A1</span> <span data-en="executionMode source. flow-caller" data-pt="Fonte do executionMode. flow-caller">executionMode source. flow-caller</span></div>
             <div class="code-block">
 <span class="k">const</span> executionMode = callerData?.<span class="s">executionMode</span> || <span class="s">'returnAfterFlow'</span>;
             </div>
@@ -655,7 +673,7 @@
           <div class="arrow">↓</div>
 
           <div class="box decision">
-            <div class="box-title"><span class="badge step">A2</span> Fonte do executionMode. library-node</div>
+            <div class="box-title"><span class="badge step">A2</span> <span data-en="executionMode source. library-node" data-pt="Fonte do executionMode. library-node">executionMode source. library-node</span></div>
             <div class="code-block">
 <span class="k">const</span> executionMode = libraryCallerData?.<span class="s">executionMode</span> || <span class="s">'returnAfterFlow'</span>;
             </div>
@@ -664,7 +682,7 @@
           <div class="arrow">↓</div>
 
           <div class="cascade">
-            <div class="cascade-title">🪜 Branching do handler</div>
+            <div class="cascade-title">🪜 <span data-en="Handler branching" data-pt="Branching do handler">Handler branching</span></div>
             <div class="cascade-step">
               <span class="cascade-num">1</span>
               <span class="cond"><code>executionMode === 'triggerOnly'</code></span>
@@ -672,7 +690,7 @@
             </div>
             <div class="cascade-step">
               <span class="cascade-num">2</span>
-              <span class="cond">qualquer outro valor ou default</span>
+              <span class="cond"><span data-en="any other value or default" data-pt="qualquer outro valor ou default">any other value or default</span></span>
               <span class="result next">→ inline (fn D)</span>
             </div>
           </div>
@@ -681,25 +699,22 @@
         <div class="fn-asides">
           <div class="aside info">
             <div class="aside-title">📎 callerData versus libraryCallerData</div>
-            <code>callerData</code>. Objeto de config do <code>flowCallerNode</code> (variáveis de entrada, session mode, executionMode, etc.).
-            <br><br><code>libraryCallerData</code>. Mesma ideia para o <code>libraryNode</code>. É configuração paralela porque os dois nós têm UIs diferentes no editor.
+            <span data-en="&lt;code&gt;callerData&lt;/code&gt;. Config object for &lt;code&gt;flowCallerNode&lt;/code&gt; (input variables, session mode, executionMode, etc.).&lt;br&gt;&lt;br&gt;&lt;code&gt;libraryCallerData&lt;/code&gt;. Same idea for &lt;code&gt;libraryNode&lt;/code&gt;. It's a parallel config because both nodes have different UIs in the editor." data-pt="&lt;code&gt;callerData&lt;/code&gt;. Objeto de config do &lt;code&gt;flowCallerNode&lt;/code&gt; (variáveis de entrada, session mode, executionMode, etc.).&lt;br&gt;&lt;br&gt;&lt;code&gt;libraryCallerData&lt;/code&gt;. Mesma ideia para o &lt;code&gt;libraryNode&lt;/code&gt;. É configuração paralela porque os dois nós têm UIs diferentes no editor."><code>callerData</code>. Config object for <code>flowCallerNode</code> (input variables, session mode, executionMode, etc.).<br><br><code>libraryCallerData</code>. Same idea for <code>libraryNode</code>. It's a parallel config because both nodes have different UIs in the editor.</span>
           </div>
 
           <div class="aside">
-            <div class="aside-title">🎯 Default seguro</div>
-            <code>|| 'returnAfterFlow'</code>. Se a config veio <code>undefined</code>, <code>null</code> ou string vazia, o default vale. Preserva compatibilidade retroativa. Flows salvos antes da flag existir continuam executando síncrono.
+            <div class="aside-title">🎯 <span data-en="Safe default" data-pt="Default seguro">Safe default</span></div>
+            <span data-en="&lt;code&gt;|| 'returnAfterFlow'&lt;/code&gt;. If the config came &lt;code&gt;undefined&lt;/code&gt;, &lt;code&gt;null&lt;/code&gt; or an empty string, the default applies. Preserves backward compatibility. Flows saved before the flag existed continue executing synchronously." data-pt="&lt;code&gt;|| 'returnAfterFlow'&lt;/code&gt;. Se a config veio &lt;code&gt;undefined&lt;/code&gt;, &lt;code&gt;null&lt;/code&gt; ou string vazia, o default vale. Preserva compatibilidade retroativa. Flows salvos antes da flag existir continuam executando síncrono."><code>|| 'returnAfterFlow'</code>. If the config came <code>undefined</code>, <code>null</code> or an empty string, the default applies. Preserves backward compatibility. Flows saved before the flag existed continue executing synchronously.</span>
           </div>
 
           <div class="aside warn">
-            <div class="aside-title">⚠️ String literal sem enum</div>
-            Comparação exata com <code>'triggerOnly'</code>. Não há validação, tipo TypeScript ou enum protegendo. Se um refactor renomear para <code>'fireAndForget'</code>, todos os flows antigos com <code>'triggerOnly'</code> viram síncrono silenciosamente.
+            <div class="aside-title">⚠️ <span data-en="String literal without enum" data-pt="String literal sem enum">String literal without enum</span></div>
+            <span data-en="Exact comparison with &lt;code&gt;'triggerOnly'&lt;/code&gt;. There's no validation, TypeScript type or enum protecting it. If a refactor renames it to &lt;code&gt;'fireAndForget'&lt;/code&gt;, all old flows with &lt;code&gt;'triggerOnly'&lt;/code&gt; silently become synchronous." data-pt="Comparação exata com &lt;code&gt;'triggerOnly'&lt;/code&gt;. Não há validação, tipo TypeScript ou enum protegendo. Se um refactor renomear para &lt;code&gt;'fireAndForget'&lt;/code&gt;, todos os flows antigos com &lt;code&gt;'triggerOnly'&lt;/code&gt; viram síncrono silenciosamente.">Exact comparison with <code>'triggerOnly'</code>. There's no validation, TypeScript type or enum protecting it. If a refactor renames it to <code>'fireAndForget'</code>, all old flows with <code>'triggerOnly'</code> silently become synchronous.</span>
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 Nomes das opções na UI</div>
-            <code>'triggerOnly'</code>. Dispara e esquece.
-            <br><code>'returnAfterFlow'</code>. Aguarda o sub-flow e usa o output no pai.
-            <br><br>Não há um terceiro valor no código atual. Se aparecer, cai no default.
+            <div class="aside-title">🔧 <span data-en="Option names in the UI" data-pt="Nomes das opções na UI">Option names in the UI</span></div>
+            <span data-en="&lt;code&gt;'triggerOnly'&lt;/code&gt;. Fire and forget.&lt;br&gt;&lt;code&gt;'returnAfterFlow'&lt;/code&gt;. Waits for the sub-flow and uses the output in the parent.&lt;br&gt;&lt;br&gt;There's no third value in the current code. If one appears, it falls to the default." data-pt="&lt;code&gt;'triggerOnly'&lt;/code&gt;. Dispara e esquece.&lt;br&gt;&lt;code&gt;'returnAfterFlow'&lt;/code&gt;. Aguarda o sub-flow e usa o output no pai.&lt;br&gt;&lt;br&gt;Não há um terceiro valor no código atual. Se aparecer, cai no default."><code>'triggerOnly'</code>. Fire and forget.<br><code>'returnAfterFlow'</code>. Waits for the sub-flow and uses the output in the parent.<br><br>There's no third value in the current code. If one appears, it falls to the default.</span>
           </div>
         </div>
       </div>
@@ -722,16 +737,16 @@
         this.apiV2Queue.enqueueApiV2Job({ params: {...} }).catch(error => logger.error(...))
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Dispara execução assíncrona do sub-flow chamado pelo <code>flowCallerNode</code>. A execução atual não aguarda. O nó é marcado como <em>enqueued</em> e o handler retorna imediatamente.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Dispatches asynchronous execution of the sub-flow called by &lt;code&gt;flowCallerNode&lt;/code&gt;. The current execution does not wait. The node is marked as &lt;em&gt;enqueued&lt;/em&gt; and the handler returns immediately." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Dispara execução assíncrona do sub-flow chamado pelo &lt;code&gt;flowCallerNode&lt;/code&gt;. A execução atual não aguarda. O nó é marcado como &lt;em&gt;enqueued&lt;/em&gt; e o handler retorna imediatamente."><strong>Purpose.</strong> Dispatches asynchronous execution of the sub-flow called by <code>flowCallerNode</code>. The current execution does not wait. The node is marked as <em>enqueued</em> and the handler returns immediately.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> O handler monta o <code>body</code> com <code>variableInputs</code>, <code>webhook</code> e <code>spaceId</code>. Monta o <code>params</code> com o flow selecionado, user, session e contadores. Chama <code>enqueueApiV2Job</code> sem <code>await</code>. É intencional. O padrão é <code>.enqueue(...).catch(...)</code>. Se o enfileiramento falhar (Redis fora, Bull travado), o <code>.catch</code> só registra o erro e a promise morre. O nó pai segue em frente como se tudo tivesse dado certo. O <code>runType</code> enviado à fila é <code>'flow-caller-node (trigger-only) - flowId: X'</code>. Permite rastrear em logs a origem da execução. Depois do disparo, o handler atualiza o nó no schema com <code>triggerStatus: 'enqueued'</code>, uma mensagem descritiva e o timestamp. O editor exibe o status ao usuário.
+        <span data-en="&lt;strong&gt;In summary.&lt;/strong&gt; The handler builds the &lt;code&gt;body&lt;/code&gt; with &lt;code&gt;variableInputs&lt;/code&gt;, &lt;code&gt;webhook&lt;/code&gt; and &lt;code&gt;spaceId&lt;/code&gt;. Builds &lt;code&gt;params&lt;/code&gt; with the selected flow, user, session and counters. Calls &lt;code&gt;enqueueApiV2Job&lt;/code&gt; without &lt;code&gt;await&lt;/code&gt;. Intentional. The pattern is &lt;code&gt;.enqueue(...).catch(...)&lt;/code&gt;. If enqueuing fails (Redis down, Bull stuck), the &lt;code&gt;.catch&lt;/code&gt; just logs the error and the promise dies. The parent node moves on as if everything went well. The &lt;code&gt;runType&lt;/code&gt; sent to the queue is &lt;code&gt;'flow-caller-node (trigger-only) - flowId: X'&lt;/code&gt;. Enables tracking execution origin in logs. After dispatch, the handler updates the node in the schema with &lt;code&gt;triggerStatus: 'enqueued'&lt;/code&gt;, a descriptive message and the timestamp. The editor shows the status to the user." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; O handler monta o &lt;code&gt;body&lt;/code&gt; com &lt;code&gt;variableInputs&lt;/code&gt;, &lt;code&gt;webhook&lt;/code&gt; e &lt;code&gt;spaceId&lt;/code&gt;. Monta o &lt;code&gt;params&lt;/code&gt; com o flow selecionado, user, session e contadores. Chama &lt;code&gt;enqueueApiV2Job&lt;/code&gt; sem &lt;code&gt;await&lt;/code&gt;. É intencional. O padrão é &lt;code&gt;.enqueue(...).catch(...)&lt;/code&gt;. Se o enfileiramento falhar (Redis fora, Bull travado), o &lt;code&gt;.catch&lt;/code&gt; só registra o erro e a promise morre. O nó pai segue em frente como se tudo tivesse dado certo. O &lt;code&gt;runType&lt;/code&gt; enviado à fila é &lt;code&gt;'flow-caller-node (trigger-only) - flowId: X'&lt;/code&gt;. Permite rastrear em logs a origem da execução. Depois do disparo, o handler atualiza o nó no schema com &lt;code&gt;triggerStatus: 'enqueued'&lt;/code&gt;, uma mensagem descritiva e o timestamp. O editor exibe o status ao usuário."><strong>In summary.</strong> The handler builds the <code>body</code> with <code>variableInputs</code>, <code>webhook</code> and <code>spaceId</code>. Builds <code>params</code> with the selected flow, user, session and counters. Calls <code>enqueueApiV2Job</code> without <code>await</code>. Intentional. The pattern is <code>.enqueue(...).catch(...)</code>. If enqueuing fails (Redis down, Bull stuck), the <code>.catch</code> just logs the error and the promise dies. The parent node moves on as if everything went well. The <code>runType</code> sent to the queue is <code>'flow-caller-node (trigger-only) - flowId: X'</code>. Enables tracking execution origin in logs. After dispatch, the handler updates the node in the schema with <code>triggerStatus: 'enqueued'</code>, a descriptive message and the timestamp. The editor shows the status to the user.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">B1</span> Payload enfileirado</div>
+            <div class="box-title"><span class="badge step">B1</span> <span data-en="Enqueued payload" data-pt="Payload enfileirado">Enqueued payload</span></div>
             <div class="code-block">
 this.apiV2Queue
   .<span class="t">enqueueApiV2Job</span>({
@@ -754,7 +769,7 @@ this.apiV2Queue
           <div class="arrow">↓</div>
 
           <div class="box cross">
-            <div class="box-title"><span class="badge step">B2</span> Catch. Só registra log, não propaga</div>
+            <div class="box-title"><span class="badge step">B2</span> <span data-en="Catch. Only logs, does not propagate" data-pt="Catch. Só registra log, não propaga">Catch. Only logs, does not propagate</span></div>
             <div class="code-block">
 .<span class="t">catch</span>(error =&gt; {
   this.loggerService.<span class="t">error</span>({
@@ -773,7 +788,7 @@ this.apiV2Queue
           <div class="arrow">↓</div>
 
           <div class="box backend">
-            <div class="box-title"><span class="badge step">B3</span> Marca o nó no schema. triggerStatus, triggerMessage e lastTriggeredAt</div>
+            <div class="box-title"><span class="badge step">B3</span> <span data-en="Marks the node in the schema. triggerStatus, triggerMessage and lastTriggeredAt" data-pt="Marca o nó no schema. triggerStatus, triggerMessage e lastTriggeredAt">Marks the node in the schema. triggerStatus, triggerMessage and lastTriggeredAt</span></div>
             <div class="code-block">
 <span class="k">const</span> newNodes = <span class="t">addConnectToNodes</span>({
   edges,
@@ -797,24 +812,23 @@ this.apiV2Queue
 
         <div class="fn-asides">
           <div class="aside warn">
-            <div class="aside-title">⚠️ O .catch() só registra log. Falha invisível ao usuário</div>
-            Se o Redis está fora ou o Bull rejeita o add (por exemplo, jobId duplicado ativo), o <code>.catch()</code> escreve um log e a promise morre. O nó fica com <code>triggerStatus: 'enqueued'</code> mesmo quando o enfileiramento falhou. A marcação de status roda antes do <code>.catch</code> resolver. O usuário vê "enfileirado" mesmo quando não foi.
-            <br><br>Sequência real. <code>enqueue(...)</code> começa (retorna Promise). Em seguida, <code>addConnectToNodes</code> executa síncrono marcando enqueued. O handler retorna. Só então, em outra tick do event loop, a Promise resolve ou rejeita.
+            <div class="aside-title">⚠️ <span data-en="The .catch() only logs. Failure invisible to the user" data-pt="O .catch() só registra log. Falha invisível ao usuário">The .catch() only logs. Failure invisible to the user</span></div>
+            <span data-en="If Redis is down or Bull rejects the add (e.g., duplicate active jobId), &lt;code&gt;.catch()&lt;/code&gt; writes a log and the promise dies. The node ends up with &lt;code&gt;triggerStatus: 'enqueued'&lt;/code&gt; even when the enqueuing failed. The status marking runs before &lt;code&gt;.catch&lt;/code&gt; resolves. The user sees &quot;enqueued&quot; even when it wasn't.&lt;br&gt;&lt;br&gt;Real sequence. &lt;code&gt;enqueue(...)&lt;/code&gt; starts (returns Promise). Then, &lt;code&gt;addConnectToNodes&lt;/code&gt; runs synchronously marking enqueued. The handler returns. Only then, on another event loop tick, does the Promise resolve or reject." data-pt="Se o Redis está fora ou o Bull rejeita o add (por exemplo, jobId duplicado ativo), o &lt;code&gt;.catch()&lt;/code&gt; escreve um log e a promise morre. O nó fica com &lt;code&gt;triggerStatus: 'enqueued'&lt;/code&gt; mesmo quando o enfileiramento falhou. A marcação de status roda antes do &lt;code&gt;.catch&lt;/code&gt; resolver. O usuário vê &quot;enfileirado&quot; mesmo quando não foi.&lt;br&gt;&lt;br&gt;Sequência real. &lt;code&gt;enqueue(...)&lt;/code&gt; começa (retorna Promise). Em seguida, &lt;code&gt;addConnectToNodes&lt;/code&gt; executa síncrono marcando enqueued. O handler retorna. Só então, em outra tick do event loop, a Promise resolve ou rejeita.">If Redis is down or Bull rejects the add (e.g., duplicate active jobId), <code>.catch()</code> writes a log and the promise dies. The node ends up with <code>triggerStatus: 'enqueued'</code> even when the enqueuing failed. The status marking runs before <code>.catch</code> resolves. The user sees "enqueued" even when it wasn't.<br><br>Real sequence. <code>enqueue(...)</code> starts (returns Promise). Then, <code>addConnectToNodes</code> runs synchronously marking enqueued. The handler returns. Only then, on another event loop tick, does the Promise resolve or reject.</span>
           </div>
 
           <div class="aside info">
-            <div class="aside-title">📎 Sem parentProcessId no payload</div>
-            Diferente do caminho síncrono (fn D), a chamada fire-and-forget não passa <code>parentProcessId</code>. A execução filha vira uma execução raiz. Não é conectada à execução pai no run log. A rastreabilidade em árvore quebra aqui.
+            <div class="aside-title">📎 <span data-en="No parentProcessId in the payload" data-pt="Sem parentProcessId no payload">No parentProcessId in the payload</span></div>
+            <span data-en="Unlike the synchronous path (fn D), the fire-and-forget call does not pass &lt;code&gt;parentProcessId&lt;/code&gt;. The child execution becomes a root execution. It is not connected to the parent execution in the run log. Tree traceability breaks here." data-pt="Diferente do caminho síncrono (fn D), a chamada fire-and-forget não passa &lt;code&gt;parentProcessId&lt;/code&gt;. A execução filha vira uma execução raiz. Não é conectada à execução pai no run log. A rastreabilidade em árvore quebra aqui.">Unlike the synchronous path (fn D), the fire-and-forget call does not pass <code>parentProcessId</code>. The child execution becomes a root execution. It is not connected to the parent execution in the run log. Tree traceability breaks here.</span>
           </div>
 
           <div class="aside">
-            <div class="aside-title">🎯 runType como marcador</div>
-            <code>`flow-caller-node (trigger-only) - flowId: X`</code>. String livre, sem enum. Consumida por dashboards e queries de log. Se mudar o texto, alertas quebram.
+            <div class="aside-title">🎯 <span data-en="runType as a marker" data-pt="runType como marcador">runType as a marker</span></div>
+            <span data-en="&lt;code&gt;`flow-caller-node (trigger-only) - flowId: X`&lt;/code&gt;. Free string, no enum. Consumed by dashboards and log queries. If the text changes, alerts break." data-pt="&lt;code&gt;`flow-caller-node (trigger-only) - flowId: X`&lt;/code&gt;. String livre, sem enum. Consumida por dashboards e queries de log. Se mudar o texto, alertas quebram."><code>`flow-caller-node (trigger-only) - flowId: X`</code>. Free string, no enum. Consumed by dashboards and log queries. If the text changes, alerts break.</span>
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 body enviado ao filho</div>
-            <code>{ variableInputs, webhook, spaceId }</code>. <code>variableInputs</code> tem <code>{ inputId, inputText, links, files, isExtraction, typeOCR }</code>. É o payload de entrada do filho. Vira <code>body</code> no <code>apiV2</code> dele.
+            <div class="aside-title">🔧 <span data-en="body sent to the child" data-pt="body enviado ao filho">body sent to the child</span></div>
+            <span data-en="&lt;code&gt;{ variableInputs, webhook, spaceId }&lt;/code&gt;. &lt;code&gt;variableInputs&lt;/code&gt; has &lt;code&gt;{ inputId, inputText, links, files, isExtraction, typeOCR }&lt;/code&gt;. It's the child's input payload. Becomes &lt;code&gt;body&lt;/code&gt; in its &lt;code&gt;apiV2&lt;/code&gt;." data-pt="&lt;code&gt;{ variableInputs, webhook, spaceId }&lt;/code&gt;. &lt;code&gt;variableInputs&lt;/code&gt; tem &lt;code&gt;{ inputId, inputText, links, files, isExtraction, typeOCR }&lt;/code&gt;. É o payload de entrada do filho. Vira &lt;code&gt;body&lt;/code&gt; no &lt;code&gt;apiV2&lt;/code&gt; dele."><code>{ variableInputs, webhook, spaceId }</code>. <code>variableInputs</code> has <code>{ inputId, inputText, links, files, isExtraction, typeOCR }</code>. It's the child's input payload. Becomes <code>body</code> in its <code>apiV2</code>.</span>
           </div>
         </div>
       </div>
@@ -837,16 +851,16 @@ this.apiV2Queue
         this.apiV2Queue.enqueueApiV2Job({ params: {..., billingFlowId} }).catch(...)
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Igual a (B), mas para o <code>libraryNode</code>. Executa flows da biblioteca do usuário. Diferença crítica. Passa <code>billingFlowId</code> para separar a cobrança do flow instalado versus o flow original.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Same as (B), but for &lt;code&gt;libraryNode&lt;/code&gt;. Executes flows from the user's library. Critical difference. Passes &lt;code&gt;billingFlowId&lt;/code&gt; to separate billing of the installed flow versus the original flow." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Igual a (B), mas para o &lt;code&gt;libraryNode&lt;/code&gt;. Executa flows da biblioteca do usuário. Diferença crítica. Passa &lt;code&gt;billingFlowId&lt;/code&gt; para separar a cobrança do flow instalado versus o flow original."><strong>Purpose.</strong> Same as (B), but for <code>libraryNode</code>. Executes flows from the user's library. Critical difference. Passes <code>billingFlowId</code> to separate billing of the installed flow versus the original flow.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> É a versão biblioteca do disparador. O padrão é praticamente idêntico ao do flow-caller. <code>enqueue(...).catch(logger)</code>. Marca o nó como <em>enqueued</em> e retorna. A grande diferença está numa linha só. O payload inclui <code>billingFlowId: billingFlowIdForExecution</code>. Resolve um problema específico de biblioteca. Quando um usuário instala um flow público da biblioteca, cada execução tem dois flowIds envolvidos. O <code>flowId</code> real que vai executar (a cópia do usuário) e o <code>billingFlowId</code> que aponta ao flow original (para cobrança e atribuição corretas). O flow-caller não tem essa complexidade. Só chama flows do próprio workspace. O runType também é diferente. <code>'library-node (trigger-only)'</code>. Permite separar em logs quantos disparos vieram de biblioteca e quantos vieram de flow-caller normal.
+        <span data-en="&lt;strong&gt;In summary.&lt;/strong&gt; It's the library version of the dispatcher. The pattern is practically identical to the flow-caller's. &lt;code&gt;enqueue(...).catch(logger)&lt;/code&gt;. Marks the node as &lt;em&gt;enqueued&lt;/em&gt; and returns. The big difference is in a single line. The payload includes &lt;code&gt;billingFlowId: billingFlowIdForExecution&lt;/code&gt;. Solves a library-specific problem. When a user installs a public flow from the library, each execution involves two flowIds. The actual &lt;code&gt;flowId&lt;/code&gt; that will execute (the user's copy) and the &lt;code&gt;billingFlowId&lt;/code&gt; pointing to the original flow (for correct billing and attribution). The flow-caller doesn't have this complexity. It only calls flows from its own workspace. The runType is also different. &lt;code&gt;'library-node (trigger-only)'&lt;/code&gt;. Allows separating in logs how many dispatches came from library and how many came from normal flow-caller." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; É a versão biblioteca do disparador. O padrão é praticamente idêntico ao do flow-caller. &lt;code&gt;enqueue(...).catch(logger)&lt;/code&gt;. Marca o nó como &lt;em&gt;enqueued&lt;/em&gt; e retorna. A grande diferença está numa linha só. O payload inclui &lt;code&gt;billingFlowId: billingFlowIdForExecution&lt;/code&gt;. Resolve um problema específico de biblioteca. Quando um usuário instala um flow público da biblioteca, cada execução tem dois flowIds envolvidos. O &lt;code&gt;flowId&lt;/code&gt; real que vai executar (a cópia do usuário) e o &lt;code&gt;billingFlowId&lt;/code&gt; que aponta ao flow original (para cobrança e atribuição corretas). O flow-caller não tem essa complexidade. Só chama flows do próprio workspace. O runType também é diferente. &lt;code&gt;'library-node (trigger-only)'&lt;/code&gt;. Permite separar em logs quantos disparos vieram de biblioteca e quantos vieram de flow-caller normal."><strong>In summary.</strong> It's the library version of the dispatcher. The pattern is practically identical to the flow-caller's. <code>enqueue(...).catch(logger)</code>. Marks the node as <em>enqueued</em> and returns. The big difference is in a single line. The payload includes <code>billingFlowId: billingFlowIdForExecution</code>. Solves a library-specific problem. When a user installs a public flow from the library, each execution involves two flowIds. The actual <code>flowId</code> that will execute (the user's copy) and the <code>billingFlowId</code> pointing to the original flow (for correct billing and attribution). The flow-caller doesn't have this complexity. It only calls flows from its own workspace. The runType is also different. <code>'library-node (trigger-only)'</code>. Allows separating in logs how many dispatches came from library and how many came from normal flow-caller.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">C1</span> Payload enfileirado (com billingFlowId)</div>
+            <div class="box-title"><span class="badge step">C1</span> <span data-en="Enqueued payload (with billingFlowId)" data-pt="Payload enfileirado (com billingFlowId)">Enqueued payload (with billingFlowId)</span></div>
             <div class="code-block">
 this.apiV2Queue
   .<span class="t">enqueueApiV2Job</span>({
@@ -860,7 +874,7 @@ this.apiV2Queue
       emailTriggers,
       autoTriggers,
       <span class="k">runType</span>: <span class="s">`library-node (trigger-only) - flowId: ${flowIdSelected}`</span>,
-      <span class="k">billingFlowId</span>: billingFlowIdForExecution,   <span class="c">// DIFERENÇA em relação ao flow-caller</span>
+      <span class="k">billingFlowId</span>: billingFlowIdForExecution,   <span class="c">// DIFFERENCE from flow-caller</span>
     },
   })
   .<span class="t">catch</span>(error =&gt; { … })
@@ -870,7 +884,7 @@ this.apiV2Queue
           <div class="arrow">↓</div>
 
           <div class="box backend">
-            <div class="box-title"><span class="badge step">C2</span> Marca o nó. Mesma estrutura do B3</div>
+            <div class="box-title"><span class="badge step">C2</span> <span data-en="Marks the node. Same structure as B3" data-pt="Marca o nó. Mesma estrutura do B3">Marks the node. Same structure as B3</span></div>
             <div class="code-block">
 <span class="k">data</span>: {
   triggerStatus: <span class="s">'enqueued'</span>,
@@ -884,24 +898,23 @@ this.apiV2Queue
 
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 billingFlowId. Flow original versus cópia</div>
-            Quando um usuário instala um flow da biblioteca (marketplace), a cópia recebe um novo id (<code>flowId</code>). Para cobrança e analytics, é útil apontar ao flow de origem (<code>billingFlowId</code>). Permite dois efeitos. O autor original recebe créditos de execução. As analytics agregam por flow público, não por cópia.
-            <br><br>Passado até o <code>apiV2</code> filho, que usa na lógica de billing.
+            <div class="aside-title">🎯 <span data-en="billingFlowId. Original flow versus copy" data-pt="billingFlowId. Flow original versus cópia">billingFlowId. Original flow versus copy</span></div>
+            <span data-en="When a user installs a flow from the library (marketplace), the copy receives a new id (&lt;code&gt;flowId&lt;/code&gt;). For billing and analytics, it's useful to point to the source flow (&lt;code&gt;billingFlowId&lt;/code&gt;). Enables two effects. The original author receives execution credits. Analytics aggregate by public flow, not by copy.&lt;br&gt;&lt;br&gt;Passed through to the child &lt;code&gt;apiV2&lt;/code&gt;, which uses it in the billing logic." data-pt="Quando um usuário instala um flow da biblioteca (marketplace), a cópia recebe um novo id (&lt;code&gt;flowId&lt;/code&gt;). Para cobrança e analytics, é útil apontar ao flow de origem (&lt;code&gt;billingFlowId&lt;/code&gt;). Permite dois efeitos. O autor original recebe créditos de execução. As analytics agregam por flow público, não por cópia.&lt;br&gt;&lt;br&gt;Passado até o &lt;code&gt;apiV2&lt;/code&gt; filho, que usa na lógica de billing.">When a user installs a flow from the library (marketplace), the copy receives a new id (<code>flowId</code>). For billing and analytics, it's useful to point to the source flow (<code>billingFlowId</code>). Enables two effects. The original author receives execution credits. Analytics aggregate by public flow, not by copy.<br><br>Passed through to the child <code>apiV2</code>, which uses it in the billing logic.</span>
           </div>
 
           <div class="aside">
-            <div class="aside-title">📎 triggerMessage prefixado</div>
-            <code>Library flow ${id} enqueued for execution</code>. Texto diferente do flow-caller (<code>Flow ${id} enqueued</code>). Ajuda o usuário no editor a distinguir a origem do disparo.
+            <div class="aside-title">📎 <span data-en="Prefixed triggerMessage" data-pt="triggerMessage prefixado">Prefixed triggerMessage</span></div>
+            <span data-en="&lt;code&gt;Library flow ${id} enqueued for execution&lt;/code&gt;. Different text from flow-caller (&lt;code&gt;Flow ${id} enqueued&lt;/code&gt;). Helps the user in the editor distinguish the origin of the dispatch." data-pt="&lt;code&gt;Library flow ${id} enqueued for execution&lt;/code&gt;. Texto diferente do flow-caller (&lt;code&gt;Flow ${id} enqueued&lt;/code&gt;). Ajuda o usuário no editor a distinguir a origem do disparo."><code>Library flow ${id} enqueued for execution</code>. Different text from flow-caller (<code>Flow ${id} enqueued</code>). Helps the user in the editor distinguish the origin of the dispatch.</span>
           </div>
 
           <div class="aside warn">
-            <div class="aside-title">⚠️ Mesmo bug do .catch() silencioso</div>
-            Igual ao flow-caller. Se o enfileiramento falha, o log é registrado, mas o nó vira <em>enqueued</em>. A UI mente ao usuário. Aqui é ainda pior. Bibliotecas costumam ser usadas em cascata. Se 10 library-nodes disparam numa execução e o Redis cai no meio, 5 podem falhar sem sinal visual.
+            <div class="aside-title">⚠️ <span data-en="Same silent .catch() bug" data-pt="Mesmo bug do .catch() silencioso">Same silent .catch() bug</span></div>
+            <span data-en="Same as flow-caller. If enqueuing fails, the log is recorded, but the node becomes &lt;em&gt;enqueued&lt;/em&gt;. The UI lies to the user. It's even worse here. Libraries are usually used in cascade. If 10 library-nodes fire in one execution and Redis drops in the middle, 5 can fail without visual signal." data-pt="Igual ao flow-caller. Se o enfileiramento falha, o log é registrado, mas o nó vira &lt;em&gt;enqueued&lt;/em&gt;. A UI mente ao usuário. Aqui é ainda pior. Bibliotecas costumam ser usadas em cascata. Se 10 library-nodes disparam numa execução e o Redis cai no meio, 5 podem falhar sem sinal visual.">Same as flow-caller. If enqueuing fails, the log is recorded, but the node becomes <em>enqueued</em>. The UI lies to the user. It's even worse here. Libraries are usually used in cascade. If 10 library-nodes fire in one execution and Redis drops in the middle, 5 can fail without visual signal.</span>
           </div>
 
           <div class="aside helper">
             <div class="aside-title">🔧 buildClearedLibraryOutputs</div>
-            Há uma diferença sutil no caminho de erro do library síncrono (fn D, contraste). Usa <code>buildClearedLibraryOutputs(staleLibraryNode?.data)</code> para limpar outputs anteriores. Não se aplica no trigger-only porque nunca houve output para limpar.
+            <span data-en="There's a subtle difference in the synchronous library error path (fn D, contrast). It uses &lt;code&gt;buildClearedLibraryOutputs(staleLibraryNode?.data)&lt;/code&gt; to clear previous outputs. Not applicable in trigger-only because there was never output to clear." data-pt="Há uma diferença sutil no caminho de erro do library síncrono (fn D, contraste). Usa &lt;code&gt;buildClearedLibraryOutputs(staleLibraryNode?.data)&lt;/code&gt; para limpar outputs anteriores. Não se aplica no trigger-only porque nunca houve output para limpar.">There's a subtle difference in the synchronous library error path (fn D, contrast). It uses <code>buildClearedLibraryOutputs(staleLibraryNode?.data)</code> to clear previous outputs. Not applicable in trigger-only because there was never output to clear.</span>
           </div>
         </div>
       </div>
@@ -915,8 +928,8 @@ this.apiV2Queue
     <div class="fn-card-header">
       <div class="fn-title">
         <span class="badge migrated" style="background:#A855F7;color:white">D</span>
-        <code>caminho síncrono. nodeCancelContext.run(() =&gt; this.apiV2(...))</code>
-        <span class="badge cross" style="font-size:9px">contraste</span>
+        <code><span data-en="synchronous path. nodeCancelContext.run(() =&gt; this.apiV2(...))" data-pt="caminho síncrono. nodeCancelContext.run(() =&gt; this.apiV2(...))">synchronous path. nodeCancelContext.run(() =&gt; this.apiV2(...))</span></code>
+        <span class="badge cross" style="font-size:9px"><span data-en="contrast" data-pt="contraste">contrast</span></span>
       </div>
       <div class="fn-loc">flux.service.ts:5645-5660 (flow-caller) · 6010-6026 (library)</div>
     </div>
@@ -925,16 +938,16 @@ this.apiV2Queue
         await nodeCancelContext.run(undefined, () => this.apiV2({ ...body, parentProcessId, parentCancelRunKey, injectedRunLogCollector }))
       </div>
       <div class="fn-purpose">
-        <strong>Propósito.</strong> Executar o sub-flow dentro do mesmo processo. Preserva run log unificado, cancelamento propagado e output incorporado no nó pai. É o default quando <code>executionMode !== 'triggerOnly'</code>.
+        <span data-en="&lt;strong&gt;Purpose.&lt;/strong&gt; Execute the sub-flow within the same process. Preserves unified run log, propagated cancellation and output incorporated into the parent node. Default when &lt;code&gt;executionMode !== 'triggerOnly'&lt;/code&gt;." data-pt="&lt;strong&gt;Propósito.&lt;/strong&gt; Executar o sub-flow dentro do mesmo processo. Preserva run log unificado, cancelamento propagado e output incorporado no nó pai. É o default quando &lt;code&gt;executionMode !== 'triggerOnly'&lt;/code&gt;."><strong>Purpose.</strong> Execute the sub-flow within the same process. Preserves unified run log, propagated cancellation and output incorporated into the parent node. Default when <code>executionMode !== 'triggerOnly'</code>.</span>
       </div>
       <div class="fn-friendly">
-        <strong>Em resumo.</strong> Aqui é a face oposta do trigger-only. Tudo unificado. Uma execução só. O handler abre um <code>AsyncLocalStorage</code> (<code>nodeCancelContext.run(undefined, () =&gt; ...)</code>) para isolar contexto de cancelamento e chama <code>this.apiV2(...)</code> com <code>await</code>. Passa 3 coisas que o trigger-only não passa. <code>parentProcessId</code> para ligar a execução filha ao pai no run log. <code>parentCancelRunKey</code> para que cancelar o pai cancele o filho automaticamente. <code>injectedRunLogCollector</code> para que o run log do filho apareça como sub-run dentro do pai, e não como execução raiz separada. O resultado (<code>nestedFlowResult</code>) é usado logo depois. Se falhou, marca erro no nó. Se deu certo, incorpora outputs no nó pai. É o modo de execução caro, mas rico. Paga o custo de aguardar. Ganha rastreabilidade completa e cancelamento em cascata.
+        <span data-en="&lt;strong&gt;In summary.&lt;/strong&gt; This is the opposite face of trigger-only. Everything unified. A single execution. The handler opens an &lt;code&gt;AsyncLocalStorage&lt;/code&gt; (&lt;code&gt;nodeCancelContext.run(undefined, () =&gt; ...)&lt;/code&gt;) to isolate cancellation context and calls &lt;code&gt;this.apiV2(...)&lt;/code&gt; with &lt;code&gt;await&lt;/code&gt;. Passes 3 things trigger-only doesn't. &lt;code&gt;parentProcessId&lt;/code&gt; to link the child execution to the parent in the run log. &lt;code&gt;parentCancelRunKey&lt;/code&gt; so that cancelling the parent automatically cancels the child. &lt;code&gt;injectedRunLogCollector&lt;/code&gt; so that the child's run log appears as a sub-run inside the parent, not as a separate root execution. The result (&lt;code&gt;nestedFlowResult&lt;/code&gt;) is used right after. If it failed, marks error on the node. If it succeeded, incorporates outputs into the parent node. It's the expensive but rich execution mode. Pays the cost of waiting. Gains complete traceability and cascade cancellation." data-pt="&lt;strong&gt;Em resumo.&lt;/strong&gt; Aqui é a face oposta do trigger-only. Tudo unificado. Uma execução só. O handler abre um &lt;code&gt;AsyncLocalStorage&lt;/code&gt; (&lt;code&gt;nodeCancelContext.run(undefined, () =&gt; ...)&lt;/code&gt;) para isolar contexto de cancelamento e chama &lt;code&gt;this.apiV2(...)&lt;/code&gt; com &lt;code&gt;await&lt;/code&gt;. Passa 3 coisas que o trigger-only não passa. &lt;code&gt;parentProcessId&lt;/code&gt; para ligar a execução filha ao pai no run log. &lt;code&gt;parentCancelRunKey&lt;/code&gt; para que cancelar o pai cancele o filho automaticamente. &lt;code&gt;injectedRunLogCollector&lt;/code&gt; para que o run log do filho apareça como sub-run dentro do pai, e não como execução raiz separada. O resultado (&lt;code&gt;nestedFlowResult&lt;/code&gt;) é usado logo depois. Se falhou, marca erro no nó. Se deu certo, incorpora outputs no nó pai. É o modo de execução caro, mas rico. Paga o custo de aguardar. Ganha rastreabilidade completa e cancelamento em cascata."><strong>In summary.</strong> This is the opposite face of trigger-only. Everything unified. A single execution. The handler opens an <code>AsyncLocalStorage</code> (<code>nodeCancelContext.run(undefined, () =&gt; ...)</code>) to isolate cancellation context and calls <code>this.apiV2(...)</code> with <code>await</code>. Passes 3 things trigger-only doesn't. <code>parentProcessId</code> to link the child execution to the parent in the run log. <code>parentCancelRunKey</code> so that cancelling the parent automatically cancels the child. <code>injectedRunLogCollector</code> so that the child's run log appears as a sub-run inside the parent, not as a separate root execution. The result (<code>nestedFlowResult</code>) is used right after. If it failed, marks error on the node. If it succeeded, incorporates outputs into the parent node. It's the expensive but rich execution mode. Pays the cost of waiting. Gains complete traceability and cascade cancellation.</span>
       </div>
 
       <div class="fn-body-cols">
         <div class="fn-main">
           <div class="box backend">
-            <div class="box-title"><span class="badge step">D1</span> flow-caller síncrono. Chamada completa</div>
+            <div class="box-title"><span class="badge step">D1</span> <span data-en="synchronous flow-caller. Complete call" data-pt="flow-caller síncrono. Chamada completa">synchronous flow-caller. Complete call</span></div>
             <div class="code-block">
 <span class="k">const</span> flowCallerSubCollector =
   parentRunLogCollector?.<span class="t">startFlowCallerSubRun</span>(parentRunLogNode ?? <span class="k">null</span>, {
@@ -953,8 +966,8 @@ this.apiV2Queue
     apiTriggers,
     emailTriggers,
     autoTriggers,
-    <span class="k">runType</span>: <span class="s">`flow-caller-node - flowId: ${flowIdSelected}`</span>,   <span class="c">// SEM (trigger-only)</span>
-    <span class="k">parentProcessId</span>: parentRunLogCollector?.<span class="s">processId</span>,       <span class="c">// vínculo</span>
+    <span class="k">runType</span>: <span class="s">`flow-caller-node - flowId: ${flowIdSelected}`</span>,   <span class="c">// NO (trigger-only)</span>
+    <span class="k">parentProcessId</span>: parentRunLogCollector?.<span class="s">processId</span>,       <span class="c">// link</span>
     parentCancelRunKey,                                          <span class="c">// cancel cascade</span>
     <span class="k">injectedRunLogCollector</span>: flowCallerSubCollector,           <span class="c">// sub-log</span>
   }),
@@ -965,7 +978,7 @@ this.apiV2Queue
           <div class="arrow">↓</div>
 
           <div class="box backend">
-            <div class="box-title"><span class="badge step">D2</span> library síncrono. Mesma estrutura, com billingFlowId</div>
+            <div class="box-title"><span class="badge step">D2</span> <span data-en="synchronous library. Same structure, with billingFlowId" data-pt="library síncrono. Mesma estrutura, com billingFlowId">synchronous library. Same structure, with billingFlowId</span></div>
             <div class="code-block">
 <span class="k">const</span> librarySubCollector =
   parentRunLogCollector?.<span class="t">startLibrarySubRun</span>(parentRunLogNode ?? <span class="k">null</span>) ?? <span class="k">null</span>;
@@ -993,9 +1006,9 @@ this.apiV2Queue
           <div class="arrow">↓</div>
 
           <div class="box decision">
-            <div class="box-title"><span class="badge step">D3</span> nestedFlowResult é usado imediatamente</div>
+            <div class="box-title"><span class="badge step">D3</span> <span data-en="nestedFlowResult is used immediately" data-pt="nestedFlowResult é usado imediatamente">nestedFlowResult is used immediately</span></div>
             <div class="box-desc">
-              Se <code>isFlowCallerRunFailed(nestedFlowResult)</code>, marca <code>errorMessage</code>, <code>errorStatusCode</code> e <code>lastExecutedAt</code> no nó pai. Se deu certo, usa <code>nestedFlowResult.message</code> para popular outputs. Nada disso acontece no trigger-only. O nó pai nunca vê o resultado.
+              <span data-en="If &lt;code&gt;isFlowCallerRunFailed(nestedFlowResult)&lt;/code&gt;, marks &lt;code&gt;errorMessage&lt;/code&gt;, &lt;code&gt;errorStatusCode&lt;/code&gt; and &lt;code&gt;lastExecutedAt&lt;/code&gt; on the parent node. If it succeeded, uses &lt;code&gt;nestedFlowResult.message&lt;/code&gt; to populate outputs. None of this happens in trigger-only. The parent node never sees the result." data-pt="Se &lt;code&gt;isFlowCallerRunFailed(nestedFlowResult)&lt;/code&gt;, marca &lt;code&gt;errorMessage&lt;/code&gt;, &lt;code&gt;errorStatusCode&lt;/code&gt; e &lt;code&gt;lastExecutedAt&lt;/code&gt; no nó pai. Se deu certo, usa &lt;code&gt;nestedFlowResult.message&lt;/code&gt; para popular outputs. Nada disso acontece no trigger-only. O nó pai nunca vê o resultado.">If <code>isFlowCallerRunFailed(nestedFlowResult)</code>, marks <code>errorMessage</code>, <code>errorStatusCode</code> and <code>lastExecutedAt</code> on the parent node. If it succeeded, uses <code>nestedFlowResult.message</code> to populate outputs. None of this happens in trigger-only. The parent node never sees the result.</span>
             </div>
             <div class="box-file">flux.service.ts:5662-5678, 6028-6048</div>
           </div>
@@ -1003,35 +1016,32 @@ this.apiV2Queue
 
         <div class="fn-asides">
           <div class="aside info">
-            <div class="aside-title">🎯 3 coisas que só o síncrono passa</div>
-            <strong>1. parentProcessId.</strong> O run log conecta a execução filha à pai como sub-run.
-            <br><strong>2. parentCancelRunKey.</strong> O cancelamento propaga do pai para o filho automaticamente.
-            <br><strong>3. injectedRunLogCollector.</strong> <code>startFlowCallerSubRun</code> e <code>startLibrarySubRun</code> abrem um coletor filho aninhado no coletor do pai.
-            <br><br>Sem isso, o filho seria uma execução raiz órfã.
+            <div class="aside-title">🎯 <span data-en="3 things only the synchronous passes" data-pt="3 coisas que só o síncrono passa">3 things only the synchronous passes</span></div>
+            <span data-en="&lt;strong&gt;1. parentProcessId.&lt;/strong&gt; The run log connects the child execution to the parent as a sub-run.&lt;br&gt;&lt;strong&gt;2. parentCancelRunKey.&lt;/strong&gt; Cancellation propagates from parent to child automatically.&lt;br&gt;&lt;strong&gt;3. injectedRunLogCollector.&lt;/strong&gt; &lt;code&gt;startFlowCallerSubRun&lt;/code&gt; and &lt;code&gt;startLibrarySubRun&lt;/code&gt; open a child collector nested inside the parent's collector.&lt;br&gt;&lt;br&gt;Without this, the child would be an orphan root execution." data-pt="&lt;strong&gt;1. parentProcessId.&lt;/strong&gt; O run log conecta a execução filha à pai como sub-run.&lt;br&gt;&lt;strong&gt;2. parentCancelRunKey.&lt;/strong&gt; O cancelamento propaga do pai para o filho automaticamente.&lt;br&gt;&lt;strong&gt;3. injectedRunLogCollector.&lt;/strong&gt; &lt;code&gt;startFlowCallerSubRun&lt;/code&gt; e &lt;code&gt;startLibrarySubRun&lt;/code&gt; abrem um coletor filho aninhado no coletor do pai.&lt;br&gt;&lt;br&gt;Sem isso, o filho seria uma execução raiz órfã."><strong>1. parentProcessId.</strong> The run log connects the child execution to the parent as a sub-run.<br><strong>2. parentCancelRunKey.</strong> Cancellation propagates from parent to child automatically.<br><strong>3. injectedRunLogCollector.</strong> <code>startFlowCallerSubRun</code> and <code>startLibrarySubRun</code> open a child collector nested inside the parent's collector.<br><br>Without this, the child would be an orphan root execution.</span>
           </div>
 
           <div class="aside">
-            <div class="aside-title">📎 runType sem sufixo</div>
-            <code>'flow-caller-node - flowId: X'</code> (sem <code>(trigger-only)</code>). Facilita filtrar em logs. <code>WHERE runType LIKE '%(trigger-only)%'</code> pega só os fire-and-forget.
+            <div class="aside-title">📎 <span data-en="runType without suffix" data-pt="runType sem sufixo">runType without suffix</span></div>
+            <span data-en="&lt;code&gt;'flow-caller-node - flowId: X'&lt;/code&gt; (without &lt;code&gt;(trigger-only)&lt;/code&gt;). Makes log filtering easier. &lt;code&gt;WHERE runType LIKE '%(trigger-only)%'&lt;/code&gt; catches only the fire-and-forget." data-pt="&lt;code&gt;'flow-caller-node - flowId: X'&lt;/code&gt; (sem &lt;code&gt;(trigger-only)&lt;/code&gt;). Facilita filtrar em logs. &lt;code&gt;WHERE runType LIKE '%(trigger-only)%'&lt;/code&gt; pega só os fire-and-forget."><code>'flow-caller-node - flowId: X'</code> (without <code>(trigger-only)</code>). Makes log filtering easier. <code>WHERE runType LIKE '%(trigger-only)%'</code> catches only the fire-and-forget.</span>
           </div>
 
           <div class="aside warn">
-            <div class="aside-title">⚠️ nodeCancelContext.run(undefined, ...). Isolamento intencional</div>
-            <code>undefined</code> como primeiro argumento do <code>AsyncLocalStorage.run</code> zera qualquer contexto de cancelamento herdado. O filho começa limpo. O cancelamento vem via <code>parentCancelRunKey</code>, não via herança de AsyncLocalStorage.
+            <div class="aside-title">⚠️ <span data-en="nodeCancelContext.run(undefined, ...). Intentional isolation" data-pt="nodeCancelContext.run(undefined, ...). Isolamento intencional">nodeCancelContext.run(undefined, ...). Intentional isolation</span></div>
+            <span data-en="&lt;code&gt;undefined&lt;/code&gt; as the first argument to &lt;code&gt;AsyncLocalStorage.run&lt;/code&gt; zeroes out any inherited cancellation context. The child starts clean. Cancellation comes via &lt;code&gt;parentCancelRunKey&lt;/code&gt;, not via AsyncLocalStorage inheritance." data-pt="&lt;code&gt;undefined&lt;/code&gt; como primeiro argumento do &lt;code&gt;AsyncLocalStorage.run&lt;/code&gt; zera qualquer contexto de cancelamento herdado. O filho começa limpo. O cancelamento vem via &lt;code&gt;parentCancelRunKey&lt;/code&gt;, não via herança de AsyncLocalStorage."><code>undefined</code> as the first argument to <code>AsyncLocalStorage.run</code> zeroes out any inherited cancellation context. The child starts clean. Cancellation comes via <code>parentCancelRunKey</code>, not via AsyncLocalStorage inheritance.</span>
           </div>
 
           <div class="aside helper">
-            <div class="aside-title">🔧 Comparação lado a lado</div>
+            <div class="aside-title">🔧 <span data-en="Side-by-side comparison" data-pt="Comparação lado a lado">Side-by-side comparison</span></div>
             <table class="field-table">
-              <tr><th>Aspecto</th><th>trigger-only</th><th>síncrono</th></tr>
-              <tr><td>await</td><td>não</td><td>sim</td></tr>
-              <tr><td>catch</td><td>logger e morre</td><td>throw ao pai</td></tr>
-              <tr><td>parentProcessId</td><td>não</td><td>vínculo</td></tr>
-              <tr><td>parentCancelRunKey</td><td>não</td><td>cascade</td></tr>
-              <tr><td>injectedRunLogCollector</td><td>não</td><td>sub-log</td></tr>
-              <tr><td>runType suffix</td><td>(trigger-only)</td><td>não</td></tr>
-              <tr><td>output no nó</td><td>não</td><td>preenchido</td></tr>
-              <tr><td>triggerStatus</td><td>'enqueued'</td><td>não</td></tr>
+              <tr><th><span data-en="Aspect" data-pt="Aspecto">Aspect</span></th><th>trigger-only</th><th><span data-en="synchronous" data-pt="síncrono">synchronous</span></th></tr>
+              <tr><td>await</td><td><span data-en="no" data-pt="não">no</span></td><td><span data-en="yes" data-pt="sim">yes</span></td></tr>
+              <tr><td>catch</td><td><span data-en="logger and dies" data-pt="logger e morre">logger and dies</span></td><td><span data-en="throw to parent" data-pt="throw ao pai">throw to parent</span></td></tr>
+              <tr><td>parentProcessId</td><td><span data-en="no" data-pt="não">no</span></td><td><span data-en="link" data-pt="vínculo">link</span></td></tr>
+              <tr><td>parentCancelRunKey</td><td><span data-en="no" data-pt="não">no</span></td><td>cascade</td></tr>
+              <tr><td>injectedRunLogCollector</td><td><span data-en="no" data-pt="não">no</span></td><td>sub-log</td></tr>
+              <tr><td>runType suffix</td><td>(trigger-only)</td><td><span data-en="no" data-pt="não">no</span></td></tr>
+              <tr><td><span data-en="output on the node" data-pt="output no nó">output on the node</span></td><td><span data-en="no" data-pt="não">no</span></td><td><span data-en="populated" data-pt="preenchido">populated</span></td></tr>
+              <tr><td>triggerStatus</td><td>'enqueued'</td><td><span data-en="no" data-pt="não">no</span></td></tr>
             </table>
           </div>
         </div>
@@ -1041,26 +1051,26 @@ this.apiV2Queue
 
   <!-- SUMMARY -->
   <div class="note info" style="margin-top:32px">
-    <strong>Resumo. O que sai de 1.1b:</strong>
-    <br>Trigger-only. Novo job na fila <code>api-v2</code> (com runType prefixado). Nó pai atualizado com <code>triggerStatus: 'enqueued'</code> mais <code>triggerMessage</code> e <code>lastTriggeredAt</code>. A execução atual continua sem esperar.
-    <br>Síncrono. Sub-run completo executado dentro da execução pai, com run log aninhado (<code>startFlowCallerSubRun</code> ou <code>startLibrarySubRun</code>). Cancelamento em cascata. Output incorporado no nó pai via <code>nestedFlowResult.message</code>.
-    <br>Assimetria. Só o <code>libraryNode</code> passa <code>billingFlowId</code>. O <code>flowCallerNode</code> não passa.
-    <br>Falha silenciosa possível no trigger-only. O <code>.catch()</code> registra log, mas o nó continua marcado como <em>enqueued</em>.
+    <span data-en="&lt;strong&gt;Summary. What comes out of 1.1b:&lt;/strong&gt;&lt;br&gt;Trigger-only. New job on the &lt;code&gt;api-v2&lt;/code&gt; queue (with prefixed runType). Parent node updated with &lt;code&gt;triggerStatus: 'enqueued'&lt;/code&gt; plus &lt;code&gt;triggerMessage&lt;/code&gt; and &lt;code&gt;lastTriggeredAt&lt;/code&gt;. The current execution continues without waiting.&lt;br&gt;Synchronous. Full sub-run executed inside the parent execution, with nested run log (&lt;code&gt;startFlowCallerSubRun&lt;/code&gt; or &lt;code&gt;startLibrarySubRun&lt;/code&gt;). Cascade cancellation. Output incorporated into the parent node via &lt;code&gt;nestedFlowResult.message&lt;/code&gt;.&lt;br&gt;Asymmetry. Only &lt;code&gt;libraryNode&lt;/code&gt; passes &lt;code&gt;billingFlowId&lt;/code&gt;. &lt;code&gt;flowCallerNode&lt;/code&gt; does not.&lt;br&gt;Possible silent failure in trigger-only. &lt;code&gt;.catch()&lt;/code&gt; logs, but the node remains marked as &lt;em&gt;enqueued&lt;/em&gt;." data-pt="&lt;strong&gt;Resumo. O que sai de 1.1b:&lt;/strong&gt;&lt;br&gt;Trigger-only. Novo job na fila &lt;code&gt;api-v2&lt;/code&gt; (com runType prefixado). Nó pai atualizado com &lt;code&gt;triggerStatus: 'enqueued'&lt;/code&gt; mais &lt;code&gt;triggerMessage&lt;/code&gt; e &lt;code&gt;lastTriggeredAt&lt;/code&gt;. A execução atual continua sem esperar.&lt;br&gt;Síncrono. Sub-run completo executado dentro da execução pai, com run log aninhado (&lt;code&gt;startFlowCallerSubRun&lt;/code&gt; ou &lt;code&gt;startLibrarySubRun&lt;/code&gt;). Cancelamento em cascata. Output incorporado no nó pai via &lt;code&gt;nestedFlowResult.message&lt;/code&gt;.&lt;br&gt;Assimetria. Só o &lt;code&gt;libraryNode&lt;/code&gt; passa &lt;code&gt;billingFlowId&lt;/code&gt;. O &lt;code&gt;flowCallerNode&lt;/code&gt; não passa.&lt;br&gt;Falha silenciosa possível no trigger-only. O &lt;code&gt;.catch()&lt;/code&gt; registra log, mas o nó continua marcado como &lt;em&gt;enqueued&lt;/em&gt;."><strong>Summary. What comes out of 1.1b:</strong>
+    <br>Trigger-only. New job on the <code>api-v2</code> queue (with prefixed runType). Parent node updated with <code>triggerStatus: 'enqueued'</code> plus <code>triggerMessage</code> and <code>lastTriggeredAt</code>. The current execution continues without waiting.
+    <br>Synchronous. Full sub-run executed inside the parent execution, with nested run log (<code>startFlowCallerSubRun</code> or <code>startLibrarySubRun</code>). Cascade cancellation. Output incorporated into the parent node via <code>nestedFlowResult.message</code>.
+    <br>Asymmetry. Only <code>libraryNode</code> passes <code>billingFlowId</code>. <code>flowCallerNode</code> does not.
+    <br>Possible silent failure in trigger-only. <code>.catch()</code> logs, but the node remains marked as <em>enqueued</em>.</span>
   </div>
 
   <div class="note">
-    <strong>Observações para migração:</strong>
-    <br>Trigger-only e síncrono precisam ser migrados juntos. Se o worker Temporal absorver a execução, mas o backend ainda chama <code>this.apiV2(...)</code> no caminho síncrono, todas as flags <code>parentProcessId</code>, <code>parentCancelRunKey</code> e <code>injectedRunLogCollector</code> deixam de existir. O worker isola cada nó. Não compartilha esse contexto.
-    <br>Solução natural. Quando o pai executa no Temporal, chamar sub-flow vira <code>await workflow.executeChildWorkflow(subAgentWorkflow, ...)</code>. Já é await-able (síncrono do ponto de vista lógico) e tem cancelamento em cascata builtin. Trigger-only vira <code>await workflow.startChild(subAgentWorkflow, { parentClosePolicy: ABANDON })</code>.
-    <br>Rastreabilidade. O Temporal tem workflow-id relationship (parent/child) que substitui <code>parentProcessId</code>. O run log aninhado (<code>startFlowCallerSubRun</code>) precisa ser reescrito para usar as APIs do Temporal ou continuar no Postgres com a mesma estrutura.
-    <br>Bug do <code>.catch()</code> silencioso. Corrigir em conjunto. No Temporal, o start de child workflow pode falhar (o workflow existe? a task queue está saudável?). Precisa propagar status real ao nó em vez de assumir <em>enqueued</em>.
-    <br><code>billingFlowId</code> continua fazendo sentido no worker. É passado como argumento do workflow. Nenhum impacto arquitetural.
-    <br>Cuidado com AsyncLocalStorage. <code>nodeCancelContext.run(undefined, ...)</code> é um padrão específico do fluxo síncrono atual. No worker Temporal, cancelamento é via CancellationScope. É um modelo diferente. Não tentar portar 1 para 1.
+    <span data-en="&lt;strong&gt;Migration notes:&lt;/strong&gt;&lt;br&gt;Trigger-only and synchronous need to be migrated together. If the Temporal worker absorbs the execution, but the backend still calls &lt;code&gt;this.apiV2(...)&lt;/code&gt; on the synchronous path, all the &lt;code&gt;parentProcessId&lt;/code&gt;, &lt;code&gt;parentCancelRunKey&lt;/code&gt; and &lt;code&gt;injectedRunLogCollector&lt;/code&gt; flags cease to exist. The worker isolates each node. It doesn't share that context.&lt;br&gt;Natural solution. When the parent runs in Temporal, calling a sub-flow becomes &lt;code&gt;await workflow.executeChildWorkflow(subAgentWorkflow, ...)&lt;/code&gt;. It's already await-able (logically synchronous) and has built-in cascade cancellation. Trigger-only becomes &lt;code&gt;await workflow.startChild(subAgentWorkflow, { parentClosePolicy: ABANDON })&lt;/code&gt;.&lt;br&gt;Traceability. Temporal has a workflow-id relationship (parent/child) that replaces &lt;code&gt;parentProcessId&lt;/code&gt;. The nested run log (&lt;code&gt;startFlowCallerSubRun&lt;/code&gt;) needs to be rewritten to use Temporal APIs or continue in Postgres with the same structure.&lt;br&gt;Silent &lt;code&gt;.catch()&lt;/code&gt; bug. Fix together. In Temporal, starting a child workflow can fail (does the workflow exist? is the task queue healthy?). Real status must be propagated to the node instead of assuming &lt;em&gt;enqueued&lt;/em&gt;.&lt;br&gt;&lt;code&gt;billingFlowId&lt;/code&gt; still makes sense in the worker. It's passed as a workflow argument. No architectural impact.&lt;br&gt;Careful with AsyncLocalStorage. &lt;code&gt;nodeCancelContext.run(undefined, ...)&lt;/code&gt; is a specific pattern of the current synchronous flow. In the Temporal worker, cancellation is via CancellationScope. It's a different model. Don't try to port 1-to-1." data-pt="&lt;strong&gt;Observações para migração:&lt;/strong&gt;&lt;br&gt;Trigger-only e síncrono precisam ser migrados juntos. Se o worker Temporal absorver a execução, mas o backend ainda chama &lt;code&gt;this.apiV2(...)&lt;/code&gt; no caminho síncrono, todas as flags &lt;code&gt;parentProcessId&lt;/code&gt;, &lt;code&gt;parentCancelRunKey&lt;/code&gt; e &lt;code&gt;injectedRunLogCollector&lt;/code&gt; deixam de existir. O worker isola cada nó. Não compartilha esse contexto.&lt;br&gt;Solução natural. Quando o pai executa no Temporal, chamar sub-flow vira &lt;code&gt;await workflow.executeChildWorkflow(subAgentWorkflow, ...)&lt;/code&gt;. Já é await-able (síncrono do ponto de vista lógico) e tem cancelamento em cascata builtin. Trigger-only vira &lt;code&gt;await workflow.startChild(subAgentWorkflow, { parentClosePolicy: ABANDON })&lt;/code&gt;.&lt;br&gt;Rastreabilidade. O Temporal tem workflow-id relationship (parent/child) que substitui &lt;code&gt;parentProcessId&lt;/code&gt;. O run log aninhado (&lt;code&gt;startFlowCallerSubRun&lt;/code&gt;) precisa ser reescrito para usar as APIs do Temporal ou continuar no Postgres com a mesma estrutura.&lt;br&gt;Bug do &lt;code&gt;.catch()&lt;/code&gt; silencioso. Corrigir em conjunto. No Temporal, o start de child workflow pode falhar (o workflow existe? a task queue está saudável?). Precisa propagar status real ao nó em vez de assumir &lt;em&gt;enqueued&lt;/em&gt;.&lt;br&gt;&lt;code&gt;billingFlowId&lt;/code&gt; continua fazendo sentido no worker. É passado como argumento do workflow. Nenhum impacto arquitetural.&lt;br&gt;Cuidado com AsyncLocalStorage. &lt;code&gt;nodeCancelContext.run(undefined, ...)&lt;/code&gt; é um padrão específico do fluxo síncrono atual. No worker Temporal, cancelamento é via CancellationScope. É um modelo diferente. Não tentar portar 1 para 1."><strong>Migration notes:</strong>
+    <br>Trigger-only and synchronous need to be migrated together. If the Temporal worker absorbs the execution, but the backend still calls <code>this.apiV2(...)</code> on the synchronous path, all the <code>parentProcessId</code>, <code>parentCancelRunKey</code> and <code>injectedRunLogCollector</code> flags cease to exist. The worker isolates each node. It doesn't share that context.
+    <br>Natural solution. When the parent runs in Temporal, calling a sub-flow becomes <code>await workflow.executeChildWorkflow(subAgentWorkflow, ...)</code>. It's already await-able (logically synchronous) and has built-in cascade cancellation. Trigger-only becomes <code>await workflow.startChild(subAgentWorkflow, { parentClosePolicy: ABANDON })</code>.
+    <br>Traceability. Temporal has a workflow-id relationship (parent/child) that replaces <code>parentProcessId</code>. The nested run log (<code>startFlowCallerSubRun</code>) needs to be rewritten to use Temporal APIs or continue in Postgres with the same structure.
+    <br>Silent <code>.catch()</code> bug. Fix together. In Temporal, starting a child workflow can fail (does the workflow exist? is the task queue healthy?). Real status must be propagated to the node instead of assuming <em>enqueued</em>.
+    <br><code>billingFlowId</code> still makes sense in the worker. It's passed as a workflow argument. No architectural impact.
+    <br>Careful with AsyncLocalStorage. <code>nodeCancelContext.run(undefined, ...)</code> is a specific pattern of the current synchronous flow. In the Temporal worker, cancellation is via CancellationScope. It's a different model. Don't try to port 1-to-1.</span>
   </div>
 
   <!-- FOOTER NAV -->
   <div class="page-footer-nav">
-    <a href="../index.html#step-1-1" class="back-btn">← Voltar ao diagrama principal</a>
+    <a href="../index.html#step-1-1" class="back-btn"><span data-en="← Back to main diagram" data-pt="← Voltar ao diagrama principal">← Back to main diagram</span></a>
   </div>
 
 </div>
@@ -1094,5 +1104,6 @@ this.apiV2Queue
   });
 })();
 </script>
+<script src="../_assets/i18n.js" defer></script>
 </body>
 </html>

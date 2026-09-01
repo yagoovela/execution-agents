@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Flux — Algoritmo do DAG (Arquitetura v2)</title>
+<title>Flux — DAG algorithm (v2 architecture)</title>
+<link rel="stylesheet" href="_assets/i18n.css">
+<link rel="stylesheet" href="_assets/header.css">
 <style>
   * { box-sizing: border-box; }
   body {
@@ -393,81 +395,99 @@
 </head>
 <body>
 <div class="container">
+<div class="doc-nav">
+  <nav class="doc-tabs" aria-label="Documentation sections">
+    <a href="index.html" class="doc-tab"><span data-en="Current architecture" data-pt="Arquitetura atual">Current architecture</span></a>
+    <a href="arquitetura-v2.html" class="doc-tab is-active"><span data-en="v2 architecture" data-pt="Arquitetura v2">v2 architecture</span></a>
+    <a href="arquitetura-v2-complemento.html" class="doc-tab"><span data-en="Plan as tasks" data-pt="Plano em tarefas">Plan as tasks</span></a>
+    <a href="timeline/index.html" class="doc-tab"><span data-en="Timeline" data-pt="Timeline">Timeline</span></a>
+  </nav>
+  <div class="lang-sw" role="group" aria-label="Language">
+    <button type="button" data-lang="en" aria-pressed="true">EN-US</button>
+    <button type="button" data-lang="pt" aria-pressed="false">PT-BR</button>
+  </div>
+</div>
+
+
+
 
   <div class="top-nav">
     <a href="arquitetura-v2.html" class="back-btn">
       <span>←</span>
-      <span>Voltar para Arquitetura v2</span>
+      <span data-en="Back to v2 architecture" data-pt="Voltar para Arquitetura v2">Back to v2 architecture</span>
     </a>
-    <span class="step-badge">
-      <span>◈</span>
-      <span>Aprofundamento — Passo 2.2</span>
-    </span>
+    <div style="display:flex;gap:10px;align-items:center">
+      <span class="step-badge">
+        <span>◈</span>
+        <span data-en="Deep dive — Step 2.2" data-pt="Aprofundamento — Passo 2.2">Deep dive — Step 2.2</span>
+      </span>
+      
+    </div>
   </div>
 
-  <h1>Algoritmo do DAG</h1>
-  <p class="subtitle">Como o workflow decide o que roda, em que ordem e o que pode rodar em paralelo.</p>
+  <h1><span data-en="DAG algorithm" data-pt="Algoritmo do DAG">DAG algorithm</span></h1>
+  <p class="subtitle"><span data-en="How the workflow decides what runs, in what order, and what can run in parallel." data-pt="Como o workflow decide o que roda, em que ordem e o que pode rodar em paralelo.">How the workflow decides what runs, in what order, and what can run in parallel.</span></p>
 
   <!-- ============================================ -->
-  <h2><span class="num">1</span> O que é o DAG aqui</h2>
+  <h2><span class="num">1</span> <span data-en="What the DAG is here" data-pt="O que é o DAG aqui">What the DAG is here</span></h2>
 
   <p>
-    <strong>DAG</strong> (Directed Acyclic Graph) é a estrutura de dados que o workflow constrói uma vez, no início da execução (passo 2.2 da <a href="arquitetura-v2.html">arquitetura v2</a>). Usa para dirigir todo o loop de execução da FASE 3.
+    <strong>DAG</strong> <span data-en="(Directed Acyclic Graph) is the data structure the workflow builds once at the start of execution (step 2.2 of the" data-pt="(Directed Acyclic Graph) é a estrutura de dados que o workflow constrói uma vez, no início da execução (passo 2.2 da">(Directed Acyclic Graph) is the data structure the workflow builds once at the start of execution (step 2.2 of the</span> <a href="arquitetura-v2.html"><span data-en="v2 architecture" data-pt="arquitetura v2">v2 architecture</span></a>). <span data-en="Used to drive the entire PHASE 3 execution loop." data-pt="Usa para dirigir todo o loop de execução da FASE 3.">Used to drive the entire PHASE 3 execution loop.</span>
   </p>
   <p>
-    A ideia central é simples. <strong>Um nó só pode rodar quando todas as coisas de que ele depende já rodaram</strong>. Nós que não dependem uns dos outros podem rodar <strong>em paralelo</strong>. O DAG é a forma matemática de representar essas dependências. O algoritmo de "ondas topológicas" é a forma de executá-lo maximizando paralelismo.
+    <span data-en="The core idea is simple. &lt;strong&gt;A node can only run once everything it depends on has finished&lt;/strong&gt;. Nodes that do not depend on each other can run &lt;strong&gt;in parallel&lt;/strong&gt;. The DAG is the mathematical way of representing those dependencies. The &quot;topological waves&quot; algorithm is the way to execute it while maximising parallelism." data-pt="A ideia central é simples. &lt;strong&gt;Um nó só pode rodar quando todas as coisas de que ele depende já rodaram&lt;/strong&gt;. Nós que não dependem uns dos outros podem rodar &lt;strong&gt;em paralelo&lt;/strong&gt;. O DAG é a forma matemática de representar essas dependências. O algoritmo de &quot;ondas topológicas&quot; é a forma de executá-lo maximizando paralelismo.">The core idea is simple. &lt;strong&gt;A node can only run once everything it depends on has finished&lt;/strong&gt;. Nodes that do not depend on each other can run &lt;strong&gt;in parallel&lt;/strong&gt;. The DAG is the mathematical way of representing those dependencies. The &quot;topological waves&quot; algorithm is the way to execute it while maximising parallelism.</span>
   </p>
 
   <div class="callout info">
-    <strong>Por que "acíclico":</strong> se A depende de B e B depende de A, ninguém pode começar. O algoritmo detecta e remove ciclos (chamados <em>back-edges</em>) antes de começar a executar.
+    <strong><span data-en="Why &quot;acyclic&quot;:" data-pt="Por que &quot;acíclico&quot;:">Why "acyclic":</span></strong> <span data-en="if A depends on B and B depends on A, nobody can start. The algorithm detects and removes cycles (called &lt;em&gt;back-edges&lt;/em&gt;) before starting to execute." data-pt="se A depende de B e B depende de A, ninguém pode começar. O algoritmo detecta e remove ciclos (chamados &lt;em&gt;back-edges&lt;/em&gt;) antes de começar a executar.">if A depends on B and B depends on A, nobody can start. The algorithm detects and removes cycles (called &lt;em&gt;back-edges&lt;/em&gt;) before starting to execute.</span>
   </div>
 
   <!-- ============================================ -->
-  <h2><span class="num">2</span> Os dois tipos de dependência</h2>
+  <h2><span class="num">2</span> <span data-en="The two kinds of dependency" data-pt="Os dois tipos de dependência">The two kinds of dependency</span></h2>
 
-  <p>Aqui está o ponto crítico que a maioria dos DAGs de ferramentas de flow ignora. <strong>A dependência não vem só das arestas visíveis do canvas</strong>. Ela pode vir também das refs <code>{{...}}</code> escondidas dentro do texto de configuração do nó. O algoritmo precisa considerar os dois.</p>
+  <p><span data-en="Here is the critical point most flow-tool DAGs miss. &lt;strong&gt;Dependency does not come only from edges visible on the canvas&lt;/strong&gt;. It can also come from &lt;code&gt;{{...}}&lt;/code&gt; refs hidden inside the node's config text. The algorithm has to consider both." data-pt="Aqui está o ponto crítico que a maioria dos DAGs de ferramentas de flow ignora. &lt;strong&gt;A dependência não vem só das arestas visíveis do canvas&lt;/strong&gt;. Ela pode vir também das refs &lt;code&gt;{{...}}&lt;/code&gt; escondidas dentro do texto de configuração do nó. O algoritmo precisa considerar os dois.">Here is the critical point most flow-tool DAGs miss. &lt;strong&gt;Dependency does not come only from edges visible on the canvas&lt;/strong&gt;. It can also come from &lt;code&gt;{{...}}&lt;/code&gt; refs hidden inside the node's config text. The algorithm has to consider both.</span></p>
 
   <div class="def-card edge">
     <div class="def-card-title">
-      <span class="kind-tag edge">Tipo A</span>
-      <span>Arestas explícitas (edges do canvas)</span>
+      <span class="kind-tag edge" data-en="Type A" data-pt="Tipo A">Type A</span>
+      <span data-en="Explicit edges (canvas edges)" data-pt="Arestas explícitas (edges do canvas)">Explicit edges (canvas edges)</span>
     </div>
     <p style="margin:0">
-      São os "fios" que o usuário desenha ligando nó a nó no editor. Ficam salvos na tabela <code>flows_nodes_edges</code>. Cada aresta tem um <code>source</code>, um <code>target</code> e um <code>type</code> (control, condition, data, side-effect).
+      <span data-en="The &quot;wires&quot; the user draws linking node to node in the editor. Stored in the &lt;code&gt;flows_nodes_edges&lt;/code&gt; table. Each edge has a &lt;code&gt;source&lt;/code&gt;, a &lt;code&gt;target&lt;/code&gt; and a &lt;code&gt;type&lt;/code&gt; (control, condition, data, side-effect)." data-pt="São os &quot;fios&quot; que o usuário desenha ligando nó a nó no editor. Ficam salvos na tabela &lt;code&gt;flows_nodes_edges&lt;/code&gt;. Cada aresta tem um &lt;code&gt;source&lt;/code&gt;, um &lt;code&gt;target&lt;/code&gt; e um &lt;code&gt;type&lt;/code&gt; (control, condition, data, side-effect).">The &quot;wires&quot; the user draws linking node to node in the editor. Stored in the &lt;code&gt;flows_nodes_edges&lt;/code&gt; table. Each edge has a &lt;code&gt;source&lt;/code&gt;, a &lt;code&gt;target&lt;/code&gt; and a &lt;code&gt;type&lt;/code&gt; (control, condition, data, side-effect).</span>
     </p>
     <p style="margin:8px 0 0 0">
-      <strong>Toda aresta explícita é dependência</strong>. O nó <code>target</code> não pode começar antes de o <code>source</code> terminar.
+      <strong><span data-en="Every explicit edge is a dependency" data-pt="Toda aresta explícita é dependência">Every explicit edge is a dependency</span></strong>. <span data-en="The &lt;code&gt;target&lt;/code&gt; node cannot start before &lt;code&gt;source&lt;/code&gt; finishes." data-pt="O nó &lt;code&gt;target&lt;/code&gt; não pode começar antes de o &lt;code&gt;source&lt;/code&gt; terminar.">The &lt;code&gt;target&lt;/code&gt; node cannot start before &lt;code&gt;source&lt;/code&gt; finishes.</span>
     </p>
   </div>
 
   <div class="def-card ref">
     <div class="def-card-title">
-      <span class="kind-tag ref">Tipo B</span>
-      <span>Refs <code>{{...}}</code> dentro do texto do nó</span>
+      <span class="kind-tag ref" data-en="Type B" data-pt="Tipo B">Type B</span>
+      <span><code>{{...}}</code> <span data-en="refs inside the node's text" data-pt="Refs &lt;code&gt;{{...}}&lt;/code&gt; dentro do texto do nó">refs inside the node's text</span></span>
     </div>
     <p style="margin:0 0 8px 0">
-      São placeholders que o usuário digita dentro dos campos do nó (prompts de LLM, corpos de requisição HTTP, expressões de script, etc.). Nem toda ref é dependência de nó. Depende do <em>alvo</em> que ela referencia.
+      <span data-en="Placeholders the user types inside the node's fields (LLM prompts, HTTP request bodies, script expressions, etc.). Not every ref is a node dependency. It depends on the &lt;em&gt;target&lt;/em&gt; it references." data-pt="São placeholders que o usuário digita dentro dos campos do nó (prompts de LLM, corpos de requisição HTTP, expressões de script, etc.). Nem toda ref é dependência de nó. Depende do &lt;em&gt;alvo&lt;/em&gt; que ela referencia.">Placeholders the user types inside the node's fields (LLM prompts, HTTP request bodies, script expressions, etc.). Not every ref is a node dependency. It depends on the &lt;em&gt;target&lt;/em&gt; it references.</span>
     </p>
 
     <div class="ref-example">
       <span class="tag">DEP</span>
-      <code>{{TextGen1.output}}</code>. Aponta para a saída de outro nó do flow. &nbsp;<span class="kind-tag dep">cria dep</span>
+      <code>{{TextGen1.output}}</code>. <span data-en="Points to another node's output in the flow." data-pt="Aponta para a saída de outro nó do flow.">Points to another node's output in the flow.</span> &nbsp;<span class="kind-tag dep" data-en="creates dep" data-pt="cria dep">creates dep</span>
     </div>
     <div class="ref-example">
       <span class="tag">DEP</span>
-      <code>{{WebSearch_results}}</code>. Mesma coisa via alias humanizado. &nbsp;<span class="kind-tag dep">cria dep</span>
+      <code>{{WebSearch_results}}</code>. <span data-en="Same thing via a humanised alias." data-pt="Mesma coisa via alias humanizado.">Same thing via a humanised alias.</span> &nbsp;<span class="kind-tag dep" data-en="creates dep" data-pt="cria dep">creates dep</span>
     </div>
     <div class="ref-example">
-      <span class="tag no-dep">SEM DEP</span>
-      <code>{{input.body.topic}}</code>. Vem do request/trigger, não de um nó. &nbsp;<span class="kind-tag no-dep">sem dep</span>
+      <span class="tag no-dep" data-en="NO DEP" data-pt="SEM DEP">NO DEP</span>
+      <code>{{input.body.topic}}</code>. <span data-en="Comes from the request/trigger, not a node." data-pt="Vem do request/trigger, não de um nó.">Comes from the request/trigger, not a node.</span> &nbsp;<span class="kind-tag no-dep" data-en="no dep" data-pt="sem dep">no dep</span>
     </div>
     <div class="ref-example">
-      <span class="tag no-dep">SEM DEP</span>
-      <code>{{context.user.email}}</code>. Vem do contexto global (user/space). &nbsp;<span class="kind-tag no-dep">sem dep</span>
+      <span class="tag no-dep" data-en="NO DEP" data-pt="SEM DEP">NO DEP</span>
+      <code>{{context.user.email}}</code>. <span data-en="Comes from global context (user/space)." data-pt="Vem do contexto global (user/space).">Comes from global context (user/space).</span> &nbsp;<span class="kind-tag no-dep" data-en="no dep" data-pt="sem dep">no dep</span>
     </div>
     <div class="ref-example">
-      <span class="tag no-dep">SEM DEP</span>
-      <code>{{env.MY_API_KEY}}</code>. Vem de variáveis do workspace. &nbsp;<span class="kind-tag no-dep">sem dep</span>
+      <span class="tag no-dep" data-en="NO DEP" data-pt="SEM DEP">NO DEP</span>
+      <code>{{env.MY_API_KEY}}</code>. <span data-en="Comes from workspace variables." data-pt="Vem de variáveis do workspace.">Comes from workspace variables.</span> &nbsp;<span class="kind-tag no-dep" data-en="no dep" data-pt="sem dep">no dep</span>
     </div>
   </div>
 
@@ -475,175 +495,175 @@
     <table>
       <thead>
         <tr>
-          <th>Alvo da ref</th>
-          <th>Exemplo</th>
-          <th>Cria dep no DAG?</th>
-          <th>Resolvido de onde</th>
+          <th data-en="Ref target" data-pt="Alvo da ref">Ref target</th>
+          <th data-en="Example" data-pt="Exemplo">Example</th>
+          <th data-en="Creates DAG dep?" data-pt="Cria dep no DAG?">Creates DAG dep?</th>
+          <th data-en="Resolved from" data-pt="Resolvido de onde">Resolved from</th>
         </tr>
       </thead>
       <tbody>
         <tr>
-          <td>Outro nó do flow</td>
+          <td><span data-en="Another node in the flow" data-pt="Outro nó do flow">Another node in the flow</span></td>
           <td><code>{{NodeLabel.field}}</code></td>
-          <td><span class="kind-tag dep">SIM</span></td>
-          <td><code>node_executions.output_data</code> do nó fonte</td>
+          <td><span class="kind-tag dep" data-en="YES" data-pt="SIM">YES</span></td>
+          <td><code>node_executions.output_data</code> <span data-en="of the source node" data-pt="do nó fonte">of the source node</span></td>
         </tr>
         <tr>
-          <td>Entrada do trigger</td>
+          <td><span data-en="Trigger input" data-pt="Entrada do trigger">Trigger input</span></td>
           <td><code>{{input.body.x}}</code></td>
-          <td><span class="kind-tag no-dep">NÃO</span></td>
-          <td>Entrada do workflow (payload do request)</td>
+          <td><span class="kind-tag no-dep" data-en="NO" data-pt="NÃO">NO</span></td>
+          <td><span data-en="Workflow input (request payload)" data-pt="Entrada do workflow (payload do request)">Workflow input (request payload)</span></td>
         </tr>
         <tr>
-          <td>Contexto global</td>
+          <td><span data-en="Global context" data-pt="Contexto global">Global context</span></td>
           <td><code>{{context.user.id}}</code></td>
-          <td><span class="kind-tag no-dep">NÃO</span></td>
-          <td>Contexto da execução (user, space, session)</td>
+          <td><span class="kind-tag no-dep" data-en="NO" data-pt="NÃO">NO</span></td>
+          <td><span data-en="Execution context (user, space, session)" data-pt="Contexto da execução (user, space, session)">Execution context (user, space, session)</span></td>
         </tr>
         <tr>
-          <td>Variáveis do workspace</td>
+          <td><span data-en="Workspace variables" data-pt="Variáveis do workspace">Workspace variables</span></td>
           <td><code>{{env.MY_KEY}}</code></td>
-          <td><span class="kind-tag no-dep">NÃO</span></td>
-          <td>Config do workspace / segredos</td>
+          <td><span class="kind-tag no-dep" data-en="NO" data-pt="NÃO">NO</span></td>
+          <td><span data-en="Workspace config / secrets" data-pt="Config do workspace / segredos">Workspace config / secrets</span></td>
         </tr>
         <tr>
           <td>Loop context (arrayNode)</td>
           <td><code>{{item.name}}</code></td>
-          <td><span class="kind-tag no-dep">NÃO*</span></td>
-          <td>Iteração corrente do array. *O arrayNode em si é dep, o <code>item</code> não é.</td>
+          <td><span class="kind-tag no-dep" data-en="NO*" data-pt="NÃO*">NO*</span></td>
+          <td><span data-en="Current array iteration. *arrayNode itself is a dep, &lt;code&gt;item&lt;/code&gt; is not." data-pt="Iteração corrente do array. *O arrayNode em si é dep, o &lt;code&gt;item&lt;/code&gt; não é.">Current array iteration. *arrayNode itself is a dep, <code>item</code> is not.</span></td>
         </tr>
       </tbody>
     </table>
   </div>
 
   <div class="callout warn">
-    <strong>Consequência prática:</strong> se o algoritmo só olhasse as arestas, um nó com <code>{{TextGen1.output}}</code> no prompt <em>sem aresta explícita para TextGen1</em> tentaria rodar antes de <code>TextGen1</code>. Resultado: substituição falharia e a execução quebraria. Por isso o passo 2.2 <strong>escaneia refs além das arestas</strong>.
+    <strong><span data-en="Practical consequence:" data-pt="Consequência prática:">Practical consequence:</span></strong> <span data-en="if the algorithm only looked at edges, a node with &lt;code&gt;{{TextGen1.output}}&lt;/code&gt; in the prompt &lt;em&gt;without an explicit edge to TextGen1&lt;/em&gt; would try to run before &lt;code&gt;TextGen1&lt;/code&gt;. Result: substitution would fail and execution would break. That is why step 2.2 &lt;strong&gt;scans refs beyond edges&lt;/strong&gt;." data-pt="se o algoritmo só olhasse as arestas, um nó com &lt;code&gt;{{TextGen1.output}}&lt;/code&gt; no prompt &lt;em&gt;sem aresta explícita para TextGen1&lt;/em&gt; tentaria rodar antes de &lt;code&gt;TextGen1&lt;/code&gt;. Resultado: substituição falharia e a execução quebraria. Por isso o passo 2.2 &lt;strong&gt;escaneia refs além das arestas&lt;/strong&gt;.">if the algorithm only looked at edges, a node with &lt;code&gt;{{TextGen1.output}}&lt;/code&gt; in the prompt &lt;em&gt;without an explicit edge to TextGen1&lt;/em&gt; would try to run before &lt;code&gt;TextGen1&lt;/code&gt;. Result: substitution would fail and execution would break. That is why step 2.2 &lt;strong&gt;scans refs beyond edges&lt;/strong&gt;.</span>
   </div>
 
   <!-- ============================================ -->
-  <h2><span class="num">3</span> O algoritmo passo a passo</h2>
+  <h2><span class="num">3</span> <span data-en="The algorithm step by step" data-pt="O algoritmo passo a passo">The algorithm step by step</span></h2>
 
   <p>
-    Rodando dentro do workflow Temporal, sobre o snapshot congelado no enqueue. Puro, sem I/O. Só transformação de dados.
+    <span data-en="Runs inside the Temporal workflow, over the snapshot frozen at enqueue. Pure, no I/O. Only data transformation." data-pt="Rodando dentro do workflow Temporal, sobre o snapshot congelado no enqueue. Puro, sem I/O. Só transformação de dados.">Runs inside the Temporal workflow, over the snapshot frozen at enqueue. Pure, no I/O. Only data transformation.</span>
   </p>
 
   <div class="algo-steps">
     <div class="algo-step">
       <div class="algo-num">1</div>
       <div class="algo-content">
-        <strong>Seed com todos os nós</strong>
-        <br>Cria mapa <code>nodes: Map&lt;nodeId, {type, ...}&gt;</code> a partir da topologia. Inicializa <code>adjacency: Map&lt;nodeId, Set&lt;nodeId&gt;&gt;</code> vazio e <code>inDegree: Map&lt;nodeId, number&gt;</code> zerado.
+        <strong><span data-en="Seed with all nodes" data-pt="Seed com todos os nós">Seed with all nodes</span></strong>
+        <br><span data-en="Builds map &lt;code&gt;nodes: Map&amp;lt;nodeId, {type, ...}&amp;gt;&lt;/code&gt; from the topology. Initialises empty &lt;code&gt;adjacency: Map&amp;lt;nodeId, Set&amp;lt;nodeId&amp;gt;&amp;gt;&lt;/code&gt; and zeroed &lt;code&gt;inDegree: Map&amp;lt;nodeId, number&amp;gt;&lt;/code&gt;." data-pt="Cria mapa &lt;code&gt;nodes: Map&amp;lt;nodeId, {type, ...}&amp;gt;&lt;/code&gt; a partir da topologia. Inicializa &lt;code&gt;adjacency: Map&amp;lt;nodeId, Set&amp;lt;nodeId&amp;gt;&amp;gt;&lt;/code&gt; vazio e &lt;code&gt;inDegree: Map&amp;lt;nodeId, number&amp;gt;&lt;/code&gt; zerado.">Builds map <code>nodes: Map&lt;nodeId, {type, ...}&gt;</code> from the topology. Initialises empty <code>adjacency: Map&lt;nodeId, Set&lt;nodeId&gt;&gt;</code> and zeroed <code>inDegree: Map&lt;nodeId, number&gt;</code>.</span>
       </div>
     </div>
 
     <div class="algo-step">
       <div class="algo-num">2</div>
       <div class="algo-content">
-        <strong>Processa arestas explícitas</strong>
-        <br>Para cada aresta <code>(source, target, type)</code> da topologia:
-        <br>• Adiciona <code>target</code> em <code>adjacency[source]</code>.
-        <br>• Incrementa <code>inDegree[target]</code>.
-        <br>• Guarda o <code>type</code> para usar em pruning de <code>conditionNode</code>.
+        <strong><span data-en="Process explicit edges" data-pt="Processa arestas explícitas">Process explicit edges</span></strong>
+        <br><span data-en="For each &lt;code&gt;(source, target, type)&lt;/code&gt; edge in the topology:" data-pt="Para cada aresta &lt;code&gt;(source, target, type)&lt;/code&gt; da topologia:">For each &lt;code&gt;(source, target, type)&lt;/code&gt; edge in the topology:</span>
+        <br>• <span data-en="Adds &lt;code&gt;target&lt;/code&gt; to &lt;code&gt;adjacency[source]&lt;/code&gt;." data-pt="Adiciona &lt;code&gt;target&lt;/code&gt; em &lt;code&gt;adjacency[source]&lt;/code&gt;.">Adds <code>target</code> to <code>adjacency[source]</code>.</span>
+        <br>• <span data-en="Increments &lt;code&gt;inDegree[target]&lt;/code&gt;." data-pt="Incrementa &lt;code&gt;inDegree[target]&lt;/code&gt;.">Increments <code>inDegree[target]</code>.</span>
+        <br>• <span data-en="Stores the &lt;code&gt;type&lt;/code&gt; for use in &lt;code&gt;conditionNode&lt;/code&gt; pruning." data-pt="Guarda o &lt;code&gt;type&lt;/code&gt; para usar em pruning de &lt;code&gt;conditionNode&lt;/code&gt;.">Stores the <code>type</code> for use in <code>conditionNode</code> pruning.</span>
       </div>
     </div>
 
     <div class="algo-step">
       <div class="algo-num">3</div>
       <div class="algo-content">
-        <strong>Escaneia refs <code>{{...}}</code> em cada nó</strong>
-        <br>Para cada nó <code>N</code>:
-        <br>• Percorre todos os campos textuais da config (<code>prompt</code>, <code>promptData</code>, <code>textData</code>, <code>contentData</code>, corpos de request, expressões de script, etc.).
-        <br>• Aplica regex <code>/\{\{([^}]+)\}\}/g</code> para extrair as refs.
-        <br>• Para cada ref, descobre o <em>alvo</em>. Se for outro nó do flow (<code>{{X.field}}</code> onde X é um nodeId ou label válido), adiciona aresta implícita <code>X → N</code> se ainda não existir. Incrementa <code>inDegree[N]</code>.
-        <br>• Se for input/context/env, ignora. Não cria dep.
+        <strong><span data-en="Scan &lt;code&gt;{{...}}&lt;/code&gt; refs in each node" data-pt="Escaneia refs &lt;code&gt;{{...}}&lt;/code&gt; em cada nó">Scan <code>{{...}}</code> refs in each node</span></strong>
+        <br><span data-en="For each node &lt;code&gt;N&lt;/code&gt;:" data-pt="Para cada nó &lt;code&gt;N&lt;/code&gt;:">For each node <code>N</code>:</span>
+        <br>• <span data-en="Walks every text field in the config (&lt;code&gt;prompt&lt;/code&gt;, &lt;code&gt;promptData&lt;/code&gt;, &lt;code&gt;textData&lt;/code&gt;, &lt;code&gt;contentData&lt;/code&gt;, request bodies, script expressions, etc.)." data-pt="Percorre todos os campos textuais da config (&lt;code&gt;prompt&lt;/code&gt;, &lt;code&gt;promptData&lt;/code&gt;, &lt;code&gt;textData&lt;/code&gt;, &lt;code&gt;contentData&lt;/code&gt;, corpos de request, expressões de script, etc.).">Walks every text field in the config (&lt;code&gt;prompt&lt;/code&gt;, &lt;code&gt;promptData&lt;/code&gt;, &lt;code&gt;textData&lt;/code&gt;, &lt;code&gt;contentData&lt;/code&gt;, request bodies, script expressions, etc.).</span>
+        <br>• <span data-en="Applies regex &lt;code&gt;/\{\{([^}]+)\}\}/g&lt;/code&gt; to extract refs." data-pt="Aplica regex &lt;code&gt;/\{\{([^}]+)\}\}/g&lt;/code&gt; para extrair as refs.">Applies regex <code>/\{\{([^}]+)\}\}/g</code> to extract refs.</span>
+        <br>• <span data-en="For each ref, discovers the &lt;em&gt;target&lt;/em&gt;. If it is another node in the flow (&lt;code&gt;{{X.field}}&lt;/code&gt; where X is a valid nodeId or label), adds implicit edge &lt;code&gt;X → N&lt;/code&gt; if not present. Increments &lt;code&gt;inDegree[N]&lt;/code&gt;." data-pt="Para cada ref, descobre o &lt;em&gt;alvo&lt;/em&gt;. Se for outro nó do flow (&lt;code&gt;{{X.field}}&lt;/code&gt; onde X é um nodeId ou label válido), adiciona aresta implícita &lt;code&gt;X → N&lt;/code&gt; se ainda não existir. Incrementa &lt;code&gt;inDegree[N]&lt;/code&gt;.">For each ref, discovers the &lt;em&gt;target&lt;/em&gt;. If it is another node in the flow (&lt;code&gt;{{X.field}}&lt;/code&gt; where X is a valid nodeId or label), adds implicit edge &lt;code&gt;X → N&lt;/code&gt; if not present. Increments &lt;code&gt;inDegree[N]&lt;/code&gt;.</span>
+        <br>• <span data-en="If it is input/context/env, ignores. No dep created." data-pt="Se for input/context/env, ignora. Não cria dep.">If it is input/context/env, ignores. No dep created.</span>
       </div>
     </div>
 
     <div class="algo-step">
       <div class="algo-num">4</div>
       <div class="algo-content">
-        <strong>Detecta e remove back-edges (ciclos)</strong>
-        <br>Roda DFS a partir dos nós de entrada (in-degree=0 antes da remoção). Se um DFS visita um nó já na pilha atual, a aresta que fecha o ciclo é uma back-edge. É <strong>removida</strong> da adjacency e o <code>inDegree</code> do target é decrementado.
-        <br><span style="color:#78350F">Nota: back-edges são normalmente erros de config (ref circular). Em runtime, optamos por remover em vez de falhar. Evita travar flows que casualmente têm ciclos benignos.</span>
+        <strong><span data-en="Detect and remove back-edges (cycles)" data-pt="Detecta e remove back-edges (ciclos)">Detect and remove back-edges (cycles)</span></strong>
+        <br><span data-en="Runs DFS from the entry nodes (in-degree=0 before removal). If a DFS visits a node already on the current stack, the edge that closes the cycle is a back-edge. It is &lt;strong&gt;removed&lt;/strong&gt; from the adjacency and the target's &lt;code&gt;inDegree&lt;/code&gt; is decremented." data-pt="Roda DFS a partir dos nós de entrada (in-degree=0 antes da remoção). Se um DFS visita um nó já na pilha atual, a aresta que fecha o ciclo é uma back-edge. É &lt;strong&gt;removida&lt;/strong&gt; da adjacency e o &lt;code&gt;inDegree&lt;/code&gt; do target é decrementado.">Runs DFS from the entry nodes (in-degree=0 before removal). If a DFS visits a node already on the current stack, the edge that closes the cycle is a back-edge. It is &lt;strong&gt;removed&lt;/strong&gt; from the adjacency and the target's &lt;code&gt;inDegree&lt;/code&gt; is decremented.</span>
+        <br><span style="color:#78350F"><span data-en="Note: back-edges are usually config errors (circular ref). At runtime, we chose to remove instead of failing. Avoids blocking flows that happen to have benign cycles." data-pt="Nota: back-edges são normalmente erros de config (ref circular). Em runtime, optamos por remover em vez de falhar. Evita travar flows que casualmente têm ciclos benignos.">Note: back-edges are usually config errors (circular ref). At runtime, we chose to remove instead of failing. Avoids blocking flows that happen to have benign cycles.</span></span>
       </div>
     </div>
 
     <div class="algo-step">
       <div class="algo-num">5</div>
       <div class="algo-content">
-        <strong>Poda nós inalcançáveis</strong>
-        <br>Faz BFS a partir dos nós com <code>inDegree === 0</code> após passo 4. Nós não visitados são unreachable. Marca como <code>skipped</code>. Tira do <code>pending</code>.
+        <strong><span data-en="Prune unreachable nodes" data-pt="Poda nós inalcançáveis">Prune unreachable nodes</span></strong>
+        <br><span data-en="Runs BFS from nodes with &lt;code&gt;inDegree === 0&lt;/code&gt; after step 4. Nodes not visited are unreachable. Marks as &lt;code&gt;skipped&lt;/code&gt;. Removes from &lt;code&gt;pending&lt;/code&gt;." data-pt="Faz BFS a partir dos nós com &lt;code&gt;inDegree === 0&lt;/code&gt; após passo 4. Nós não visitados são unreachable. Marca como &lt;code&gt;skipped&lt;/code&gt;. Tira do &lt;code&gt;pending&lt;/code&gt;.">Runs BFS from nodes with <code>inDegree === 0</code> after step 4. Nodes not visited are unreachable. Marks as <code>skipped</code>. Removes from <code>pending</code>.</span>
       </div>
     </div>
 
     <div class="algo-step">
       <div class="algo-num">6</div>
       <div class="algo-content">
-        <strong>Retorna estruturas imutáveis</strong>
-        <br>• <code>adjacency</code>. Final, não muda na execução.
-        <br>• <code>inDegree</code>. Inicial. Será decrementado ao longo da execução (mas isso é <em>state</em>, não muda a estrutura do DAG).
-        <br>• <code>edgeTypes</code>. Para decisões de condition/side-effect na FASE 3.
-        <br>• <code>pending</code>. Set inicial de nós a executar (todos menos os skipped).
+        <strong><span data-en="Return immutable structures" data-pt="Retorna estruturas imutáveis">Return immutable structures</span></strong>
+        <br>• <code>adjacency</code>. <span data-en="Final, does not change during execution." data-pt="Final, não muda na execução.">Final, does not change during execution.</span>
+        <br>• <code>inDegree</code>. <span data-en="Initial. Will be decremented throughout execution (but that is &lt;em&gt;state&lt;/em&gt;, does not change the DAG structure)." data-pt="Inicial. Será decrementado ao longo da execução (mas isso é &lt;em&gt;state&lt;/em&gt;, não muda a estrutura do DAG).">Initial. Will be decremented throughout execution (but that is &lt;em&gt;state&lt;/em&gt;, does not change the DAG structure).</span>
+        <br>• <code>edgeTypes</code>. <span data-en="For condition/side-effect decisions in PHASE 3." data-pt="Para decisões de condition/side-effect na FASE 3.">For condition/side-effect decisions in PHASE 3.</span>
+        <br>• <code>pending</code>. <span data-en="Initial set of nodes to execute (all except the skipped)." data-pt="Set inicial de nós a executar (todos menos os skipped).">Initial set of nodes to execute (all except the skipped).</span>
       </div>
     </div>
   </div>
 
   <!-- ============================================ -->
-  <h2><span class="num">4</span> Exemplo concreto</h2>
+  <h2><span class="num">4</span> <span data-en="Concrete example" data-pt="Exemplo concreto">Concrete example</span></h2>
 
-  <p>Flow simples: pesquisa em duas fontes em paralelo, junta os resultados e escreve um artigo.</p>
+  <p><span data-en="Simple flow: searches two sources in parallel, joins the results and writes an article." data-pt="Flow simples: pesquisa em duas fontes em paralelo, junta os resultados e escreve um artigo.">Simple flow: searches two sources in parallel, joins the results and writes an article.</span></p>
 
-  <h3>Nós e sua configuração</h3>
+  <h3><span data-en="Nodes and their configuration" data-pt="Nós e sua configuração">Nodes and their configuration</span></h3>
 
   <div class="def-card" style="border-left-color:#64748B">
     <div class="def-card-title"><code>Topic</code> <span class="n-type" style="font-size:10px;background:#F1F5F9;padding:2px 6px;border-radius:3px">variableInputNode</span></div>
-    <p style="margin:0">Ponto de entrada. Recebe do trigger o campo <code>topic</code> (ex: "Machine Learning").</p>
+    <p style="margin:0"><span data-en="Entry point. Receives the &lt;code&gt;topic&lt;/code&gt; field from the trigger (e.g. &quot;Machine Learning&quot;)." data-pt="Ponto de entrada. Recebe do trigger o campo &lt;code&gt;topic&lt;/code&gt; (ex: &quot;Machine Learning&quot;).">Entry point. Receives the &lt;code&gt;topic&lt;/code&gt; field from the trigger (e.g. &quot;Machine Learning&quot;).</span></p>
   </div>
 
   <div class="def-card" style="border-left-color:#3B82F6">
     <div class="def-card-title"><code>WebSearch</code> <span class="n-type" style="font-size:10px;background:#F1F5F9;padding:2px 6px;border-radius:3px">webSearch</span></div>
-    <p style="margin:0">Query = <code>{{Topic.topic}}</code>. Roda uma busca web.</p>
+    <p style="margin:0">Query = <code>{{Topic.topic}}</code>. <span data-en="Runs a web search." data-pt="Roda uma busca web.">Runs a web search.</span></p>
     <p style="margin:6px 0 0 0"><em>Deps:</em> <span class="kind-tag edge">EDGE</span> Topic <span class="kind-tag ref">REF</span> Topic</p>
   </div>
 
   <div class="def-card" style="border-left-color:#3B82F6">
     <div class="def-card-title"><code>NewsSearch</code> <span class="n-type" style="font-size:10px;background:#F1F5F9;padding:2px 6px;border-radius:3px">webSearch</span></div>
-    <p style="margin:0">Query = <code>últimas notícias sobre {{Topic.topic}}</code>. Busca só em fontes de notícias.</p>
+    <p style="margin:0">Query = <code><span data-en="latest news about" data-pt="últimas notícias sobre">latest news about</span> {{Topic.topic}}</code>. <span data-en="Searches only news sources." data-pt="Busca só em fontes de notícias.">Searches only news sources.</span></p>
     <p style="margin:6px 0 0 0"><em>Deps:</em> <span class="kind-tag edge">EDGE</span> Topic <span class="kind-tag ref">REF</span> Topic</p>
   </div>
 
   <div class="def-card" style="border-left-color:#3B82F6">
     <div class="def-card-title"><code>Compare</code> <span class="n-type" style="font-size:10px;background:#F1F5F9;padding:2px 6px;border-radius:3px">textGenerator</span></div>
-    <p style="margin:0">Prompt = <code>Compare estas fontes:\nWEB: {{WebSearch.results}}\nNEWS: {{NewsSearch.results}}</code></p>
-    <p style="margin:6px 0 0 0"><em>Deps:</em> <span class="kind-tag ref">REF</span> WebSearch <span class="kind-tag ref">REF</span> NewsSearch <span style="color:#991B1B;font-size:11px">(sem edges, só refs!)</span></p>
+    <p style="margin:0">Prompt = <code><span data-en="Compare these sources" data-pt="Compare estas fontes">Compare these sources</span>:\nWEB: {{WebSearch.results}}\nNEWS: {{NewsSearch.results}}</code></p>
+    <p style="margin:6px 0 0 0"><em>Deps:</em> <span class="kind-tag ref">REF</span> WebSearch <span class="kind-tag ref">REF</span> NewsSearch <span style="color:#991B1B;font-size:11px"><span data-en="(no edges, only refs!)" data-pt="(sem edges, só refs!)">(no edges, only refs!)</span></span></p>
   </div>
 
   <div class="def-card" style="border-left-color:#3B82F6">
     <div class="def-card-title"><code>Article</code> <span class="n-type" style="font-size:10px;background:#F1F5F9;padding:2px 6px;border-radius:3px">textGenerator</span></div>
-    <p style="margin:0">Prompt = <code>Escreva artigo sobre {{Topic.topic}} baseado em: {{Compare.text}}</code></p>
+    <p style="margin:0">Prompt = <code><span data-en="Write article about" data-pt="Escreva artigo sobre">Write article about</span> {{Topic.topic}} <span data-en="based on" data-pt="baseado em">based on</span>: {{Compare.text}}</code></p>
     <p style="margin:6px 0 0 0"><em>Deps:</em> <span class="kind-tag edge">EDGE</span> Compare <span class="kind-tag ref">REF</span> Compare <span class="kind-tag ref">REF</span> Topic</p>
   </div>
 
-  <h3>DAG resultante (após algoritmo)</h3>
+  <h3><span data-en="Resulting DAG (after the algorithm)" data-pt="DAG resultante (após algoritmo)">Resulting DAG (after the algorithm)</span></h3>
 
-  <p>Depois do passo 2.2 rodar, o DAG fica organizado em <strong>ondas topológicas</strong>. Cada onda contém os nós que podem rodar em paralelo:</p>
+  <p><span data-en="After step 2.2 runs, the DAG is organised in &lt;strong&gt;topological waves&lt;/strong&gt;. Each wave contains the nodes that can run in parallel:" data-pt="Depois do passo 2.2 rodar, o DAG fica organizado em &lt;strong&gt;ondas topológicas&lt;/strong&gt;. Cada onda contém os nós que podem rodar em paralelo:">After step 2.2 runs, the DAG is organised in &lt;strong&gt;topological waves&lt;/strong&gt;. Each wave contains the nodes that can run in parallel:</span></p>
 
   <div class="dag-viz">
     <div class="dag-lanes">
 
       <div class="wave-col w1">
-        <div class="wave-title">Onda 1</div>
+        <div class="wave-title"><span data-en="Wave 1" data-pt="Onda 1">Wave 1</span></div>
         <div class="dag-node" style="border-left-color:#64748B">
           <div class="n-name">Topic</div>
           <span class="n-type">variableInputNode</span>
           <div class="n-deps">
-            <span style="color:#94A3B8">nenhuma dep (in-degree=0)</span>
+            <span style="color:#94A3B8" data-en="no dep (in-degree=0)" data-pt="nenhuma dep (in-degree=0)">no dep (in-degree=0)</span>
           </div>
         </div>
       </div>
 
       <div class="wave-col w2">
-        <div class="wave-title">Onda 2 <span class="parallel">2 em paralelo</span></div>
+        <div class="wave-title"><span data-en="Wave 2" data-pt="Onda 2">Wave 2</span> <span class="parallel" data-en="2 in parallel" data-pt="2 em paralelo">2 in parallel</span></div>
         <div class="dag-node">
           <div class="n-name">WebSearch</div>
           <span class="n-type">webSearch</span>
@@ -663,7 +683,7 @@
       </div>
 
       <div class="wave-col w3">
-        <div class="wave-title">Onda 3</div>
+        <div class="wave-title"><span data-en="Wave 3" data-pt="Onda 3">Wave 3</span></div>
         <div class="dag-node">
           <div class="n-name">Compare</div>
           <span class="n-type">textGenerator</span>
@@ -675,7 +695,7 @@
       </div>
 
       <div class="wave-col w4">
-        <div class="wave-title">Onda 4</div>
+        <div class="wave-title"><span data-en="Wave 4" data-pt="Onda 4">Wave 4</span></div>
         <div class="dag-node">
           <div class="n-name">Article</div>
           <span class="n-type">textGenerator</span>
@@ -691,18 +711,18 @@
   </div>
 
   <div class="callout tip">
-    <strong>Duas observações importantes:</strong>
+    <strong><span data-en="Two important observations:" data-pt="Duas observações importantes:">Two important observations:</span></strong>
     <br><br>
-    <strong>1.</strong> <code>Compare</code> só tem refs, nenhuma aresta explícita. O usuário digitou <code>{{WebSearch.results}}</code> no prompt sem desenhar fios. Mesmo assim, o algoritmo captura essas deps no passo 3 e coloca <code>Compare</code> corretamente na onda 3. Sem esse scan, ele iria para a onda 1 e falharia na substituição.
+    <strong>1.</strong> <code>Compare</code> <span data-en="only has refs, no explicit edges. The user typed &lt;code&gt;{{WebSearch.results}}&lt;/code&gt; in the prompt without drawing wires. Even so, the algorithm captures those deps at step 3 and correctly places &lt;code&gt;Compare&lt;/code&gt; in wave 3. Without that scan, it would go to wave 1 and fail substitution." data-pt="só tem refs, nenhuma aresta explícita. O usuário digitou &lt;code&gt;{{WebSearch.results}}&lt;/code&gt; no prompt sem desenhar fios. Mesmo assim, o algoritmo captura essas deps no passo 3 e coloca &lt;code&gt;Compare&lt;/code&gt; corretamente na onda 3. Sem esse scan, ele iria para a onda 1 e falharia na substituição.">only has refs, no explicit edges. The user typed &lt;code&gt;{{WebSearch.results}}&lt;/code&gt; in the prompt without drawing wires. Even so, the algorithm captures those deps at step 3 and correctly places &lt;code&gt;Compare&lt;/code&gt; in wave 3. Without that scan, it would go to wave 1 and fail substitution.</span>
     <br><br>
-    <strong>2.</strong> <code>Article</code> tem <code>ref: Topic</code> mesmo estando 3 ondas depois. O algoritmo detecta e adiciona a aresta implícita. Isso <strong>não afeta a onda</strong> em que <code>Article</code> roda. Já depende de <code>Compare</code> (que depende de <code>WebSearch</code>/<code>NewsSearch</code>, que dependem de <code>Topic</code>). <code>Topic</code> já vai estar completo quando a onda 4 começar. É belt-and-suspenders. A dep é registrada por segurança, sem custo real.
+    <strong>2.</strong> <code>Article</code> <span data-en="has &lt;code&gt;ref: Topic&lt;/code&gt; even though it's 3 waves later. The algorithm detects and adds the implicit edge. This &lt;strong&gt;does not affect the wave&lt;/strong&gt; where &lt;code&gt;Article&lt;/code&gt; runs. It already depends on &lt;code&gt;Compare&lt;/code&gt; (which depends on &lt;code&gt;WebSearch&lt;/code&gt;/&lt;code&gt;NewsSearch&lt;/code&gt;, which depend on &lt;code&gt;Topic&lt;/code&gt;). &lt;code&gt;Topic&lt;/code&gt; will already be complete when wave 4 starts. It is belt-and-suspenders. The dep is recorded for safety, at no real cost." data-pt="tem &lt;code&gt;ref: Topic&lt;/code&gt; mesmo estando 3 ondas depois. O algoritmo detecta e adiciona a aresta implícita. Isso &lt;strong&gt;não afeta a onda&lt;/strong&gt; em que &lt;code&gt;Article&lt;/code&gt; roda. Já depende de &lt;code&gt;Compare&lt;/code&gt; (que depende de &lt;code&gt;WebSearch&lt;/code&gt;/&lt;code&gt;NewsSearch&lt;/code&gt;, que dependem de &lt;code&gt;Topic&lt;/code&gt;). &lt;code&gt;Topic&lt;/code&gt; já vai estar completo quando a onda 4 começar. É belt-and-suspenders. A dep é registrada por segurança, sem custo real.">has &lt;code&gt;ref: Topic&lt;/code&gt; even though it's 3 waves later. The algorithm detects and adds the implicit edge. This &lt;strong&gt;does not affect the wave&lt;/strong&gt; where &lt;code&gt;Article&lt;/code&gt; runs. It already depends on &lt;code&gt;Compare&lt;/code&gt; (which depends on &lt;code&gt;WebSearch&lt;/code&gt;/&lt;code&gt;NewsSearch&lt;/code&gt;, which depend on &lt;code&gt;Topic&lt;/code&gt;). &lt;code&gt;Topic&lt;/code&gt; will already be complete when wave 4 starts. It is belt-and-suspenders. The dep is recorded for safety, at no real cost.</span>
   </div>
 
   <!-- ============================================ -->
-  <h2><span class="num">5</span> Trace de execução (onda por onda)</h2>
+  <h2><span class="num">5</span> <span data-en="Execution trace (wave by wave)" data-pt="Trace de execução (onda por onda)">Execution trace (wave by wave)</span></h2>
 
   <p>
-    Estado inicial após o passo 2.2 rodar:
+    <span data-en="Initial state after step 2.2 runs:" data-pt="Estado inicial após o passo 2.2 rodar:">Initial state after step 2.2 runs:</span>
   </p>
 
   <div class="trace">
@@ -710,7 +730,7 @@
     <div class="trace-wave" style="background:#F8FAFC;border-left-color:#64748B">
       <div class="trace-wave-title">
         <span>◇</span>
-        <span>Estado inicial (antes da onda 1)</span>
+        <span data-en="Initial state (before wave 1)" data-pt="Estado inicial (antes da onda 1)">Initial state (before wave 1)</span>
       </div>
       <div class="trace-line"><span class="k">pending</span> = <span class="v">{ Topic, WebSearch, NewsSearch, Compare, Article }</span></div>
       <div class="trace-line"><span class="k">completed</span> = <span class="v">{ }</span></div>
@@ -721,54 +741,54 @@
     <div class="trace-wave w1">
       <div class="trace-wave-title">
         <span>①</span>
-        <span>Onda 1</span>
+        <span data-en="Wave 1" data-pt="Onda 1">Wave 1</span>
       </div>
-      <div class="trace-line"><span class="op">readySet</span> = { <strong>Topic</strong> } &nbsp;<span class="note">// único com in-degree=0</span></div>
-      <div class="trace-line"><span class="op">Promise.all([ dispatch(Topic) ])</span> &nbsp;<span class="note">// 1 activity só</span></div>
-      <div class="trace-line"><span class="note">→ Topic termina, output = { topic: "Machine Learning" }</span></div>
+      <div class="trace-line"><span class="op">readySet</span> = { <strong>Topic</strong> } &nbsp;<span class="note" data-en="// only one with in-degree=0" data-pt="// único com in-degree=0">// only one with in-degree=0</span></div>
+      <div class="trace-line"><span class="op">Promise.all([ dispatch(Topic) ])</span> &nbsp;<span class="note" data-en="// 1 activity only" data-pt="// 1 activity só">// 1 activity only</span></div>
+      <div class="trace-line"><span class="note" data-en="→ Topic finishes, output = { topic: &quot;Machine Learning&quot; }" data-pt="→ Topic termina, output = { topic: &quot;Machine Learning&quot; }">→ Topic finishes, output = { topic: "Machine Learning" }</span></div>
       <div class="trace-line"><span class="op">outputStore.append</span>(Topic, output)</div>
-      <div class="trace-line"><span class="op">decrementa inDegree</span> dos sucessores de Topic:</div>
+      <div class="trace-line"><span class="op" data-en="decrement inDegree" data-pt="decrementa inDegree">decrement inDegree</span> <span data-en="of Topic's successors:" data-pt="dos sucessores de Topic:">of Topic's successors:</span></div>
       <div class="trace-line">&nbsp;&nbsp;WebSearch: 1 → <strong>0</strong></div>
       <div class="trace-line">&nbsp;&nbsp;NewsSearch: 1 → <strong>0</strong></div>
-      <div class="trace-line">&nbsp;&nbsp;Article: 2 → 1 &nbsp;<span class="note">// via ref implícita</span></div>
+      <div class="trace-line">&nbsp;&nbsp;Article: 2 → 1 &nbsp;<span class="note" data-en="// via implicit ref" data-pt="// via ref implícita">// via implicit ref</span></div>
       <div class="trace-line"><span class="k">completed</span> = <span class="v">{ Topic }</span></div>
     </div>
 
     <div class="trace-wave w2">
       <div class="trace-wave-title">
         <span>②</span>
-        <span>Onda 2. Paralelismo real.</span>
+        <span data-en="Wave 2. Real parallelism." data-pt="Onda 2. Paralelismo real.">Wave 2. Real parallelism.</span>
       </div>
-      <div class="trace-line"><span class="op">readySet</span> = { <strong>WebSearch, NewsSearch</strong> } &nbsp;<span class="note">// AMBOS com in-degree=0</span></div>
-      <div class="trace-line"><span class="op">Promise.all([ dispatch(WebSearch), dispatch(NewsSearch) ])</span> &nbsp;<span class="note">// 2 activities em paralelo!</span></div>
-      <div class="trace-line"><span class="note">→ Ambas rodam ao mesmo tempo. Se cada uma leva 3s, onda 2 dura ~3s (não 6s).</span></div>
+      <div class="trace-line"><span class="op">readySet</span> = { <strong>WebSearch, NewsSearch</strong> } &nbsp;<span class="note" data-en="// BOTH with in-degree=0" data-pt="// AMBOS com in-degree=0">// BOTH with in-degree=0</span></div>
+      <div class="trace-line"><span class="op">Promise.all([ dispatch(WebSearch), dispatch(NewsSearch) ])</span> &nbsp;<span class="note" data-en="// 2 activities in parallel!" data-pt="// 2 activities em paralelo!">// 2 activities in parallel!</span></div>
+      <div class="trace-line"><span class="note" data-en="→ Both run at the same time. If each takes 3s, wave 2 lasts ~3s (not 6s)." data-pt="→ Ambas rodam ao mesmo tempo. Se cada uma leva 3s, onda 2 dura ~3s (não 6s).">→ Both run at the same time. If each takes 3s, wave 2 lasts ~3s (not 6s).</span></div>
       <div class="trace-line"><span class="op">outputStore.append</span>(WebSearch, ...) &nbsp;+&nbsp; <span class="op">outputStore.append</span>(NewsSearch, ...)</div>
-      <div class="trace-line"><span class="op">decrementa inDegree</span> de Compare:</div>
-      <div class="trace-line">&nbsp;&nbsp;Compare: 2 → 1 → <strong>0</strong> &nbsp;<span class="note">// duas decrementadas (uma por WebSearch, outra por NewsSearch)</span></div>
+      <div class="trace-line"><span class="op" data-en="decrement inDegree" data-pt="decrementa inDegree">decrement inDegree</span> <span data-en="of Compare:" data-pt="de Compare:">of Compare:</span></div>
+      <div class="trace-line">&nbsp;&nbsp;Compare: 2 → 1 → <strong>0</strong> &nbsp;<span class="note" data-en="// two decrements (one by WebSearch, one by NewsSearch)" data-pt="// duas decrementadas (uma por WebSearch, outra por NewsSearch)">// two decrements (one by WebSearch, one by NewsSearch)</span></div>
       <div class="trace-line"><span class="k">completed</span> = <span class="v">{ Topic, WebSearch, NewsSearch }</span></div>
     </div>
 
     <div class="trace-wave w3">
       <div class="trace-wave-title">
         <span>③</span>
-        <span>Onda 3</span>
+        <span data-en="Wave 3" data-pt="Onda 3">Wave 3</span>
       </div>
       <div class="trace-line"><span class="op">readySet</span> = { <strong>Compare</strong> }</div>
       <div class="trace-line"><span class="op">Promise.all([ dispatch(Compare) ])</span></div>
-      <div class="trace-line"><span class="note">→ Activity resolve {{WebSearch.results}} e {{NewsSearch.results}} lendo do node_executions dos dois; roda LLM.</span></div>
+      <div class="trace-line"><span class="note" data-en="→ Activity resolves {{WebSearch.results}} and {{NewsSearch.results}} by reading from node_executions of both; runs LLM." data-pt="→ Activity resolve {{WebSearch.results}} e {{NewsSearch.results}} lendo do node_executions dos dois; roda LLM.">→ Activity resolves {{WebSearch.results}} and {{NewsSearch.results}} by reading from node_executions of both; runs LLM.</span></div>
       <div class="trace-line"><span class="op">outputStore.append</span>(Compare, ...)</div>
-      <div class="trace-line"><span class="op">decrementa inDegree</span> de Article: 1 → <strong>0</strong></div>
+      <div class="trace-line"><span class="op" data-en="decrement inDegree" data-pt="decrementa inDegree">decrement inDegree</span> <span data-en="of Article: 1 → &lt;strong&gt;0&lt;/strong&gt;" data-pt="de Article: 1 → &lt;strong&gt;0&lt;/strong&gt;">of Article: 1 → <strong>0</strong></span></div>
       <div class="trace-line"><span class="k">completed</span> = <span class="v">{ Topic, WebSearch, NewsSearch, Compare }</span></div>
     </div>
 
     <div class="trace-wave w4">
       <div class="trace-wave-title">
         <span>④</span>
-        <span>Onda 4</span>
+        <span data-en="Wave 4" data-pt="Onda 4">Wave 4</span>
       </div>
       <div class="trace-line"><span class="op">readySet</span> = { <strong>Article</strong> }</div>
       <div class="trace-line"><span class="op">Promise.all([ dispatch(Article) ])</span></div>
-      <div class="trace-line"><span class="note">→ Resolve {{Compare.text}} e {{Topic.topic}} do outputStore; roda LLM final.</span></div>
+      <div class="trace-line"><span class="note" data-en="→ Resolves {{Compare.text}} and {{Topic.topic}} from the outputStore; runs final LLM." data-pt="→ Resolve {{Compare.text}} e {{Topic.topic}} do outputStore; roda LLM final.">→ Resolves {{Compare.text}} and {{Topic.topic}} from the outputStore; runs final LLM.</span></div>
       <div class="trace-line"><span class="op">outputStore.append</span>(Article, ...)</div>
       <div class="trace-line"><span class="k">completed</span> = <span class="v">{ Topic, WebSearch, NewsSearch, Compare, Article }</span></div>
     </div>
@@ -776,43 +796,43 @@
     <div class="trace-wave done">
       <div class="trace-wave-title">
         <span>✓</span>
-        <span>Fim do loop</span>
+        <span data-en="End of loop" data-pt="Fim do loop">End of loop</span>
       </div>
-      <div class="trace-line"><span class="op">readySet</span> = { } &nbsp;<span class="op">pending</span> = { } → <span class="note">sai do loop, vai para a FASE 4 (finalização)</span></div>
+      <div class="trace-line"><span class="op">readySet</span> = { } &nbsp;<span class="op">pending</span> = { } → <span class="note" data-en="exits loop, goes to PHASE 4 (finalisation)" data-pt="sai do loop, vai para a FASE 4 (finalização)">exits loop, goes to PHASE 4 (finalisation)</span></div>
     </div>
 
   </div>
 
   <div class="callout tip">
-    <strong>Ganho de paralelismo:</strong> se o legacy executasse esse flow em série, o tempo total seria a soma de todos (5 nós × tempo médio). Com ondas paralelas, o tempo total é a soma das <em>ondas</em>. Na onda 2, WebSearch e NewsSearch dividem o tempo. Em flows com muitas branches paralelas (agentes de pesquisa multi-fonte, geração de N variações, etc.), o ganho é linear com a largura do grafo.
+    <strong><span data-en="Parallelism gain:" data-pt="Ganho de paralelismo:">Parallelism gain:</span></strong> <span data-en="if the legacy ran this flow serially, total time would be the sum of all (5 nodes × average time). With parallel waves, total time is the sum of the &lt;em&gt;waves&lt;/em&gt;. In wave 2, WebSearch and NewsSearch share the time. On flows with many parallel branches (multi-source research agents, generating N variations, etc.), the gain is linear with the graph's width." data-pt="se o legacy executasse esse flow em série, o tempo total seria a soma de todos (5 nós × tempo médio). Com ondas paralelas, o tempo total é a soma das &lt;em&gt;ondas&lt;/em&gt;. Na onda 2, WebSearch e NewsSearch dividem o tempo. Em flows com muitas branches paralelas (agentes de pesquisa multi-fonte, geração de N variações, etc.), o ganho é linear com a largura do grafo.">if the legacy ran this flow serially, total time would be the sum of all (5 nodes × average time). With parallel waves, total time is the sum of the &lt;em&gt;waves&lt;/em&gt;. In wave 2, WebSearch and NewsSearch share the time. On flows with many parallel branches (multi-source research agents, generating N variations, etc.), the gain is linear with the graph's width.</span>
   </div>
 
   <!-- ============================================ -->
-  <h2><span class="num">6</span> Casos especiais que o algoritmo precisa tratar</h2>
+  <h2><span class="num">6</span> <span data-en="Special cases the algorithm handles" data-pt="Casos especiais que o algoritmo precisa tratar">Special cases the algorithm handles</span></h2>
 
-  <h3>Nó condition</h3>
+  <h3><span data-en="Condition node" data-pt="Nó condition">Condition node</span></h3>
   <p>
-    Um <code>conditionNode</code> tem múltiplos handles de saída (ex: true/false, ou N branches nomeadas). Durante a construção do DAG, todas as arestas de saída viram deps normais. Em runtime (FASE 3.5), quando o condition avalia e escolhe UM handle, os outros são marcados como <strong>dead</strong>. Os sucessores das arestas mortas têm seu <code>inDegree</code> decrementado como se o predecessor tivesse "completado", mas a saída é vazia. Sem isso, sucessores de handles não tomados ficariam no <code>pending</code> para sempre.
+    <span data-en="A &lt;code&gt;conditionNode&lt;/code&gt; has multiple output handles (e.g. true/false, or N named branches). During DAG construction, all output edges become normal deps. At runtime (PHASE 3.5), when the condition evaluates and picks ONE handle, the others are marked &lt;strong&gt;dead&lt;/strong&gt;. Successors of dead edges have their &lt;code&gt;inDegree&lt;/code&gt; decremented as if the predecessor had &quot;completed&quot;, but with an empty output. Without this, successors of untaken handles would remain in &lt;code&gt;pending&lt;/code&gt; forever." data-pt="Um &lt;code&gt;conditionNode&lt;/code&gt; tem múltiplos handles de saída (ex: true/false, ou N branches nomeadas). Durante a construção do DAG, todas as arestas de saída viram deps normais. Em runtime (FASE 3.5), quando o condition avalia e escolhe UM handle, os outros são marcados como &lt;strong&gt;dead&lt;/strong&gt;. Os sucessores das arestas mortas têm seu &lt;code&gt;inDegree&lt;/code&gt; decrementado como se o predecessor tivesse &quot;completado&quot;, mas a saída é vazia. Sem isso, sucessores de handles não tomados ficariam no &lt;code&gt;pending&lt;/code&gt; para sempre.">A &lt;code&gt;conditionNode&lt;/code&gt; has multiple output handles (e.g. true/false, or N named branches). During DAG construction, all output edges become normal deps. At runtime (PHASE 3.5), when the condition evaluates and picks ONE handle, the others are marked &lt;strong&gt;dead&lt;/strong&gt;. Successors of dead edges have their &lt;code&gt;inDegree&lt;/code&gt; decremented as if the predecessor had &quot;completed&quot;, but with an empty output. Without this, successors of untaken handles would remain in &lt;code&gt;pending&lt;/code&gt; forever.</span>
   </p>
 
-  <h3>Nó com efeito colateral independente</h3>
+  <h3><span data-en="Node with independent side effect" data-pt="Nó com efeito colateral independente">Node with independent side effect</span></h3>
   <p>
-    Certos nós (<code>apiCaller</code>, <code>mcpNode</code>, <code>pushData</code>) rodam pelo <em>efeito</em>, não pela saída. Se o grafo de refs nunca os inclui como dep de ninguém, uma implementação ingênua acharia que eles são "unreachable" e pularia. O algoritmo classifica esse tipo de aresta como <code>side-effect</code> na etapa 2. Preserva no <code>pending</code> mesmo sem dependentes.
+    <span data-en="Some nodes (&lt;code&gt;apiCaller&lt;/code&gt;, &lt;code&gt;mcpNode&lt;/code&gt;, &lt;code&gt;pushData&lt;/code&gt;) run for the &lt;em&gt;effect&lt;/em&gt;, not for the output. If the ref graph never includes them as anyone's dep, a naive implementation would treat them as &quot;unreachable&quot; and skip them. The algorithm classifies this kind of edge as &lt;code&gt;side-effect&lt;/code&gt; in step 2. Preserves them in &lt;code&gt;pending&lt;/code&gt; even without dependents." data-pt="Certos nós (&lt;code&gt;apiCaller&lt;/code&gt;, &lt;code&gt;mcpNode&lt;/code&gt;, &lt;code&gt;pushData&lt;/code&gt;) rodam pelo &lt;em&gt;efeito&lt;/em&gt;, não pela saída. Se o grafo de refs nunca os inclui como dep de ninguém, uma implementação ingênua acharia que eles são &quot;unreachable&quot; e pularia. O algoritmo classifica esse tipo de aresta como &lt;code&gt;side-effect&lt;/code&gt; na etapa 2. Preserva no &lt;code&gt;pending&lt;/code&gt; mesmo sem dependentes.">Some nodes (&lt;code&gt;apiCaller&lt;/code&gt;, &lt;code&gt;mcpNode&lt;/code&gt;, &lt;code&gt;pushData&lt;/code&gt;) run for the &lt;em&gt;effect&lt;/em&gt;, not for the output. If the ref graph never includes them as anyone's dep, a naive implementation would treat them as &quot;unreachable&quot; and skip them. The algorithm classifies this kind of edge as &lt;code&gt;side-effect&lt;/code&gt; in step 2. Preserves them in &lt;code&gt;pending&lt;/code&gt; even without dependents.</span>
   </p>
 
-  <h3>Refs em campos aninhados</h3>
+  <h3><span data-en="Refs in nested fields" data-pt="Refs em campos aninhados">Refs in nested fields</span></h3>
   <p>
-    Refs podem aparecer dentro de arrays, objetos JSON, expressões, etc. O escaneamento (passo 3) precisa ser recursivo em toda a estrutura do <code>node_data</code>. Refs em campos que <em>não</em> são de execução (label, cor, posição no canvas) são ignoradas. O escanner tem uma lista dos campos "executáveis" por tipo de nó.
+    <span data-en="Refs can appear inside arrays, JSON objects, expressions, etc. The scan (step 3) must be recursive across the entire &lt;code&gt;node_data&lt;/code&gt; structure. Refs in fields that are &lt;em&gt;not&lt;/em&gt; for execution (label, colour, canvas position) are ignored. The scanner has a list of &quot;executable&quot; fields per node type." data-pt="Refs podem aparecer dentro de arrays, objetos JSON, expressões, etc. O escaneamento (passo 3) precisa ser recursivo em toda a estrutura do &lt;code&gt;node_data&lt;/code&gt;. Refs em campos que &lt;em&gt;não&lt;/em&gt; são de execução (label, cor, posição no canvas) são ignoradas. O escanner tem uma lista dos campos &quot;executáveis&quot; por tipo de nó.">Refs can appear inside arrays, JSON objects, expressions, etc. The scan (step 3) must be recursive across the entire &lt;code&gt;node_data&lt;/code&gt; structure. Refs in fields that are &lt;em&gt;not&lt;/em&gt; for execution (label, colour, canvas position) are ignored. The scanner has a list of &quot;executable&quot; fields per node type.</span>
   </p>
 
-  <h3>Refs para nó que não existe no snapshot</h3>
+  <h3><span data-en="Refs to a node not in the snapshot" data-pt="Refs para nó que não existe no snapshot">Refs to a node not in the snapshot</span></h3>
   <p>
-    Pode acontecer. Usuário renomeou/deletou um nó, mas outro nó ainda tem <code>{{OldName.field}}</code>. O passo 2.3 (<code>validateDag</code>), logo depois do <code>buildDag</code>, falha a execução rápido com <code>InvalidReferenceError</code>. Aponta qual nó tem qual ref quebrada. Sem <code>validateDag</code>, a execução iria até o nó com a ref quebrada, gastaria créditos das dependências e só quebraria no meio.
+    <span data-en="Can happen. User renamed/deleted a node, but another node still has &lt;code&gt;{{OldName.field}}&lt;/code&gt;. Step 2.3 (&lt;code&gt;validateDag&lt;/code&gt;), right after &lt;code&gt;buildDag&lt;/code&gt;, fails the execution fast with &lt;code&gt;InvalidReferenceError&lt;/code&gt;. Points to which node has which broken ref. Without &lt;code&gt;validateDag&lt;/code&gt;, execution would run up to the node with the broken ref, spending dependency credits, and only break in the middle." data-pt="Pode acontecer. Usuário renomeou/deletou um nó, mas outro nó ainda tem &lt;code&gt;{{OldName.field}}&lt;/code&gt;. O passo 2.3 (&lt;code&gt;validateDag&lt;/code&gt;), logo depois do &lt;code&gt;buildDag&lt;/code&gt;, falha a execução rápido com &lt;code&gt;InvalidReferenceError&lt;/code&gt;. Aponta qual nó tem qual ref quebrada. Sem &lt;code&gt;validateDag&lt;/code&gt;, a execução iria até o nó com a ref quebrada, gastaria créditos das dependências e só quebraria no meio.">Can happen. User renamed/deleted a node, but another node still has &lt;code&gt;{{OldName.field}}&lt;/code&gt;. Step 2.3 (&lt;code&gt;validateDag&lt;/code&gt;), right after &lt;code&gt;buildDag&lt;/code&gt;, fails the execution fast with &lt;code&gt;InvalidReferenceError&lt;/code&gt;. Points to which node has which broken ref. Without &lt;code&gt;validateDag&lt;/code&gt;, execution would run up to the node with the broken ref, spending dependency credits, and only break in the middle.</span>
   </p>
 
-  <h3>arrayNode (fan-out real)</h3>
+  <h3>arrayNode <span data-en="(real fan-out)" data-pt="(fan-out real)">(real fan-out)</span></h3>
   <p>
-    O <code>arrayNode</code> não expande no DAG estático. É <strong>um nó só</strong> no grafo. Quando executa (FASE 3.5), dispara um <code>ChildWorkflow</code> que constrói seu próprio DAG para as N iterações do array. O DAG pai vê o arrayNode como uma unidade atômica. A paralelização das iterações é interna ao child workflow. Isso mantém o DAG raiz pequeno mesmo com loops grandes.
+    <span data-en="&lt;code&gt;arrayNode&lt;/code&gt; does not expand in the static DAG. It is &lt;strong&gt;a single node&lt;/strong&gt; in the graph. When it runs (PHASE 3.5), it fires a &lt;code&gt;ChildWorkflow&lt;/code&gt; that builds its own DAG for the N array iterations. The parent DAG sees the arrayNode as an atomic unit. The iterations' parallelisation is internal to the child workflow. This keeps the root DAG small even with large loops." data-pt="O &lt;code&gt;arrayNode&lt;/code&gt; não expande no DAG estático. É &lt;strong&gt;um nó só&lt;/strong&gt; no grafo. Quando executa (FASE 3.5), dispara um &lt;code&gt;ChildWorkflow&lt;/code&gt; que constrói seu próprio DAG para as N iterações do array. O DAG pai vê o arrayNode como uma unidade atômica. A paralelização das iterações é interna ao child workflow. Isso mantém o DAG raiz pequeno mesmo com loops grandes.">&lt;code&gt;arrayNode&lt;/code&gt; does not expand in the static DAG. It is &lt;strong&gt;a single node&lt;/strong&gt; in the graph. When it runs (PHASE 3.5), it fires a &lt;code&gt;ChildWorkflow&lt;/code&gt; that builds its own DAG for the N array iterations. The parent DAG sees the arrayNode as an atomic unit. The iterations' parallelisation is internal to the child workflow. This keeps the root DAG small even with large loops.</span>
   </p>
 
   <!-- ============================================ -->
@@ -820,10 +840,11 @@
   <div style="text-align:center;margin-top:40px">
     <a href="arquitetura-v2.html" class="back-btn">
       <span>←</span>
-      <span>Voltar para Arquitetura v2</span>
+      <span data-en="Back to v2 architecture" data-pt="Voltar para Arquitetura v2">Back to v2 architecture</span>
     </a>
   </div>
 
 </div>
+<script src="_assets/i18n.js" defer></script>
 </body>
 </html>

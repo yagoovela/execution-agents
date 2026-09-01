@@ -1,8 +1,10 @@
 ﻿<!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Flux — Execução de Agente (Estado Atual)</title>
+<title>Flux — Agent execution (current state)</title>
+<link rel="stylesheet" href="_assets/i18n.css">
+<link rel="stylesheet" href="_assets/header.css">
 <style>
   * { box-sizing: border-box; }
   body {
@@ -769,49 +771,82 @@
     align-items: center;
     gap: 6px;
   }
+
+  /* Inline cross-refs inside a .box (must NOT be <a> — nested anchors break the outer .box card) */
+  .ref-link { color: #3B82F6; text-decoration: underline; cursor: pointer; }
+
+  /* Unified top tabs (shared across the 4 top-level docs) */
+  .doc-nav { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+  .doc-tabs {
+    display: flex; gap: 4px; background: #fff; padding: 5px; border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(15,23,42,0.08); flex-wrap: wrap;
+    border: 1px solid #E2E8F0; flex: 1 1 auto; min-width: 0;
+  }
+  .doc-tabs .doc-tab {
+    flex: 1 1 auto; text-align: center; padding: 9px 16px; border-radius: 8px;
+    text-decoration: none; color: #475569; font-size: 13px; font-weight: 600;
+    letter-spacing: -0.1px; transition: background 0.15s, color 0.15s; white-space: nowrap;
+  }
+  .doc-tabs .doc-tab:hover { background: #F1F5F9; color: #0F172A; }
+  .doc-tabs .doc-tab.is-active {
+    background: #0F172A; color: #fff; box-shadow: 0 1px 2px rgba(15,23,42,0.15);
+  }
+  .doc-tabs .doc-tab.is-active:hover { background: #0F172A; color: #fff; }
 </style>
 </head>
 <body>
 <div class="container">
+<div class="doc-nav">
+  <nav class="doc-tabs" aria-label="Documentation sections">
+    <a href="index.html" class="doc-tab is-active"><span data-en="Current architecture" data-pt="Arquitetura atual">Current architecture</span></a>
+    <a href="arquitetura-v2.html" class="doc-tab"><span data-en="v2 architecture" data-pt="Arquitetura v2">v2 architecture</span></a>
+    <a href="arquitetura-v2-complemento.html" class="doc-tab"><span data-en="Plan as tasks" data-pt="Plano em tarefas">Plan as tasks</span></a>
+    <a href="timeline/index.html" class="doc-tab"><span data-en="Timeline" data-pt="Timeline">Timeline</span></a>
+    <a href="progresso-refatoracao.html" class="doc-tab"><span data-en="Progress" data-pt="Progresso">Progresso</span></a>
+  </nav>
+  <div class="lang-sw" role="group" aria-label="Language">
+    <button type="button" data-lang="en" aria-pressed="true">EN-US</button>
+    <button type="button" data-lang="pt" aria-pressed="false">PT-BR</button>
+  </div>
+</div>
 
-  <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
-    <a href="arquitetura-v2.html" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:linear-gradient(90deg,#DBEAFE,#F3E8FF);color:#3730A3;text-decoration:none;border-radius:8px;border:1px solid #C7D2FE;font-size:12.5px;font-weight:700;box-shadow:0 1px 3px rgba(0,0,0,0.06);transition:transform 0.15s"
-       onmouseover="this.style.transform='translateY(-1px)'"
-       onmouseout="this.style.transform='translateY(0)'">
-      <span>✦</span>
-      <span>Ver proposta — Arquitetura v2</span>
-      <span style="font-weight:700">→</span>
-    </a>
+
+
+
+  
+
+  <div class="hero">
+    <div class="kicker"><span class="ico">📋</span></div>
+    <h1><span data-en="Current architecture — how the agent runs today" data-pt="Arquitetura atual — como o agente roda hoje">Current architecture — how the agent runs today</span></h1>
+    <div class="goal"><span data-en="A step-by-step walkthrough of the &lt;code&gt;apiV2&lt;/code&gt; loop as it exists in production: every phase, gate, side-effect and cross-cutting concern. Companion to &lt;code&gt;arquitetura-v2.html&lt;/code&gt;, which describes where this has to go." data-pt="Um passo a passo do loop &lt;code&gt;apiV2&lt;/code&gt; como ele existe em produção: cada fase, gate, side-effect e concern transversal. Companheiro de &lt;code&gt;arquitetura-v2.html&lt;/code&gt;, que descreve para onde tudo isso precisa ir.">A step-by-step walkthrough of the <code>apiV2</code> loop as it exists in production: every phase, gate, side-effect and cross-cutting concern. Companion to <code>arquitetura-v2.html</code>, which describes where this has to go.</span></div>
   </div>
 
-  <h1>Execução de Agente — Estado Atual</h1>
-
   <!-- ================================================== -->
-  <!-- FASE 1 — ENTRADA E PREPARAÇÃO -->
+  <!-- PHASE 1 — INTAKE AND PREPARATION -->
   <!-- ================================================== -->
   <div class="section">
     <div class="section-header">
       <div class="section-number">1</div>
-      <div class="section-title">FASE 1 — Entrada e preparação</div>
-      <div class="section-desc">Fase 1 do doc original (passos 1–8, com 1.8 adicionado pós-doc)</div>
+      <div class="section-title"><span data-en="PHASE 1 — Intake and preparation" data-pt="FASE 1 — Entrada e preparação">PHASE 1 — Intake and preparation</span></div>
+      <div class="section-desc"><span data-en="Phase 1 of the original doc (steps 1–8, with 1.8 added after the doc)" data-pt="Fase 1 do doc original (passos 1–8, com 1.8 adicionado pós-doc)">Phase 1 of the original doc (steps 1–8, with 1.8 added after the doc)</span></div>
     </div>
 
     <div class="flow-column">
       <div class="box external">
-        <div class="box-title">Cliente faz requisição</div>
-        <div class="box-desc">API pública, editor, chatbot, form, webhook público ou CSV batch</div>
+        <div class="box-title"><span data-en="Client sends a request" data-pt="Cliente faz requisição">Client sends a request</span></div>
+        <div class="box-desc"><span data-en="Public API, editor, chatbot, form, public webhook or CSV batch" data-pt="API pública, editor, chatbot, form, webhook público ou CSV batch">Public API, editor, chatbot, form, public webhook or CSV batch</span></div>
       </div>
       <div class="arrow">↓</div>
     </div>
 
     <div class="endpoints-grid">
-      <div class="endpoint-box"><code>POST /flux/api-v2</code><span class="kind">API-key • síncrono • runType: api</span></div>
-      <div class="endpoint-box"><code>POST /flux/execute-from-canvas</code><span class="kind">Editor • background • runType: canvas</span></div>
-      <div class="endpoint-box"><code>POST /flux/execute-single-node</code><span class="kind">Editor • runType: single-node</span></div>
-      <div class="endpoint-box"><code>POST /flux/api-v2-webhook</code><span class="kind">Público • enfileira Bull</span></div>
-      <div class="endpoint-box"><code>POST /flux/chatbot-api-socket</code><span class="kind">Chatbot • com socketId • runType: chatbot</span></div>
-      <div class="endpoint-box"><code>POST /flux/formapi-v1</code><span class="kind">Form • runType: formapi</span></div>
-      <div class="endpoint-box"><code>POST /flux/batch-process</code><span class="kind">CSV • itera linhas • runType: batch</span></div>
+      <div class="endpoint-box"><code>POST /flux/api-v2</code><span class="kind" data-en="API-key • synchronous • runType: api" data-pt="API-key • síncrono • runType: api">API-key • synchronous • runType: api</span></div>
+      <div class="endpoint-box"><code>POST /flux/execute-from-canvas</code><span class="kind" data-en="Editor • background • runType: canvas" data-pt="Editor • background • runType: canvas">Editor • background • runType: canvas</span></div>
+      <div class="endpoint-box"><code>POST /flux/execute-single-node</code><span class="kind" data-en="Editor • runType: single-node" data-pt="Editor • runType: single-node">Editor • runType: single-node</span></div>
+      <div class="endpoint-box"><code>POST /flux/api-v2-webhook</code><span class="kind" data-en="Public • enqueues Bull" data-pt="Público • enfileira Bull">Public • enqueues Bull</span></div>
+      <div class="endpoint-box"><code>POST /flux/chatbot-api-socket</code><span class="kind" data-en="Chatbot • with socketId • runType: chatbot" data-pt="Chatbot • com socketId • runType: chatbot">Chatbot • with socketId • runType: chatbot</span></div>
+      <div class="endpoint-box"><code>POST /flux/formapi-v1</code><span class="kind" data-en="Form • runType: formapi" data-pt="Form • runType: formapi">Form • runType: formapi</span></div>
+      <div class="endpoint-box"><code>POST /flux/batch-process</code><span class="kind" data-en="CSV • iterates rows • runType: batch" data-pt="CSV • itera linhas • runType: batch">CSV • iterates rows • runType: batch</span></div>
     </div>
 
     <div class="arrow">↓</div>
@@ -820,16 +855,16 @@
       <a href="passos/passo-1-1.html" class="box backend clickable-node" id="step-1-1">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title">
-          <span class="badge step">1.1</span> Bull queue <code>api-v2</code> — <code>ApiV2QueueProcessor.execute()</code>
-          <span class="badge ess">essencial</span>
+          <span class="badge step">1.1</span> <span data-en="Bull queue" data-pt="Bull queue">Bull queue</span> <code>api-v2</code> — <code>ApiV2QueueProcessor.execute()</code>
+          <span class="badge ess" data-en="essential" data-pt="essencial">essential</span>
         </div>
         <div class="box-desc">
-          Recebe <code>ApiV2QueueModel { jobId, params, webhookUrl, apiV2CallbackFormat }</code>. Config Bull com <code>attempts: 1</code>, <code>timeout: 10min</code>, concorrência via <code>AGENT_CONCURRENCY</code>. Marca <code>markRunning</code>/<code>markInProgress</code>, chama <code>apiV2</code>, publica resultado em <code>McpRunStatus</code>/<code>FlowExecutionStatus</code>, dispara callback HTTP em 2 formatos (novo vs legacy).
+          <span data-en="Receives &lt;code&gt;ApiV2QueueModel { jobId, params, webhookUrl, apiV2CallbackFormat }&lt;/code&gt;. Bull config with &lt;code&gt;attempts: 1&lt;/code&gt;, &lt;code&gt;timeout: 10min&lt;/code&gt;, concurrency via &lt;code&gt;AGENT_CONCURRENCY&lt;/code&gt;. Marks &lt;code&gt;markRunning&lt;/code&gt;/&lt;code&gt;markInProgress&lt;/code&gt;, calls &lt;code&gt;apiV2&lt;/code&gt;, publishes the result to &lt;code&gt;McpRunStatus&lt;/code&gt;/&lt;code&gt;FlowExecutionStatus&lt;/code&gt;, fires an HTTP callback in 2 formats (new vs legacy)." data-pt="Recebe &lt;code&gt;ApiV2QueueModel { jobId, params, webhookUrl, apiV2CallbackFormat }&lt;/code&gt;. Config Bull com &lt;code&gt;attempts: 1&lt;/code&gt;, &lt;code&gt;timeout: 10min&lt;/code&gt;, concorrência via &lt;code&gt;AGENT_CONCURRENCY&lt;/code&gt;. Marca &lt;code&gt;markRunning&lt;/code&gt;/&lt;code&gt;markInProgress&lt;/code&gt;, chama &lt;code&gt;apiV2&lt;/code&gt;, publica resultado em &lt;code&gt;McpRunStatus&lt;/code&gt;/&lt;code&gt;FlowExecutionStatus&lt;/code&gt;, dispara callback HTTP em 2 formatos (novo vs legacy).">Receives <code>ApiV2QueueModel { jobId, params, webhookUrl, apiV2CallbackFormat }</code>. Bull config with <code>attempts: 1</code>, <code>timeout: 10min</code>, concurrency via <code>AGENT_CONCURRENCY</code>. Marks <code>markRunning</code>/<code>markInProgress</code>, calls <code>apiV2</code>, publishes the result to <code>McpRunStatus</code>/<code>FlowExecutionStatus</code>, fires an HTTP callback in 2 formats (new vs legacy).</span>
         </div>
         <div class="box-file">src/jobs/apiV2Job/apiV2Job.queue.ts:18-35 · apiV2Job.processor.ts:16-212 · models/apiV2JobModel.ts:6-33</div>
         <div class="click-hint">
           <span class="click-hint-icon">🔍</span>
-          <span>Clique para ver detalhamento (config Bull + processor + callbacks + OnQueueFailed)</span>
+          <span data-en="Click for details (Bull config + processor + callbacks + OnQueueFailed)" data-pt="Clique para ver detalhamento (config Bull + processor + callbacks + OnQueueFailed)">Click for details (Bull config + processor + callbacks + OnQueueFailed)</span>
           <span class="click-hint-arrow">→</span>
         </div>
       </a>
@@ -838,16 +873,16 @@
       <a href="passos/passo-1-1a.html" class="box cross clickable-node" id="step-1-1a">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title">
-          <span class="badge step">1.1a</span> Serviços auxiliares acionados pela fila
+          <span class="badge step">1.1a</span> <span data-en="Auxiliary services triggered by the queue" data-pt="Serviços auxiliares acionados pela fila">Auxiliary services triggered by the queue</span>
           <span class="badge cross">cross</span>
         </div>
         <div class="box-desc">
-          <code>McpRunStatusService</code> (condicional em <code>mcpTracking</code>) e <code>FlowExecutionStatusService</code> (condicional em <code>executionId</code>) rastreiam o run em 2 caminhos independentes: MCP UI (workspaceId/agentId/tokenId) e persistência de status (markInProgress/markCompleted/markError).
+          <span data-en="&lt;code&gt;McpRunStatusService&lt;/code&gt; (conditional on &lt;code&gt;mcpTracking&lt;/code&gt;) and &lt;code&gt;FlowExecutionStatusService&lt;/code&gt; (conditional on &lt;code&gt;executionId&lt;/code&gt;) track the run through 2 independent paths: MCP UI (workspaceId/agentId/tokenId) and status persistence (markInProgress/markCompleted/markError)." data-pt="&lt;code&gt;McpRunStatusService&lt;/code&gt; (condicional em &lt;code&gt;mcpTracking&lt;/code&gt;) e &lt;code&gt;FlowExecutionStatusService&lt;/code&gt; (condicional em &lt;code&gt;executionId&lt;/code&gt;) rastreiam o run em 2 caminhos independentes: MCP UI (workspaceId/agentId/tokenId) e persistência de status (markInProgress/markCompleted/markError).">&lt;code&gt;McpRunStatusService&lt;/code&gt; (conditional on &lt;code&gt;mcpTracking&lt;/code&gt;) and &lt;code&gt;FlowExecutionStatusService&lt;/code&gt; (conditional on &lt;code&gt;executionId&lt;/code&gt;) track the run through 2 independent paths: MCP UI (workspaceId/agentId/tokenId) and status persistence (markInProgress/markCompleted/markError).</span>
         </div>
         <div class="box-file">apiV2Job.processor.ts:38-42, 63-108, 133-152 · src/app-api/flux/flow-execution-status.service.ts</div>
         <div class="click-hint">
           <span class="click-hint-icon">🔍</span>
-          <span>Clique para ver detalhamento (2 gates + 3 métodos de cada service)</span>
+          <span data-en="Click for details (2 gates + 3 methods of each service)" data-pt="Clique para ver detalhamento (2 gates + 3 métodos de cada service)">Click for details (2 gates + 3 methods of each service)</span>
           <span class="click-hint-arrow">→</span>
         </div>
       </a>
@@ -856,24 +891,24 @@
       <a href="passos/passo-1-1b.html" class="box cross clickable-node" id="step-1-1b">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title">
-          <span class="badge step">1.1b</span> Chamadores <em>internos</em> da fila — pattern fire-and-forget
+          <span class="badge step">1.1b</span> <span data-en="&lt;em&gt;Internal&lt;/em&gt; queue callers — fire-and-forget pattern" data-pt="Chamadores &lt;em&gt;internos&lt;/em&gt; da fila — pattern fire-and-forget">&lt;em&gt;Internal&lt;/em&gt; queue callers — fire-and-forget pattern</span>
         </div>
         <div class="box-desc">
-          <code>flowCallerNode</code> e <code>libraryNode</code> com <code>executionMode: 'triggerOnly'</code> enfileiram sub-flows via <code>enqueueApiV2Job(...).catch(...)</code> sem await. Contraste com o caminho síncrono default (<code>returnAfterFlow</code>).
+          <span data-en="&lt;code&gt;flowCallerNode&lt;/code&gt; and &lt;code&gt;libraryNode&lt;/code&gt; with &lt;code&gt;executionMode: 'triggerOnly'&lt;/code&gt; enqueue sub-flows via &lt;code&gt;enqueueApiV2Job(...).catch(...)&lt;/code&gt; without awaiting. Contrast with the default synchronous path (&lt;code&gt;returnAfterFlow&lt;/code&gt;)." data-pt="&lt;code&gt;flowCallerNode&lt;/code&gt; e &lt;code&gt;libraryNode&lt;/code&gt; com &lt;code&gt;executionMode: 'triggerOnly'&lt;/code&gt; enfileiram sub-flows via &lt;code&gt;enqueueApiV2Job(...).catch(...)&lt;/code&gt; sem await. Contraste com o caminho síncrono default (&lt;code&gt;returnAfterFlow&lt;/code&gt;).">&lt;code&gt;flowCallerNode&lt;/code&gt; and &lt;code&gt;libraryNode&lt;/code&gt; with &lt;code&gt;executionMode: 'triggerOnly'&lt;/code&gt; enqueue sub-flows via &lt;code&gt;enqueueApiV2Job(...).catch(...)&lt;/code&gt; without awaiting. Contrast with the default synchronous path (&lt;code&gt;returnAfterFlow&lt;/code&gt;).</span>
         </div>
         <div class="box-file">flux.service.ts:5593-5618 (flowCallerNode) · 5960-5986 (libraryNode)</div>
         <div class="click-hint">
           <span class="click-hint-icon">🔍</span>
-          <span>Clique para ver detalhamento (2 handlers + gate executionMode + fallback erro)</span>
+          <span data-en="Click for details (2 handlers + executionMode gate + error fallback)" data-pt="Clique para ver detalhamento (2 handlers + gate executionMode + fallback erro)">Click for details (2 handlers + executionMode gate + error fallback)</span>
           <span class="click-hint-arrow">→</span>
         </div>
       </a>
       <div class="arrow">↓</div>
-      <div class="arrow-label">todos os endpoints (com ou sem fila) chamam</div>
+      <div class="arrow-label"><span data-en="every endpoint (with or without queue) calls" data-pt="todos os endpoints (com ou sem fila) chamam">every endpoint (with or without queue) calls</span></div>
 
       <div class="box backend">
-        <div class="box-title">FluxService.apiV2() — ORQUESTRADOR ÚNICO</div>
-        <div class="box-desc">Ponto de entrada de toda execução de agente</div>
+        <div class="box-title"><span data-en="FluxService.apiV2() — SOLE ORCHESTRATOR" data-pt="FluxService.apiV2() — ORQUESTRADOR ÚNICO">FluxService.apiV2() — SOLE ORCHESTRATOR</span></div>
+        <div class="box-desc"><span data-en="Entry point for every agent execution" data-pt="Ponto de entrada de toda execução de agente">Entry point for every agent execution</span></div>
         <div class="box-file">src/app-api/flux/flux.service.ts:2280</div>
       </div>
       <div class="arrow">↓</div>
@@ -881,15 +916,15 @@
       <a href="passos/passo-1-0a.html" class="box backend clickable-node" id="step-1-0a">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title">
-          <span class="badge step">1.0a</span> Setup inicial pré-tudo
+          <span class="badge step">1.0a</span> <span data-en="Pre-everything initial setup" data-pt="Setup inicial pré-tudo">Pre-everything initial setup</span>
         </div>
         <div class="box-desc">
-          <code>sessionId</code> trimmed · contadores <code>totalTokensUsed/Cost</code> + closure <code>onUpdateTokens</code> · <code>runLogProcessId</code> resolvido em cascata de 4 fontes · <code>chatbotSocketByRun</code> registrado se <code>socketId</code> · <code>isNestedRunLog</code> flag para gates downstream.
+          <span data-en="Trimmed &lt;code&gt;sessionId&lt;/code&gt; · &lt;code&gt;totalTokensUsed/Cost&lt;/code&gt; counters + &lt;code&gt;onUpdateTokens&lt;/code&gt; closure · &lt;code&gt;runLogProcessId&lt;/code&gt; resolved via a 4-source cascade · &lt;code&gt;chatbotSocketByRun&lt;/code&gt; registered if &lt;code&gt;socketId&lt;/code&gt; · &lt;code&gt;isNestedRunLog&lt;/code&gt; flag for downstream gates." data-pt="&lt;code&gt;sessionId&lt;/code&gt; trimmed · contadores &lt;code&gt;totalTokensUsed/Cost&lt;/code&gt; + closure &lt;code&gt;onUpdateTokens&lt;/code&gt; · &lt;code&gt;runLogProcessId&lt;/code&gt; resolvido em cascata de 4 fontes · &lt;code&gt;chatbotSocketByRun&lt;/code&gt; registrado se &lt;code&gt;socketId&lt;/code&gt; · &lt;code&gt;isNestedRunLog&lt;/code&gt; flag para gates downstream.">Trimmed <code>sessionId</code> · <code>totalTokensUsed/Cost</code> counters + <code>onUpdateTokens</code> closure · <code>runLogProcessId</code> resolved via a 4-source cascade · <code>chatbotSocketByRun</code> registered if <code>socketId</code> · <code>isNestedRunLog</code> flag for downstream gates.</span>
         </div>
         <div class="box-file">flux.service.ts:2319-2337</div>
         <div class="click-hint">
           <span class="click-hint-icon">🔍</span>
-          <span>Clique para ver detalhamento (cascata runLogProcessId + closure + flag nested)</span>
+          <span data-en="Click for details (runLogProcessId cascade + closure + nested flag)" data-pt="Clique para ver detalhamento (cascata runLogProcessId + closure + flag nested)">Click for details (runLogProcessId cascade + closure + nested flag)</span>
           <span class="click-hint-arrow">→</span>
         </div>
       </a>
@@ -898,39 +933,39 @@
       <a href="passos/passo-1-0b.html" class="box backend clickable-node" id="step-1-0b">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title">
-          <span class="badge step">1.0b</span> Resolução do <code>runTypeEnum</code>
+          <span class="badge step">1.0b</span> <span data-en="Resolve &lt;code&gt;runTypeEnum&lt;/code&gt;" data-pt="Resolução do &lt;code&gt;runTypeEnum&lt;/code&gt;">Resolve <code>runTypeEnum</code></span>
         </div>
         <div class="box-desc">
-          Switch de 24 linhas mapeando <code>runType</code> (string) para o enum <code>FlowLogRunType</code>. Mapeamento direto por valor + default por prefixo para <code>flow-caller-node</code>/<code>library-node</code>/<code>WEBHOOK</code>.
+          <span data-en="A 24-line switch mapping &lt;code&gt;runType&lt;/code&gt; (string) to the &lt;code&gt;FlowLogRunType&lt;/code&gt; enum. Direct mapping by value + default via prefix for &lt;code&gt;flow-caller-node&lt;/code&gt;/&lt;code&gt;library-node&lt;/code&gt;/&lt;code&gt;WEBHOOK&lt;/code&gt;." data-pt="Switch de 24 linhas mapeando &lt;code&gt;runType&lt;/code&gt; (string) para o enum &lt;code&gt;FlowLogRunType&lt;/code&gt;. Mapeamento direto por valor + default por prefixo para &lt;code&gt;flow-caller-node&lt;/code&gt;/&lt;code&gt;library-node&lt;/code&gt;/&lt;code&gt;WEBHOOK&lt;/code&gt;.">A 24-line switch mapping <code>runType</code> (string) to the <code>FlowLogRunType</code> enum. Direct mapping by value + default via prefix for <code>flow-caller-node</code>/<code>library-node</code>/<code>WEBHOOK</code>.</span>
         </div>
         <div class="box-file">flux.service.ts:2339-2374</div>
         <div class="click-hint">
           <span class="click-hint-icon">🔍</span>
-          <span>Clique para ver detalhamento (switch + prefix matching + uso downstream)</span>
+          <span data-en="Click for details (switch + prefix matching + downstream use)" data-pt="Clique para ver detalhamento (switch + prefix matching + uso downstream)">Click for details (switch + prefix matching + downstream use)</span>
           <span class="click-hint-arrow">→</span>
         </div>
       </a>
       <div class="arrow">↓</div>
 
       <div class="box backend">
-        <div class="box-title"><span class="badge step">1.2</span> Validação de usuário <span class="badge ess">essencial</span></div>
+        <div class="box-title"><span class="badge step">1.2</span> <span data-en="User validation" data-pt="Validação de usuário">User validation</span> <span class="badge ess" data-en="essential" data-pt="essencial">essential</span></div>
         <div class="box-desc"><code>userService.findOne({ id: user.id })</code></div>
-        <div class="box-file">flux.service.ts:2377-2380 <em>(era ~1773)</em></div>
+        <div class="box-file">flux.service.ts:2377-2380 <em data-en="(was ~1773)" data-pt="(era ~1773)">(was ~1773)</em></div>
       </div>
       <div class="arrow">↓</div>
 
       <a href="passos/passo-1-3.html" class="box db clickable-node" id="step-1-3">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title">
-          <span class="badge step">1.3</span> Carrega flow + nós + arestas + permissões <span class="badge ess">essencial</span>
+          <span class="badge step">1.3</span> <span data-en="Load flow + nodes + edges + permissions" data-pt="Carrega flow + nós + arestas + permissões">Load flow + nodes + edges + permissions</span> <span class="badge ess" data-en="essential" data-pt="essencial">essential</span>
         </div>
         <div class="box-desc">
           <code>getFlowWithNodesAndEdges()</code> · <code>resolveExecutionHistoryId()</code> · <code>checkIfUserCanRunFlow()</code> · <code>assertOwnerCanRunFlow()</code>
         </div>
-        <div class="box-file">flux.service.ts:2338-2367 <em>(era ~1778)</em></div>
+        <div class="box-file">flux.service.ts:2338-2367 <em data-en="(was ~1778)" data-pt="(era ~1778)">(was ~1778)</em></div>
         <div class="click-hint">
           <span class="click-hint-icon">🔍</span>
-          <span>Clique para ver detalhamento das 4 funções</span>
+          <span data-en="Click for details of the 4 functions" data-pt="Clique para ver detalhamento das 4 funções">Click for details of the 4 functions</span>
           <span class="click-hint-arrow">→</span>
         </div>
       </a>
@@ -938,28 +973,28 @@
 
       <a href="passos/passo-1-4.html" class="box cross clickable-node" id="step-1-4">
         <span class="click-chevron" aria-hidden="true">›</span>
-        <div class="box-title"><span class="badge step">1.4</span> Setup de log por espaço <span class="badge cross">cross-cutting</span></div>
-        <div class="box-desc"><code>RunLogCollector.createRoot()</code> + <code>spaceRunLogsService.scheduleUpsert()</code> + upsert inicial</div>
-        <div class="box-file">flux.service.ts:2371-2437 <em>(era ~1809)</em></div>
+        <div class="box-title"><span class="badge step">1.4</span> <span data-en="Per-space log setup" data-pt="Setup de log por espaço">Per-space log setup</span> <span class="badge cross">cross-cutting</span></div>
+        <div class="box-desc"><code>RunLogCollector.createRoot()</code> + <code>spaceRunLogsService.scheduleUpsert()</code> + <span data-en="initial upsert" data-pt="upsert inicial">initial upsert</span></div>
+        <div class="box-file">flux.service.ts:2371-2437 <em data-en="(was ~1809)" data-pt="(era ~1809)">(was ~1809)</em></div>
         <div class="click-hint">
           <span class="click-hint-icon">🔍</span>
-          <span>Clique para ver detalhamento (gate + 4 funções)</span>
+          <span data-en="Click for details (gate + 4 functions)" data-pt="Clique para ver detalhamento (gate + 4 funções)">Click for details (gate + 4 functions)</span>
           <span class="click-hint-arrow">→</span>
         </div>
       </a>
       <div style="width:520px;max-width:100%;background:#EFF6FF;border-left:4px solid #3B82F6;padding:10px 14px;border-radius:6px;font-size:12px;color:#1E3A8A;margin-top:6px">
-        <strong>📝 Nota:</strong> Precisamos estruturar melhor o que precisamos documentar, para que, e o que é importante para o time de produto/dev.
+        <strong>📝 <span data-en="Note:" data-pt="Nota:">Note:</span></strong> <span data-en="We need to better structure what to document, for whom, and what matters to the product/dev teams." data-pt="Precisamos estruturar melhor o que precisamos documentar, para que, e o que é importante para o time de produto/dev.">We need to better structure what to document, for whom, and what matters to the product/dev teams.</span>
       </div>
       <div class="arrow">↓</div>
 
       <a href="passos/passo-1-5.html" class="box backend clickable-node" id="step-1-5">
         <span class="click-chevron" aria-hidden="true">›</span>
-        <div class="box-title"><span class="badge step">1.5</span> Carrega objetos personalizados <span class="badge ess">essencial</span></div>
-        <div class="box-desc">Resolve <code>ObjectOwner</code> (space &gt; companyUser &gt; user), chama <code>objectsService.getObjectsByOwner()</code></div>
-        <div class="box-file">flux.service.ts:2439-2462 <em>(era ~1879)</em></div>
+        <div class="box-title"><span class="badge step">1.5</span> <span data-en="Load custom objects" data-pt="Carrega objetos personalizados">Load custom objects</span> <span class="badge ess" data-en="essential" data-pt="essencial">essential</span></div>
+        <div class="box-desc"><span data-en="Resolves &lt;code&gt;ObjectOwner&lt;/code&gt; (space &gt; companyUser &gt; user), calls &lt;code&gt;objectsService.getObjectsByOwner()&lt;/code&gt;" data-pt="Resolve &lt;code&gt;ObjectOwner&lt;/code&gt; (space &gt; companyUser &gt; user), chama &lt;code&gt;objectsService.getObjectsByOwner()&lt;/code&gt;">Resolves <code>ObjectOwner</code> (space &gt; companyUser &gt; user), calls <code>objectsService.getObjectsByOwner()</code></span></div>
+        <div class="box-file">flux.service.ts:2439-2462 <em data-en="(was ~1879)" data-pt="(era ~1879)">(was ~1879)</em></div>
         <div class="click-hint">
           <span class="click-hint-icon">🔍</span>
-          <span>Clique para ver detalhamento (ObjectOwner + 4 funções)</span>
+          <span data-en="Click for details (ObjectOwner + 4 functions)" data-pt="Clique para ver detalhamento (ObjectOwner + 4 funções)">Click for details (ObjectOwner + 4 functions)</span>
           <span class="click-hint-arrow">→</span>
         </div>
       </a>
@@ -968,15 +1003,15 @@
       <a href="passos/passo-1-5a.html" class="box backend clickable-node" id="step-1-5a">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title">
-          <span class="badge step">1.5a</span> <code>stripStaleErrorState()</code> — limpa erros de runs anteriores
+          <span class="badge step">1.5a</span> <code>stripStaleErrorState()</code> — <span data-en="clear errors from previous runs" data-pt="limpa erros de runs anteriores">clear errors from previous runs</span>
         </div>
         <div class="box-desc">
-          Remove <code>errorMessage</code>/<code>errorStatusCode</code> acumulados de execuções passadas antes de começar. Também monta cópia enxuta de <code>edges</code> (só campos usados pelo scheduler).
+          <span data-en="Removes &lt;code&gt;errorMessage&lt;/code&gt;/&lt;code&gt;errorStatusCode&lt;/code&gt; accumulated from past executions before starting. Also builds a lean copy of &lt;code&gt;edges&lt;/code&gt; (only fields the scheduler uses)." data-pt="Remove &lt;code&gt;errorMessage&lt;/code&gt;/&lt;code&gt;errorStatusCode&lt;/code&gt; acumulados de execuções passadas antes de começar. Também monta cópia enxuta de &lt;code&gt;edges&lt;/code&gt; (só campos usados pelo scheduler).">Removes <code>errorMessage</code>/<code>errorStatusCode</code> accumulated from past executions before starting. Also builds a lean copy of <code>edges</code> (only fields the scheduler uses).</span>
         </div>
         <div class="box-file">flux.service.ts:2513-2520 · 444-448 (stripStaleErrorState)</div>
         <div class="click-hint">
           <span class="click-hint-icon">🔍</span>
-          <span>Clique para ver detalhamento (implementação + edges enxuto)</span>
+          <span data-en="Click for details (implementation + lean edges)" data-pt="Clique para ver detalhamento (implementação + edges enxuto)">Click for details (implementation + lean edges)</span>
           <span class="click-hint-arrow">→</span>
         </div>
       </a>
@@ -985,15 +1020,15 @@
       <a href="passos/passo-1-5b.html" class="box backend clickable-node" id="step-1-5b">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title">
-          <span class="badge step">1.5b</span> Reset de <code>fluxObject</code> com <em>clearOnExecution</em>
+          <span class="badge step">1.5b</span> <span data-en="Reset &lt;code&gt;fluxObject&lt;/code&gt; with &lt;em&gt;clearOnExecution&lt;/em&gt;" data-pt="Reset de &lt;code&gt;fluxObject&lt;/code&gt; com &lt;em&gt;clearOnExecution&lt;/em&gt;">Reset <code>fluxObject</code> with <em>clearOnExecution</em></span>
         </div>
         <div class="box-desc">
-          Filtra nós marcados com <code>clearOnExecution</code> e, se persistem entries, limpa sessão chat via <code>sessionStateService.clear</code>. Depois <code>persistNodeDataToLiveRow</code> grava reset no banco e mapeia <code>updatedFlows</code> em memória.
+          <span data-en="Filters nodes marked with &lt;code&gt;clearOnExecution&lt;/code&gt; and, if entries persist, clears the chat session via &lt;code&gt;sessionStateService.clear&lt;/code&gt;. Then &lt;code&gt;persistNodeDataToLiveRow&lt;/code&gt; writes the reset to the database and maps &lt;code&gt;updatedFlows&lt;/code&gt; in memory." data-pt="Filtra nós marcados com &lt;code&gt;clearOnExecution&lt;/code&gt; e, se persistem entries, limpa sessão chat via &lt;code&gt;sessionStateService.clear&lt;/code&gt;. Depois &lt;code&gt;persistNodeDataToLiveRow&lt;/code&gt; grava reset no banco e mapeia &lt;code&gt;updatedFlows&lt;/code&gt; em memória.">Filters nodes marked with <code>clearOnExecution</code> and, if entries persist, clears the chat session via <code>sessionStateService.clear</code>. Then <code>persistNodeDataToLiveRow</code> writes the reset to the database and maps <code>updatedFlows</code> in memory.</span>
         </div>
         <div class="box-file">flux.service.ts:2525-2558</div>
         <div class="click-hint">
           <span class="click-hint-icon">🔍</span>
-          <span>Clique para ver detalhamento (isFluxObjectClearOnExecution + reset)</span>
+          <span data-en="Click for details (isFluxObjectClearOnExecution + reset)" data-pt="Clique para ver detalhamento (isFluxObjectClearOnExecution + reset)">Click for details (isFluxObjectClearOnExecution + reset)</span>
           <span class="click-hint-arrow">→</span>
         </div>
       </a>
@@ -1001,12 +1036,12 @@
 
       <a href="passos/passo-1-6.html" class="box backend clickable-node" id="step-1-6">
         <span class="click-chevron" aria-hidden="true">›</span>
-        <div class="box-title"><span class="badge step">1.6</span> Carrega contexto de chat <span class="badge ess">essencial (modo chat)</span></div>
-        <div class="box-desc"><code>sessionStateService.readContents()</code> para <code>fluxObject</code> e <code>nodesBox</code> com chat habilitado. Atualiza sessão selecionada.</div>
-        <div class="box-file">flux.service.ts:2560-2697 <em>(era ~1931)</em></div>
+        <div class="box-title"><span class="badge step">1.6</span> <span data-en="Load chat context" data-pt="Carrega contexto de chat">Load chat context</span> <span class="badge ess" data-en="essential (chat mode)" data-pt="essencial (modo chat)">essential (chat mode)</span></div>
+        <div class="box-desc"><span data-en="&lt;code&gt;sessionStateService.readContents()&lt;/code&gt; for &lt;code&gt;fluxObject&lt;/code&gt; and &lt;code&gt;nodesBox&lt;/code&gt; with chat enabled. Updates the selected session." data-pt="&lt;code&gt;sessionStateService.readContents()&lt;/code&gt; para &lt;code&gt;fluxObject&lt;/code&gt; e &lt;code&gt;nodesBox&lt;/code&gt; com chat habilitado. Atualiza sessão selecionada.">&lt;code&gt;sessionStateService.readContents()&lt;/code&gt; for &lt;code&gt;fluxObject&lt;/code&gt; and &lt;code&gt;nodesBox&lt;/code&gt; with chat enabled. Updates the selected session.</span></div>
+        <div class="box-file">flux.service.ts:2560-2697 <em data-en="(was ~1931)" data-pt="(era ~1931)">(was ~1931)</em></div>
         <div class="click-hint">
           <span class="click-hint-icon">🔍</span>
-          <span>Clique para ver detalhamento (gate + 4 blocos de merge)</span>
+          <span data-en="Click for details (gate + 4 merge blocks)" data-pt="Clique para ver detalhamento (gate + 4 blocos de merge)">Click for details (gate + 4 merge blocks)</span>
           <span class="click-hint-arrow">→</span>
         </div>
       </a>
@@ -1014,12 +1049,12 @@
 
       <a href="passos/passo-1-7.html" class="box external clickable-node" id="step-1-7">
         <span class="click-chevron" aria-hidden="true">›</span>
-        <div class="box-title"><span class="badge step">1.7</span> Refresh de token Google (condicional) <span class="badge ess">essencial</span></div>
-        <div class="box-desc">Só se flow tem <code>pullData</code>/<code>pushData</code> com provider=google. Usa <code>OAuth2Client</code>.</div>
-        <div class="box-file">flux.service.ts:2699-2722 <em>(era ~2060)</em></div>
+        <div class="box-title"><span class="badge step">1.7</span> <span data-en="Google token refresh (conditional)" data-pt="Refresh de token Google (condicional)">Google token refresh (conditional)</span> <span class="badge ess" data-en="essential" data-pt="essencial">essential</span></div>
+        <div class="box-desc"><span data-en="Only if the flow has &lt;code&gt;pullData&lt;/code&gt;/&lt;code&gt;pushData&lt;/code&gt; with provider=google. Uses &lt;code&gt;OAuth2Client&lt;/code&gt;." data-pt="Só se flow tem &lt;code&gt;pullData&lt;/code&gt;/&lt;code&gt;pushData&lt;/code&gt; com provider=google. Usa &lt;code&gt;OAuth2Client&lt;/code&gt;.">Only if the flow has &lt;code&gt;pullData&lt;/code&gt;/&lt;code&gt;pushData&lt;/code&gt; with provider=google. Uses &lt;code&gt;OAuth2Client&lt;/code&gt;.</span></div>
+        <div class="box-file">flux.service.ts:2699-2722 <em data-en="(was ~2060)" data-pt="(era ~2060)">(was ~2060)</em></div>
         <div class="click-hint">
           <span class="click-hint-icon">🔍</span>
-          <span>Clique para ver detalhamento (gate + OAuth2Client refresh)</span>
+          <span data-en="Click for details (gate + OAuth2Client refresh)" data-pt="Clique para ver detalhamento (gate + OAuth2Client refresh)">Click for details (gate + OAuth2Client refresh)</span>
           <span class="click-hint-arrow">→</span>
         </div>
       </a>
@@ -1028,15 +1063,15 @@
       <a href="passos/passo-1-7a.html" class="box backend clickable-node" id="step-1-7a">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title">
-          <span class="badge step">1.7a</span> Reset de nós com <code>clearOnExecution</code> — por tipo
+          <span class="badge step">1.7a</span> <span data-en="Reset nodes with &lt;code&gt;clearOnExecution&lt;/code&gt; — per type" data-pt="Reset de nós com &lt;code&gt;clearOnExecution&lt;/code&gt; — por tipo">Reset nodes with <code>clearOnExecution</code> — per type</span>
         </div>
         <div class="box-desc">
-          Map com 7+ branches por <code>node.type</code>: <code>outputObjectNode</code> (text/textData), <code>fluxBox</code>/<code>libraryNode</code> (por key), <code>voiceBoxNode</code> (audioUrl), <code>commandContentNode</code>, <code>apiCaller</code>/<code>mcpNode</code>, tipos genéricos e <code>conditionNode.currentLoopCounter</code>.
+          <span data-en="Map with 7+ branches by &lt;code&gt;node.type&lt;/code&gt;: &lt;code&gt;outputObjectNode&lt;/code&gt; (text/textData), &lt;code&gt;fluxBox&lt;/code&gt;/&lt;code&gt;libraryNode&lt;/code&gt; (per key), &lt;code&gt;voiceBoxNode&lt;/code&gt; (audioUrl), &lt;code&gt;commandContentNode&lt;/code&gt;, &lt;code&gt;apiCaller&lt;/code&gt;/&lt;code&gt;mcpNode&lt;/code&gt;, generic types and &lt;code&gt;conditionNode.currentLoopCounter&lt;/code&gt;." data-pt="Map com 7+ branches por &lt;code&gt;node.type&lt;/code&gt;: &lt;code&gt;outputObjectNode&lt;/code&gt; (text/textData), &lt;code&gt;fluxBox&lt;/code&gt;/&lt;code&gt;libraryNode&lt;/code&gt; (por key), &lt;code&gt;voiceBoxNode&lt;/code&gt; (audioUrl), &lt;code&gt;commandContentNode&lt;/code&gt;, &lt;code&gt;apiCaller&lt;/code&gt;/&lt;code&gt;mcpNode&lt;/code&gt;, tipos genéricos e &lt;code&gt;conditionNode.currentLoopCounter&lt;/code&gt;.">Map with 7+ branches by <code>node.type</code>: <code>outputObjectNode</code> (text/textData), <code>fluxBox</code>/<code>libraryNode</code> (per key), <code>voiceBoxNode</code> (audioUrl), <code>commandContentNode</code>, <code>apiCaller</code>/<code>mcpNode</code>, generic types and <code>conditionNode.currentLoopCounter</code>.</span>
         </div>
         <div class="box-file">flux.service.ts:2724-2812</div>
         <div class="click-hint">
           <span class="click-hint-icon">🔍</span>
-          <span>Clique para ver detalhamento (7+ tipos de reset por node type)</span>
+          <span data-en="Click for details (7+ reset types per node type)" data-pt="Clique para ver detalhamento (7+ tipos de reset por node type)">Click for details (7+ reset types per node type)</span>
           <span class="click-hint-arrow">→</span>
         </div>
       </a>
@@ -1048,12 +1083,12 @@
           <span class="badge step">1.7b</span> <code>clearRunOutputForSeed()</code> + <code>clearObjects()</code>
         </div>
         <div class="box-desc">
-          <code>clearRunOutputForSeed</code> zera outputs por-nó via map. <code>clearObjects</code> limpa objetos personalizados marcados para reset (via callback <code>onMutateObjectCallerData</code>). Snapshot final <code>newFlows</code> antes do 1.8.
+          <span data-en="&lt;code&gt;clearRunOutputForSeed&lt;/code&gt; zeroes per-node outputs via a map. &lt;code&gt;clearObjects&lt;/code&gt; clears custom objects marked for reset (via the &lt;code&gt;onMutateObjectCallerData&lt;/code&gt; callback). Final &lt;code&gt;newFlows&lt;/code&gt; snapshot before 1.8." data-pt="&lt;code&gt;clearRunOutputForSeed&lt;/code&gt; zera outputs por-nó via map. &lt;code&gt;clearObjects&lt;/code&gt; limpa objetos personalizados marcados para reset (via callback &lt;code&gt;onMutateObjectCallerData&lt;/code&gt;). Snapshot final &lt;code&gt;newFlows&lt;/code&gt; antes do 1.8.">&lt;code&gt;clearRunOutputForSeed&lt;/code&gt; zeroes per-node outputs via a map. &lt;code&gt;clearObjects&lt;/code&gt; clears custom objects marked for reset (via the &lt;code&gt;onMutateObjectCallerData&lt;/code&gt; callback). Final &lt;code&gt;newFlows&lt;/code&gt; snapshot before 1.8.</span>
         </div>
         <div class="box-file">flux.service.ts:2814-2825</div>
         <div class="click-hint">
           <span class="click-hint-icon">🔍</span>
-          <span>Clique para ver detalhamento (idempotência + closure mutation)</span>
+          <span data-en="Click for details (idempotence + closure mutation)" data-pt="Clique para ver detalhamento (idempotência + closure mutation)">Click for details (idempotence + closure mutation)</span>
           <span class="click-hint-arrow">→</span>
         </div>
       </a>
@@ -1062,64 +1097,64 @@
       <a href="passos/passo-1-8.html" class="box backend clickable-node" id="step-1-8">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title">
-          <span class="badge step">1.8</span> Resolução de inputs (<code>varInputNode</code>) + extração/OCR
-          <span class="badge ess">essencial</span>
-          <span class="badge new">expandido pós-doc</span>
+          <span class="badge step">1.8</span> <span data-en="Input resolution (&lt;code&gt;varInputNode&lt;/code&gt;) + extraction/OCR" data-pt="Resolução de inputs (&lt;code&gt;varInputNode&lt;/code&gt;) + extração/OCR">Input resolution (<code>varInputNode</code>) + extraction/OCR</span>
+          <span class="badge ess" data-en="essential" data-pt="essencial">essential</span>
+          <span class="badge new" data-en="expanded post-doc" data-pt="expandido pós-doc">expanded post-doc</span>
         </div>
         <div class="box-desc">
-          <strong>Bloco de 361 linhas</strong> (2827-3189). Muito mais complexo que "resolve variáveis".
+          <strong><span data-en="361-line block" data-pt="Bloco de 361 linhas">361-line block</span></strong> <span data-en="(2827-3189). Much more complex than &quot;resolve variables&quot;." data-pt="(2827-3189). Muito mais complexo que &quot;resolve variáveis&quot;.">(2827-3189). Much more complex than "resolve variables".</span>
           <br><br>
-          <strong>Fallback <code>dataInput</code> (2829-2850)</strong>: se <code>body.variableInputs</code> vazio E <code>body.dataInput</code> definido E existe pelo menos um <code>varInputNode</code>, sintetiza um input single-shot para o primeiro <code>varInputNode</code>. Aceita <code>dataInput</code> como string OU objeto <code>{ inputText, text }</code>.
+          <strong><code>dataInput</code> <span data-en="fallback" data-pt="Fallback">fallback</span> (2829-2850)</strong>: <span data-en="if &lt;code&gt;body.variableInputs&lt;/code&gt; is empty AND &lt;code&gt;body.dataInput&lt;/code&gt; is defined AND at least one &lt;code&gt;varInputNode&lt;/code&gt; exists, synthesises a single-shot input for the first &lt;code&gt;varInputNode&lt;/code&gt;. Accepts &lt;code&gt;dataInput&lt;/code&gt; as a string OR object &lt;code&gt;{ inputText, text }&lt;/code&gt;." data-pt="se &lt;code&gt;body.variableInputs&lt;/code&gt; vazio E &lt;code&gt;body.dataInput&lt;/code&gt; definido E existe pelo menos um &lt;code&gt;varInputNode&lt;/code&gt;, sintetiza um input single-shot para o primeiro &lt;code&gt;varInputNode&lt;/code&gt;. Aceita &lt;code&gt;dataInput&lt;/code&gt; como string OU objeto &lt;code&gt;{ inputText, text }&lt;/code&gt;.">if <code>body.variableInputs</code> is empty AND <code>body.dataInput</code> is defined AND at least one <code>varInputNode</code> exists, synthesises a single-shot input for the first <code>varInputNode</code>. Accepts <code>dataInput</code> as a string OR object <code>{ inputText, text }</code>.</span>
           <br><br>
-          <strong>Para cada <code>variableInput</code></strong> (2853+):
-          <br>• Se <code>node.type === 'varInputNode'</code>:
-          <br>&nbsp;&nbsp;→ Resolve <code>isExtraction</code>: se null e tem links/files, default <code>false</code>
-          <br>&nbsp;&nbsp;→ Ramo <code>isExtraction === true</code> (2893-3008):
-          <br>&nbsp;&nbsp;&nbsp;&nbsp;- Links: <code>extractionService.extractTextFromLink({ fileSrc, fileMimetype, flowId, user, typeOCR })</code> — <code>typeOCR</code> ∈ {<code>mistral_ocr</code>, <code>mistral_vision</code>, <code>google_ocr</code>}, default <code>mistral_ocr</code>
-          <br>&nbsp;&nbsp;&nbsp;&nbsp;- Files (base64): <code>generateFileKeyFromBase64</code> → <code>awsService.uploadFile(buffer, key, mimetype)</code> → mesmo OCR
-          <br>&nbsp;&nbsp;&nbsp;&nbsp;- Try/catch por link e por file — falhas viram string de erro concatenada em <code>extractText</code>. O flow <strong>não</strong> aborta.
-          <br>&nbsp;&nbsp;→ Ramo <code>isExtraction === false</code> (3010-3071):
-          <br>&nbsp;&nbsp;&nbsp;&nbsp;- Links: só concatena URLs em <code>extractText</code> (sem OCR)
-          <br>&nbsp;&nbsp;&nbsp;&nbsp;- Files: upload S3 igual, mas guarda só URLs
-          <br>• Se <code>node.type !== 'varInputNode'</code> (3128-3188): rota de <em>fileUrl fallback</em>. Trata entradas para outros tipos de nó com upload S3 mas sem OCR.
+          <strong><span data-en="For each &lt;code&gt;variableInput&lt;/code&gt;" data-pt="Para cada &lt;code&gt;variableInput&lt;/code&gt;">For each <code>variableInput</code></span></strong> (2853+):
+          <br>• <span data-en="If &lt;code&gt;node.type === 'varInputNode'&lt;/code&gt;:" data-pt="Se &lt;code&gt;node.type === 'varInputNode'&lt;/code&gt;:">If &lt;code&gt;node.type === 'varInputNode'&lt;/code&gt;:</span>
+          <br>&nbsp;&nbsp;→ <span data-en="Resolves &lt;code&gt;isExtraction&lt;/code&gt;: if null and has links/files, defaults to &lt;code&gt;false&lt;/code&gt;" data-pt="Resolve &lt;code&gt;isExtraction&lt;/code&gt;: se null e tem links/files, default &lt;code&gt;false&lt;/code&gt;">Resolves &lt;code&gt;isExtraction&lt;/code&gt;: if null and has links/files, defaults to &lt;code&gt;false&lt;/code&gt;</span>
+          <br>&nbsp;&nbsp;→ <code>isExtraction === true</code> <span data-en="branch" data-pt="Ramo">branch</span> (2893-3008):
+          <br>&nbsp;&nbsp;&nbsp;&nbsp;- <span data-en="Links: &lt;code&gt;extractionService.extractTextFromLink({ fileSrc, fileMimetype, flowId, user, typeOCR })&lt;/code&gt; — &lt;code&gt;typeOCR&lt;/code&gt; ∈ {&lt;code&gt;mistral_ocr&lt;/code&gt;, &lt;code&gt;mistral_vision&lt;/code&gt;, &lt;code&gt;google_ocr&lt;/code&gt;}, default &lt;code&gt;mistral_ocr&lt;/code&gt;" data-pt="Links: &lt;code&gt;extractionService.extractTextFromLink({ fileSrc, fileMimetype, flowId, user, typeOCR })&lt;/code&gt; — &lt;code&gt;typeOCR&lt;/code&gt; ∈ {&lt;code&gt;mistral_ocr&lt;/code&gt;, &lt;code&gt;mistral_vision&lt;/code&gt;, &lt;code&gt;google_ocr&lt;/code&gt;}, default &lt;code&gt;mistral_ocr&lt;/code&gt;">Links: <code>extractionService.extractTextFromLink({ fileSrc, fileMimetype, flowId, user, typeOCR })</code> — <code>typeOCR</code> ∈ {<code>mistral_ocr</code>, <code>mistral_vision</code>, <code>google_ocr</code>}, default <code>mistral_ocr</code></span>
+          <br>&nbsp;&nbsp;&nbsp;&nbsp;- <span data-en="Files (base64): &lt;code&gt;generateFileKeyFromBase64&lt;/code&gt; → &lt;code&gt;awsService.uploadFile(buffer, key, mimetype)&lt;/code&gt; → same OCR" data-pt="Files (base64): &lt;code&gt;generateFileKeyFromBase64&lt;/code&gt; → &lt;code&gt;awsService.uploadFile(buffer, key, mimetype)&lt;/code&gt; → mesmo OCR">Files (base64): <code>generateFileKeyFromBase64</code> → <code>awsService.uploadFile(buffer, key, mimetype)</code> → same OCR</span>
+          <br>&nbsp;&nbsp;&nbsp;&nbsp;- <span data-en="Try/catch per link and per file — failures become an error string concatenated into &lt;code&gt;extractText&lt;/code&gt;. The flow does &lt;strong&gt;not&lt;/strong&gt; abort." data-pt="Try/catch por link e por file — falhas viram string de erro concatenada em &lt;code&gt;extractText&lt;/code&gt;. O flow &lt;strong&gt;não&lt;/strong&gt; aborta.">Try/catch per link and per file — failures become an error string concatenated into <code>extractText</code>. The flow does <strong>not</strong> abort.</span>
+          <br>&nbsp;&nbsp;→ <code>isExtraction === false</code> <span data-en="branch" data-pt="Ramo">branch</span> (3010-3071):
+          <br>&nbsp;&nbsp;&nbsp;&nbsp;- <span data-en="Links: only concatenates URLs into &lt;code&gt;extractText&lt;/code&gt; (no OCR)" data-pt="Links: só concatena URLs em &lt;code&gt;extractText&lt;/code&gt; (sem OCR)">Links: only concatenates URLs into <code>extractText</code> (no OCR)</span>
+          <br>&nbsp;&nbsp;&nbsp;&nbsp;- <span data-en="Files: same S3 upload, but only stores URLs" data-pt="Files: upload S3 igual, mas guarda só URLs">Files: same S3 upload, but only stores URLs</span>
+          <br>• <span data-en="If &lt;code&gt;node.type !== 'varInputNode'&lt;/code&gt; (3128-3188): &lt;em&gt;fileUrl fallback&lt;/em&gt; route. Handles inputs for other node types with S3 upload but no OCR." data-pt="Se &lt;code&gt;node.type !== 'varInputNode'&lt;/code&gt; (3128-3188): rota de &lt;em&gt;fileUrl fallback&lt;/em&gt;. Trata entradas para outros tipos de nó com upload S3 mas sem OCR.">If &lt;code&gt;node.type !== 'varInputNode'&lt;/code&gt; (3128-3188): &lt;em&gt;fileUrl fallback&lt;/em&gt; route. Handles inputs for other node types with S3 upload but no OCR.</span>
           <br><br>
-          <strong>Após loop</strong>: para cada <code>varInputNode</code> resolvido, chama <code>addConnectToNodes({ edges, nds, nodeData: { id, data: { text, uploadedFiles, extractText, isExtraction, links, files } }, onMutateSchema, objectCallerData })</code> . Propaga a entrada para os nós conectados pelas arestas. Depois <code>persistInputNodeData(...)</code> grava no banco (<code>flows_nodes.data</code>).
+          <strong><span data-en="After the loop" data-pt="Após loop">After the loop</span></strong>: <span data-en="for each resolved &lt;code&gt;varInputNode&lt;/code&gt;, calls &lt;code&gt;addConnectToNodes({ edges, nds, nodeData: { id, data: { text, uploadedFiles, extractText, isExtraction, links, files } }, onMutateSchema, objectCallerData })&lt;/code&gt;. Propagates the input to nodes connected by the edges. Then &lt;code&gt;persistInputNodeData(...)&lt;/code&gt; writes to the database (&lt;code&gt;flows_nodes.data&lt;/code&gt;)." data-pt="para cada &lt;code&gt;varInputNode&lt;/code&gt; resolvido, chama &lt;code&gt;addConnectToNodes({ edges, nds, nodeData: { id, data: { text, uploadedFiles, extractText, isExtraction, links, files } }, onMutateSchema, objectCallerData })&lt;/code&gt;. Propaga a entrada para os nós conectados pelas arestas. Depois &lt;code&gt;persistInputNodeData(...)&lt;/code&gt; grava no banco (&lt;code&gt;flows_nodes.data&lt;/code&gt;).">for each resolved <code>varInputNode</code>, calls <code>addConnectToNodes({ edges, nds, nodeData: { id, data: { text, uploadedFiles, extractText, isExtraction, links, files } }, onMutateSchema, objectCallerData })</code>. Propagates the input to nodes connected by the edges. Then <code>persistInputNodeData(...)</code> writes to the database (<code>flows_nodes.data</code>).</span>
           <br><br>
-          <em>Bloco pesado que roda antes do scheduler. É onde PDF/imagem/áudio viram texto para o LLM. Cada nível de sub-flow (nodesBox/libraryNode/fluxBox) roda esse mesmo mecanismo de novo, com o custo pago em cascata.</em>
+          <em><span data-en="Heavy block that runs before the scheduler. This is where PDF/image/audio become text for the LLM. Each sub-flow level (nodesBox/libraryNode/fluxBox) runs this same mechanism again, with the cost paid in cascade." data-pt="Bloco pesado que roda antes do scheduler. É onde PDF/imagem/áudio viram texto para o LLM. Cada nível de sub-flow (nodesBox/libraryNode/fluxBox) roda esse mesmo mecanismo de novo, com o custo pago em cascata.">Heavy block that runs before the scheduler. This is where PDF/image/audio become text for the LLM. Each sub-flow level (nodesBox/libraryNode/fluxBox) runs this same mechanism again, with the cost paid in cascade.</span></em>
         </div>
         <div class="box-file">flux.service.ts:2827-3189</div>
         <div class="click-hint">
           <span class="click-hint-icon">🔍</span>
-          <span>Clique para ver detalhamento (dataInput fallback + OCR + propagação + persistência)</span>
+          <span data-en="Click for details (dataInput fallback + OCR + propagation + persistence)" data-pt="Clique para ver detalhamento (dataInput fallback + OCR + propagação + persistência)">Click for details (dataInput fallback + OCR + propagation + persistence)</span>
           <span class="click-hint-arrow">→</span>
         </div>
       </a>
     </div>
   </div>
 
- 
+
 
   <!-- ================================================== -->
-  <!-- FASE 2 — SETUP DA EXECUÇÃO -->
+  <!-- PHASE 2 — EXECUTION SETUP -->
   <!-- ================================================== -->
   <div class="section">
     <div class="section-header">
       <div class="section-number">2</div>
-      <div class="section-title">FASE 2 — Setup da execução</div>
-      <div class="section-desc">Fase 2 do doc (passos 8–10). <strong>Base do algoritmo que vai ser reimplementado.</strong></div>
+      <div class="section-title"><span data-en="PHASE 2 — Execution setup" data-pt="FASE 2 — Setup da execução">PHASE 2 — Execution setup</span></div>
+      <div class="section-desc"><span data-en="Phase 2 of the doc (steps 8–10). &lt;strong&gt;Foundation of the algorithm that will be re-implemented.&lt;/strong&gt;" data-pt="Fase 2 do doc (passos 8–10). &lt;strong&gt;Base do algoritmo que vai ser reimplementado.&lt;/strong&gt;">Phase 2 of the doc (steps 8–10). <strong>Foundation of the algorithm that will be re-implemented.</strong></span></div>
     </div>
 
     <div class="flow-column">
       <a href="passos/passo-2-1.html" class="box backend clickable-node" id="step-2-1">
         <span class="click-chevron" aria-hidden="true">›</span>
-        <div class="box-title"><span class="badge step">2.1</span> buildSchedulerState() — DAG scheduler <span class="badge ess">essencial</span></div>
+        <div class="box-title"><span class="badge step">2.1</span> buildSchedulerState() — DAG scheduler <span class="badge ess" data-en="essential" data-pt="essencial">essential</span></div>
         <div class="box-desc">
-          Classifica arestas em <code>control / condition / data / global</code>, remove <strong>backedges</strong>, calcula predecessores, monta fila <code>ready</code>. Também <code>planOrder()</code> para ordem topológica de debug.
+          <span data-en="Classifies edges as &lt;code&gt;control / condition / data / global&lt;/code&gt;, removes &lt;strong&gt;backedges&lt;/strong&gt;, computes predecessors, builds the &lt;code&gt;ready&lt;/code&gt; queue. Also &lt;code&gt;planOrder()&lt;/code&gt; for a debug-friendly topological order." data-pt="Classifica arestas em &lt;code&gt;control / condition / data / global&lt;/code&gt;, remove &lt;strong&gt;backedges&lt;/strong&gt;, calcula predecessores, monta fila &lt;code&gt;ready&lt;/code&gt;. Também &lt;code&gt;planOrder()&lt;/code&gt; para ordem topológica de debug.">Classifies edges as <code>control / condition / data / global</code>, removes <strong>backedges</strong>, computes predecessors, builds the <code>ready</code> queue. Also <code>planOrder()</code> for a debug-friendly topological order.</span>
         </div>
         <div class="box-file">src/app-api/flux/scheduler.ts:152-293 (planOrder: 412-425)</div>
         <div class="click-hint">
           <span class="click-hint-icon">🔍</span>
-          <span>Clique para ver detalhamento (classify + reachable + backedges + preds)</span>
+          <span data-en="Click for details (classify + reachable + backedges + preds)" data-pt="Clique para ver detalhamento (classify + reachable + backedges + preds)">Click for details (classify + reachable + backedges + preds)</span>
           <span class="click-hint-arrow">→</span>
         </div>
       </a>
@@ -1127,20 +1162,20 @@
 
       <a href="passos/passo-2-2.html" class="box backend clickable-node" id="step-2-2">
         <span class="click-chevron" aria-hidden="true">›</span>
-        <div class="box-title"><span class="badge step">2.2</span> Variáveis mutáveis de execução <span class="badge ess">essencial (é o que estora RAM hoje)</span></div>
+        <div class="box-title"><span class="badge step">2.2</span> <span data-en="Mutable execution variables" data-pt="Variáveis mutáveis de execução">Mutable execution variables</span> <span class="badge ess" data-en="essential (this is what blows RAM today)" data-pt="essencial (é o que estora RAM hoje)">essential (this is what blows RAM today)</span></div>
         <div class="box-desc">
-          <strong>Bloco pré-scheduler (3191-3207)</strong>: <code>myUpdatedNodes = newFlows</code> · <code>myTexts = {}</code> · <code>nodeSubstitutionSchema = generateSchemaFromNodes(newFlows)</code>
-          <br><strong>Bloco pré-loop (3234-3249)</strong>:
+          <strong><span data-en="Pre-scheduler block (3191-3207)" data-pt="Bloco pré-scheduler (3191-3207)">Pre-scheduler block (3191-3207)</span></strong>: <code>myUpdatedNodes = newFlows</code> · <code>myTexts = {}</code> · <code>nodeSubstitutionSchema = generateSchemaFromNodes(newFlows)</code>
+          <br><strong><span data-en="Pre-loop block (3234-3249)" data-pt="Bloco pré-loop (3234-3249)">Pre-loop block (3234-3249)</span></strong>:
           <br>• <code>const processedNodeIds = new Set&lt;string&gt;()</code>
           <br>• <code>let stoppedByLoopBehavior = false</code>
           <br>• <code>let stoppedByNodeFailure = false</code>
           <br>• <code>let stoppedByCancel = false</code>
           <br>• <code>let lastExecutedNodeId: string | null = null</code>
         </div>
-        <div class="box-file">flux.service.ts:3191-3207, 3234-3249 <em>(ref antiga 3146-3182 estava errada)</em></div>
+        <div class="box-file">flux.service.ts:3191-3207, 3234-3249 <em data-en="(old ref 3146-3182 was wrong)" data-pt="(ref antiga 3146-3182 estava errada)">(old ref 3146-3182 was wrong)</em></div>
         <div class="click-hint">
           <span class="click-hint-icon">🔍</span>
-          <span>Clique para ver detalhamento (5 grupos de variáveis + cancellation)</span>
+          <span data-en="Click for details (5 variable groups + cancellation)" data-pt="Clique para ver detalhamento (5 grupos de variáveis + cancellation)">Click for details (5 variable groups + cancellation)</span>
           <span class="click-hint-arrow">→</span>
         </div>
       </a>
@@ -1149,15 +1184,15 @@
       <a href="passos/passo-2-2a.html" class="box backend clickable-node" id="step-2-2a">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title">
-          <span class="badge step">2.2a</span> Setup de cancellation <em>antes</em> do loop
+          <span class="badge step">2.2a</span> <span data-en="Cancellation setup &lt;em&gt;before&lt;/em&gt; the loop" data-pt="Setup de cancellation &lt;em&gt;antes&lt;/em&gt; do loop">Cancellation setup <em>before</em> the loop</span>
         </div>
         <div class="box-desc">
-          <code>shouldWatchCancellation</code> + <code>resolveCancelRunKey</code> + feature flag <code>NODE_CANCEL_IN_FLIGHT_FLAG</code> + <code>startNodeCancelWatch</code> montam o AbortSignal que o loop consulta a cada iteração no <a href="#step-3-cancel" style="color:#3B82F6;text-decoration:underline">3-cancel</a>.
+          <span data-en="&lt;code&gt;shouldWatchCancellation&lt;/code&gt; + &lt;code&gt;resolveCancelRunKey&lt;/code&gt; + feature flag &lt;code&gt;NODE_CANCEL_IN_FLIGHT_FLAG&lt;/code&gt; + &lt;code&gt;startNodeCancelWatch&lt;/code&gt; assemble the AbortSignal that the loop checks every iteration at" data-pt="&lt;code&gt;shouldWatchCancellation&lt;/code&gt; + &lt;code&gt;resolveCancelRunKey&lt;/code&gt; + feature flag &lt;code&gt;NODE_CANCEL_IN_FLIGHT_FLAG&lt;/code&gt; + &lt;code&gt;startNodeCancelWatch&lt;/code&gt; montam o AbortSignal que o loop consulta a cada iteração no">&lt;code&gt;shouldWatchCancellation&lt;/code&gt; + &lt;code&gt;resolveCancelRunKey&lt;/code&gt; + feature flag &lt;code&gt;NODE_CANCEL_IN_FLIGHT_FLAG&lt;/code&gt; + &lt;code&gt;startNodeCancelWatch&lt;/code&gt; assemble the AbortSignal that the loop checks every iteration at</span> <span class="ref-link" data-target="step-3-cancel">3-cancel</span>.
         </div>
         <div class="box-file">flux.service.ts:3239-3249 · run-cancellation.service.ts</div>
         <div class="click-hint">
           <span class="click-hint-icon">🔍</span>
-          <span>Clique para ver detalhamento (3 gates + AbortSignal + Redis pub/sub)</span>
+          <span data-en="Click for details (3 gates + AbortSignal + Redis pub/sub)" data-pt="Clique para ver detalhamento (3 gates + AbortSignal + Redis pub/sub)">Click for details (3 gates + AbortSignal + Redis pub/sub)</span>
           <span class="click-hint-arrow">→</span>
         </div>
       </a>
@@ -1165,17 +1200,17 @@
 
       <a href="passos/passo-2-3.html" class="box backend clickable-node" id="step-2-3">
         <span class="click-chevron" aria-hidden="true">›</span>
-        <div class="box-title"><span class="badge step">2.3</span> generateSchemaFromNodes() — schema de substituição <span class="badge ess">essencial</span></div>
+        <div class="box-title"><span class="badge step">2.3</span> generateSchemaFromNodes() — <span data-en="substitution schema" data-pt="schema de substituição">substitution schema</span> <span class="badge ess" data-en="essential" data-pt="essencial">essential</span></div>
         <div class="box-desc">
-          3 chaves por nó no schema in-memory:
+          <span data-en="3 keys per node in the in-memory schema:" data-pt="3 chaves por nó no schema in-memory:">3 keys per node in the in-memory schema:</span>
           <br>• <code>schema[nodeId]</code> (UUID)
-          <br>• <code>schema[nodeId_normalizado]</code> (ref-key)
-          <br>• <code>schema[label_lowercase]</code> (alias humano)
+          <br>• <code>schema[nodeId_normalizado]</code> <span data-en="(ref-key)" data-pt="(ref-key)">(ref-key)</span>
+          <br>• <code>schema[label_lowercase]</code> <span data-en="(human alias)" data-pt="(alias humano)">(human alias)</span>
         </div>
         <div class="box-file">node-reference-substitution/node-reference-substitution.service.ts:82</div>
         <div class="click-hint">
           <span class="click-hint-icon">🔍</span>
-          <span>Clique para ver detalhamento (whitelist + 3-key indexing + ciclo de vida)</span>
+          <span data-en="Click for details (whitelist + 3-key indexing + lifecycle)" data-pt="Clique para ver detalhamento (whitelist + 3-key indexing + ciclo de vida)">Click for details (whitelist + 3-key indexing + lifecycle)</span>
           <span class="click-hint-arrow">→</span>
         </div>
       </a>
@@ -1183,33 +1218,32 @@
 
       <a href="passos/passo-2-4.html" class="box cross clickable-node" id="step-2-4">
         <span class="click-chevron" aria-hidden="true">›</span>
-        <div class="box-title"><span class="badge step">2.4</span> Setup do RunLogCollector inicial <span class="badge cross">cross</span></div>
-        <div class="box-desc">Cria novo se top-level, ou reusa <code>injectedRunLogCollector</code> se nested (chamado por fluxBox/libraryNode)</div>
+        <div class="box-title"><span class="badge step">2.4</span> <span data-en="Initial RunLogCollector setup" data-pt="Setup do RunLogCollector inicial">Initial RunLogCollector setup</span> <span class="badge cross">cross</span></div>
+        <div class="box-desc"><span data-en="Creates a new one if top-level, or reuses &lt;code&gt;injectedRunLogCollector&lt;/code&gt; if nested (called by fluxBox/libraryNode)" data-pt="Cria novo se top-level, ou reusa &lt;code&gt;injectedRunLogCollector&lt;/code&gt; se nested (chamado por fluxBox/libraryNode)">Creates a new one if top-level, or reuses <code>injectedRunLogCollector</code> if nested (called by fluxBox/libraryNode)</span></div>
         <div class="box-file">flux.service.ts:2290-2293, 3810-3818</div>
         <div class="click-hint">
           <span class="click-hint-icon">🔍</span>
-          <span>Clique para ver detalhamento (init pattern + subRun + loopBody)</span>
+          <span data-en="Click for details (init pattern + subRun + loopBody)" data-pt="Clique para ver detalhamento (init pattern + subRun + loopBody)">Click for details (init pattern + subRun + loopBody)</span>
           <span class="click-hint-arrow">→</span>
         </div>
       </a>
     </div>
 
     <div class="note">
-      <strong>Ponto crítico:</strong> O <code>nodeSubstitutionSchema</code> é mutado in-place ao longo do loop (a memória cita ~57 sync sites).
-      O worker <strong>não tem</strong> engine equivalente. Recebe cada nó já pré-substituído pelo backend.
+      <strong><span data-en="Critical point:" data-pt="Ponto crítico:">Critical point:</span></strong> <span data-en="&lt;code&gt;nodeSubstitutionSchema&lt;/code&gt; is mutated in-place throughout the loop (memory cites ~57 sync sites). The worker &lt;strong&gt;has no&lt;/strong&gt; equivalent engine. It receives each node already pre-substituted by the backend." data-pt="O &lt;code&gt;nodeSubstitutionSchema&lt;/code&gt; é mutado in-place ao longo do loop (a memória cita ~57 sync sites). O worker &lt;strong&gt;não tem&lt;/strong&gt; engine equivalente. Recebe cada nó já pré-substituído pelo backend.">&lt;code&gt;nodeSubstitutionSchema&lt;/code&gt; is mutated in-place throughout the loop (memory cites ~57 sync sites). The worker &lt;strong&gt;has no&lt;/strong&gt; equivalent engine. It receives each node already pre-substituted by the backend.</span>
     </div>
   </div>
 
- 
+
 
   <!-- ================================================== -->
-  <!-- FASE 3 — LOOP PRINCIPAL -->
+  <!-- PHASE 3 — MAIN LOOP -->
   <!-- ================================================== -->
   <div class="section">
     <div class="section-header">
       <div class="section-number">3</div>
-      <div class="section-title">FASE 3 — Loop principal</div>
-      <div class="section-desc">Passos 11–22 do doc · flux.service.ts:3227-4734</div>
+      <div class="section-title"><span data-en="PHASE 3 — Main loop" data-pt="FASE 3 — Loop principal">PHASE 3 — Main loop</span></div>
+      <div class="section-desc"><span data-en="Steps 11–22 of the doc · flux.service.ts:3227-4734" data-pt="Passos 11–22 do doc · flux.service.ts:3227-4734">Steps 11–22 of the doc · flux.service.ts:3227-4734</span></div>
     </div>
 
     <div class="loop-container">
@@ -1218,12 +1252,12 @@
       <div class="flow-column">
         <a href="passos/passo-3-1.html" class="box backend clickable-node" id="step-3-1">
           <span class="click-chevron" aria-hidden="true">›</span>
-          <div class="box-title"><span class="badge step">3.1</span> nextReady(schedState) <span class="badge ess">essencial</span></div>
-          <div class="box-desc">Scheduler devolve próximo nó pronto (in-degree = 0 nas arestas ativas)</div>
+          <div class="box-title"><span class="badge step">3.1</span> nextReady(schedState) <span class="badge ess" data-en="essential" data-pt="essencial">essential</span></div>
+          <div class="box-desc"><span data-en="Scheduler returns the next ready node (in-degree = 0 on active edges)" data-pt="Scheduler devolve próximo nó pronto (in-degree = 0 nas arestas ativas)">Scheduler returns the next ready node (in-degree = 0 on active edges)</span></div>
           <div class="box-file">flux.service.ts:3227</div>
           <div class="click-hint">
             <span class="click-hint-icon">🔍</span>
-            <span>Clique para ver detalhamento (FIFO + 3 sets + markCompleted)</span>
+            <span data-en="Click for details (FIFO + 3 sets + markCompleted)" data-pt="Clique para ver detalhamento (FIFO + 3 sets + markCompleted)">Click for details (FIFO + 3 sets + markCompleted)</span>
             <span class="click-hint-arrow">→</span>
           </div>
         </a>
@@ -1231,12 +1265,12 @@
 
         <a href="passos/passo-3-2.html" class="box backend clickable-node" id="step-3-2">
           <span class="click-chevron" aria-hidden="true">›</span>
-          <div class="box-title"><span class="badge step">3.2</span> Busca do nó + previewResponses cache <span class="badge ess">essencial</span></div>
-          <div class="box-desc">Lê nó atualizado de <code>myUpdatedNodes</code>. Lê <code>previewResponses</code> (cache das 10 últimas respostas, máx 10 items).</div>
+          <div class="box-title"><span class="badge step">3.2</span> <span data-en="Node fetch + previewResponses cache" data-pt="Busca do nó + previewResponses cache">Node fetch + previewResponses cache</span> <span class="badge ess" data-en="essential" data-pt="essencial">essential</span></div>
+          <div class="box-desc"><span data-en="Reads the updated node from &lt;code&gt;myUpdatedNodes&lt;/code&gt;. Reads &lt;code&gt;previewResponses&lt;/code&gt; (cache of the last 10 responses, max 10 items)." data-pt="Lê nó atualizado de &lt;code&gt;myUpdatedNodes&lt;/code&gt;. Lê &lt;code&gt;previewResponses&lt;/code&gt; (cache das 10 últimas respostas, máx 10 items).">Reads the updated node from <code>myUpdatedNodes</code>. Reads <code>previewResponses</code> (cache of the last 10 responses, max 10 items).</span></div>
           <div class="box-file">flux.service.ts:3241-3278</div>
           <div class="click-hint">
             <span class="click-hint-icon">🔍</span>
-            <span>Clique para ver detalhamento (find + bookkeeping + ring buffer)</span>
+            <span data-en="Click for details (find + bookkeeping + ring buffer)" data-pt="Clique para ver detalhamento (find + bookkeeping + ring buffer)">Click for details (find + bookkeeping + ring buffer)</span>
             <span class="click-hint-arrow">→</span>
           </div>
         </a>
@@ -1244,12 +1278,12 @@
 
         <a href="passos/passo-3-3.html" class="box backend clickable-node" id="step-3-3">
           <span class="click-chevron" aria-hidden="true">›</span>
-          <div class="box-title"><span class="badge step">3.3</span> applySubstitutionToObject(node, schema) <span class="badge legacy">só backend</span></div>
-          <div class="box-desc">Substitui <code>{{...}}</code> recursivamente no node.data usando o schema atualizado</div>
+          <div class="box-title"><span class="badge step">3.3</span> applySubstitutionToObject(node, schema) <span class="badge legacy" data-en="backend only" data-pt="só backend">backend only</span></div>
+          <div class="box-desc"><span data-en="Recursively substitutes &lt;code&gt;{{...}}&lt;/code&gt; in node.data using the updated schema" data-pt="Substitui &lt;code&gt;{{...}}&lt;/code&gt; recursivamente no node.data usando o schema atualizado">Recursively substitutes <code>{{...}}</code> in node.data using the updated schema</span></div>
           <div class="box-file">flux.service.ts:3281 · node-reference-substitution.service.ts:145</div>
           <div class="click-hint">
             <span class="click-hint-icon">🔍</span>
-            <span>Clique para ver detalhamento (walker + regex + 3-key lookup)</span>
+            <span data-en="Click for details (walker + regex + 3-key lookup)" data-pt="Clique para ver detalhamento (walker + regex + 3-key lookup)">Click for details (walker + regex + 3-key lookup)</span>
             <span class="click-hint-arrow">→</span>
           </div>
         </a>
@@ -1259,14 +1293,14 @@
           <span class="click-chevron" aria-hidden="true">›</span>
           <div class="box-title"><span class="badge step">3.4</span> runLogCollector.startNode() + chargeContext.enterWith() <span class="badge cross">cross</span></div>
           <div class="box-desc">
-            Abre <code>RunLogNode</code> hierárquico (aninhado no root criado no <a href="#step-1-4" style="color:#3B82F6;text-decoration:underline">1.4</a>) e ativa <strong>dois</strong> AsyncLocalStorage por nó:
-            <br>• <code>chargeContext.enterWith({ execId: runLogProcessId, nodeId: node.id })</code> — capturado por qualquer <code>charge-tokens</code> feito durante o handler para atribuir o custo ao nó certo
-            <br>• <code>if (cancelWatch) nodeCancelContext.enterWith(cancelWatch.entry)</code> — só se o watch de cancel foi armado no <a href="#" onclick="return false" style="color:#3B82F6">2.2a</a>. Handlers que chamam <code>await</code> podem consultar esse contexto para abortar cedo.
+            <span data-en="Opens a hierarchical &lt;code&gt;RunLogNode&lt;/code&gt; (nested in the root created at" data-pt="Abre &lt;code&gt;RunLogNode&lt;/code&gt; hierárquico (aninhado no root criado no">Opens a hierarchical &lt;code&gt;RunLogNode&lt;/code&gt; (nested in the root created at</span> <span class="ref-link" data-target="step-1-4">1.4</span>) <span data-en="and activates &lt;strong&gt;two&lt;/strong&gt; per-node AsyncLocalStorages:" data-pt="e ativa &lt;strong&gt;dois&lt;/strong&gt; AsyncLocalStorage por nó:">and activates &lt;strong&gt;two&lt;/strong&gt; per-node AsyncLocalStorages:</span>
+            <br>• <code>chargeContext.enterWith({ execId: runLogProcessId, nodeId: node.id })</code> — <span data-en="captured by any &lt;code&gt;charge-tokens&lt;/code&gt; done during the handler to attribute cost to the correct node" data-pt="capturado por qualquer &lt;code&gt;charge-tokens&lt;/code&gt; feito durante o handler para atribuir o custo ao nó certo">captured by any &lt;code&gt;charge-tokens&lt;/code&gt; done during the handler to attribute cost to the correct node</span>
+            <br>• <code>if (cancelWatch) nodeCancelContext.enterWith(cancelWatch.entry)</code> — <span data-en="only if the cancel watch was armed at" data-pt="só se o watch de cancel foi armado no">only if the cancel watch was armed at</span> <span class="ref-link" data-target="step-2-2a">2.2a</span>. <span data-en="Handlers that call &lt;code&gt;await&lt;/code&gt; can read this context to abort early." data-pt="Handlers que chamam &lt;code&gt;await&lt;/code&gt; podem consultar esse contexto para abortar cedo.">Handlers that call &lt;code&gt;await&lt;/code&gt; can read this context to abort early.</span>
           </div>
           <div class="box-file">flux.service.ts:3316-3322</div>
           <div class="click-hint">
             <span class="click-hint-icon">🔍</span>
-            <span>Clique para ver detalhamento (ALS + startNode + recordLegacyNodeStart)</span>
+            <span data-en="Click for details (ALS + startNode + recordLegacyNodeStart)" data-pt="Clique para ver detalhamento (ALS + startNode + recordLegacyNodeStart)">Click for details (ALS + startNode + recordLegacyNodeStart)</span>
             <span class="click-hint-arrow">→</span>
           </div>
         </a>
@@ -1274,12 +1308,12 @@
 
         <a href="passos/passo-3-4-cancellation.html" class="box backend clickable-node" id="step-3-cancel">
           <span class="click-chevron" aria-hidden="true">›</span>
-          <div class="box-title">Cancellation check <span class="badge new">novo pós-doc</span></div>
-          <div class="box-desc">Feature flag <code>NODE_CANCEL_IN_FLIGHT_FLAG</code>. Se <code>cancelWatch.wasAborted()</code> → <code>finishCancelledNode()</code> e break do loop</div>
+          <div class="box-title"><span data-en="Cancellation check" data-pt="Cancellation check">Cancellation check</span> <span class="badge new" data-en="new post-doc" data-pt="novo pós-doc">new post-doc</span></div>
+          <div class="box-desc"><span data-en="Feature flag &lt;code&gt;NODE_CANCEL_IN_FLIGHT_FLAG&lt;/code&gt;. If &lt;code&gt;cancelWatch.wasAborted()&lt;/code&gt; → &lt;code&gt;finishCancelledNode()&lt;/code&gt; and break the loop" data-pt="Feature flag &lt;code&gt;NODE_CANCEL_IN_FLIGHT_FLAG&lt;/code&gt;. Se &lt;code&gt;cancelWatch.wasAborted()&lt;/code&gt; → &lt;code&gt;finishCancelledNode()&lt;/code&gt; e break do loop">Feature flag <code>NODE_CANCEL_IN_FLIGHT_FLAG</code>. If <code>cancelWatch.wasAborted()</code> → <code>finishCancelledNode()</code> and break the loop</span></div>
           <div class="box-file">flux.service.ts:3192-3194, 4516-4530</div>
           <div class="click-hint">
             <span class="click-hint-icon">🔍</span>
-            <span>Clique para ver detalhamento (watch + AbortSignal + finishCancelledNode)</span>
+            <span data-en="Click for details (watch + AbortSignal + finishCancelledNode)" data-pt="Clique para ver detalhamento (watch + AbortSignal + finishCancelledNode)">Click for details (watch + AbortSignal + finishCancelledNode)</span>
             <span class="click-hint-arrow">→</span>
           </div>
         </a>
@@ -1290,12 +1324,12 @@
           <div class="box-title"><span class="badge step">3.5</span> Dispatch: isTemporalNode(type) OR isWorkerRoutedIntegration(node)?</div>
           <div class="box-desc">
             Temporal: <code>commandTextNode</code>, <code>scripting</code>, <code>apiCaller</code>, <code>mathFunction</code>, <code>counterNode</code>, <code>outputController</code><br>
-            Worker-routed integration: provider ∈ {stripe, wordpress, slack, notion, zapier, hubspot} <span class="badge new">novo</span>
+            <span data-en="Worker-routed integration: provider ∈ {stripe, wordpress, slack, notion, zapier, hubspot}" data-pt="Worker-routed integration: provider ∈ {stripe, wordpress, slack, notion, zapier, hubspot}">Worker-routed integration: provider ∈ {stripe, wordpress, slack, notion, zapier, hubspot}</span> <span class="badge new" data-en="new" data-pt="novo">new</span>
           </div>
           <div class="box-file">flux.service.ts:740 + shared/integration/integration-executable-node.ts</div>
           <div class="click-hint">
             <span class="click-hint-icon">🔍</span>
-            <span>Clique para ver detalhamento (3 checks + processNodeViaTemporal + 17 inline)</span>
+            <span data-en="Click for details (3 checks + processNodeViaTemporal + 17 inline)" data-pt="Clique para ver detalhamento (3 checks + processNodeViaTemporal + 17 inline)">Click for details (3 checks + processNodeViaTemporal + 17 inline)</span>
             <span class="click-hint-arrow">→</span>
           </div>
         </a>
@@ -1306,29 +1340,29 @@
 
         <!-- LANE: TEMPORAL -->
         <div class="lane temporal">
-          <div class="lane-title">SIM → processNodeViaTemporal() <span class="badge migrated">MIGRADO</span></div>
+          <div class="lane-title"><span data-en="YES → processNodeViaTemporal()" data-pt="SIM → processNodeViaTemporal()">YES → processNodeViaTemporal()</span> <span class="badge migrated" data-en="MIGRATED" data-pt="MIGRADO">MIGRATED</span></div>
 
           <div class="box backend">
-            <div class="box-title"><span class="badge step">T1</span> Pré-resolve edge reference fields</div>
-            <div class="box-desc">Resolve <code>{{...}}</code> em <code>promptData</code>/<code>contentData</code>/<code>textData</code> antes do handoff</div>
+            <div class="box-title"><span class="badge step">T1</span> <span data-en="Pre-resolve edge reference fields" data-pt="Pré-resolve edge reference fields">Pre-resolve edge reference fields</span></div>
+            <div class="box-desc"><span data-en="Resolves &lt;code&gt;{{...}}&lt;/code&gt; in &lt;code&gt;promptData&lt;/code&gt;/&lt;code&gt;contentData&lt;/code&gt;/&lt;code&gt;textData&lt;/code&gt; before the handoff" data-pt="Resolve &lt;code&gt;{{...}}&lt;/code&gt; em &lt;code&gt;promptData&lt;/code&gt;/&lt;code&gt;contentData&lt;/code&gt;/&lt;code&gt;textData&lt;/code&gt; antes do handoff">Resolves <code>{{...}}</code> in <code>promptData</code>/<code>contentData</code>/<code>textData</code> before the handoff</span></div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box db">
-            <div class="box-title"><span class="badge step">T2</span> INSERT node_executions (input resolvido)</div>
-            <div class="box-desc">Cria row com <code>metadata</code> = {workflowId, runKind, runType, runId}</div>
+            <div class="box-title"><span class="badge step">T2</span> <span data-en="INSERT node_executions (resolved input)" data-pt="INSERT node_executions (input resolvido)">INSERT node_executions (resolved input)</span></div>
+            <div class="box-desc"><span data-en="Creates row with &lt;code&gt;metadata&lt;/code&gt; = {workflowId, runKind, runType, runId}" data-pt="Cria row com &lt;code&gt;metadata&lt;/code&gt; = {workflowId, runKind, runType, runId}">Creates row with &lt;code&gt;metadata&lt;/code&gt; = {workflowId, runKind, runType, runId}</span></div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box backend">
             <div class="box-title"><span class="badge step">T3</span> temporalService.client.start('processSingleNode')</div>
-            <div class="box-desc">Workflow ID determinístico via <code>buildNodeWorkflowId(nodeId, execId)</code></div>
+            <div class="box-desc"><span data-en="Deterministic workflow ID via &lt;code&gt;buildNodeWorkflowId(nodeId, execId)&lt;/code&gt;" data-pt="Workflow ID determinístico via &lt;code&gt;buildNodeWorkflowId(nodeId, execId)&lt;/code&gt;">Deterministic workflow ID via <code>buildNodeWorkflowId(nodeId, execId)</code></span></div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box backend blocking-wait">
-            <div class="box-title"><span class="badge step">T4</span> BLOCKING WAIT pelo worker</div>
-            <div class="box-desc">Backend fica travado até workflow terminar</div>
+            <div class="box-title"><span class="badge step">T4</span> <span data-en="BLOCKING WAIT for the worker" data-pt="BLOCKING WAIT pelo worker">BLOCKING WAIT for the worker</span></div>
+            <div class="box-desc"><span data-en="Backend stays blocked until the workflow finishes" data-pt="Backend fica travado até workflow terminar">Backend stays blocked until the workflow finishes</span></div>
           </div>
 
           <div class="worker-flow">
@@ -1342,16 +1376,16 @@
               <div class="arrow">↓</div>
               <div class="box db">
                 <div class="box-title"><span class="badge step">W2</span> getNodeInfoActivity → fetchNodeRow()</div>
-                <div class="box-desc">SELECT em <code>node_executions</code> ou <code>flows_nodes</code></div>
+                <div class="box-desc"><span data-en="SELECT on &lt;code&gt;node_executions&lt;/code&gt; or &lt;code&gt;flows_nodes&lt;/code&gt;" data-pt="SELECT em &lt;code&gt;node_executions&lt;/code&gt; ou &lt;code&gt;flows_nodes&lt;/code&gt;">SELECT on <code>node_executions</code> or <code>flows_nodes</code></span></div>
               </div>
               <div class="arrow">↓</div>
               <div class="box s3">
-                <div class="box-title"><span class="badge step">W3</span> resolveClaimRef() se necessário</div>
-                <div class="box-desc">Fetch de payload em S3 via <code>/worker/get-payload</code></div>
+                <div class="box-title"><span class="badge step">W3</span> <span data-en="resolveClaimRef() if needed" data-pt="resolveClaimRef() se necessário">resolveClaimRef() if needed</span></div>
+                <div class="box-desc"><span data-en="Fetch payload from S3 via &lt;code&gt;/worker/get-payload&lt;/code&gt;" data-pt="Fetch de payload em S3 via &lt;code&gt;/worker/get-payload&lt;/code&gt;">Fetch payload from S3 via <code>/worker/get-payload</code></span></div>
               </div>
               <div class="arrow">↓</div>
               <div class="box worker">
-                <div class="box-title"><span class="badge step">W4</span> Switch por node type (hardcoded)</div>
+                <div class="box-title"><span class="badge step">W4</span> <span data-en="Switch by node type (hardcoded)" data-pt="Switch por node type (hardcoded)">Switch by node type (hardcoded)</span></div>
                 <div class="box-desc">
                   <div class="handlers-list">
                     <span class="mig">textGenerator</span>
@@ -1370,33 +1404,33 @@
               </div>
               <div class="arrow">↓</div>
               <div class="box worker">
-                <div class="box-title"><span class="badge step">W5</span> resolveEdgeData() (local, sem <code>{{...}}</code>)</div>
-                <div class="box-desc">Deduplica e concatena outputs dos nós upstream</div>
+                <div class="box-title"><span class="badge step">W5</span> resolveEdgeData() <span data-en="(local, no &lt;code&gt;{{...}}&lt;/code&gt;)" data-pt="(local, sem &lt;code&gt;{{...}}&lt;/code&gt;)">(local, no &lt;code&gt;{{...}}&lt;/code&gt;)</span></div>
+                <div class="box-desc"><span data-en="Dedupes and concatenates outputs from upstream nodes" data-pt="Deduplica e concatena outputs dos nós upstream">Dedupes and concatenates outputs from upstream nodes</span></div>
               </div>
               <div class="arrow">↓</div>
               <div class="box worker">
-                <div class="box-title"><span class="badge step">W6</span> Executa handler</div>
-                <div class="box-desc">Chama LLM/HTTP/SQL/integração externa/lambda</div>
+                <div class="box-title"><span class="badge step">W6</span> <span data-en="Runs the handler" data-pt="Executa handler">Runs the handler</span></div>
+                <div class="box-desc"><span data-en="Calls LLM/HTTP/SQL/external integration/lambda" data-pt="Chama LLM/HTTP/SQL/integração externa/lambda">Calls LLM/HTTP/SQL/external integration/lambda</span></div>
               </div>
-              <div class="arrow-label">(text-gen: stream via Redis)</div>
+              <div class="arrow-label"><span data-en="(text-gen: stream via Redis)" data-pt="(text-gen: stream via Redis)">(text-gen: stream via Redis)</span></div>
               <div class="arrow">↓</div>
               <div class="box backend">
                 <div class="box-title"><span class="badge step">W7</span> HTTP /worker/charge-tokens</div>
-                <div class="box-desc">INSERT em <code>token_transactions</code></div>
+                <div class="box-desc"><span data-en="INSERT into &lt;code&gt;token_transactions&lt;/code&gt;" data-pt="INSERT em &lt;code&gt;token_transactions&lt;/code&gt;">INSERT into <code>token_transactions</code></span></div>
               </div>
               <div class="arrow">↓</div>
               <div class="box db">
                 <div class="box-title"><span class="badge step">W8</span> persistNodeSuccess() → 2 UPDATEs</div>
                 <div class="box-desc">
                   1) <code>node_executions.outputData</code> (claim-check &gt;256KB → S3)<br>
-                  2) <code>flows_nodes.data</code> (só campos leves: text/result/errorMessage)
+                  2) <code>flows_nodes.data</code> <span data-en="(only light fields: text/result/errorMessage)" data-pt="(só campos leves: text/result/errorMessage)">(only light fields: text/result/errorMessage)</span>
                 </div>
                 <div class="box-file">nodes/shared/persist-node-success.ts:86</div>
               </div>
               <div class="arrow">↓</div>
               <div class="box db">
                 <div class="box-title"><span class="badge step">W9</span> generateExecutionLogsActivity</div>
-                <div class="box-desc">INSERT em <code>execution_logs</code></div>
+                <div class="box-desc"><span data-en="INSERT into &lt;code&gt;execution_logs&lt;/code&gt;" data-pt="INSERT em &lt;code&gt;execution_logs&lt;/code&gt;">INSERT into <code>execution_logs</code></span></div>
               </div>
               <div class="arrow">↓</div>
               <div class="box redis">
@@ -1405,32 +1439,32 @@
             </div>
           </div>
 
-          <div class="arrow">↑ workflow retorna ↑</div>
+          <div class="arrow">↑ <span data-en="workflow returns" data-pt="workflow retorna">workflow returns</span> ↑</div>
 
           <div class="box db">
             <div class="box-title"><span class="badge step">T5</span> SELECT outputData FROM node_executions</div>
-            <div class="box-desc">Se {__claimRef} → GET no S3 + JSON.parse</div>
+            <div class="box-desc"><span data-en="If {__claimRef} → GET on S3 + JSON.parse" data-pt="Se {__claimRef} → GET no S3 + JSON.parse">If {__claimRef} → GET on S3 + JSON.parse</span></div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box db">
             <div class="box-title"><span class="badge step">T6</span> sumChargesByExecution(execId, nodeId)</div>
-            <div class="box-desc">Agrega <code>token_transactions</code> em <code>totalTokensUsed</code>/<code>totalCost</code></div>
+            <div class="box-desc"><span data-en="Aggregates &lt;code&gt;token_transactions&lt;/code&gt; into &lt;code&gt;totalTokensUsed&lt;/code&gt;/&lt;code&gt;totalCost&lt;/code&gt;" data-pt="Agrega &lt;code&gt;token_transactions&lt;/code&gt; em &lt;code&gt;totalTokensUsed&lt;/code&gt;/&lt;code&gt;totalCost&lt;/code&gt;">Aggregates <code>token_transactions</code> into <code>totalTokensUsed</code>/<code>totalCost</code></span></div>
           </div>
         </div>
 
         <!-- LANE: INLINE -->
         <div class="lane inline">
-          <div class="lane-title">NÃO → executa inline no backend <span class="badge legacy">LEGACY</span></div>
+          <div class="lane-title"><span data-en="NO → runs inline in the backend" data-pt="NÃO → executa inline no backend">NO → runs inline in the backend</span> <span class="badge legacy">LEGACY</span></div>
 
           <div class="box backend">
-            <div class="box-title"><span class="badge step">L1</span> Switch por node type — ~60 branches</div>
-            <div class="box-desc">Handler roda direto em <code>FluxService</code>, sem Temporal</div>
+            <div class="box-title"><span class="badge step">L1</span> <span data-en="Switch by node type — ~60 branches" data-pt="Switch por node type — ~60 branches">Switch by node type — ~60 branches</span></div>
+            <div class="box-desc"><span data-en="Handler runs directly in &lt;code&gt;FluxService&lt;/code&gt;, without Temporal" data-pt="Handler roda direto em &lt;code&gt;FluxService&lt;/code&gt;, sem Temporal">Handler runs directly in <code>FluxService</code>, without Temporal</span></div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box backend">
-            <div class="box-title"><span class="badge step">L2</span> Handlers dedicados no backend</div>
+            <div class="box-title"><span class="badge step">L2</span> <span data-en="Dedicated handlers in the backend" data-pt="Handlers dedicados no backend">Dedicated handlers in the backend</span></div>
             <div class="box-desc">
               <div class="handlers-list">
                 <span class="leg">voiceBoxNode<br>(3364)</span>
@@ -1438,7 +1472,7 @@
                 <span class="leg">imageGenerator<br>(6972)</span>
                 <span class="leg">pullData<br>(3397)</span>
                 <span class="leg">pushData<br>(3415)</span>
-                <span class="leg">thirdPartyIntegration<br>(3453) não-migrado</span>
+                <span class="leg">thirdPartyIntegration<br><span data-en="(3453) non-migrated" data-pt="(3453) não-migrado">(3453) non-migrated</span></span>
                 <span class="special">conditionNode<br>(3540)</span>
                 <span class="leg">nodesBox<br>(3575)</span>
                 <span class="leg">commandContentNode<br>(3651)</span>
@@ -1452,24 +1486,24 @@
                 <span class="leg">mcpNode</span>
               </div>
               <em style="font-size:10px;color:#64748B">
-                Nós sem handler no dispatch:
-                <br>• <code>varInputNode</code> — <strong>tem</strong> lógica, mas executada em <a href="passos/passo-1-8.html" style="color:#3B82F6;text-decoration:underline">1.8 antes do loop</a> (upload S3 + OCR + propagação via arestas), <em>não</em> em Fase 3
-                <br>• <code>outputController</code>/<code>outputObjectNode</code>/<code>varOutputNode</code> — atravessam o loop como no-op; só têm lógica no passo <a href="passos/passo-4-6.html" style="color:#3B82F6;text-decoration:underline">4.6</a> (<code>persistInputNodeData</code>)
-                <br>• <code>comment</code>/<code>label</code>/<code>group</code> — puramente visuais; passam pelo scheduler como no-op silencioso
-                <br>• <code>GLOBAL_STARTER</code> — usado como <code>source</code> do <code>flowGlobalEdge</code> no <code>buildSchedulerState</code>
+                <span data-en="Nodes without a dispatch handler:" data-pt="Nós sem handler no dispatch:">Nodes without a dispatch handler:</span>
+                <br>• <code>varInputNode</code> — <strong><span data-en="has" data-pt="tem">has</span></strong> <span data-en="logic, but it runs at" data-pt="lógica, mas executada em">logic, but it runs at</span> <a href="passos/passo-1-8.html" style="color:#3B82F6;text-decoration:underline"><span data-en="1.8 before the loop" data-pt="1.8 antes do loop">1.8 before the loop</span></a> <span data-en="(S3 upload + OCR + edge propagation), &lt;em&gt;not&lt;/em&gt; in Phase 3" data-pt="(upload S3 + OCR + propagação via arestas), &lt;em&gt;não&lt;/em&gt; em Fase 3">(S3 upload + OCR + edge propagation), &lt;em&gt;not&lt;/em&gt; in Phase 3</span>
+                <br>• <code>outputController</code>/<code>outputObjectNode</code>/<code>varOutputNode</code> — <span data-en="traverse the loop as a no-op; only have logic at step" data-pt="atravessam o loop como no-op; só têm lógica no passo">traverse the loop as a no-op; only have logic at step</span> <a href="passos/passo-4-6.html" style="color:#3B82F6;text-decoration:underline">4.6</a> (<code>persistInputNodeData</code>)
+                <br>• <code>comment</code>/<code>label</code>/<code>group</code> — <span data-en="purely visual; pass through the scheduler as a silent no-op" data-pt="puramente visuais; passam pelo scheduler como no-op silencioso">purely visual; pass through the scheduler as a silent no-op</span>
+                <br>• <code>GLOBAL_STARTER</code> — <span data-en="used as the &lt;code&gt;source&lt;/code&gt; of &lt;code&gt;flowGlobalEdge&lt;/code&gt; in &lt;code&gt;buildSchedulerState&lt;/code&gt;" data-pt="usado como &lt;code&gt;source&lt;/code&gt; do &lt;code&gt;flowGlobalEdge&lt;/code&gt; no &lt;code&gt;buildSchedulerState&lt;/code&gt;">used as the <code>source</code> of <code>flowGlobalEdge</code> in <code>buildSchedulerState</code></span>
               </em>
             </div>
           </div>
 
           <div class="box cross" style="width:100%;margin-top:8px">
             <div class="box-title">
-              🔁 OCR re-execuções dentro de sub-flows
-              <span class="badge new">omitido no doc</span>
+              🔁 <span data-en="OCR re-executions inside sub-flows" data-pt="OCR re-execuções dentro de sub-flows">OCR re-executions inside sub-flows</span>
+              <span class="badge new" data-en="omitted in doc" data-pt="omitido no doc">omitted in doc</span>
             </div>
             <div class="box-desc">
-              Quando <code>nodesBox</code> / <code>libraryNode</code> / <code>fluxBox</code> executam um sub-flow, o mesmo mecanismo de <code>varInputNode</code>+OCR
-              (<a href="passos/passo-1-8.html" style="color:#6B21A8;text-decoration:underline">passo 1.8</a>) roda <strong>de novo</strong> para resolver as entradas do sub-flow, usando <code>callerData.textData</code> / <code>fileLinkData</code> em vez de <code>body.variableInputs</code>.
-              <br>Cada nível de aninhamento paga o custo de extração/OCR novamente.
+              <span data-en="When &lt;code&gt;nodesBox&lt;/code&gt; / &lt;code&gt;libraryNode&lt;/code&gt; / &lt;code&gt;fluxBox&lt;/code&gt; run a sub-flow, the same &lt;code&gt;varInputNode&lt;/code&gt;+OCR mechanism" data-pt="Quando &lt;code&gt;nodesBox&lt;/code&gt; / &lt;code&gt;libraryNode&lt;/code&gt; / &lt;code&gt;fluxBox&lt;/code&gt; executam um sub-flow, o mesmo mecanismo de &lt;code&gt;varInputNode&lt;/code&gt;+OCR">When <code>nodesBox</code> / <code>libraryNode</code> / <code>fluxBox</code> run a sub-flow, the same <code>varInputNode</code>+OCR mechanism</span>
+              (<a href="passos/passo-1-8.html" style="color:#6B21A8;text-decoration:underline"><span data-en="step 1.8" data-pt="passo 1.8">step 1.8</span></a>) <span data-en="runs &lt;strong&gt;again&lt;/strong&gt; to resolve the sub-flow's inputs, using &lt;code&gt;callerData.textData&lt;/code&gt; / &lt;code&gt;fileLinkData&lt;/code&gt; instead of &lt;code&gt;body.variableInputs&lt;/code&gt;." data-pt="roda &lt;strong&gt;de novo&lt;/strong&gt; para resolver as entradas do sub-flow, usando &lt;code&gt;callerData.textData&lt;/code&gt; / &lt;code&gt;fileLinkData&lt;/code&gt; em vez de &lt;code&gt;body.variableInputs&lt;/code&gt;.">runs &lt;strong&gt;again&lt;/strong&gt; to resolve the sub-flow's inputs, using &lt;code&gt;callerData.textData&lt;/code&gt; / &lt;code&gt;fileLinkData&lt;/code&gt; instead of &lt;code&gt;body.variableInputs&lt;/code&gt;.</span>
+              <br><span data-en="Each nesting level pays the extraction/OCR cost again." data-pt="Cada nível de aninhamento paga o custo de extração/OCR novamente.">Each nesting level pays the extraction/OCR cost again.</span>
             </div>
             <div class="box-file">flux.service.ts:5464-5533 (nodesBox), 5819+ (libraryNode/fluxBox)</div>
           </div>
@@ -1480,9 +1514,9 @@
             <div class="inner-loop-badge">🔄 arrayNode / loopIterationContext</div>
             <div class="flow-column">
               <div class="box backend">
-                <div class="box-title"><span class="badge step">L2a</span> arrayNode itera sobre lista <span class="badge ess">essencial e complexo</span></div>
+                <div class="box-title"><span class="badge step">L2a</span> <span data-en="arrayNode iterates over a list" data-pt="arrayNode itera sobre lista">arrayNode iterates over a list</span> <span class="badge ess" data-en="essential and complex" data-pt="essencial e complexo">essential and complex</span></div>
                 <div class="box-desc">
-                  <code>for iterationIndex</code>: entra em <code>loopIterationContext.enterWith({ index, bodyNodeIds })</code>, re-executa body por item.
+                  <code>for iterationIndex</code>: <span data-en="enters &lt;code&gt;loopIterationContext.enterWith({ index, bodyNodeIds })&lt;/code&gt;, re-executes the body per item." data-pt="entra em &lt;code&gt;loopIterationContext.enterWith({ index, bodyNodeIds })&lt;/code&gt;, re-executa body por item.">enters <code>loopIterationContext.enterWith({ index, bodyNodeIds })</code>, re-executes the body per item.</span>
                 </div>
                 <div class="box-file">flux.service.ts:3738, 3825-4346</div>
               </div>
@@ -1492,38 +1526,38 @@
 
           <!-- SPECIAL: CONDITION -->
           <div class="box decision" style="width:100%">
-            <div class="box-title"><span class="badge step">L2b</span> conditionNode — avalia branch <span class="badge ess">essencial</span></div>
+            <div class="box-title"><span class="badge step">L2b</span> conditionNode — <span data-en="evaluates branch" data-pt="avalia branch">evaluates branch</span> <span class="badge ess" data-en="essential" data-pt="essencial">essential</span></div>
             <div class="box-desc">
-              Avalia <code>node.data.conditions[]</code>, resolve <code>outputHandle-0/1</code> ou <code>conditionHandle-T*/F*</code>, chama <code>completeCondition(schedState, id, handle)</code>.
+              <span data-en="Evaluates &lt;code&gt;node.data.conditions[]&lt;/code&gt;, resolves &lt;code&gt;outputHandle-0/1&lt;/code&gt; or &lt;code&gt;conditionHandle-T*/F*&lt;/code&gt;, calls &lt;code&gt;completeCondition(schedState, id, handle)&lt;/code&gt;." data-pt="Avalia &lt;code&gt;node.data.conditions[]&lt;/code&gt;, resolve &lt;code&gt;outputHandle-0/1&lt;/code&gt; ou &lt;code&gt;conditionHandle-T*/F*&lt;/code&gt;, chama &lt;code&gt;completeCondition(schedState, id, handle)&lt;/code&gt;.">Evaluates <code>node.data.conditions[]</code>, resolves <code>outputHandle-0/1</code> or <code>conditionHandle-T*/F*</code>, calls <code>completeCondition(schedState, id, handle)</code>.</span>
             </div>
             <div class="box-file">flux.service.ts:3540-3573, 4013-4040</div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box external">
-            <div class="box-title"><span class="badge step">L3</span> Chama serviços externos</div>
-            <div class="box-desc">ElevenLabs / Ideogram / FAL / SerpAPI / Firecrawl / Google Sheets / APIs de integração</div>
+            <div class="box-title"><span class="badge step">L3</span> <span data-en="Calls external services" data-pt="Chama serviços externos">Calls external services</span></div>
+            <div class="box-desc"><span data-en="ElevenLabs / Ideogram / FAL / SerpAPI / Firecrawl / Google Sheets / integration APIs" data-pt="ElevenLabs / Ideogram / FAL / SerpAPI / Firecrawl / Google Sheets / APIs de integração">ElevenLabs / Ideogram / FAL / SerpAPI / Firecrawl / Google Sheets / integration APIs</span></div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box db">
-            <div class="box-title"><span class="badge step">L4</span> UPDATE flows_nodes.data (JSONB completo)</div>
+            <div class="box-title"><span class="badge step">L4</span> <span data-en="UPDATE flows_nodes.data (full JSONB)" data-pt="UPDATE flows_nodes.data (JSONB completo)">UPDATE flows_nodes.data (full JSONB)</span></div>
             <div class="box-desc">
-              Grava campos <strong>gordos</strong>: <code>previewResponses</code>, <code>contentData</code>, <code>text</code>...
-              <br><em>Padrão que causa problema de perf de FE em agentes grandes.</em>
+              <span data-en="Writes &lt;strong&gt;fat&lt;/strong&gt; fields: &lt;code&gt;previewResponses&lt;/code&gt;, &lt;code&gt;contentData&lt;/code&gt;, &lt;code&gt;text&lt;/code&gt;..." data-pt="Grava campos &lt;strong&gt;gordos&lt;/strong&gt;: &lt;code&gt;previewResponses&lt;/code&gt;, &lt;code&gt;contentData&lt;/code&gt;, &lt;code&gt;text&lt;/code&gt;...">Writes &lt;strong&gt;fat&lt;/strong&gt; fields: &lt;code&gt;previewResponses&lt;/code&gt;, &lt;code&gt;contentData&lt;/code&gt;, &lt;code&gt;text&lt;/code&gt;...</span>
+              <br><em><span data-en="Pattern that causes FE perf issues in large agents." data-pt="Padrão que causa problema de perf de FE em agentes grandes.">Pattern that causes FE perf issues in large agents.</span></em>
             </div>
           </div>
           <div class="arrow">↓</div>
 
           <div class="box cross">
             <div class="box-title">recordLegacyNodeStart / recordInApiNodeError <span class="badge cross">cross</span></div>
-            <div class="box-desc">Registra <code>node_executions</code> row mesmo para nós não-Temporal, para trace uniforme</div>
+            <div class="box-desc"><span data-en="Records a &lt;code&gt;node_executions&lt;/code&gt; row even for non-Temporal nodes, for uniform tracing" data-pt="Registra &lt;code&gt;node_executions&lt;/code&gt; row mesmo para nós não-Temporal, para trace uniforme">Records a <code>node_executions</code> row even for non-Temporal nodes, for uniform tracing</span></div>
             <div class="box-file">flux.service.ts:1842, 3303-3316, 4593-4720</div>
           </div>
         </div>
       </div>
 
-      <div class="converge">↓ ambos convergem ↓</div>
+      <div class="converge">↓ <span data-en="both converge" data-pt="ambos convergem">both converge</span> ↓</div>
 
       <div class="flow-column">
         <a href="passos/passo-3-5b.html" class="box backend clickable-node" id="step-3-5b">
@@ -1532,12 +1566,12 @@
             <span class="badge step">3.5b</span> <code>publishInApiNodeOutput()</code> + <code>persistSmallMemoryEntries()</code>
           </div>
           <div class="box-desc">
-            Só para nós inline (não-Temporal, não worker-routed). <code>publishInApiNodeOutput</code> = equivalente inline de W8/W9 do worker; <code>persistSmallMemoryEntries</code> descarrega no banco só campos leves para reduzir RAM.
+            <span data-en="Only for inline nodes (non-Temporal, non-worker-routed). &lt;code&gt;publishInApiNodeOutput&lt;/code&gt; = inline equivalent of the worker's W8/W9; &lt;code&gt;persistSmallMemoryEntries&lt;/code&gt; offloads only light fields to the database to reduce RAM." data-pt="Só para nós inline (não-Temporal, não worker-routed). &lt;code&gt;publishInApiNodeOutput&lt;/code&gt; = equivalente inline de W8/W9 do worker; &lt;code&gt;persistSmallMemoryEntries&lt;/code&gt; descarrega no banco só campos leves para reduzir RAM.">Only for inline nodes (non-Temporal, non-worker-routed). <code>publishInApiNodeOutput</code> = inline equivalent of the worker's W8/W9; <code>persistSmallMemoryEntries</code> offloads only light fields to the database to reduce RAM.</span>
           </div>
           <div class="box-file">flux.service.ts:4562-4581</div>
           <div class="click-hint">
             <span class="click-hint-icon">🔍</span>
-            <span>Clique para ver detalhamento (gate isTemporal + gate worker-routed + reduzir RAM)</span>
+            <span data-en="Click for details (isTemporal gate + worker-routed gate + reduce RAM)" data-pt="Clique para ver detalhamento (gate isTemporal + gate worker-routed + reduzir RAM)">Click for details (isTemporal gate + worker-routed gate + reduce RAM)</span>
             <span class="click-hint-arrow">→</span>
           </div>
         </a>
@@ -1545,41 +1579,41 @@
 
         <a href="passos/passo-3-6.html" class="box backend clickable-node" id="step-3-6">
           <span class="click-chevron" aria-hidden="true">›</span>
-          <div class="box-title"><span class="badge step">3.6</span> updateSchemaWithNodeOutput() <span class="badge ess">essencial</span></div>
-          <div class="box-desc">Deixa output visível para próximos nós como <code>{{nodeLabel}}</code></div>
+          <div class="box-title"><span class="badge step">3.6</span> updateSchemaWithNodeOutput() <span class="badge ess" data-en="essential" data-pt="essencial">essential</span></div>
+          <div class="box-desc"><span data-en="Makes the output visible to subsequent nodes as &lt;code&gt;{{nodeLabel}}&lt;/code&gt;" data-pt="Deixa output visível para próximos nós como &lt;code&gt;{{nodeLabel}}&lt;/code&gt;">Makes the output visible to subsequent nodes as <code>{{nodeLabel}}</code></span></div>
           <div class="box-file">flux.service.ts:3389, 3485, 3624, 3670, 4331</div>
-          <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (walker + 3 chaves + 5 handlers)</span><span class="click-hint-arrow">→</span></div>
+          <div class="click-hint"><span class="click-hint-icon">🔍</span><span data-en="Click for details (walker + 3 keys + 5 handlers)" data-pt="Clique para ver detalhamento (walker + 3 chaves + 5 handlers)">Click for details (walker + 3 keys + 5 handlers)</span><span class="click-hint-arrow">→</span></div>
         </a>
         <div class="arrow">↓</div>
 
         <a href="passos/passo-3-7.html" class="box cross clickable-node" id="step-3-7">
           <span class="click-chevron" aria-hidden="true">›</span>
-          <div class="box-title"><span class="badge step">3.7</span> Contabilidade token/custo por nó <span class="badge cross">cross (billing)</span></div>
-          <div class="box-desc"><code>genericTokensBefore/After</code> + <code>onUpdateTokens</code> callback</div>
+          <div class="box-title"><span class="badge step">3.7</span> <span data-en="Per-node token/cost bookkeeping" data-pt="Contabilidade token/custo por nó">Per-node token/cost bookkeeping</span> <span class="badge cross" data-en="cross (billing)" data-pt="cross (billing)">cross (billing)</span></div>
+          <div class="box-desc"><code>genericTokensBefore/After</code> + <code>onUpdateTokens</code> <span data-en="callback" data-pt="callback">callback</span></div>
           <div class="box-file">flux.service.ts:3248-3249, 3296-3297, 4537-4546</div>
-          <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (closure + ALS + sumChargesByExecution)</span><span class="click-hint-arrow">→</span></div>
+          <div class="click-hint"><span class="click-hint-icon">🔍</span><span data-en="Click for details (closure + ALS + sumChargesByExecution)" data-pt="Clique para ver detalhamento (closure + ALS + sumChargesByExecution)">Click for details (closure + ALS + sumChargesByExecution)</span><span class="click-hint-arrow">→</span></div>
         </a>
         <div class="arrow">↓</div>
 
         <a href="passos/passo-3-8.html" class="box backend clickable-node" id="step-3-8">
           <span class="click-chevron" aria-hidden="true">›</span>
-          <div class="box-title"><span class="badge step">3.8</span> Tratamento de erro por nó <span class="badge ess">essencial</span></div>
+          <div class="box-title"><span class="badge step">3.8</span> <span data-en="Per-node error handling" data-pt="Tratamento de erro por nó">Per-node error handling</span> <span class="badge ess" data-en="essential" data-pt="essencial">essential</span></div>
           <div class="box-desc">
-            <strong>Try-catch envolvendo toda a iteração do while (4702-4794)</strong>.
+            <strong><span data-en="Try-catch wrapping the entire while iteration (4702-4794)" data-pt="Try-catch envolvendo toda a iteração do while (4702-4794)">Try-catch wrapping the entire while iteration (4702-4794)</span></strong>.
             <br><br>
-            No catch, na ordem:
-            <br>1. <code>cancelWatch?.wasAborted()</code> (4703-4718) — se o run foi cancelado durante o handler, muda para o caminho de cancel (não trata como erro real). Seta <code>stoppedByCancel = true</code> e break.
-            <br>2. <code>const detail = extractWorkflowError(error)</code> (4723) — normaliza erro de Temporal + Node em <code>{ message, code, cause }</code>.
-            <br>3. <code>clearFailedNodeOutput({ node, myUpdatedNodes, nodeSubstitutionSchema })</code> (4725) — remove saída parcial do nó falhado do schema para próximos nós não referenciarem lixo.
-            <br>4. <code>runLogCollector?.endNode({ status: 'error', errorMessage, ... })</code> (4739-4748) — fecha o RunLogNode com erro.
-            <br>5. <code>loggerService.error(...)</code> (4750-4766) — Winston com <code>error_type</code>, stack, flow, user.
-            <br>6. <code>recordInApiNodeError({ nodeId, executionId, errorMessage })</code> (4771-4787) — grava linha de erro em <code>node_executions</code> para trace uniforme (mesma tabela dos nós Temporal).
-            <br>7. <code>stoppedByNodeFailure = true</code>; break do while.
+            <span data-en="In the catch, in order:" data-pt="No catch, na ordem:">In the catch, in order:</span>
+            <br>1. <code>cancelWatch?.wasAborted()</code> (4703-4718) — <span data-en="if the run was cancelled during the handler, switches to the cancel path (does not treat as a real error). Sets &lt;code&gt;stoppedByCancel = true&lt;/code&gt; and breaks." data-pt="se o run foi cancelado durante o handler, muda para o caminho de cancel (não trata como erro real). Seta &lt;code&gt;stoppedByCancel = true&lt;/code&gt; e break.">if the run was cancelled during the handler, switches to the cancel path (does not treat as a real error). Sets <code>stoppedByCancel = true</code> and breaks.</span>
+            <br>2. <code>const detail = extractWorkflowError(error)</code> (4723) — <span data-en="normalises Temporal + Node errors into &lt;code&gt;{ message, code, cause }&lt;/code&gt;." data-pt="normaliza erro de Temporal + Node em &lt;code&gt;{ message, code, cause }&lt;/code&gt;.">normalises Temporal + Node errors into <code>{ message, code, cause }</code>.</span>
+            <br>3. <code>clearFailedNodeOutput({ node, myUpdatedNodes, nodeSubstitutionSchema })</code> (4725) — <span data-en="removes the failed node's partial output from the schema so downstream nodes do not reference garbage." data-pt="remove saída parcial do nó falhado do schema para próximos nós não referenciarem lixo.">removes the failed node's partial output from the schema so downstream nodes do not reference garbage.</span>
+            <br>4. <code>runLogCollector?.endNode({ status: 'error', errorMessage, ... })</code> (4739-4748) — <span data-en="closes the RunLogNode with error." data-pt="fecha o RunLogNode com erro.">closes the RunLogNode with error.</span>
+            <br>5. <code>loggerService.error(...)</code> (4750-4766) — <span data-en="Winston with &lt;code&gt;error_type&lt;/code&gt;, stack, flow, user." data-pt="Winston com &lt;code&gt;error_type&lt;/code&gt;, stack, flow, user.">Winston with <code>error_type</code>, stack, flow, user.</span>
+            <br>6. <code>recordInApiNodeError({ nodeId, executionId, errorMessage })</code> (4771-4787) — <span data-en="writes an error row to &lt;code&gt;node_executions&lt;/code&gt; for uniform tracing (same table as Temporal nodes)." data-pt="grava linha de erro em &lt;code&gt;node_executions&lt;/code&gt; para trace uniforme (mesma tabela dos nós Temporal).">writes an error row to <code>node_executions</code> for uniform tracing (same table as Temporal nodes).</span>
+            <br>7. <code>stoppedByNodeFailure = true</code>; <span data-en="break out of the while." data-pt="break do while.">break out of the while.</span>
             <br><br>
-            <strong>Marcação de rota morta em condition</strong>: quando é <code>conditionNode</code> que falhou, chama <code>completeCondition(schedState, nodeId, DEAD_HANDLE)</code> antes do break — o scheduler propaga "morte" para os nós downstream inalcançáveis, que aparecem em <a href="#step-4-1" style="color:#3B82F6;text-decoration:underline">4.1</a> como <code>dead</code> e não como <code>unprocessed</code>.
+            <strong><span data-en="Dead-route marking on condition" data-pt="Marcação de rota morta em condition">Dead-route marking on condition</span></strong>: <span data-en="when the failed node is a &lt;code&gt;conditionNode&lt;/code&gt;, calls &lt;code&gt;completeCondition(schedState, nodeId, DEAD_HANDLE)&lt;/code&gt; before the break — the scheduler propagates &quot;death&quot; to unreachable downstream nodes, which appear at" data-pt="quando é &lt;code&gt;conditionNode&lt;/code&gt; que falhou, chama &lt;code&gt;completeCondition(schedState, nodeId, DEAD_HANDLE)&lt;/code&gt; antes do break — o scheduler propaga &quot;morte&quot; para os nós downstream inalcançáveis, que aparecem em">when the failed node is a <code>conditionNode</code>, calls <code>completeCondition(schedState, nodeId, DEAD_HANDLE)</code> before the break — the scheduler propagates "death" to unreachable downstream nodes, which appear at</span> <span class="ref-link" data-target="step-4-1">4.1</span> <span data-en="as &lt;code&gt;dead&lt;/code&gt; and not as &lt;code&gt;unprocessed&lt;/code&gt;." data-pt="como &lt;code&gt;dead&lt;/code&gt; e não como &lt;code&gt;unprocessed&lt;/code&gt;.">as <code>dead</code> and not as <code>unprocessed</code>.</span>
           </div>
-          <div class="box-file">flux.service.ts:4702-4794 (try/catch) · flux.service.ts:5342+ (catch top-level em 5.1)</div>
-          <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (soft fail + catch + recordInApiNodeError)</span><span class="click-hint-arrow">→</span></div>
+          <div class="box-file"><span data-en="flux.service.ts:4702-4794 (try/catch) · flux.service.ts:5342+ (top-level catch at 5.1)" data-pt="flux.service.ts:4702-4794 (try/catch) · flux.service.ts:5342+ (catch top-level em 5.1)">flux.service.ts:4702-4794 (try/catch) · flux.service.ts:5342+ (top-level catch at 5.1)</span></div>
+          <div class="click-hint"><span class="click-hint-icon">🔍</span><span data-en="Click for details (soft fail + catch + recordInApiNodeError)" data-pt="Clique para ver detalhamento (soft fail + catch + recordInApiNodeError)">Click for details (soft fail + catch + recordInApiNodeError)</span><span class="click-hint-arrow">→</span></div>
         </a>
         <div class="arrow">↓</div>
 
@@ -1587,74 +1621,74 @@
           <span class="click-chevron" aria-hidden="true">›</span>
           <div class="box-title"><span class="badge step">3.9</span> runLogCollector.endNode() <span class="badge cross">cross</span></div>
           <div class="box-desc">
-            Fecha o <code>RunLogNode</code> aberto no <a href="#step-3-4" style="color:#3B82F6;text-decoration:underline">3.4</a> passando output final, tokens delta (<code>after - before</code>), custo e status (<code>completed | error | cancelled</code>).
+            <span data-en="Closes the &lt;code&gt;RunLogNode&lt;/code&gt; opened at" data-pt="Fecha o &lt;code&gt;RunLogNode&lt;/code&gt; aberto no">Closes the <code>RunLogNode</code> opened at</span> <span class="ref-link" data-target="step-3-4">3.4</span> <span data-en="passing final output, tokens delta (&lt;code&gt;after - before&lt;/code&gt;), cost and status (&lt;code&gt;completed | error | cancelled&lt;/code&gt;)." data-pt="passando output final, tokens delta (&lt;code&gt;after - before&lt;/code&gt;), custo e status (&lt;code&gt;completed | error | cancelled&lt;/code&gt;).">passing final output, tokens delta (<code>after - before</code>), cost and status (<code>completed | error | cancelled</code>).</span>
             <br><br>
-            <strong>⚠ Duplicação / dead code</strong>: no código atual, <code>endNode()</code> aparece 2× em locais próximos:
-            <br>• <code>flux.service.ts:4604-4614</code> — chamada ativa, dentro do path de sucesso
-            <br>• <code>flux.service.ts:4620-4630</code> — bloco duplicado alcançável só em edge cases que já foram capturados acima; é <em>dead code</em> herdado de refatorações e pode ser removido em cleanup dedicado
+            <strong><span data-en="⚠ Duplication / dead code" data-pt="⚠ Duplicação / dead code">⚠ Duplication / dead code</span></strong>: <span data-en="in the current code, &lt;code&gt;endNode()&lt;/code&gt; appears 2× in nearby locations:" data-pt="no código atual, &lt;code&gt;endNode()&lt;/code&gt; aparece 2× em locais próximos:">in the current code, <code>endNode()</code> appears 2× in nearby locations:</span>
+            <br>• <code>flux.service.ts:4604-4614</code> — <span data-en="active call, inside the success path" data-pt="chamada ativa, dentro do path de sucesso">active call, inside the success path</span>
+            <br>• <code>flux.service.ts:4620-4630</code> — <span data-en="duplicated block reachable only in edge cases already captured above; it is &lt;em&gt;dead code&lt;/em&gt; inherited from refactors and can be removed in dedicated cleanup" data-pt="bloco duplicado alcançável só em edge cases que já foram capturados acima; é &lt;em&gt;dead code&lt;/em&gt; herdado de refatorações e pode ser removido em cleanup dedicado">duplicated block reachable only in edge cases already captured above; it is &lt;em&gt;dead code&lt;/em&gt; inherited from refactors and can be removed in dedicated cleanup</span>
           </div>
-          <div class="box-file">flux.service.ts:4604-4614 (ativa) · 4620-4630 (dead code)</div>
-          <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (endNode + duplicação/dead code)</span><span class="click-hint-arrow">→</span></div>
+          <div class="box-file">flux.service.ts:4604-4614 <span data-en="(active)" data-pt="(ativa)">(active)</span> · 4620-4630 (dead code)</div>
+          <div class="click-hint"><span class="click-hint-icon">🔍</span><span data-en="Click for details (endNode + duplication/dead code)" data-pt="Clique para ver detalhamento (endNode + duplicação/dead code)">Click for details (endNode + duplication/dead code)</span><span class="click-hint-arrow">→</span></div>
         </a>
         <div class="arrow">↓</div>
 
         <a href="passos/passo-3-10.html" class="box redis clickable-node" id="step-3-10">
           <span class="click-chevron" aria-hidden="true">›</span>
-          <div class="box-title"><span class="badge step">3.10</span> Notificação WebSocket <span class="badge cross">cross</span></div>
-          <div class="box-desc">Envia iteração + <code>finalResult</code> + <code>reason</code> ao browser (via chatbotSocketByRun)</div>
+          <div class="box-title"><span class="badge step">3.10</span> <span data-en="WebSocket notification" data-pt="Notificação WebSocket">WebSocket notification</span> <span class="badge cross">cross</span></div>
+          <div class="box-desc"><span data-en="Sends iteration + &lt;code&gt;finalResult&lt;/code&gt; + &lt;code&gt;reason&lt;/code&gt; to the browser (via chatbotSocketByRun)" data-pt="Envia iteração + &lt;code&gt;finalResult&lt;/code&gt; + &lt;code&gt;reason&lt;/code&gt; ao browser (via chatbotSocketByRun)">Sends iteration + <code>finalResult</code> + <code>reason</code> to the browser (via chatbotSocketByRun)</span></div>
           <div class="box-file">flux.service.ts:2288, 5293-5307</div>
-          <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (chatbotSocketByRun + emitNodeStatus + gateway)</span><span class="click-hint-arrow">→</span></div>
+          <div class="click-hint"><span class="click-hint-icon">🔍</span><span data-en="Click for details (chatbotSocketByRun + emitNodeStatus + gateway)" data-pt="Clique para ver detalhamento (chatbotSocketByRun + emitNodeStatus + gateway)">Click for details (chatbotSocketByRun + emitNodeStatus + gateway)</span><span class="click-hint-arrow">→</span></div>
         </a>
         <div class="arrow">↓</div>
 
         <a href="passos/passo-3-11.html" class="box backend clickable-node" id="step-3-11">
           <span class="click-chevron" aria-hidden="true">›</span>
-          <div class="box-title"><span class="badge step">3.11</span> Avanço do DAG <span class="badge ess">essencial</span></div>
-          <div class="box-desc"><code>markCompleted(schedState, id)</code> ou <code>completeCondition(schedState, id, handle)</code> (nó de condição)</div>
+          <div class="box-title"><span class="badge step">3.11</span> <span data-en="DAG advance" data-pt="Avanço do DAG">DAG advance</span> <span class="badge ess" data-en="essential" data-pt="essencial">essential</span></div>
+          <div class="box-desc"><code>markCompleted(schedState, id)</code> <span data-en="or" data-pt="ou">or</span> <code>completeCondition(schedState, id, handle)</code> <span data-en="(condition node)" data-pt="(nó de condição)">(condition node)</span></div>
           <div class="box-file">flux.service.ts:3566-3571, 4013, 4004-4006</div>
-          <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (handledAdvance + markCompleted + completeCondition)</span><span class="click-hint-arrow">→</span></div>
+          <div class="click-hint"><span class="click-hint-icon">🔍</span><span data-en="Click for details (handledAdvance + markCompleted + completeCondition)" data-pt="Clique para ver detalhamento (handledAdvance + markCompleted + completeCondition)">Click for details (handledAdvance + markCompleted + completeCondition)</span><span class="click-hint-arrow">→</span></div>
         </a>
 
         <div class="arrow">↺</div>
-        <div class="arrow-label">volta para 3.1 (próximo nó pronto)</div>
+        <div class="arrow-label"><span data-en="back to 3.1 (next ready node)" data-pt="volta para 3.1 (próximo nó pronto)">back to 3.1 (next ready node)</span></div>
       </div>
     </div>
   </div>
 
- 
+
 
   <!-- ================================================== -->
-  <!-- FASE 4 — FINALIZAÇÃO -->
+  <!-- PHASE 4 — FINALISATION -->
   <!-- ================================================== -->
   <div class="section">
     <div class="section-header">
       <div class="section-number">4</div>
-      <div class="section-title">FASE 4 — Finalização</div>
-      <div class="section-desc">Passos 23–33 do doc · flux.service.ts:4735+</div>
+      <div class="section-title"><span data-en="PHASE 4 — Finalisation" data-pt="FASE 4 — Finalização">PHASE 4 — Finalisation</span></div>
+      <div class="section-desc"><span data-en="Steps 23–33 of the doc · flux.service.ts:4735+" data-pt="Passos 23–33 do doc · flux.service.ts:4735+">Steps 23–33 of the doc · flux.service.ts:4735+</span></div>
     </div>
 
     <div class="flow-column">
       <a href="passos/passo-4-1.html" class="box cross clickable-node" id="step-4-1">
         <span class="click-chevron" aria-hidden="true">›</span>
-        <div class="box-title"><span class="badge step">4.1</span> Detecção de nós não-processados <span class="badge cross">cross</span></div>
-        <div class="box-desc">Warning se sobrar nó fora de <code>completed</code> ou <code>dead</code>. Loga error com IDs.</div>
+        <div class="box-title"><span class="badge step">4.1</span> <span data-en="Detection of unprocessed nodes" data-pt="Detecção de nós não-processados">Detection of unprocessed nodes</span> <span class="badge cross">cross</span></div>
+        <div class="box-desc"><span data-en="Warns if a node remains outside &lt;code&gt;completed&lt;/code&gt; or &lt;code&gt;dead&lt;/code&gt;. Logs an error with IDs." data-pt="Warning se sobrar nó fora de &lt;code&gt;completed&lt;/code&gt; ou &lt;code&gt;dead&lt;/code&gt;. Loga error com IDs.">Warns if a node remains outside <code>completed</code> or <code>dead</code>. Logs an error with IDs.</span></div>
         <div class="box-file">flux.service.ts:4802-4845</div>
-        <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (unprocessed + cancel footprint + gate)</span><span class="click-hint-arrow">→</span></div>
+        <div class="click-hint"><span class="click-hint-icon">🔍</span><span data-en="Click for details (unprocessed + cancel footprint + gate)" data-pt="Clique para ver detalhamento (unprocessed + cancel footprint + gate)">Click for details (unprocessed + cancel footprint + gate)</span><span class="click-hint-arrow">→</span></div>
       </a>
       <div class="arrow">↓</div>
 
       <a href="passos/passo-4-1a.html" class="box backend clickable-node" id="step-4-1a">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title">
-          <span class="badge step">4.1a</span> Publicação de status cancelado (só se <code>stoppedByCancel</code>)
+          <span class="badge step">4.1a</span> <span data-en="Publish cancelled status (only if &lt;code&gt;stoppedByCancel&lt;/code&gt;)" data-pt="Publicação de status cancelado (só se &lt;code&gt;stoppedByCancel&lt;/code&gt;)">Publish cancelled status (only if <code>stoppedByCancel</code>)</span>
         </div>
         <div class="box-desc">
-          <code>resolveCancelledRunFootprint</code> computa quem completou/skipou/foi cancelled. Depois <code>runCancellationService.markCancelled</code> + <code>emitCancelledRunStatuses</code> distinguem esse run de <em>error</em> na UI.
+          <span data-en="&lt;code&gt;resolveCancelledRunFootprint&lt;/code&gt; computes who completed/skipped/was cancelled. Then &lt;code&gt;runCancellationService.markCancelled&lt;/code&gt; + &lt;code&gt;emitCancelledRunStatuses&lt;/code&gt; distinguish this run from &lt;em&gt;error&lt;/em&gt; in the UI." data-pt="&lt;code&gt;resolveCancelledRunFootprint&lt;/code&gt; computa quem completou/skipou/foi cancelled. Depois &lt;code&gt;runCancellationService.markCancelled&lt;/code&gt; + &lt;code&gt;emitCancelledRunStatuses&lt;/code&gt; distinguem esse run de &lt;em&gt;error&lt;/em&gt; na UI.">&lt;code&gt;resolveCancelledRunFootprint&lt;/code&gt; computes who completed/skipped/was cancelled. Then &lt;code&gt;runCancellationService.markCancelled&lt;/code&gt; + &lt;code&gt;emitCancelledRunStatuses&lt;/code&gt; distinguish this run from &lt;em&gt;error&lt;/em&gt; in the UI.</span>
         </div>
         <div class="box-file">flux.service.ts:4805-4825 · run-cancellation.service.ts</div>
         <div class="click-hint">
           <span class="click-hint-icon">🔍</span>
-          <span>Clique para ver detalhamento (footprint + markCancelled + emit WebSocket)</span>
+          <span data-en="Click for details (footprint + markCancelled + WebSocket emit)" data-pt="Clique para ver detalhamento (footprint + markCancelled + emit WebSocket)">Click for details (footprint + markCancelled + WebSocket emit)</span>
           <span class="click-hint-arrow">→</span>
         </div>
       </a>
@@ -1663,15 +1697,15 @@
       <a href="passos/passo-4-1b.html" class="box backend clickable-node" id="step-4-1b">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title">
-          <span class="badge step">4.1b</span> Limpeza de <code>flow-global.data.logs</code>
+          <span class="badge step">4.1b</span> <span data-en="Cleanup of &lt;code&gt;flow-global.data.logs&lt;/code&gt;" data-pt="Limpeza de &lt;code&gt;flow-global.data.logs&lt;/code&gt;">Cleanup of <code>flow-global.data.logs</code></span>
         </div>
         <div class="box-desc">
-          Housekeeping menor no nó global: zera <code>data.logs</code> para não ser persistido gordo no próximo <code>UPDATE flows_nodes</code>.
+          <span data-en="Minor housekeeping on the global node: zeroes &lt;code&gt;data.logs&lt;/code&gt; so it is not persisted fat in the next &lt;code&gt;UPDATE flows_nodes&lt;/code&gt;." data-pt="Housekeeping menor no nó global: zera &lt;code&gt;data.logs&lt;/code&gt; para não ser persistido gordo no próximo &lt;code&gt;UPDATE flows_nodes&lt;/code&gt;.">Minor housekeeping on the global node: zeroes <code>data.logs</code> so it is not persisted fat in the next <code>UPDATE flows_nodes</code>.</span>
         </div>
         <div class="box-file">flux.service.ts:4851-4855</div>
         <div class="click-hint">
           <span class="click-hint-icon">🔍</span>
-          <span>Clique para ver detalhamento (find + mutate + impacto downstream)</span>
+          <span data-en="Click for details (find + mutate + downstream impact)" data-pt="Clique para ver detalhamento (find + mutate + impacto downstream)">Click for details (find + mutate + downstream impact)</span>
           <span class="click-hint-arrow">→</span>
         </div>
       </a>
@@ -1679,108 +1713,108 @@
 
       <a href="passos/passo-4-2.html" class="box cross clickable-node" id="step-4-2">
         <span class="click-chevron" aria-hidden="true">›</span>
-        <div class="box-title"><span class="badge step">4.2</span> Coleta de nós com erro</div>
-        <div class="box-desc">Filtra nós com <code>errorMessage</code>/<code>errorStatusCode</code>; extrai primeira mensagem</div>
+        <div class="box-title"><span class="badge step">4.2</span> <span data-en="Collect failed nodes" data-pt="Coleta de nós com erro">Collect failed nodes</span></div>
+        <div class="box-desc"><span data-en="Filters nodes with &lt;code&gt;errorMessage&lt;/code&gt;/&lt;code&gt;errorStatusCode&lt;/code&gt;; extracts the first message" data-pt="Filtra nós com &lt;code&gt;errorMessage&lt;/code&gt;/&lt;code&gt;errorStatusCode&lt;/code&gt;; extrai primeira mensagem">Filters nodes with <code>errorMessage</code>/<code>errorStatusCode</code>; extracts the first message</span></div>
         <div class="box-file">flux.service.ts:4780-4799</div>
-        <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (filter + resolveRunLogStatus)</span><span class="click-hint-arrow">→</span></div>
+        <div class="click-hint"><span class="click-hint-icon">🔍</span><span data-en="Click for details (filter + resolveRunLogStatus)" data-pt="Clique para ver detalhamento (filter + resolveRunLogStatus)">Click for details (filter + resolveRunLogStatus)</span><span class="click-hint-arrow">→</span></div>
       </a>
       <div class="arrow">↓</div>
 
       <a href="passos/passo-4-3.html" class="box db clickable-node" id="step-4-3">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title"><span class="badge step">4.3</span> flowLogsService.createLog() <span class="badge cross">cross</span></div>
-        <div class="box-desc">INSERT em <code>execution_logs</code>: status, error_message, spent_tokens, cost, run_type</div>
+        <div class="box-desc"><span data-en="INSERT into &lt;code&gt;execution_logs&lt;/code&gt;: status, error_message, spent_tokens, cost, run_type" data-pt="INSERT em &lt;code&gt;execution_logs&lt;/code&gt;: status, error_message, spent_tokens, cost, run_type">INSERT into <code>execution_logs</code>: status, error_message, spent_tokens, cost, run_type</span></div>
         <div class="box-file">flux.service.ts:4802-4822</div>
-        <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (createLog + schema flow_log)</span><span class="click-hint-arrow">→</span></div>
+        <div class="click-hint"><span class="click-hint-icon">🔍</span><span data-en="Click for details (createLog + flow_log schema)" data-pt="Clique para ver detalhamento (createLog + schema flow_log)">Click for details (createLog + flow_log schema)</span><span class="click-hint-arrow">→</span></div>
       </a>
       <div class="arrow">↓</div>
 
       <a href="passos/passo-4-4.html" class="box db clickable-node" id="step-4-4">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title"><span class="badge step">4.4</span> RunLogCollector.finalize() + spaceRunLogsService.flushNow()</div>
-        <div class="box-desc">Grava trace completo em <code>space_run_logs</code> (imediato, não schedulado)</div>
+        <div class="box-desc"><span data-en="Writes the complete trace to &lt;code&gt;space_run_logs&lt;/code&gt; (immediate, not scheduled)" data-pt="Grava trace completo em &lt;code&gt;space_run_logs&lt;/code&gt; (imediato, não schedulado)">Writes the complete trace to <code>space_run_logs</code> (immediate, not scheduled)</span></div>
         <div class="box-file">flux.service.ts:4824-4862</div>
-        <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (finalize + flushNow + summary)</span><span class="click-hint-arrow">→</span></div>
+        <div class="click-hint"><span class="click-hint-icon">🔍</span><span data-en="Click for details (finalize + flushNow + summary)" data-pt="Clique para ver detalhamento (finalize + flushNow + summary)">Click for details (finalize + flushNow + summary)</span><span class="click-hint-arrow">→</span></div>
       </a>
       <div class="arrow">↓</div>
 
       <a href="passos/passo-4-5.html" class="box backend clickable-node" id="step-4-5">
         <span class="click-chevron" aria-hidden="true">›</span>
-        <div class="box-title"><span class="badge step">4.5</span> Preparação de erro amigável <span class="badge ess">essencial</span></div>
-        <div class="box-desc">Constrói string: <code>nodeError = 'Execution failed at node "..." — ...'</code></div>
+        <div class="box-title"><span class="badge step">4.5</span> <span data-en="Friendly error preparation" data-pt="Preparação de erro amigável">Friendly error preparation</span> <span class="badge ess" data-en="essential" data-pt="essencial">essential</span></div>
+        <div class="box-desc"><span data-en="Builds string: &lt;code&gt;nodeError = 'Execution failed at node &quot;...&quot; — ...'&lt;/code&gt;" data-pt="Constrói string: &lt;code&gt;nodeError = 'Execution failed at node &quot;...&quot; — ...'&lt;/code&gt;">Builds string: <code>nodeError = 'Execution failed at node "..." — ...'</code></span></div>
         <div class="box-file">flux.service.ts:4881-4884</div>
-        <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (template string + label fallback)</span><span class="click-hint-arrow">→</span></div>
+        <div class="click-hint"><span class="click-hint-icon">🔍</span><span data-en="Click for details (template string + label fallback)" data-pt="Clique para ver detalhamento (template string + label fallback)">Click for details (template string + label fallback)</span><span class="click-hint-arrow">→</span></div>
       </a>
       <div class="arrow">↓</div>
 
       <a href="passos/passo-4-6.html" class="box db clickable-node" id="step-4-6">
         <span class="click-chevron" aria-hidden="true">›</span>
-        <div class="box-title"><span class="badge step">4.6</span> persistInputNodeData() para outputObjectNode <span class="badge ess">essencial</span></div>
-        <div class="box-desc">Persiste text/textData dos nós de saída</div>
+        <div class="box-title"><span class="badge step">4.6</span> <span data-en="persistInputNodeData() for outputObjectNode" data-pt="persistInputNodeData() para outputObjectNode">persistInputNodeData() for outputObjectNode</span> <span class="badge ess" data-en="essential" data-pt="essencial">essential</span></div>
+        <div class="box-desc"><span data-en="Persists text/textData of the output nodes" data-pt="Persiste text/textData dos nós de saída">Persists text/textData of the output nodes</span></div>
         <div class="box-file">flux.service.ts:4893-4905</div>
-        <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (filter + Promise.all + version dispatch)</span><span class="click-hint-arrow">→</span></div>
+        <div class="click-hint"><span class="click-hint-icon">🔍</span><span data-en="Click for details (filter + Promise.all + version dispatch)" data-pt="Clique para ver detalhamento (filter + Promise.all + version dispatch)">Click for details (filter + Promise.all + version dispatch)</span><span class="click-hint-arrow">→</span></div>
       </a>
       <div class="arrow">↓</div>
 
       <a href="passos/passo-4-7.html" class="box external clickable-node" id="step-4-7">
         <span class="click-chevron" aria-hidden="true">›</span>
-        <div class="box-title"><span class="badge step">4.7</span> Emails + callbacks HTTP <span class="badge cross">cross</span> <span class="badge new">expandido pós-doc</span></div>
+        <div class="box-title"><span class="badge step">4.7</span> <span data-en="Emails + HTTP callbacks" data-pt="Emails + callbacks HTTP">Emails + HTTP callbacks</span> <span class="badge cross">cross</span> <span class="badge new" data-en="expanded post-doc" data-pt="expandido pós-doc">expanded post-doc</span></div>
         <div class="box-desc">
-          <strong>Bloco de 240 linhas</strong> (4981-5220). Ordem real:
+          <strong><span data-en="240-line block" data-pt="Bloco de 240 linhas">240-line block</span></strong> <span data-en="(4981-5220). Actual order:" data-pt="(4981-5220). Ordem real:">(4981-5220). Actual order:</span>
           <br><br>
-          <strong>1. Extração de outputs (4956-5026)</strong> — <code>getOutputsObjectNodes(myUpdatedNodes)</code> pega todos os <code>outputObjectNode</code>. Para cada um:
-          <br>&nbsp;&nbsp;• <code>persistInputNodeData()</code> grava <code>text</code> e <code>textData</code> definitivos (nasce do <a href="#step-4-6" style="color:#3B82F6;text-decoration:underline">4.6</a> mas concretiza aqui)
-          <br>&nbsp;&nbsp;• Extrai textos e URLs de anexos que virarão payload de email/webhook
+          <strong>1. <span data-en="Output extraction (4956-5026)" data-pt="Extração de outputs (4956-5026)">Output extraction (4956-5026)</span></strong> — <code>getOutputsObjectNodes(myUpdatedNodes)</code> <span data-en="picks every &lt;code&gt;outputObjectNode&lt;/code&gt;. For each one:" data-pt="pega todos os &lt;code&gt;outputObjectNode&lt;/code&gt;. Para cada um:">picks every <code>outputObjectNode</code>. For each one:</span>
+          <br>&nbsp;&nbsp;• <code>persistInputNodeData()</code> <span data-en="writes definitive &lt;code&gt;text&lt;/code&gt; and &lt;code&gt;textData&lt;/code&gt; (originates at" data-pt="grava &lt;code&gt;text&lt;/code&gt; e &lt;code&gt;textData&lt;/code&gt; definitivos (nasce do">writes definitive <code>text</code> and <code>textData</code> (originates at</span> <span class="ref-link" data-target="step-4-6">4.6</span> <span data-en="but is finalised here)" data-pt="mas concretiza aqui)">but is finalised here)</span>
+          <br>&nbsp;&nbsp;• <span data-en="Extracts text and URLs of attachments that will become the email/webhook payload" data-pt="Extrai textos e URLs de anexos que virarão payload de email/webhook">Extracts text and URLs of attachments that will become the email/webhook payload</span>
           <br><br>
-          <strong>2. Download de attachments (5041-5070)</strong> — para cada URL identificada como anexo (S3, external), baixa via <code>httpService</code>/AWS SDK e monta buffer para a API do provider.
+          <strong>2. <span data-en="Attachment download (5041-5070)" data-pt="Download de attachments (5041-5070)">Attachment download (5041-5070)</span></strong> — <span data-en="for each URL identified as an attachment (S3, external), downloads via &lt;code&gt;httpService&lt;/code&gt;/AWS SDK and assembles the buffer for the provider's API." data-pt="para cada URL identificada como anexo (S3, external), baixa via &lt;code&gt;httpService&lt;/code&gt;/AWS SDK e monta buffer para a API do provider.">for each URL identified as an attachment (S3, external), downloads via <code>httpService</code>/AWS SDK and assembles the buffer for the provider's API.</span>
           <br><br>
-          <strong>3. ⚠ Dedup Redis <em>duplo</em> (5094-5160)</strong> — protege contra duplicação de email em 2 cenários diferentes:
-          <br>&nbsp;&nbsp;• <strong>Nível 1 — dedup por run</strong>: chave <code>email-sent:${flowId}:${nodeId}:${runLogProcessId}</code>, TTL <strong>24h</strong>, <code>SET NX</code>. Evita reenvio se o mesmo run for reexecutado (retry manual, crash+resume). Se <code>NX</code> falhar → skip com log.
-          <br>&nbsp;&nbsp;• <strong>Nível 2 — dedup por conteúdo</strong>: hash do payload (destinatários + assunto + corpo), TTL <strong>90s</strong>. Evita disparo duplicado em janela curta (cliques repetidos, race entre workers, etc.). Se hash já existe → skip.
-          <br>&nbsp;&nbsp;<em>Só dispara se ambos os checks passarem.</em>
+          <strong>3. <span data-en="⚠ Double Redis dedup (5094-5160)" data-pt="⚠ Dedup Redis &lt;em&gt;duplo&lt;/em&gt; (5094-5160)">⚠ Double Redis dedup (5094-5160)</span></strong> — <span data-en="protects against duplicate email in 2 different scenarios:" data-pt="protege contra duplicação de email em 2 cenários diferentes:">protects against duplicate email in 2 different scenarios:</span>
+          <br>&nbsp;&nbsp;• <strong><span data-en="Level 1 — dedup per run" data-pt="Nível 1 — dedup por run">Level 1 — dedup per run</span></strong>: <span data-en="key" data-pt="chave">key</span> <code>email-sent:${flowId}:${nodeId}:${runLogProcessId}</code>, TTL <strong>24h</strong>, <code>SET NX</code>. <span data-en="Prevents re-send if the same run is re-executed (manual retry, crash+resume). If &lt;code&gt;NX&lt;/code&gt; fails → skip with log." data-pt="Evita reenvio se o mesmo run for reexecutado (retry manual, crash+resume). Se &lt;code&gt;NX&lt;/code&gt; falhar → skip com log.">Prevents re-send if the same run is re-executed (manual retry, crash+resume). If <code>NX</code> fails → skip with log.</span>
+          <br>&nbsp;&nbsp;• <strong><span data-en="Level 2 — dedup per content" data-pt="Nível 2 — dedup por conteúdo">Level 2 — dedup per content</span></strong>: <span data-en="hash of the payload (recipients + subject + body), TTL &lt;strong&gt;90s&lt;/strong&gt;. Prevents duplicate fires in a short window (repeated clicks, race between workers, etc.). If the hash already exists → skip." data-pt="hash do payload (destinatários + assunto + corpo), TTL &lt;strong&gt;90s&lt;/strong&gt;. Evita disparo duplicado em janela curta (cliques repetidos, race entre workers, etc.). Se hash já existe → skip.">hash of the payload (recipients + subject + body), TTL &lt;strong&gt;90s&lt;/strong&gt;. Prevents duplicate fires in a short window (repeated clicks, race between workers, etc.). If the hash already exists → skip.</span>
+          <br>&nbsp;&nbsp;<em><span data-en="Only fires if both checks pass." data-pt="Só dispara se ambos os checks passarem.">Only fires if both checks pass.</span></em>
           <br><br>
-          <strong>4. Envio via provider (5164-5195)</strong>:
-          <br>&nbsp;&nbsp;• Provider integrado (EmailJs, SendGrid, ...) — API-key do <code>UserIntegration</code>
-          <br>&nbsp;&nbsp;• Fallback para <code>SMTP</code> nativo
-          <br>&nbsp;&nbsp;• Ou webhook direto se o nó marca <code>useWebhook</code>
+          <strong>4. <span data-en="Provider send (5164-5195)" data-pt="Envio via provider (5164-5195)">Provider send (5164-5195)</span></strong>:
+          <br>&nbsp;&nbsp;• <span data-en="Integrated provider (EmailJs, SendGrid, ...) — API-key from &lt;code&gt;UserIntegration&lt;/code&gt;" data-pt="Provider integrado (EmailJs, SendGrid, ...) — API-key do &lt;code&gt;UserIntegration&lt;/code&gt;">Integrated provider (EmailJs, SendGrid, ...) — API-key from &lt;code&gt;UserIntegration&lt;/code&gt;</span>
+          <br>&nbsp;&nbsp;• <span data-en="Fallback to native &lt;code&gt;SMTP&lt;/code&gt;" data-pt="Fallback para &lt;code&gt;SMTP&lt;/code&gt; nativo">Fallback to native &lt;code&gt;SMTP&lt;/code&gt;</span>
+          <br>&nbsp;&nbsp;• <span data-en="Or direct webhook if the node sets &lt;code&gt;useWebhook&lt;/code&gt;" data-pt="Ou webhook direto se o nó marca &lt;code&gt;useWebhook&lt;/code&gt;">Or direct webhook if the node sets &lt;code&gt;useWebhook&lt;/code&gt;</span>
           <br><br>
-          <strong>5. Callback HTTP consolidado (5164-5195)</strong> — se o request original veio com <code>callbackUrl</code>, dispara POST com <code>{ processId, outputs, tokens, cost }</code>. Diferente do callback da fila (que é feito pelo processor no <a href="#" onclick="return false" style="color:#3B82F6">1.1</a>).
+          <strong>5. <span data-en="Consolidated HTTP callback (5164-5195)" data-pt="Callback HTTP consolidado (5164-5195)">Consolidated HTTP callback (5164-5195)</span></strong> — <span data-en="if the original request came with &lt;code&gt;callbackUrl&lt;/code&gt;, fires POST with &lt;code&gt;{ processId, outputs, tokens, cost }&lt;/code&gt;. Different from the queue callback (done by the processor at" data-pt="se o request original veio com &lt;code&gt;callbackUrl&lt;/code&gt;, dispara POST com &lt;code&gt;{ processId, outputs, tokens, cost }&lt;/code&gt;. Diferente do callback da fila (que é feito pelo processor no">if the original request came with <code>callbackUrl</code>, fires POST with <code>{ processId, outputs, tokens, cost }</code>. Different from the queue callback (done by the processor at</span> <span class="ref-link" data-target="step-1-1">1.1</span>).
         </div>
-        <div class="box-file">flux.service.ts:4956-5026 (extração) · 5041-5070 (attachments) · 5094-5160 (dedup Redis duplo) · 5164-5195 (envio + callback)</div>
-        <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (dedup Redis + 3 providers + webhooks)</span><span class="click-hint-arrow">→</span></div>
+        <div class="box-file">flux.service.ts:4956-5026 <span data-en="(extraction)" data-pt="(extração)">(extraction)</span> · 5041-5070 (attachments) · 5094-5160 <span data-en="(double Redis dedup)" data-pt="(dedup Redis duplo)">(double Redis dedup)</span> · 5164-5195 <span data-en="(send + callback)" data-pt="(envio + callback)">(send + callback)</span></div>
+        <div class="click-hint"><span class="click-hint-icon">🔍</span><span data-en="Click for details (Redis dedup + 3 providers + webhooks)" data-pt="Clique para ver detalhamento (dedup Redis + 3 providers + webhooks)">Click for details (Redis dedup + 3 providers + webhooks)</span><span class="click-hint-arrow">→</span></div>
       </a>
       <div class="arrow">↓</div>
 
       <a href="passos/passo-4-8.html" class="box db clickable-node" id="step-4-8">
         <span class="click-chevron" aria-hidden="true">›</span>
-        <div class="box-title"><span class="badge step">4.8</span> Atualização de chat <span class="badge ess">essencial (modo chat)</span> <span class="badge new">expandido pós-doc</span></div>
+        <div class="box-title"><span class="badge step">4.8</span> <span data-en="Chat update" data-pt="Atualização de chat">Chat update</span> <span class="badge ess" data-en="essential (chat mode)" data-pt="essencial (modo chat)">essential (chat mode)</span> <span class="badge new" data-en="expanded post-doc" data-pt="expandido pós-doc">expanded post-doc</span></div>
         <div class="box-desc">
-          <strong>Só roda se <code>sessionIdForChat</code> foi resolvido no <a href="#step-1-6" style="color:#3B82F6;text-decoration:underline">1.6</a></strong> (havia <code>sessionId</code> explícito OU o flow tem <code>fluxObject</code> com <code>chat: true</code>).
+          <strong><span data-en="Only runs if &lt;code&gt;sessionIdForChat&lt;/code&gt; was resolved at" data-pt="Só roda se &lt;code&gt;sessionIdForChat&lt;/code&gt; foi resolvido no">Only runs if <code>sessionIdForChat</code> was resolved at</span> <span class="ref-link" data-target="step-1-6">1.6</span></strong> <span data-en="(explicit &lt;code&gt;sessionId&lt;/code&gt; was passed OR the flow has &lt;code&gt;fluxObject&lt;/code&gt; with &lt;code&gt;chat: true&lt;/code&gt;)." data-pt="(havia &lt;code&gt;sessionId&lt;/code&gt; explícito OU o flow tem &lt;code&gt;fluxObject&lt;/code&gt; com &lt;code&gt;chat: true&lt;/code&gt;).">(explicit <code>sessionId</code> was passed OR the flow has <code>fluxObject</code> with <code>chat: true</code>).</span>
           <br><br>
-          <strong>1. Coleta de <code>sessionAppends</code> (5223-5266)</strong> — varre <code>myUpdatedNodes</code>, seleciona <code>fluxObject</code>/<code>nodesBox</code> com chat, monta lista <code>[{ scopeId, sessionKey, entries }]</code>.
+          <strong>1. <span data-en="Collect &lt;code&gt;sessionAppends&lt;/code&gt; (5223-5266)" data-pt="Coleta de &lt;code&gt;sessionAppends&lt;/code&gt; (5223-5266)">Collect <code>sessionAppends</code> (5223-5266)</span></strong> — <span data-en="scans &lt;code&gt;myUpdatedNodes&lt;/code&gt;, picks &lt;code&gt;fluxObject&lt;/code&gt;/&lt;code&gt;nodesBox&lt;/code&gt; with chat, assembles list &lt;code&gt;[{ scopeId, sessionKey, entries }]&lt;/code&gt;." data-pt="varre &lt;code&gt;myUpdatedNodes&lt;/code&gt;, seleciona &lt;code&gt;fluxObject&lt;/code&gt;/&lt;code&gt;nodesBox&lt;/code&gt; com chat, monta lista &lt;code&gt;[{ scopeId, sessionKey, entries }]&lt;/code&gt;.">scans <code>myUpdatedNodes</code>, picks <code>fluxObject</code>/<code>nodesBox</code> with chat, assembles list <code>[{ scopeId, sessionKey, entries }]</code>.</span>
           <br><br>
-          <strong>2. Montagem do <code>assistantAnswer</code> (5259-5266)</strong> — junta o output dos <code>outputObjectNode</code> num único texto que representa a resposta do assistente naquele turn.
+          <strong>2. <span data-en="Build &lt;code&gt;assistantAnswer&lt;/code&gt; (5259-5266)" data-pt="Montagem do &lt;code&gt;assistantAnswer&lt;/code&gt; (5259-5266)">Build <code>assistantAnswer</code> (5259-5266)</span></strong> — <span data-en="joins the &lt;code&gt;outputObjectNode&lt;/code&gt; outputs into a single text representing the assistant's response in that turn." data-pt="junta o output dos &lt;code&gt;outputObjectNode&lt;/code&gt; num único texto que representa a resposta do assistente naquele turn.">joins the &lt;code&gt;outputObjectNode&lt;/code&gt; outputs into a single text representing the assistant's response in that turn.</span>
           <br><br>
-          <strong>3. Append em SessionState (5273-5286)</strong> — loop por <code>sessionAppends</code>: <code>await this.sessionStateService.appendEntries({ scopeType: 'chat', scopeId, sessionKey, entries, ownerUserId })</code>. É aqui que o histórico "cresce" persistentemente para próximas invocações com o mesmo <code>sessionId</code>.
+          <strong>3. <span data-en="Append into SessionState (5273-5286)" data-pt="Append em SessionState (5273-5286)">Append into SessionState (5273-5286)</span></strong> — <span data-en="loop over &lt;code&gt;sessionAppends&lt;/code&gt;: &lt;code&gt;await this.sessionStateService.appendEntries({ scopeType: 'chat', scopeId, sessionKey, entries, ownerUserId })&lt;/code&gt;. This is where the history persistently &quot;grows&quot; for future invocations with the same &lt;code&gt;sessionId&lt;/code&gt;." data-pt="loop por &lt;code&gt;sessionAppends&lt;/code&gt;: &lt;code&gt;await this.sessionStateService.appendEntries({ scopeType: 'chat', scopeId, sessionKey, entries, ownerUserId })&lt;/code&gt;. É aqui que o histórico &quot;cresce&quot; persistentemente para próximas invocações com o mesmo &lt;code&gt;sessionId&lt;/code&gt;.">loop over &lt;code&gt;sessionAppends&lt;/code&gt;: &lt;code&gt;await this.sessionStateService.appendEntries({ scopeType: 'chat', scopeId, sessionKey, entries, ownerUserId })&lt;/code&gt;. This is where the history persistently &quot;grows&quot; for future invocations with the same &lt;code&gt;sessionId&lt;/code&gt;.</span>
           <br><br>
-          <strong>4. <code>chatLogRepository.save(...)</code> (5305-5313)</strong> — grava row estruturada em <code>chat_logs</code> com <code>{ flowId, sessionId, userMessage, assistantAnswer, tokens, cost, timestamp }</code>. É a fonte para a UI de histórico e para billing por sessão.
+          <strong>4. <code>chatLogRepository.save(...)</code> (5305-5313)</strong> — <span data-en="writes a structured row to &lt;code&gt;chat_logs&lt;/code&gt; with &lt;code&gt;{ flowId, sessionId, userMessage, assistantAnswer, tokens, cost, timestamp }&lt;/code&gt;. It is the source for the history UI and per-session billing." data-pt="grava row estruturada em &lt;code&gt;chat_logs&lt;/code&gt; com &lt;code&gt;{ flowId, sessionId, userMessage, assistantAnswer, tokens, cost, timestamp }&lt;/code&gt;. É a fonte para a UI de histórico e para billing por sessão.">writes a structured row to <code>chat_logs</code> with <code>{ flowId, sessionId, userMessage, assistantAnswer, tokens, cost, timestamp }</code>. It is the source for the history UI and per-session billing.</span>
         </div>
         <div class="box-file">flux.service.ts:5223-5314</div>
-        <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (sessionAppends + appendEntries + chatLogs)</span><span class="click-hint-arrow">→</span></div>
+        <div class="click-hint"><span class="click-hint-icon">🔍</span><span data-en="Click for details (sessionAppends + appendEntries + chatLogs)" data-pt="Clique para ver detalhamento (sessionAppends + appendEntries + chatLogs)">Click for details (sessionAppends + appendEntries + chatLogs)</span><span class="click-hint-arrow">→</span></div>
       </a>
       <div class="arrow">↓</div>
 
       <a href="passos/passo-4-9.html" class="box backend clickable-node" id="step-4-9">
         <span class="click-chevron" aria-hidden="true">›</span>
-        <div class="box-title"><span class="badge step">4.9</span> Retorno ao chamador <span class="badge ess">essencial</span></div>
+        <div class="box-title"><span class="badge step">4.9</span> <span data-en="Return to the caller" data-pt="Retorno ao chamador">Return to the caller</span> <span class="badge ess" data-en="essential" data-pt="essencial">essential</span></div>
         <div class="box-desc"><code>{ message[], nodeError, totalTokensUsed, totalCost }</code></div>
         <div class="box-file">flux.service.ts:5293-5307</div>
-        <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (return shape + arrayDataToText)</span><span class="click-hint-arrow">→</span></div>
+        <div class="click-hint"><span class="click-hint-icon">🔍</span><span data-en="Click for details (return shape + arrayDataToText)" data-pt="Clique para ver detalhamento (return shape + arrayDataToText)">Click for details (return shape + arrayDataToText)</span><span class="click-hint-arrow">→</span></div>
       </a>
     </div>
   </div>
 
- 
+
 
   <!-- ================================================== -->
   <!-- CATCH + CLEANUP -->
@@ -1788,87 +1822,99 @@
   <div class="section">
     <div class="section-header">
       <div class="section-number">5</div>
-      <div class="section-title">Catch top-level + cleanup</div>
-      <div class="section-desc">Passos 32–33 do doc</div>
+      <div class="section-title"><span data-en="Top-level catch + cleanup" data-pt="Catch top-level + cleanup">Top-level catch + cleanup</span></div>
+      <div class="section-desc"><span data-en="Steps 32–33 of the doc" data-pt="Passos 32–33 do doc">Steps 32–33 of the doc</span></div>
     </div>
     <div class="flow-column">
       <a href="passos/passo-5-1.html" class="box cross clickable-node" id="step-5-1">
         <span class="click-chevron" aria-hidden="true">›</span>
         <div class="box-title"><span class="badge step">5.1</span> catch { ... } — top-level <span class="badge cross">cross</span></div>
-        <div class="box-desc">Finaliza <code>RunLog</code> em erro, cria <code>FlowLog</code> com status de erro, re-lança exception</div>
+        <div class="box-desc"><span data-en="Finalises &lt;code&gt;RunLog&lt;/code&gt; in error, creates &lt;code&gt;FlowLog&lt;/code&gt; with error status, re-throws exception" data-pt="Finaliza &lt;code&gt;RunLog&lt;/code&gt; em erro, cria &lt;code&gt;FlowLog&lt;/code&gt; com status de erro, re-lança exception">Finalises <code>RunLog</code> in error, creates <code>FlowLog</code> with error status, re-throws exception</span></div>
         <div class="box-file">flux.service.ts:5308-5389</div>
-        <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (finalize error + Winston hint + createLog + throw)</span><span class="click-hint-arrow">→</span></div>
+        <div class="click-hint"><span class="click-hint-icon">🔍</span><span data-en="Click for details (finalize error + Winston hint + createLog + throw)" data-pt="Clique para ver detalhamento (finalize error + Winston hint + createLog + throw)">Click for details (finalize error + Winston hint + createLog + throw)</span><span class="click-hint-arrow">→</span></div>
       </a>
       <div class="arrow">↓</div>
       <a href="passos/passo-5-2.html" class="box backend clickable-node" id="step-5-2">
         <span class="click-chevron" aria-hidden="true">›</span>
-        <div class="box-title"><span class="badge step">5.2</span> mcpRunStatusService.markFinished() (se veio da fila) <span class="badge cross">cross</span></div>
-        <div class="box-desc">Registra tokens/cost/durationMs no MCP tracking</div>
+        <div class="box-title"><span class="badge step">5.2</span> mcpRunStatusService.markFinished() <span data-en="(if it came from the queue)" data-pt="(se veio da fila)">(if it came from the queue)</span> <span class="badge cross">cross</span></div>
+        <div class="box-desc"><span data-en="Records tokens/cost/durationMs in MCP tracking" data-pt="Registra tokens/cost/durationMs no MCP tracking">Records tokens/cost/durationMs in MCP tracking</span></div>
         <div class="box-file">apiV2Job.processor.ts:58-67, 80-88</div>
-        <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (markRunning + markFinished + mcp_run_status)</span><span class="click-hint-arrow">→</span></div>
+        <div class="click-hint"><span class="click-hint-icon">🔍</span><span data-en="Click for details (markRunning + markFinished + mcp_run_status)" data-pt="Clique para ver detalhamento (markRunning + markFinished + mcp_run_status)">Click for details (markRunning + markFinished + mcp_run_status)</span><span class="click-hint-arrow">→</span></div>
       </a>
       <div class="arrow">↓</div>
       <a href="passos/passo-5-3.html" class="box backend clickable-node" id="step-5-3">
         <span class="click-chevron" aria-hidden="true">›</span>
-        <div class="box-title"><span class="badge step">5.3</span> Cleanup do socket do chatbot</div>
-        <div class="box-desc"><code>delete chatbotSocketByRun[runId]</code> no <code>finally</code></div>
+        <div class="box-title"><span class="badge step">5.3</span> <span data-en="Chatbot socket cleanup" data-pt="Cleanup do socket do chatbot">Chatbot socket cleanup</span></div>
+        <div class="box-desc"><code>delete chatbotSocketByRun[runId]</code> <span data-en="in the &lt;code&gt;finally&lt;/code&gt;" data-pt="no &lt;code&gt;finally&lt;/code&gt;">in the <code>finally</code></span></div>
         <div class="box-file">flux.service.ts:5392-5395</div>
-        <div class="click-hint"><span class="click-hint-icon">🔍</span><span>Clique para ver detalhamento (delete Map + forgetRun)</span><span class="click-hint-arrow">→</span></div>
+        <div class="click-hint"><span class="click-hint-icon">🔍</span><span data-en="Click for details (delete Map + forgetRun)" data-pt="Clique para ver detalhamento (delete Map + forgetRun)">Click for details (delete Map + forgetRun)</span><span class="click-hint-arrow">→</span></div>
       </a>
     </div>
   </div>
 
- 
+
 
   <!-- ================================================== -->
-  <!-- FASE 5 — CROSS-CUTTING -->
+  <!-- PHASE 5 — CROSS-CUTTING -->
   <!-- ================================================== -->
   <div class="section">
     <div class="section-header">
       <div class="section-number">✦</div>
-      <div class="section-title">FASE 5 — Preocupações transversais (cross-cutting)</div>
-      <div class="section-desc">Atravessam todas as fases acima</div>
+      <div class="section-title"><span data-en="PHASE 5 — Cross-cutting concerns" data-pt="FASE 5 — Preocupações transversais (cross-cutting)">PHASE 5 — Cross-cutting concerns</span></div>
+      <div class="section-desc"><span data-en="Traverse every phase above" data-pt="Atravessam todas as fases acima">Traverse every phase above</span></div>
     </div>
 
     <div class="cross-cutting">
-      <h3>Concerns que atravessam todo o fluxo</h3>
+      <h3><span data-en="Concerns that traverse the whole flow" data-pt="Concerns que atravessam todo o fluxo">Concerns that traverse the whole flow</span></h3>
       <div class="cross-grid">
         <div class="cross-item">
-          <strong>Logging (4 camadas)</strong>
-          Winston (erros técnicos) · FlowLog (execução) · SpaceRunLogs via RunLogCollector (hierárquico, nested runs) · <code>recordLegacyNodeStart/Success</code> para nós não-Temporal
+          <strong><span data-en="Logging (4 layers)" data-pt="Logging (4 camadas)">Logging (4 layers)</span></strong>
+          <span data-en="Winston (technical errors) · FlowLog (execution) · SpaceRunLogs via RunLogCollector (hierarchical, nested runs) · &lt;code&gt;recordLegacyNodeStart/Success&lt;/code&gt; for non-Temporal nodes" data-pt="Winston (erros técnicos) · FlowLog (execução) · SpaceRunLogs via RunLogCollector (hierárquico, nested runs) · &lt;code&gt;recordLegacyNodeStart/Success&lt;/code&gt; para nós não-Temporal">Winston (technical errors) · FlowLog (execution) · SpaceRunLogs via RunLogCollector (hierarchical, nested runs) · <code>recordLegacyNodeStart/Success</code> for non-Temporal nodes</span>
         </div>
         <div class="cross-item">
-          <strong>Token / custo</strong>
-          <code>chargeContext</code> async-local storage · pricing via tabela <code>model_price</code> · persistência em <code>execution_logs.spent_tokens</code>/<code>cost</code> e por nó em <code>RunLogNode</code>
+          <strong><span data-en="Token / cost" data-pt="Token / custo">Token / cost</span></strong>
+          <span data-en="&lt;code&gt;chargeContext&lt;/code&gt; async-local storage · pricing via &lt;code&gt;model_price&lt;/code&gt; table · persistence in &lt;code&gt;execution_logs.spent_tokens&lt;/code&gt;/&lt;code&gt;cost&lt;/code&gt; and per node in &lt;code&gt;RunLogNode&lt;/code&gt;" data-pt="&lt;code&gt;chargeContext&lt;/code&gt; async-local storage · pricing via tabela &lt;code&gt;model_price&lt;/code&gt; · persistência em &lt;code&gt;execution_logs.spent_tokens&lt;/code&gt;/&lt;code&gt;cost&lt;/code&gt; e por nó em &lt;code&gt;RunLogNode&lt;/code&gt;">&lt;code&gt;chargeContext&lt;/code&gt; async-local storage · pricing via &lt;code&gt;model_price&lt;/code&gt; table · persistence in &lt;code&gt;execution_logs.spent_tokens&lt;/code&gt;/&lt;code&gt;cost&lt;/code&gt; and per node in &lt;code&gt;RunLogNode&lt;/code&gt;</span>
         </div>
         <div class="cross-item">
-          <strong>Chat / sessão</strong>
-          <code>SessionStateService</code> com chave stable (scope + sessionKey + ownerUserId)
+          <strong><span data-en="Chat / session" data-pt="Chat / sessão">Chat / session</span></strong>
+          <code>SessionStateService</code> <span data-en="with a stable key (scope + sessionKey + ownerUserId)" data-pt="com chave stable (scope + sessionKey + ownerUserId)">with a stable key (scope + sessionKey + ownerUserId)</span>
         </div>
         <div class="cross-item">
-          <strong>Mídia / arquivos S3</strong>
-          Imagens/áudio salvos antes de retornar. Padrão claim-check &gt;256KB <strong>já usado em ambos os paths</strong> (Temporal e inline) — flux.service.ts:525, 581, 1533
+          <strong><span data-en="Media / S3 files" data-pt="Mídia / arquivos S3">Media / S3 files</span></strong>
+          <span data-en="Images/audio saved before returning. Claim-check &gt;256KB pattern &lt;strong&gt;already used in both paths&lt;/strong&gt; (Temporal and inline) — flux.service.ts:525, 581, 1533" data-pt="Imagens/áudio salvos antes de retornar. Padrão claim-check &gt;256KB &lt;strong&gt;já usado em ambos os paths&lt;/strong&gt; (Temporal e inline) — flux.service.ts:525, 581, 1533">Images/audio saved before returning. Claim-check &gt;256KB pattern &lt;strong&gt;already used in both paths&lt;/strong&gt; (Temporal and inline) — flux.service.ts:525, 581, 1533</span>
         </div>
         <div class="cross-item">
           <strong>MCP tracking</strong>
-          <code>mcpRunStatusService.markRunning()</code> no início (apiV2Job.processor.ts:48) · <code>markFinished()</code> no fim (58-67, 80-88) com tokens/cost/durationMs
+          <code>mcpRunStatusService.markRunning()</code> <span data-en="at start" data-pt="no início">at start</span> (apiV2Job.processor.ts:48) · <code>markFinished()</code> <span data-en="at end" data-pt="no fim">at end</span> (58-67, 80-88) <span data-en="with tokens/cost/durationMs" data-pt="com tokens/cost/durationMs">with tokens/cost/durationMs</span>
         </div>
         <div class="cross-item">
-          <strong>Objetos personalizados</strong>
-          <code>nodesBox</code> via <code>modifyData()</code> + <code>objectCaller()</code> · <code>onMutateObjectCallerData</code> callback
+          <strong><span data-en="Custom objects" data-pt="Objetos personalizados">Custom objects</span></strong>
+          <code>nodesBox</code> <span data-en="via" data-pt="via">via</span> <code>modifyData()</code> + <code>objectCaller()</code> · <code>onMutateObjectCallerData</code> <span data-en="callback" data-pt="callback">callback</span>
         </div>
         <div class="cross-item">
-          <strong>Detecção Temporal vs legacy</strong>
-          <code>isTemporalNode(type)</code> · <code>isWorkerRoutedIntegration(node)</code> <span class="badge new">novo</span>
+          <strong><span data-en="Temporal vs legacy detection" data-pt="Detecção Temporal vs legacy">Temporal vs legacy detection</span></strong>
+          <code>isTemporalNode(type)</code> · <code>isWorkerRoutedIntegration(node)</code> <span class="badge new" data-en="new" data-pt="novo">new</span>
         </div>
         <div class="cross-item">
-          <strong>Cancellation <span class="badge new">novo</span></strong>
-          Feature flag <code>NODE_CANCEL_IN_FLIGHT_FLAG</code> · <code>shouldWatchCancellation()</code>, <code>startNodeCancelWatch()</code>, <code>nodeCancelContext</code>, <code>finishCancelledNode()</code>
+          <strong>Cancellation <span class="badge new" data-en="new" data-pt="novo">new</span></strong>
+          <span data-en="Feature flag" data-pt="Feature flag">Feature flag</span> <code>NODE_CANCEL_IN_FLIGHT_FLAG</code> · <code>shouldWatchCancellation()</code>, <code>startNodeCancelWatch()</code>, <code>nodeCancelContext</code>, <code>finishCancelledNode()</code>
         </div>
       </div>
     </div>
   </div>
 
 </div>
+<script src="_assets/i18n.js" defer></script>
+<script>
+  // Inline cross-refs: scroll to target without triggering the parent .box link navigation
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('.ref-link[data-target]');
+    if (!el) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var target = document.getElementById(el.dataset.target);
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, true);
+</script>
 </body>
 </html>
