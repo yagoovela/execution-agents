@@ -7,6 +7,15 @@ decide the prefetch executor's fate on evidence.
 
 ## Scope — three separable pieces
 
+**Not in scope, settled by `D18`: the batch-process endpoints stay.** None of the five is
+deprecated — `POST /batch-process` (`flux.controller.ts:643`), `GET /batch-process/:id/status`
+(`:839`), `GET /batch-process/all` (`:872`), `POST /batch-process/:id/stop` (`:888`) and
+`GET /batch-process/:ids/download` (`:923`). The route stays as the entry point and its body moves
+into `B7`'s durable workflow; the status, stop, listing and download endpoints are the surface a
+batch screen reads, so they gain a consumer rather than losing one. Do not sweep them up with the
+legacy endpoint below — they look similar and are not.
+
+
 ### 1. `/process/single-node-legacy`
 
 `back/src/temporal/temporal.controller.ts:71`, backed by

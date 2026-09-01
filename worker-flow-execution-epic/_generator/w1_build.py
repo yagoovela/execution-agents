@@ -37,7 +37,7 @@ SEC1 = {
 
 SEC3 = {
  'S2': ('What the task does, in three parts', 'O que a task faz, em três partes'),
- 'S3': ('What the task does, in three parts', 'O que a task faz, em três partes'),
+ 'S3': ('What the task does, in four parts', 'O que a task faz, em quatro partes'),
  'S8': ('What the task does, in four parts', 'O que a task faz, em quatro partes'),
  'E3': ('What the task does, in three parts', 'O que a task faz, em três partes'),
 }

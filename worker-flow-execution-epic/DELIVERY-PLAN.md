@@ -249,23 +249,19 @@ unchanged. No task added, removed or re-sequenced — see analysis §12.
 
 ## Decisions that gate a wave
 
-These block their wave from starting, not from finishing. Four of them carry an assumption the
-tasks already state — proceeding on the assumption is fine; discovering it was wrong late is not.
+These block their wave from starting, not from finishing.
 
-| # | Decision | Assumption taken | Gates |
-|---|---|---|---|
-| D1 | Shared package or copy-port for the scheduler and substitution | none — genuinely open | Wave 4 |
-| D2 | Is the prefetch executor the destination or a stopgap | needs C2's measurement | Wave 4 |
-| D3 | Do the nine front-driven types running headless count as a fix or a behaviour change | treated as a **product change** requiring sign-off | Wave 3 |
-| D4 | Are the two stranded modules paused or forgotten | assumed forgotten — A3 finishes them | Wave 2 |
-| D5 | What are `comment`, `label`, `group` | none — must be answered for the registry to be authoritative | Wave 2 |
-| D6 | Sub-flow depth ceiling | **3, env-configurable**, pending the measurement in S1 | Wave 0 |
-| D7 | Behaviour when a run hits its cost ceiling | **abort with a typed error**, not silent degradation | Wave 1 |
-| D8 | Worker pool `max` | **activity concurrency + 2**; PgBouncer in transaction mode recommended | Wave 1 |
-| D9 | Per-tenant concurrency | **queue the excess**, do not reject | Wave 1 |
-| D15 | Execution budget numbers | **open** — X per node, Y per run, chain total; all three from measurement, not from taste | Wave 0 |
-| D13 | Sub-flow execution identity | **chained** — own run id plus `parentRunId`; depth, cycle, cancellation and spend all read the chain | Wave 0 |
-| D14 | Calling a flow already on the chain | **refused outright**, at any depth — it is awaiting a return | Wave 0 |
-| D10 | What `public: true` should permit on the webhook route | none — must be stated, not inherited from a broken `where` | Wave 0 |
-| D11 | Behaviour when a rate limit is hit | **reject with 429 + Retry-After**, deliberately unlike D9 — admission is where rejecting is right | Wave 1 |
-| D12 | Cron single-fire mechanism | **advisory lock per job name**, so nothing needs to know the replica count | Wave 1 |
+**What each decision asks, what it settled and why is in [`PLAN.md`](./PLAN.md) §7 — that table is
+the single source.** This one only says which wave each decision gates, because the same answer
+written in two places diverges the first time somebody edits one of them. That already happened in
+this spec once.
+
+| Wave | Decisions that gate it |
+|---|---|
+| Wave 0 | D6, D10, D13, D14, D15 |
+| Wave 1 | D7, D8, D9, D11, D12, D19, D20 |
+| Wave 2 | D4, D5 |
+| Wave 3 | D3 |
+| Wave 4 | D1, D2, D16, D22 |
+| Wave 5 | D17, D21, D23 |
+| Wave 6 | D18 |

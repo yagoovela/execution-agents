@@ -185,9 +185,64 @@ PARTS = [
         'O stop liga uma flag. Linhas em voo rodam até o fim, e um lote cujo laço já morreu ignora o stop por completo.'),
        ('Stop cancels the workflow, which cancels the row children in flight, and the batch reaches a <strong>terminal</strong> status the endpoint can report.',
         'O stop cancela o workflow, que cancela os filhos de linha em voo, e o lote chega a um status <strong>terminal</strong> que o endpoint consegue reportar.'))},
-]
 
+{'n':'4','title':('A screen to create a batch and watch it run','Uma tela para criar um lote e acompanhá-lo'),
+ 'loc':('front · reads the five existing endpoints','front · lê os cinco endpoints existentes'),
+ 'purpose':('Give the stop and status endpoints a consumer. Cancellation nobody can reach is not a feature.',
+            'Dar um consumidor aos endpoints de stop e status. Cancelamento que ninguém alcança não é funcionalidade.'),
+ 'body':('<p>A batch is created from a CSV and watched while it runs: <strong>rows done, rows failed, the current row, and the output per row</strong>. '
+         'The endpoints already exist — <code>POST /batch-process</code>, <code>GET /:id/status</code>, <code>GET /all</code>, <code>POST /:id/stop</code> and '
+         '<code>GET /:ids/download</code>. What has never existed is a surface that reads them.</p>'
+         '<p><strong>This is why <code>D18</code> keeps the route instead of retiring it.</strong> The five endpoints gain a consumer in this epic rather than '
+         'losing one, so none of them is deprecated — and <code>C2</code> must not sweep them up with the legacy endpoint, which looks similar and is not.</p>',
+         '<p>Um lote é criado a partir de um CSV e acompanhado enquanto roda: <strong>linhas concluídas, linhas falhadas, a linha atual e a saída por linha</strong>. '
+         'Os endpoints já existem — <code>POST /batch-process</code>, <code>GET /:id/status</code>, <code>GET /all</code>, <code>POST /:id/stop</code> e '
+         '<code>GET /:ids/download</code>. O que nunca existiu é uma superfície que os leia.</p>'
+         '<p><strong>É por isso que a <code>D18</code> mantém a rota em vez de aposentá-la.</strong> Os cinco endpoints ganham um consumidor neste épico em vez de '
+         'perder um, então nenhum deles é depreciado — e a <code>C2</code> não pode varrê-los junto com o endpoint legado, que é parecido e não é a mesma coisa.</p>'),
+ 'ba':(('Stop and status are endpoints with no caller. A stalled batch is discovered by someone noticing.',
+        'Stop e status são endpoints sem chamador. Um lote travado é descoberto por alguém que percebe.'),
+       ('The batch is visible while it runs, and stopping it is a button rather than a request somebody has to compose.',
+        'O lote é visível enquanto roda, e pará-lo é um botão em vez de uma requisição que alguém precisa montar.'))},
+
+{'n':'5','title':('Stop after too many failures, if the customer asks for it','Parar após falhas demais, se o cliente pedir'),
+ 'loc':('new — batch configuration','novo — configuração do lote'),
+ 'purpose':('Let a batch that is clearly going wrong stop early, without making that the default for a batch that is merely imperfect.',
+            'Deixar um lote que claramente deu errado parar cedo, sem tornar isso o padrão para um lote apenas imperfeito.'),
+ 'body':('<p>An optional policy, set per batch: either an <strong>absolute count</strong> — <em>stop after 1000 failures</em> — or a <strong>share of the rows '
+         'processed</strong> — <em>stop at 60% failed</em>. <strong>Unset means run the whole CSV</strong>, which is today&#x27;s behaviour and stays the default.</p>'
+         '<p>Two things have to be decided with it and stated in the PR, because leaving either implicit produces a policy nobody can predict:</p>',
+         '<p>Uma política opcional, definida por lote: um <strong>número absoluto</strong> — <em>parar após 1000 falhas</em> — ou uma <strong>fração das linhas '
+         'processadas</strong> — <em>parar em 60% de falha</em>. <strong>Sem definir, roda o CSV inteiro</strong>, que é o comportamento de hoje e continua o padrão.</p>'
+         '<p>Duas coisas precisam ser decididas junto e declaradas no PR, porque deixar qualquer uma implícita produz uma política que ninguém consegue prever:</p>'),
+ 'list':[('<strong>What counts as a failure</strong> — a failed row, or a failed node inside a row that otherwise produced output?',
+          '<strong>O que conta como falha</strong> — uma linha que falhou, ou um node que falhou dentro de uma linha que ainda assim produziu saída?'),
+         ('<strong>What happens to rows already in flight</strong> when the threshold trips — cancelled with the batch, or allowed to finish?',
+          '<strong>O que acontece com as linhas já em voo</strong> quando o limite dispara — canceladas junto com o lote, ou deixadas terminar?')],
+ 'body2':('<p><strong>The share form needs a minimum sample</strong>, or a batch whose first two rows fail stops at 100% failed. That is not a corner case; it is '
+          'the first thing a tester will do.</p>',
+          '<p><strong>A forma em fração precisa de amostra mínima</strong>, senão um lote cujas duas primeiras linhas falham para com 100% de falha. Isso não é caso '
+          'de canto; é a primeira coisa que quem testa vai fazer.</p>'),
+ 'callouts':[('mig',('Interactions to re-read, not constraints today','Interações para reler, não restrições de hoje'),
+   ('<p><strong><code>S1</code>:</strong> a row is a sub-flow, so it starts at depth 1 and anything it calls goes deeper. A batch of a flow that itself composes '
+    'two levels reaches the <code>S1</code> ceiling — confirm the ceiling is measured against batch rows, not only against hand-built flows.</p>'
+    '<p><strong><code>D21</code>:</strong> every row is a child of a parent that has already started, so if a priority list is ever introduced, one thousand-row CSV '
+    'could hold the front of the queue. <strong>No such ordering exists today</strong> — work starts as capacity frees up — so this is a risk to re-read when '
+    '<code>D21</code>&#x27;s condition is met.</p>',
+    '<p><strong><code>S1</code>:</strong> uma linha é um sub-fluxo, então começa na profundidade 1 e qualquer coisa que ela chame vai mais fundo. Um lote de um fluxo '
+    'que por si só compõe dois níveis atinge o teto da <code>S1</code> — confirme que o teto é medido contra linhas de lote, não só contra fluxos feitos à mão.</p>'
+    '<p><strong><code>D21</code>:</strong> toda linha é filha de um pai que já começou, então se uma lista de prioridade for criada, um CSV de mil linhas poderia '
+    'segurar a frente da fila. <strong>Nenhuma ordenação dessas existe hoje</strong> — o trabalho começa conforme a capacidade libera — então isso é um risco para '
+    'reler quando a condição da <code>D21</code> for atendida.</p>'))]},
+]
 VERIF = [
+ (True, ('Negative control — the stop-on-failure threshold','Controle negativo — o limite de parada por falha'),
+  ('Build a CSV whose rows <strong>fail deterministically past a known point</strong>. Run it with the policy unset and confirm the batch processes every row and '
+   'fails every one. Then set the threshold and confirm it stops at the row it should, with the reason recorded and the completed rows kept. '
+   '<strong>A threshold that has never been seen not to trigger is not a threshold.</strong>',
+   'Monte um CSV cujas linhas <strong>falhem de forma determinística a partir de um ponto conhecido</strong>. Rode com a política desligada e confirme que o lote '
+   'processa todas as linhas e falha em todas. Depois ligue o limite e confirme que ele para na linha certa, com o motivo registrado e as linhas concluídas '
+   'preservadas. <strong>Um limite que nunca foi visto sem disparar não é um limite.</strong>')),
  (True, ('Negative control — restart it mid-run','Controle negativo — reinicie no meio'),
   ('Start a batch, <strong>restart the backend mid-run, and confirm the batch stalls on <code>main</code></strong> — that is today&#x27;s behaviour and it should be '
    'seen once, by the person doing the work. Then confirm the workflow version resumes and completes.',

@@ -28,14 +28,21 @@ def load():
     for code, state, ref, note in _ROW.findall(open(_PATH, encoding='utf-8').read()):
         if state not in LABELS:
             raise ValueError('STATUS.md: unknown state %r for %s' % (state, code))
+        if note and ' // ' not in note:
+            raise ValueError(
+                'STATUS.md: the note for %s has no Portuguese side. Write it as '
+                '"English // Portugues" — the pages are bilingual and the note is rendered '
+                'into them verbatim, so an untranslated note shows English in both languages.'
+                % code)
+        note_en, _, note_pt = note.partition(' // ')
         out[code] = {'state': state, 'ref': ref if ref not in ('—', '-', '') else None,
-                     'note': note or None}
+                     'note': note_en or None, 'note_pt': (note_pt or note_en) or None}
     return out
 
 STATUS = load()
 
 def of(code):
-    return STATUS.get(code, {'state': 'planned', 'ref': None, 'note': None})
+    return STATUS.get(code, {'state': 'planned', 'ref': None, 'note': None, 'note_pt': None})
 
 if __name__ == '__main__':
     from collections import Counter

@@ -51,6 +51,8 @@ sees; queueing turns it into latency, which is the correct trade for a backgroun
 **In.** Both limits emit a metric before they emit an error. A ceiling nobody can see being
 approached will be discovered by being hit.
 
+**In — the pre-flight credit check, per `D20`.** The ceiling is not a per-node property evaluated at dispatch. Check before the run starts, in the gate `S1` already runs between building the DAG and spending anything: does this flow need credit, and is there enough. Refusing there turns a bill into an error message. It does not replace the charge-time ceiling — a pre-flight check cannot know which branch will run — but it catches the case that matters most, which is starting work that was never going to finish.
+
 **Out.** Changing pricing, plan structure, or how charges are computed.
 
 ## Verification
