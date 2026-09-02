@@ -35,6 +35,20 @@ measure it and state the number rather than assuming.
 **In.** Validate the feature flag's current state before relying on it. `NODE_CANCEL_IN_FLIGHT_FLAG`
 was added after the original design and is not proven at production scale.
 
+**In — what the ledger records, per `D22`.** We ask the provider to cancel. If it reports the tokens
+spent up to that point, record the charge **normally**, exactly as a generation that completed — the
+work was really done and really cost. If it reports nothing, record what is available and mark the
+entry as cancelled or aborted by the user. **Never record zero for a cancelled generation that
+consumed tokens**, because that is the case that makes the ledger disagree with the provider's
+invoice, and it disagrees silently.
+
+**In — cancellation propagates down the chain, per `D23`.** A `fluxBox`, `libraryNode` or
+`arrayNode` is not allowed to finish the way a generation is: its execution is an open-ended amount
+of further work. Cancelling one cancels its children, which is native for Temporal child workflows
+and is what the `parentRunId` chain from `S1` exists to carry. For `arrayNode`, the element already
+generating finishes; the remaining elements never start. **`nodesBox` is not in this list:** it dispatches to `objectCaller`, which executes no nodes and only reads and writes an object's
+session state, so cancelling it prevents no spend and leaves the object half-written.
+
 **Out.** Changing what cancellation means to the user, or cancelling already-committed side
 effects. A cancelled push that already reached Stripe stays sent.
 
@@ -44,18 +58,19 @@ effects. A cancelled push that already reached Stripe stays sent.
   Then break the propagation and watch it start anyway — that is the regression this task exists to
   prevent, and it is invisible without the test.
 - Cancel during a **child workflow** (`fluxBox` / `libraryNode`): the child must stop too.
-  Cancellation propagation is native for child workflows, so this test is cheap and proves the
-  design choice.
+  Propagation is native for child workflows, so the test is cheap — but **no child workflow exists
+  until B6 (Wave 5)**, so this proof is B6's Done-when clause, not this task's. E2 proves
+  cancellation for a single-level run.
 - Measure click-to-effective-cancel before and after.
 - Confirm the per-node timers are gone: run a sixty-node agent and count active timers and the
   database query rate against the pre-change baseline.
 
 ## Done when
 
-Cancellation is Temporal-native end to end including child workflows, the poller and the ALS
-context are removed, the footprint UX is unchanged, and the latency is measured.
+Cancellation is Temporal-native end to end for a single-level run (the child-workflow proof lands
+with B6, which creates the first child workflow), the poller and the ALS context are removed, the footprint UX is unchanged, and the latency is measured.
 
 ## Files
 
-`back/src/app-api/flux/node-cancel-watch.ts` · `back/src/app-api/flux/flux.service.ts:3192–3194, 4516–4530` ·
+`back/src/app-api/flux/node-cancel-watch.ts` · `back/src/app-api/flux/flux.service.ts` (`NODE_CANCEL_IN_FLIGHT_FLAG`, `nodeCancelContext.enterWith`, `finishCancelledNode`) ·
 `back/src/temporal/temporal.service.ts` · the worker flow workflow and its activities

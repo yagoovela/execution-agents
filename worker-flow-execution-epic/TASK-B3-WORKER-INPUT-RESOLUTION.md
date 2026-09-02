@@ -8,7 +8,7 @@ by reference and resolves what it needs.
 ## Why — and what already exists
 
 Today the API resolves a node's input and pre-saves it before dispatch: `openNodeExecution`
-INSERTs `node_executions.input`, and the worker only reads it (`fetch-node-row.ts:6–10` selects
+INSERTs `node_executions.input`, and the worker only reads it (`fetch-node-row.ts` selects
 `input` when `execId` is present, never the live row). While the API owns that step, the worker
 cannot own the graph — every node needs a round trip through the back to become runnable.
 
@@ -23,8 +23,8 @@ destination, and move it to the worker side of the boundary.
 
 ## Scope
 
-**In.** Answer D2 with the measurement from C2 in hand: how many production flows satisfy the
-17-type whitelist, and what the prefetch path actually saved. A flag defaulting to `legacy` whose
+**In.** Answer D2 with A1's measurement in hand (Wave 2): how many stored flows satisfy the
+17-type whitelist, how many ran with the flag on, and what the prefetch path actually saved. A flag defaulting to `legacy` whose
 whitelist excludes every LLM node and every control-flow node may be shipped but dormant.
 
 **In.** Then either widen and relocate the prefetch executor, or implement resolution in the

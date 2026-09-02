@@ -7,8 +7,8 @@
 ## Why now rather than with B6
 
 `flowCallerNode` calls `this.apiV2()` — the whole orchestrator — for the selected flow
-(`flux.service.ts:5611–5622`); `libraryNode` does the same. There is no depth limit and no cycle
-detection: `parentFlowId` is threaded for billing attribution only (`:5732, 5815`).
+(`flux.service.ts`); `libraryNode` does the same. There is no depth limit and no cycle
+detection: `parentFlowId` is threaded for billing attribution only.
 
 Flow A pointing at B and B pointing back at A recurses until the process dies, and each level is a
 complete run — its own scheduler state, its own `node_executions` rows, its own run-log tree, its
@@ -119,5 +119,5 @@ move to child workflows.
 
 ## Files
 
-`back/src/app-api/flux/flux.service.ts:5400, 5611–5622, 5717, 5732, 5815` · the run context threaded
+`back/src/app-api/flux/flux.service.ts` (`flowCallerNode()`, `libraryNode()`, `parentFlowId`) · the run context threaded
 through `apiV2` · new env var + `env-vars-sync`

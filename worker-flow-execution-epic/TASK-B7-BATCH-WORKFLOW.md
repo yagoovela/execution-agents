@@ -7,11 +7,11 @@ largest multiplier of a missing cost ceiling). **Source:** review §11.2.
 
 ## Why
 
-`/flux/batch-process` calls `this.processBatch(...).catch(...)` (`flux.controller.ts:560`) —
+`/flux/batch-process` calls `this.processBatch(...).catch(...)` (`flux.controller.ts`) —
 unawaited. The request returns immediately and the work continues **detached inside the backend
 process**.
 
-`processBatch` (`:574–706`) is a sequential `for` loop over CSV rows. Per row it re-reads the batch,
+`processBatch` is a sequential `for` loop over CSV rows. Per row it re-reads the batch,
 re-reads the row record, runs a **complete flow** via `await this.fluxService.apiV2(…)`, writes the
 output, re-reads the batch and saves the pointer — four to five database round trips on bookkeeping
 before the run itself.
@@ -44,6 +44,25 @@ because the loop cannot trust its own memory across a restart; a workflow can.
 **In.** Honour the stop endpoint (`/batch-process/:id/stop`) through workflow cancellation, which
 also cancels in-flight rows — better than today, where stopping sets a flag the loop checks.
 
+**Out — a batch screen** (`front`). The screen does not exist today and is **not built in this
+migration/refactor** (decided 2026-09-02). When it is built it reads what already exists — rows done,
+rows failed, the current row, per-row output, the stop endpoint. The route stays regardless (`D18`):
+the five endpoints are the batch's only surface, and this task makes what runs behind them durable.
+
+**In — an optional stop-on-failure policy, set by the customer per batch.** Either an absolute
+count or a share of rows processed — *stop after 1000 failures*, or *stop at 60% failed*. Unset
+means run the whole CSV. Two things have to be decided with it and stated in the PR: what counts as
+a failure (a failed row, or a failed node inside an otherwise successful row), and what happens to
+rows already in flight when the threshold trips — cancelled with the batch, or allowed to finish.
+The share form cannot be evaluated on the first rows without a minimum sample, or a batch whose
+first two rows fail stops at 100%.
+
+**Interaction with `D21`.** Every row is a child workflow of a parent that has already started. If a priority list is ever introduced, `D21` would put all of a large batch's rows ahead of newly admitted runs, and one thousand-row CSV could hold the front of the queue. No such ordering exists today — work starts as capacity frees up — so this is a risk to re-read when `D21`'s condition is met, not a constraint on this task now.
+
+**Interaction with `S1`.** A row is a sub-flow, so it starts at depth 1 and any flow it calls goes
+deeper. A batch of a flow that itself composes two levels reaches the `S1` ceiling — confirm the
+ceiling is measured against batch rows, not only against hand-built flows.
+
 **Out.** Changing the CSV format, the input mapping to `varInputNode`s, or the output shape.
 
 ## Verification
@@ -53,12 +72,27 @@ also cancels in-flight rows — better than today, where stopping sets a flag th
   workflow version resumes and completes.
 - **Cost ceiling interaction.** Run a batch whose total would exceed the tenant's budget and confirm
   S3 stops it at the ceiling, with the partially-completed rows recorded rather than lost.
+- **Negative control, stop-on-failure.** Build a CSV whose rows fail deterministically past a
+  known point, run it with the policy unset, and confirm the batch processes every row and fails
+  every one. Then set the threshold and confirm it stops at the row it should, with the reason
+  recorded and the completed rows kept. A threshold that has never been seen not to trigger is not
+  a threshold.
 - Stop mid-batch and confirm in-flight rows cancel and the status is terminal.
 - Compare outputs row for row against a pre-change run of the same CSV.
 - Measure the bookkeeping reduction — queries per row, before and after. The claim in this task is
   four to five round trips; prove it or correct it.
 
+## Done when
+
+A batch survives a backend restart and resumes; the workflow is the sole writer of
+`lastProcessedLine` and the status columns, and they reach a terminal state; stop cancels the rows
+in flight and the status says so; the stop-on-failure policy trips at the row it should — and
+demonstrably does not trip when unset or before its minimum sample; a batch that would exceed the
+tenant's ceiling is stopped by S3 with the completed rows kept; outputs match a pre-change run row
+for row; and the bookkeeping reduction is measured, not asserted. The batch screen is not part of
+this task's done.
+
 ## Files
 
-`back/src/app-api/flux/flux.controller.ts:513–517, 560, 574–706, 710–800` ·
+`back/src/app-api/flux/flux.controller.ts` (the `/batch-process` handler, `processBatch()`, and the four status/listing/stop/download handlers) ·
 `back/src/entities/batch_processing_file*.ts` · new batch workflow in the worker

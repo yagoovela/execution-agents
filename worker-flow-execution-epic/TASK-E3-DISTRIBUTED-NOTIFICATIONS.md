@@ -10,13 +10,14 @@ the event rate. **Source:** analysis §11.3.
 Two problems, both structural.
 
 **The socket path is process-local.** `chatbotSocketByRun` is a plain `Map` in the backend process
-(`flux.service.ts:2288, 5293–5307`, cleaned up at `:5392–5395`). A run whose socket was registered
+(`flux.service.ts` — set when the run starts, deleted in the run's `finally`; four uses in total). A run whose socket was registered
 on replica A cannot be notified from replica B. That is a blocker for horizontal scale, and it is
 already latent — it does not need the worker migration to bite.
 
 **There are two mechanisms.** The worker publishes to Redis (`room_status_updated`,
 `room_stream_chunk`, `completion_stream_chunk`) which the backend relays via `@EventPattern` to
-Socket.io; the inline path writes to the socket directly. Two paths to maintain, two places to fix
+Socket.io — in two controllers: `temporal.controller.ts` for the first two, `router.controller.ts`
+for `completion_stream_chunk`; the inline path writes to the socket directly. Two paths to maintain, two places to fix
 a bug, and they will drift — the same failure this epic is trying to end for dispatch lists.
 
 ## Scope
@@ -52,6 +53,6 @@ parallel dispatch.
 
 ## Files
 
-`back/src/app-api/gateway/gateway.ts:69, 76` · `back/src/temporal/temporal.controller.ts:88–97` ·
-`back/src/app-api/flux/flux.service.ts:2288, 5293–5307, 5392–5395` ·
+`back/src/app-api/gateway/gateway.ts` (`response()`, `responseToUser()`) · `back/src/temporal/temporal.controller.ts` (the `@EventPattern` relays for `room_status_updated`, `room_stream_chunk`) · `back/src/app-api/router/router.controller.ts` (`completion_stream_chunk`) ·
+`back/src/app-api/flux/flux.service.ts` (`chatbotSocketByRun`) ·
 `worker/src/modules/notification/notification.service.ts`

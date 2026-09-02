@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
 TITLE=('Promote the finished modules and providers','Promover os módulos e provedores prontos')
-GOAL=('Get the <b>six node types and two providers</b> that are already finished into production. This is <b>release work, not engineering</b> — blocked on a branch reconciliation nobody has done.',
-      'Levar para produção os <b>seis tipos de node e dois provedores</b> que já estão prontos. Isto é <b>trabalho de release, não de engenharia</b> — travado numa reconciliação de branches que ninguém fez.')
+GOAL=('Get the <b>six node types and two providers</b> that are already finished into production. This is <b>release work, not engineering</b>: verify what is in test against the definition of done, and promote it.',
+      'Levar para produção os <b>seis tipos de node e dois provedores</b> que já estão prontos. Isto é <b>trabalho de release, não de engenharia</b>: conferir o que está em teste contra a definição de pronto, e promover.')
 
 GLANCE=[
  ('crit',('Severity','Severidade'),('Nothing is broken','Nada está quebrado'),
-  ('Six finished worker modules and two finished providers have simply <strong>never reached an environment</strong>.',
-   'Seis módulos de worker prontos e dois provedores prontos simplesmente <strong>nunca chegaram a um ambiente</strong>.')),
+  ('Six finished worker modules and two finished providers are simply <strong>not in production</strong>.',
+   'Seis módulos de worker prontos e dois provedores prontos simplesmente <strong>não estão em produção</strong>.')),
  ('dep',('Depends on','Depende de'),('A1','A1'),
   ('Blocks nothing — but it is the <strong>cheapest coverage in the epic</strong>. The work is already written.',
    'Não bloqueia nada — mas é a <strong>cobertura mais barata do épico</strong>. O trabalho já está escrito.')),
@@ -21,30 +21,28 @@ GLANCE=[
 
 LEDE=(
  '<p><strong>Updated 2026-08-24.</strong> <code>mcpNode</code> shipped completely — worker enum, <code>mcp</code> module, <code>isTemporalNode</code>, legacy allowlist, and <code>mcp</code> as a migrated integration provider. '
- 'It is done and out of this task. <strong>Six</strong> node types remain, and they are all on <strong>one branch that was never merged anywhere</strong> — not <code>develop</code>, not <code>staging</code> (analysis §12).</p>'
- '<p><code>origin/chore/merge-868k8twjb-develop-20260805</code> carries all six. <strong>The gap widened rather than closed:</strong> whatever is blocking that merge has now been blocking it while a parallel line shipped past it. '
- 'That is no longer “promotion work” — it is a question to answer before the promotion starts.</p>',
+ 'It is done and out of this task. <strong>Six</strong> node types remain, and — corrected 2026-09-02, only production counts — they are <strong>not in <code>worker@origin/main</code></strong>; they are in test on the dev environment (analysis §12).</p>'
+ '<p>The first draft framed this as reconciling a chore branch that had reached no environment; that framing is dropped. Where the six sit before production is the release pipeline&#x27;s business. If the dev line and production have diverged, resolving it is a step of the promotion, not the task&#x27;s premise.</p>',
  '<p><strong>Atualizado em 2026-08-24.</strong> O <code>mcpNode</code> subiu por completo — enum do worker, módulo <code>mcp</code>, <code>isTemporalNode</code>, allowlist legada, e <code>mcp</code> como provedor de integração migrado. '
- 'Está pronto e fora desta task. Restam <strong>seis</strong> tipos de node, e todos estão em <strong>uma branch que nunca foi mesclada em lugar nenhum</strong> — nem <code>develop</code>, nem <code>staging</code> (análise §12).</p>'
- '<p>A <code>origin/chore/merge-868k8twjb-develop-20260805</code> carrega os seis. <strong>A distância aumentou em vez de fechar:</strong> o que trava esse merge já o travou enquanto uma linha paralela passou na frente. '
- 'Isso deixou de ser “trabalho de promoção” — é uma pergunta a responder antes de a promoção começar.</p>')
+ 'Está pronto e fora desta task. Restam <strong>seis</strong> tipos de node, e — corrigido em 2026-09-02, só produção conta — <strong>não estão em <code>worker@origin/main</code></strong>; estão em teste no ambiente de dev (análise §12).</p>'
+ '<p>A primeira versão tratava isto como reconciliar uma branch chore que não tinha chegado a nenhum ambiente; esse enquadramento foi descartado. Onde os seis estão antes da produção é assunto do pipeline de release. Se a linha de dev e a produção divergiram, resolver isso é um passo da promoção, não a premissa da task.</p>')
 
 TABLE={'k':'table',
  'head':[('Finished work','Trabalho pronto'),('Worker module / adapter','Módulo / adaptador no worker'),
          ('Where it is today','Onde está hoje'),('Reached production?','Chegou à produção?')],
  'rows':[
   [{'t':'voiceBoxNode','mono':True},{'t':'voice-generator','mono':True},
-   ('The chore merge branch','A branch de merge chore'),{'t':('No environment','Nenhum ambiente'),'pill':'no'}],
+   ('In test (dev)','Em teste (dev)'),{'t':('Not in production','Não está em produção'),'pill':'no'}],
   [{'t':'webCrawling','mono':True},{'t':'web-crawling','mono':True},
-   ('The chore merge branch','A branch de merge chore'),{'t':('No environment','Nenhum ambiente'),'pill':'no'}],
+   ('In test (dev)','Em teste (dev)'),{'t':('Not in production','Não está em produção'),'pill':'no'}],
   [{'t':'webSearch','mono':True},{'t':'web-search','mono':True},
-   ('The chore merge branch','A branch de merge chore'),{'t':('No environment','Nenhum ambiente'),'pill':'no'}],
+   ('In test (dev)','Em teste (dev)'),{'t':('Not in production','Não está em produção'),'pill':'no'}],
   [{'t':'commandContentNode','mono':True},{'t':'large-memory','mono':True},
-   ('The chore merge branch','A branch de merge chore'),{'t':('No environment','Nenhum ambiente'),'pill':'no'}],
+   ('In test (dev)','Em teste (dev)'),{'t':('Not in production','Não está em produção'),'pill':'no'}],
   [{'t':'pullData','mono':True},{'t':'pull-data','mono':True},
-   ('The chore merge branch','A branch de merge chore'),{'t':('No environment','Nenhum ambiente'),'pill':'no'}],
+   ('In test (dev)','Em teste (dev)'),{'t':('Not in production','Não está em produção'),'pill':'no'}],
   [{'t':'pushData','mono':True},{'t':'push-data','mono':True},
-   ('The chore merge branch','A branch de merge chore'),{'t':('No environment','Nenhum ambiente'),'pill':'no'}],
+   ('In test (dev)','Em teste (dev)'),{'t':('Not in production','Não está em produção'),'pill':'no'}],
   [{'t':'clickup (provider)','mono':True},{'t':'clickup.adapter.ts','mono':True},
    ('<code>worker@origin/develop</code> and <code>MIGRATED_INTEGRATION_PROVIDERS</code> on <code>back@origin/master</code>',
     '<code>worker@origin/develop</code> e <code>MIGRATED_INTEGRATION_PROVIDERS</code> em <code>back@origin/master</code>'),
@@ -131,19 +129,19 @@ DEC_STAGING={
 PARTS=[
 {'n':'1','title':('Find out what is blocking the merge, before merging',
                   'Descobrir o que trava o merge, antes de mesclar'),
- 'loc':'origin/chore/merge-868k8twjb-develop-20260805',
+ 'loc':'worker@origin/develop (in test) → main',
  'purpose':('A branch that has survived a whole release cycle unmerged is telling you something. Assume “merge conflict” only after looking.',
             'Uma branch que sobreviveu a um ciclo de release inteiro sem ser mesclada está dizendo alguma coisa. Suponha “conflito de merge” só depois de olhar.'),
- 'body':('<p>Then create the reconciliation branch and merge both lines. <strong>Expect conflicts</strong>: the dev branches moved a long way while the migration was in flight.</p>'
+ 'body':('<p>Take the dev line as it is in test. If it and production have diverged, merge — and <strong>expect conflicts</strong>, because the lines moved while the migration was in flight.</p>'
          '<p><strong>Union resolution — keep both sides, lose no code.</strong> <code>-X ours</code> is banned here; it produces a clean merge that silently discards a side, which is the one failure mode this reconciliation cannot survive. '
          'The policy was already paid for once and written down: <code>worker-thirdparty-integration-migration/DEV-RECONCILIATION.md</code>. Follow it rather than rediscovering it.</p>',
-         '<p>Depois crie a branch de reconciliação e mescle as duas linhas. <strong>Espere conflitos</strong>: as branches de dev andaram muito enquanto a migração estava em voo.</p>'
+         '<p>Pegue a linha de dev como está em teste. Se ela e a produção divergiram, mescle — e <strong>espere conflitos</strong>, porque as linhas andaram enquanto a migração estava em voo.</p>'
          '<p><strong>Resolução por união — manter os dois lados, não perder código.</strong> O <code>-X ours</code> está proibido aqui; ele produz um merge limpo que descarta um lado em silêncio, que é o único modo de falha que esta reconciliação não sobrevive. '
          'A política já foi paga uma vez e está escrita: <code>worker-thirdparty-integration-migration/DEV-RECONCILIATION.md</code>. Siga-a em vez de redescobri-la.</p>'),
- 'ba':(('Six finished modules sit on a branch that has reached no environment, and no written record says why.',
-        'Seis módulos prontos ficam numa branch que não chegou a ambiente nenhum, e nenhum registro escrito diz por quê.'),
-       ('The two lines are reconciled with <strong>every side kept</strong>, the blocker is named, and the six are on a branch that ships.',
-        'As duas linhas são reconciliadas com <strong>todos os lados preservados</strong>, o bloqueio é nomeado, e os seis ficam numa branch que sobe.')),
+ 'ba':(('Six finished modules are in test and not in production; production is the only environment this spec counts.',
+        'Seis módulos prontos estão em teste e não em produção; produção é o único ambiente que esta spec conta.'),
+       ('Whatever diverged is reconciled with <strong>every side kept</strong>, and the six are on the branch that ships.',
+        'O que divergiu é reconciliado com <strong>todos os lados preservados</strong>, e os seis ficam na branch que sobe.')),
  'callouts':[('mig',('Scope — what this task does not do','Escopo — o que esta task não faz'),
    ('<p>No change to what those modules do. <strong>If a module fails the definition of done, that failure becomes its own task</strong> — do not fix it inside the promotion. '
     'A promotion that also repairs things cannot be reverted by not promoting, and “revert by not promoting” is the entire reason this task is cheap.</p>',
@@ -203,15 +201,15 @@ VERIF=[
    'Em 2026-08-21, o <code>back@origin/staging</code> ainda carregava os <strong>seis</strong> provedores pré-release enquanto a produção carregava <strong>oito</strong>. <strong>Confirme se isso é deliberado</strong> — promover por um staging defasado ou quebra a produção de novo ou passa em silêncio, e os dois são reportados como sucesso.')),
 ]
 
-DONE=('All six node types are in <code>main</code>, the two pending providers are in production, each of them satisfies <strong>PLAN §3.4</strong>, and <strong>the two branch lines no longer exist as divergent heads</strong>.',
-      'Os seis tipos de node estão na <code>main</code>, os dois provedores pendentes estão em produção, cada um satisfaz o <strong>PLAN §3.4</strong>, e <strong>as duas linhas de branch deixam de existir como cabeças divergentes</strong>.')
+DONE=('All six node types are in <code>main</code>, the two pending providers are in production, and each of them satisfies <strong>PLAN §3.4</strong> — what is in test is in <code>main</code>.',
+      'Os seis tipos de node estão na <code>main</code>, os dois provedores pendentes estão em produção, e cada um satisfaz o <strong>PLAN §3.4</strong> — o que está em teste está na <code>main</code>.')
 
 FILES=[('worker/src/modules/nodes/{voice-generator,web-crawling,web-search,large-memory,pull-data,push-data}/',False),
        ('worker/src/modules/nodes/nodes.types.ts',False),
        ('worker/src/modules/temporal/**',False),
        ('worker adapters: clickup.adapter.ts · quickbooks.adapter.ts',False),
        ('the A1 registry',False),
-       ('reconciliation branch of the two lines',True)]
+       ('the promotion branch',False)]
 
 BLOCKS=[
  {'k':'label','n':'1','t':('What is finished, and where it is parked','O que está pronto, e onde está parado')},

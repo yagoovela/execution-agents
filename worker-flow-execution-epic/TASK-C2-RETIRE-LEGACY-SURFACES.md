@@ -7,10 +7,18 @@ decide the prefetch executor's fate on evidence.
 
 ## Scope — three separable pieces
 
+**Not in scope, settled by `D18`: the batch-process endpoints stay.** None of the five is
+deprecated — `POST /batch-process` (`flux.controller.ts`), `GET /batch-process/:id/status`, `GET /batch-process/all`, `POST /batch-process/:id/stop` and
+`GET /batch-process/:ids/download`. The route stays as the entry point and its body moves
+into `B7`'s durable workflow; the status, stop, listing and download endpoints are the batch's only
+surface — the screen that would read them is not built in this epic (B7, 2026-09-02) — and they stay
+regardless. Do not sweep them up with the legacy endpoint below — they look similar and are not.
+
+
 ### 1. `/process/single-node-legacy`
 
-`back/src/temporal/temporal.controller.ts:71`, backed by
-`single-node-legacy/single-node-legacy.service.ts`. Its `validateNode` (`:132–150`) refuses
+`back/src/temporal/temporal.controller.ts`, backed by
+`single-node-legacy/single-node-legacy.service.ts`. Its `validateNode` refuses
 migrated types, refuses mutating types, and accepts only `LEGACY_SINGLE_RUN_NODE_TYPES`.
 
 Once every executable type runs in the worker, this endpoint accepts nothing — it becomes a
@@ -21,20 +29,18 @@ flow but is still in `LEGACY_SINGLE_RUN_NODE_TYPES`, so this endpoint runs it in
 node takes different paths depending on how it was started (analysis §9.4). Either fix it in A1's
 wake or record it here as knowingly carried until retirement.
 
-### 2. The prefetch executor — measure, then decide (D2)
+### 2. The prefetch executor — execute the D2 answer
 
 `back/src/app-api/flux/prefetch/` is in production behind `FLUX_EXEC_MEMORY_MODE`, defaulting to
 `legacy`, with a 17-type whitelist that excludes every Temporal type and every control-flow type
-(analysis §9.2.1). **Before deciding anything, measure:**
+(analysis §9.2.1). **The measurement is A1's and the answer is B3's** (ownership split 2026-09-02,
+PLAN §7 D2): A1 reports, while it runs `canUsePrefetchForFlow` against every stored flow in Wave 2,
+how many flows satisfy the whitelist, how many ran with the flag on, and what it saved; B3 answers
+D2 with those numbers in Wave 4. This task **executes** whichever answer won:
 
-- How many production flows satisfy `canUsePrefetchForFlow`? A whitelist excluding every LLM node
-  may make the answer near zero.
-- Of those, how many ran with the flag on? What did it save — memory, latency, row size?
-
-Then one of:
-- **Destination:** it is the model B3 generalises; widen the whitelist as the A track lands and
-  keep it.
-- **Stopgap:** B3's worker-side resolution supersedes it; retire the executor and its whitelist,
+- **Destination:** it is the model B3 generalised; the whitelist is derived from the A1 registry, not
+  hand-maintained, and the executor stays.
+- **Stopgap:** B3's worker-side resolution superseded it; retire the executor and its whitelist,
   removing a fourth list from the world.
 
 Either answer is fine. Leaving it undecided is not: a dormant second execution path is a
@@ -64,6 +70,6 @@ it; no migration flag from this epic remains.
 
 ## Files
 
-`back/src/temporal/temporal.controller.ts:71` · `back/src/temporal/single-node-legacy/**` ·
-`back/src/app-api/flux/prefetch/**` · `back/src/app-api/flux/flux.service.ts:1402–1431, 3198–3226` ·
+`back/src/temporal/temporal.controller.ts` (`/process/single-node-legacy`) · `back/src/temporal/single-node-legacy/**` ·
+`back/src/app-api/flux/prefetch/**` (`memory-mode.ts` owns `FLUX_EXEC_MEMORY_MODE`) · `back/src/app-api/flux/flux.service.ts` (`PREFETCH_SUPPORTED_NODE_TYPES`, `canUsePrefetchForFlow`, the `isPrefetchMode()` switch) ·
 `front/src/service/processService.ts`

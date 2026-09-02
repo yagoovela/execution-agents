@@ -11,17 +11,17 @@ lives in has been duplicated. **Source:** analysis §11.5.
 **Verified in this repository:**
 
 1. **`previewResponses` trim uses strict equality.** `responses.length === 10` at six sites
-   (`flux.service.ts:3276, 3868, 7978, 8031, 8083, 8210`). One element is appended per run, so the
+   (`flux.service.ts`). One element is appended per run, so the
    cap normally holds — but any array that reaches eleven by another path never trims again and
    grows without bound inside `flows_nodes.data`, which is the known front-end performance
    offender. Change to `>=`, and decide whether to backfill oversized arrays.
-2. **`endNode` called twice on the same handle.** `flux.service.ts:4537` and `:4553`, both on
+2. **`endNode` called twice on the same handle.** two consecutive calls in `flux.service.ts`, both on
    `genericRunLogNode`. Harmless today, but it will confuse anyone porting the collector, and E1
    is about to.
 
 **Reported by the step documentation, confirm before acting:**
 
-3. **`processFlowWithSubstitution`** (`node-reference-substitution.service.ts:241–267`) may be dead
+3. **`processFlowWithSubstitution`** (`node-reference-substitution.service.ts`) may be dead
    code. B2 is about to extract this module — extracting dead code and then maintaining it in two
    repos is the specific waste to avoid. Prove it is unreachable across all four repos and
    `origin/production` before deleting; code absence in one repo is not proof of no traffic.
@@ -30,10 +30,10 @@ lives in has been duplicated. **Source:** analysis §11.5.
    not a find-and-replace.
 5. **`api-caller-polling.ts` has no importers.** `back/src/app-api/flux/api-caller-polling.ts` is
    referenced by nothing across `back` and `worker`; the polling it implements already lives in the
-   worker as `execute-polling`, consumed by `api-caller.service.ts:17, 407` (review §11.5). Same
+   worker as `execute-polling`, consumed by `api-caller.service.ts` (review §11.5). Same
    proof burden as item 3 — all repos plus `origin/production` — before deleting.
 6. **The friendly error timestamp** records "now" rather than when the error occurred
-   (`flux.service.ts:4881–4884`).
+   (`flux.service.ts`).
 
 **Out.** Anything that changes execution semantics. This task is for defects whose fix is
 behaviour-preserving in the normal case; a fix that changes what a run produces belongs to the task
@@ -58,6 +58,6 @@ assumed, and the dead-code claim is proven across every repo before anything is 
 
 ## Files
 
-`back/src/app-api/flux/flux.service.ts:3276, 3868, 4537, 4553, 4881–4884, 7978, 8031, 8083, 8210` ·
-`back/src/app-api/node-reference-substitution/node-reference-substitution.service.ts:241–267` ·
+`back/src/app-api/flux/flux.service.ts` (`responses.length === 10` at six sites; the two consecutive `endNode` calls on `genericRunLogNode`; the friendly-error timestamp) ·
+`back/src/app-api/node-reference-substitution/node-reference-substitution.service.ts` (`processFlowWithSubstitution`) ·
 `back/.env.example` and every environment that carries the Google client secret

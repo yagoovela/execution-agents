@@ -9,7 +9,7 @@ activity template end to end after A2 promotes the finished modules and provider
 
 `reportBuilder` is pure compute plus one upload (analysis §3.1): it sorts `data.variables` by
 `(y, x)`, escapes HTML, composes the document, and calls `uploadService.uploadText`. No billing,
-no model access, no mutable engine state. Handler at `flux.service.ts:9177`, dispatched at `:1343`.
+no model access, no mutable engine state. Handler `reportBuilderNode()` in `flux.service.ts`, dispatched from the node-type switch.
 
 It is the only remaining node where a migration exercises the whole pipeline — registration,
 dispatch, persistence, notification — **without** a provider surface or a new contract obscuring a
@@ -32,7 +32,7 @@ claim-check goes through the API.
    validates, composes, calls the file callback, `persistNodeSuccess`, returns the DTO.
 2. Registry entry behind the flag.
 3. Prove byte-identical output against the inline handler on real stored `reportBuilder` nodes.
-4. Flip; delete the twin at `flux.service.ts:9177` and the dispatch at `:1343`.
+4. Flip; delete the `reportBuilderNode()` twin and its dispatch case in `flux.service.ts`.
 
 ## Verification
 
@@ -52,4 +52,4 @@ claim-check goes through the API.
 ## Files
 
 new `worker/src/modules/nodes/report-builder/` · `worker/src/modules/nodes/nodes.types.ts` ·
-`worker/src/modules/temporal/**` · `back/src/app-api/flux/flux.service.ts:1343, 9177` · the A1 registry
+`worker/src/modules/temporal/**` · `back/src/app-api/flux/flux.service.ts` (`reportBuilderNode()` + its dispatch case) · the A1 registry

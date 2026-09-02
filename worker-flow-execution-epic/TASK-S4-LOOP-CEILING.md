@@ -15,7 +15,7 @@ Three limits, because they catch different things and none of them subsumes the 
 
 ## Why
 
-`evaluateLoopCondition` (`folw/helpers/helpers.ts:2075–2110`) applies the limit on one branch only:
+`evaluateLoopCondition` (`folw/helpers/helpers.ts`) applies the limit on one branch only:
 
 ```
 if (loopBehavior === 'continue') finalResult = userConditionResult && loopLimitCheck;
@@ -112,7 +112,7 @@ three reasons are distinguishable from each other and from the node's own limit.
 
 ## Files
 
-`back/src/app-api/folw/helpers/helpers.ts:2075–2110` ·
-`back/src/app-api/flux/flux.service.ts:6742–6812` (condition), `:3738` (array) ·
+`back/src/app-api/folw/helpers/helpers.ts` (`evaluateLoopCondition`) ·
+`back/src/app-api/flux/flux.service.ts` (`conditionNode()`; the inline `arrayNode` branch) ·
 `back/src/app-api/flux/scheduler.ts` (the counter lives with the loop that dispatches) ·
 the chain-root accounting shared with `TASK-S3` · new env vars + `env-vars-sync`

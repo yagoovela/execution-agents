@@ -54,13 +54,13 @@ SPECS = [
   ('What the task does, in three parts', 'O que a task faz, em três partes')),
  ('B7', w5_b7, '4', [w5_b7.DEC_RESUME],
   ('Three consequences a workflow fixes for free', 'Três consequências que um workflow corrige de graça'),
-  ('What the task does, in three parts', 'O que a task faz, em três partes')),
+  ('What the task does, in five parts', 'O que a task faz, em cinco partes')),
  ('C1', w6_c1, '3', None,
   ('What gets deleted, and who owns each deletion', 'O que é apagado, e de quem é cada deleção'),
   ('What the task does, in three parts', 'O que a task faz, em três partes')),
  ('C2', w6_c2, '4', w6_c2.DECISIONS,
   ('The three pieces, and what each removal buys', 'As três peças, e o que cada remoção traz'),
-  ('What the task does, in three parts', 'O que a task faz, em três partes')),
+  ('What the task does, in four parts', 'O que a task faz, em quatro partes')),
 ]
 
 W5_B5_DECISIONS = w5_b5.DECISIONS

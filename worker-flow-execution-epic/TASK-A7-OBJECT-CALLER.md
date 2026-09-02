@@ -16,7 +16,7 @@ Today it reads `data.selectedId` against `objectCallerData` — the engine's in-
 run — reads the latest session state for
 `{scopeType:'object', scopeId, sessionKey, ownerUserId}`, then reads and/or writes the object's
 content and publishes the change back through `onMutateObjectCallerData` so later nodes see it.
-Handler at `flux.service.ts:6834`; call sites `:1370`, `:2580`, `:3575`, `:4146`.
+Handler `objectCaller()` in `flux.service.ts`; three dispatch sites — the full-run type switch, the loop-body path and the single-node path — plus the pre-run session clear.
 
 ## Scope
 
@@ -29,7 +29,7 @@ Handler at `flux.service.ts:6834`; call sites `:1370`, `:2580`, `:3575`, `:4146`
 3. **An answer on ordering.** Today the engine serialises every Object Caller in a run through one
    in-memory array. Two callers touching the same object must stay ordered once they are
    independent activities. Two acceptable answers: an advisory lock, following the pattern already
-   used in `worker/src/modules/nodes/third-party-integration/oauth-token.repo.ts:7`
+   used in `worker/src/modules/nodes/third-party-integration/oauth-token.repo.ts`
    (`pg_advisory_xact_lock`), or an idempotent activity. **Pick one and state why** — do not ship
    without addressing it and hope the ordering holds.
 
@@ -44,7 +44,7 @@ Handler at `flux.service.ts:6834`; call sites `:1370`, `:2580`, `:3575`, `:4146`
 - Session-state parity: `readLatest` / `appendEntries` through the callback must produce the same
   rows the inline path produces, on real stored objects.
 - The chat path (`fluxObject` / `nodesBox` with chat enabled) must be unaffected — it is written
-  at run finalisation (`flux.service.ts:5222`), outside this node.
+  at run finalisation (`flux.service.ts`), outside this node.
 
 ## Done when
 
@@ -53,6 +53,6 @@ decision is recorded in this file with its rationale; the inline handler is dele
 
 ## Files
 
-`back/src/app-api/flux/flux.service.ts:6834` (+ call sites `:1370, :2580, :3575, :4146`) ·
+`back/src/app-api/flux/flux.service.ts` (`objectCaller()` + its three dispatch sites) ·
 `back/src/temporal/worker.controller.ts` (new callbacks) · `back/src/app-api/objects/` ·
 `back/src/app-api/session_state/` · new `worker/src/modules/nodes/object-caller/` · the A1 registry

@@ -12,11 +12,11 @@ Four independent lists exist today, none referencing another (analysis §9.2.3):
 
 | List | Where | Contents | Actually governs |
 |---|---|---|---|
-| `isTemporalNode(type)` | `back/src/app-api/flux/flux.service.ts:740` | 7 types | the flow loop **and** `executeSingleNode` |
-| `isWorkerRoutedIntegration(node)` | `back/src/shared/integration/integration-executable-node.ts:38` | provider ∈ {stripe, wordpress, slack, notion, zapier, hubspot, supabase, pinecone, mcp} | the same two paths |
+| `isTemporalNode(type)` | `back/src/app-api/flux/flux.service.ts` | 7 types | the flow loop **and** `executeSingleNode` |
+| `isWorkerRoutedIntegration(node)` | `back/src/shared/integration/integration-executable-node.ts` | provider ∈ {stripe, wordpress, slack, notion, zapier, hubspot, supabase, pinecone, mcp} | the same two paths |
 | `MIGRATED_TEMPORAL_NODE_TYPES` | `back/src/temporal/single-node-legacy/legacy-allowlist.ts` | the same 7 | only `/process/single-node-legacy` validation |
-| `PREFETCH_SUPPORTED_NODE_TYPES` | `flux.service.ts:1402–1421` | 17 types | whether a flow may use the prefetch executor |
-| `basedOnType` | `node-reference-substitution.service.ts:25–80` | per node type, which fields a placeholder may reference | whether a node's field can be referenced at all |
+| `PREFETCH_SUPPORTED_NODE_TYPES` | `flux.service.ts` | 17 types | whether a flow may use the prefetch executor |
+| `basedOnType` | `node-reference-substitution.service.ts` | per node type, which fields a placeholder may reference | whether a node's field can be referenced at all |
 
 `basedOnType` is not a dispatch list, but it is the same failure mode and it is load-bearing for
 B3: adding a node type with a referenceable field means editing it by hand, with nothing checking
@@ -72,6 +72,10 @@ that own them (A2, A3, C1) — this task only makes them visible in one place.
 - **Measure before refusing** (PLAN §3.3.2): `canUsePrefetchForFlow` is a refusing rule. Run the
   new implementation against real stored flows and confirm the set of flows it accepts is
   identical to today's. Report any difference as a defect in this task, not as an improvement.
+- **D2's measurement, reported here.** While `canUsePrefetchForFlow` runs against every stored flow
+  for the check above, record how many flows satisfy the whitelist, how many of them ran with
+  `FLUX_EXEC_MEMORY_MODE=prefetch`, and what it saved. Report the numbers in the PR — B3 answers D2
+  with them (Wave 4) and C2 executes the answer (Wave 6). Unknown is unverifiable, not zero.
 
 ## Done when
 
@@ -81,6 +85,7 @@ behaviour changed.
 
 ## Files
 
-`back/src/app-api/flux/flux.service.ts` · `back/src/shared/integration/integration-executable-node.ts` ·
+`back/src/app-api/flux/flux.service.ts` (`isTemporalNode`, `PREFETCH_SUPPORTED_NODE_TYPES`, `canUsePrefetchForFlow`) ·
+`back/src/shared/integration/integration-executable-node.ts` (`MIGRATED_INTEGRATION_PROVIDERS`, `isWorkerRoutedIntegration`) ·
 `back/src/temporal/single-node-legacy/legacy-allowlist.ts` · new registry module + fixture + specs ·
 `worker/src/modules/nodes/nodes.types.ts` (read only, source of the fixture)

@@ -17,10 +17,10 @@ GLANCE=[
    'Depois da B6, o Temporal vai sustentar a recursão fielmente por toda a frota, com retry em cada nível.')),
 ]
 LEDE=(
- '<p><code>flowCallerNode</code> calls <code>this.apiV2()</code> — the whole orchestrator — for the selected flow (<code>flux.service.ts:5611–5622</code>); <code>libraryNode</code> does the same. '
+ '<p><code>flowCallerNode</code> calls <code>this.apiV2()</code> — the whole orchestrator — for the selected flow (<code>flux.service.ts</code>); <code>libraryNode</code> does the same. '
  '<strong>There is no depth limit and no cycle detection</strong>: <code>parentFlowId</code> is threaded for billing attribution only.</p>'
  '<p>Flow A pointing at B and B pointing back at A recurses until the process dies — and <strong>each level is a complete run</strong>, with its own scheduler state, its own <code>node_executions</code> rows, its own run-log tree and its own token spend.</p>',
- '<p>O <code>flowCallerNode</code> chama <code>this.apiV2()</code> — o orquestrador inteiro — para o fluxo selecionado (<code>flux.service.ts:5611–5622</code>); o <code>libraryNode</code> faz o mesmo. '
+ '<p>O <code>flowCallerNode</code> chama <code>this.apiV2()</code> — o orquestrador inteiro — para o fluxo selecionado (<code>flux.service.ts</code>); o <code>libraryNode</code> faz o mesmo. '
  '<strong>Não há limite de profundidade nem detecção de ciclo</strong>: o <code>parentFlowId</code> é passado só para atribuição de cobrança.</p>'
  '<p>Um fluxo A apontando para B e B apontando de volta para A recursa até o processo morrer — e <strong>cada nível é um run completo</strong>, com seu próprio estado de scheduler, suas linhas em <code>node_executions</code>, sua árvore de run-log e seu próprio gasto de tokens.</p>')
 
@@ -153,7 +153,7 @@ DEC_DEPTH={
 
 PARTS=[
 {'n':'1','title':('Why now, rather than with B6','Por que agora, e não junto da B6'),
- 'loc':'flux.service.ts:5611–5622',
+ 'loc':'flux.service.ts',
  'purpose':('The guard has to exist before the platform learns to sustain the recursion reliably.',
             'A guarda tem de existir antes de a plataforma aprender a sustentar a recursão de forma confiável.'),
  'body':('<p>Today the blast radius is <strong>one backend process</strong>. It degrades, the run never returns, and somebody restarts something.</p>'
@@ -198,6 +198,6 @@ VERIF=[
 ]
 DONE=('Cycles are refused with a clear message, depth is capped by an <strong>env-configurable</strong> ceiling, the <strong>stored flows were measured and no working flow is refused</strong>, and the guard lives in state that survives the move to child workflows.',
       'Ciclos são recusados com mensagem clara, a profundidade é limitada por um teto <strong>configurável por ambiente</strong>, os <strong>fluxos guardados foram medidos e nenhum fluxo que funciona é recusado</strong>, e a guarda vive num estado que sobrevive à mudança para child workflows.')
-FILES=[('back/src/app-api/flux/flux.service.ts:5400, 5611–5622, 5717, 5732, 5815',False),
+FILES=[('back/src/app-api/flux/flux.service.ts (flowCallerNode() · libraryNode() · parentFlowId)',False),
        ('the run context threaded through apiV2',True),
        ('new env var + env-vars-sync',True)]

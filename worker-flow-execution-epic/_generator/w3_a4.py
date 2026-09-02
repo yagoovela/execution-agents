@@ -70,9 +70,9 @@ TASK = {
     'Qualquer diferença é um defeito desta task, não uma melhoria. O formato do relatório não muda aqui.')),
  ],
  'lede':(
-  '<p><code>reportBuilder</code> is pure compute plus one upload: it sorts <code>data.variables</code> by <code>(y, x)</code>, escapes HTML, composes the document and calls <code>uploadService.uploadText</code>. Handler at <code>flux.service.ts:9177</code>, dispatched at <code>:1343</code>.</p>'
+  '<p><code>reportBuilder</code> is pure compute plus one upload: it sorts <code>data.variables</code> by <code>(y, x)</code>, escapes HTML, composes the document and calls <code>uploadService.uploadText</code>. Handler <code>reportBuilderNode()</code> in <code>flux.service.ts</code>, dispatched from the node-type switch.</p>'
   '<p>It is <strong>the only remaining node where a migration exercises the whole pipeline</strong> — registration, dispatch, persistence, notification — <em>without</em> a provider surface or a new contract obscuring a failure. That is what makes it the right canary, and not merely the easiest win.</p>',
-  '<p>O <code>reportBuilder</code> é puro cálculo mais um upload: ordena <code>data.variables</code> por <code>(y, x)</code>, escapa HTML, compõe o documento e chama <code>uploadService.uploadText</code>. Handler em <code>flux.service.ts:9177</code>, despachado em <code>:1343</code>.</p>'
+  '<p>O <code>reportBuilder</code> é puro cálculo mais um upload: ordena <code>data.variables</code> por <code>(y, x)</code>, escapa HTML, compõe o documento e chama <code>uploadService.uploadText</code>. Handler <code>reportBuilderNode()</code> em <code>flux.service.ts</code>, despachado pelo switch de tipo de node.</p>'
   '<p>É <strong>o único node restante em que uma migração exercita o pipeline inteiro</strong> — registro, dispatch, persistência, notificação — <em>sem</em> uma superfície de provedor ou um contrato novo escondendo uma falha. É isso que o torna o canário certo, e não apenas a vitória mais fácil.</p>'),
  'blocks':[
   {'k':'label','n':'1','t':('Why this node is the canary','Por que este node é o canário')},
@@ -126,8 +126,8 @@ TASK = {
    ],
    'body2':('<p>Then the registry entry from <code>A1</code>, <strong>behind the flag</strong> — the new path lands disabled and is flipped in a separate deploy, per PLAN §3.2.</p>',
             '<p>Depois a entrada no registro da <code>A1</code>, <strong>atrás da flag</strong> — o caminho novo entra desligado e é virado em outro deploy, conforme PLAN §3.2.</p>'),
-   'ba':(('The report is composed inside <code>flux.service.ts</code>, in the engine&#x27;s process, dispatched from <code>:1343</code>.',
-          'O relatório é composto dentro do <code>flux.service.ts</code>, no processo do engine, despachado a partir de <code>:1343</code>.'),
+   'ba':(('The report is composed inside <code>flux.service.ts</code>, in the engine&#x27;s process, dispatched from the node-type switch.',
+          'O relatório é composto dentro do <code>flux.service.ts</code>, no processo do engine, despachado a partir do switch de tipo de node.'),
          ('The worker composes it, the registry says so in one place, and the flag still defaults to today&#x27;s behaviour until it is flipped.',
           'O worker o compõe, o registro diz isso em um único lugar, e a flag continua no comportamento de hoje até ser virada.'))},
   {'k':'part','n':'2',
@@ -145,12 +145,12 @@ TASK = {
           'O worker chama o callback de arquivo estabelecido e <strong>não guarda credenciais de storage</strong> — a mesma propriedade em que o claim check se apoia.'))},
   {'k':'part','n':'3',
    'title':('Prove it, flip it, delete the twin','Provar, virar, apagar o gêmeo'),
-   'loc':'flux.service.ts:1343, 9177',
+   'loc':'flux.service.ts',
    'purpose':('A node is not migrated when its activity exists — it is migrated when the inline twin is gone.',
               'Um node não está migrado quando a activity existe — está migrado quando o gêmeo inline some.'),
-   'body':('<p>Run both implementations over <strong>every distinct <code>reportBuilder</code> configuration in the dev database</strong> and diff the produced text. Then flip the flag in its own deploy. Then delete the handler at <code>:9177</code> and the dispatch at <code>:1343</code> — PLAN §3.4 point 4 is satisfied by deletion or by a guard that cannot double-fire, and here deletion is available.</p>'
+   'body':('<p>Run both implementations over <strong>every distinct <code>reportBuilder</code> configuration in the dev database</strong> and diff the produced text. Then flip the flag in its own deploy. Then delete the <code>reportBuilderNode()</code> handler and its dispatch case — PLAN §3.4 point 4 is satisfied by deletion or by a guard that cannot double-fire, and here deletion is available.</p>'
            '<p>One behaviour is easy to lose in a rewrite: <strong>empty <code>variables</code> returns early</strong> in the inline version. The worker has to match that, rather than politely producing an empty document.</p>',
-           '<p>Rode as duas implementações sobre <strong>toda configuração distinta de <code>reportBuilder</code> no banco de dev</strong> e faça o diff do texto produzido. Depois vire a flag, em deploy próprio. Depois apague o handler em <code>:9177</code> e o dispatch em <code>:1343</code> — o ponto 4 do PLAN §3.4 se satisfaz com a deleção ou com uma guarda que impeça disparo duplo, e aqui a deleção está disponível.</p>'
+           '<p>Rode as duas implementações sobre <strong>toda configuração distinta de <code>reportBuilder</code> no banco de dev</strong> e faça o diff do texto produzido. Depois vire a flag, em deploy próprio. Depois apague o handler <code>reportBuilderNode()</code> e o seu caso de dispatch — o ponto 4 do PLAN §3.4 se satisfaz com a deleção ou com uma guarda que impeça disparo duplo, e aqui a deleção está disponível.</p>'
            '<p>Um comportamento é fácil de perder numa reescrita: <strong><code>variables</code> vazio retorna cedo</strong> na versão inline. O worker precisa fazer o mesmo, em vez de gentilmente produzir um documento vazio.</p>'),
    'ba':(('Two implementations of the same report could coexist, and only a reader comparing them by eye would notice they had drifted.',
           'Duas implementações do mesmo relatório poderiam coexistir, e só um leitor comparando a olho perceberia que divergiram.'),
@@ -177,13 +177,13 @@ TASK = {
    ('<strong>DELIVERY-PLAN, wave 3.</strong> The node becomes a blocking round trip until Wave 5. Measure it and state the number in the PR — this is the cheapest node in the wave, so its number is the <strong>floor</strong> for every other migration here.',
     '<strong>DELIVERY-PLAN, onda 3.</strong> O node vira um round trip bloqueante até a Onda 5. Meça e informe o número no PR — este é o node mais barato da onda, então o número dele é o <strong>piso</strong> para todas as outras migrações daqui.')),
  ],
- 'done':('<code>reportBuilder</code> satisfies <strong>PLAN §3.4</strong> — all seven points, not just a working activity — its output is <strong>proven identical over the stored configurations</strong>, the upload path is written down, and the inline handler at <code>:9177</code> with its dispatch at <code>:1343</code> is <strong>deleted</strong>.',
-         'O <code>reportBuilder</code> satisfaz o <strong>PLAN §3.4</strong> — os sete pontos, não só uma activity funcionando — sua saída está <strong>provada idêntica sobre as configurações guardadas</strong>, o caminho de upload está registrado, e o handler inline em <code>:9177</code> com seu dispatch em <code>:1343</code> foi <strong>apagado</strong>.'),
+ 'done':('<code>reportBuilder</code> satisfies <strong>PLAN §3.4</strong> — all seven points, not just a working activity — its output is <strong>proven identical over the stored configurations</strong>, the upload path is written down, and the inline <code>reportBuilderNode()</code> handler with its dispatch case is <strong>deleted</strong>.',
+         'O <code>reportBuilder</code> satisfaz o <strong>PLAN §3.4</strong> — os sete pontos, não só uma activity funcionando — sua saída está <strong>provada idêntica sobre as configurações guardadas</strong>, o caminho de upload está registrado, e o handler inline <code>reportBuilderNode()</code> com o seu caso de dispatch foi <strong>apagado</strong>.'),
  'files':[
   ('worker/src/modules/nodes/report-builder/',True),
   ('worker/src/modules/nodes/nodes.types.ts',False),
   ('worker/src/modules/temporal/**',False),
-  ('back/src/app-api/flux/flux.service.ts:1343, 9177',False),
+  ('back/src/app-api/flux/flux.service.ts (reportBuilderNode() + its dispatch case)',False),
   ('the A1 dispatch registry',False),
  ],
 }

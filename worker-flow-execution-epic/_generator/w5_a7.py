@@ -23,14 +23,14 @@ LEDE = (
  '<p>Today <code>nodesBox</code> reads <code>data.selectedId</code> against <code>objectCallerData</code> — the engine&#x27;s in-memory array for the run — '
  'reads the latest session state for <code>{scopeType:&#x27;object&#x27;, scopeId, sessionKey, ownerUserId}</code>, then reads and/or writes the object&#x27;s '
  'content and publishes the change back through <code>onMutateObjectCallerData</code> so later nodes see it. '
- 'Handler at <code>flux.service.ts:6834</code>; call sites <code>:1370</code>, <code>:2580</code>, <code>:3575</code>, <code>:4146</code>.</p>'
+ 'Handler <code>objectCaller()</code> in <code>flux.service.ts</code>; three dispatch sites plus the pre-run session clear.</p>'
  '<p>It is the only one of the five mutating nodes with extractable logic. <code>conditionNode</code>, <code>arrayNode</code>, <code>fluxBox</code> and '
  '<code>libraryNode</code> are <strong>control flow</strong> — they decide what runs next, and belong in the workflow (<code>B6</code>). '
  '<strong><code>nodesBox</code> mutates data, not control</strong> (analysis §3.5).</p>',
  '<p>Hoje o <code>nodesBox</code> resolve <code>data.selectedId</code> contra o <code>objectCallerData</code> — o array em memória do motor para aquele run — '
  'lê o estado de sessão mais recente para <code>{scopeType:&#x27;object&#x27;, scopeId, sessionKey, ownerUserId}</code>, e então lê e/ou escreve o conteúdo '
  'do objeto e publica a mudança de volta via <code>onMutateObjectCallerData</code> para que nodes posteriores a enxerguem. '
- 'Handler em <code>flux.service.ts:6834</code>; pontos de chamada <code>:1370</code>, <code>:2580</code>, <code>:3575</code>, <code>:4146</code>.</p>'
+ 'Handler <code>objectCaller()</code> em <code>flux.service.ts</code>; três pontos de dispatch mais a limpeza de sessão pré-run.</p>'
  '<p>É o único dos cinco nodes mutantes com lógica extraível. <code>conditionNode</code>, <code>arrayNode</code>, <code>fluxBox</code> e '
  '<code>libraryNode</code> são <strong>controle de fluxo</strong> — decidem o que roda em seguida, e pertencem ao workflow (<code>B6</code>). '
  '<strong>O <code>nodesBox</code> muta dado, não controle</strong> (análise §3.5).</p>')
@@ -83,9 +83,9 @@ DEC_ORDERING = {
   {'ltr':'A','pick':True,'name':('<code>pg_advisory_xact_lock</code> per object','<code>pg_advisory_xact_lock</code> por objeto'),
    'tag':('recommended','recomendada'),
    'how':('The activity takes a transaction-scoped advisory lock keyed by the object before its read-modify-write, so two Object Callers on the same '
-          'object serialise. The pattern is already in the worker — <code>third-party-integration/oauth-token.repo.ts:7</code>.',
+          'object serialise. The pattern is already in the worker — <code>third-party-integration/oauth-token.repo.ts</code>.',
           'A activity toma um advisory lock com escopo de transação, chaveado pelo objeto, antes do read-modify-write, de modo que dois Object Callers '
-          'no mesmo objeto serializam. O padrão já existe no worker — <code>third-party-integration/oauth-token.repo.ts:7</code>.'),
+          'no mesmo objeto serializam. O padrão já existe no worker — <code>third-party-integration/oauth-token.repo.ts</code>.'),
    'pros':[('It is a <strong>working pattern already in this codebase</strong>, not a design — review §6 lists it as something to keep',
             'É um <strong>padrão que já funciona neste código</strong>, não um projeto — a review §6 o lista como algo a preservar'),
            ('It becomes the ordering authority the in-memory array used to be, which is precisely what is being removed',
@@ -175,7 +175,7 @@ PARTS = [
         'O escopo atravessa o callback explicitamente, e a paridade com o caminho inline é provada em objetos armazenados em vez de suposta.'))},
 
 {'n':'3','title':('Ordering — the part that will be underestimated','Ordem — a parte que será subestimada'),
- 'loc':'flux.service.ts:6834 · oauth-token.repo.ts:7',
+ 'loc':'flux.service.ts · oauth-token.repo.ts',
  'purpose':('Whatever replaces <code>objectCallerData</code> has to be the ordering authority, or the node has to become idempotent.',
             'O que substituir o <code>objectCallerData</code> precisa ser a autoridade de ordem, ou o node precisa se tornar idempotente.'),
  'body':('<p>The in-memory array was doing more than caching. It was <strong>the run&#x27;s ordering authority</strong>: every Object Caller in the run went '
@@ -195,10 +195,10 @@ PARTS = [
  'callouts':[('mig',('Out of scope','Fora de escopo'),
    ('<p>Changing object semantics, session-state scoping, or the chat behaviour built on it. '
     'The chat path — <code>fluxObject</code> / <code>nodesBox</code> with chat enabled — is written at <strong>run finalisation</strong> '
-    '(<code>flux.service.ts:5222</code>), outside this node, and must be unaffected.</p>',
+    '(<code>flux.service.ts</code>), outside this node, and must be unaffected.</p>',
     '<p>Mudar a semântica de objeto, o escopo do estado de sessão, ou o comportamento de chat construído sobre isso. '
     'O caminho de chat — <code>fluxObject</code> / <code>nodesBox</code> com chat habilitado — é escrito na <strong>finalização do run</strong> '
-    '(<code>flux.service.ts:5222</code>), fora deste node, e precisa ficar intacto.</p>'))]},
+    '(<code>flux.service.ts</code>), fora deste node, e precisa ficar intacto.</p>'))]},
 ]
 
 VERIF = [
@@ -215,14 +215,14 @@ VERIF = [
    'O <code>readLatest</code> e o <code>appendEntries</code> pelo callback precisam produzir <strong>as mesmas linhas que o caminho inline produz</strong>, '
    'verificado em objetos reais já armazenados — não numa fixture montada para casar.')),
  (False, ('The chat path is untouched','O caminho de chat fica intocado'),
-  ('<code>fluxObject</code> / <code>nodesBox</code> with chat enabled is written at run finalisation (<code>flux.service.ts:5222</code>), outside this node. '
+  ('<code>fluxObject</code> / <code>nodesBox</code> with chat enabled is written at run finalisation (<code>flux.service.ts</code>), outside this node. '
    'Confirm it still behaves identically — it is the easiest thing on this page to break without noticing.',
-   'O <code>fluxObject</code> / <code>nodesBox</code> com chat habilitado é escrito na finalização do run (<code>flux.service.ts:5222</code>), fora deste node. '
+   'O <code>fluxObject</code> / <code>nodesBox</code> com chat habilitado é escrito na finalização do run (<code>flux.service.ts</code>), fora deste node. '
    'Confirme que continua idêntico — é a coisa mais fácil desta página de quebrar sem perceber.')),
  (False, ('The inline handler is deleted, not parked','O handler inline é apagado, não estacionado'),
-  ('Per <code>C1</code>: the handler at <code>:6834</code> and its four dispatch sites go, and the <code>A1</code> registry entry loses <code>hasInlineTwin</code>. '
+  ('Per <code>C1</code>: the <code>objectCaller()</code> handler and its dispatch sites go, and the <code>A1</code> registry entry loses <code>hasInlineTwin</code>. '
    'A node with two implementations is a double-execution risk, not a safety net.',
-   'Conforme a <code>C1</code>: o handler em <code>:6834</code> e seus quatro pontos de dispatch saem, e a entrada no registro da <code>A1</code> perde o <code>hasInlineTwin</code>. '
+   'Conforme a <code>C1</code>: o handler <code>objectCaller()</code> e seus pontos de dispatch saem, e a entrada no registro da <code>A1</code> perde o <code>hasInlineTwin</code>. '
    'Um node com duas implementações é risco de dupla execução, não rede de segurança.')),
 ]
 
@@ -231,7 +231,7 @@ DONE = ('<code>nodesBox</code> satisfies <code>PLAN §3.4</code>; both callbacks
         'O <code>nodesBox</code> satisfaz o <code>PLAN §3.4</code>; os dois callbacks existem e estão documentados na <code>D1</code>; '
         'a <strong>decisão de ordem está registrada com sua justificativa</strong>; e o handler inline foi apagado.')
 
-FILES = [('back/src/app-api/flux/flux.service.ts:6834 (+ call sites :1370, :2580, :3575, :4146)', False),
+FILES = [('back/src/app-api/flux/flux.service.ts (objectCaller() + its dispatch sites)', False),
          ('back/src/temporal/worker.controller.ts (new callbacks)', True),
          ('back/src/app-api/objects/', False),
          ('back/src/app-api/session_state/', False),

@@ -44,7 +44,7 @@ C3=dict(
   ]),
  PARTS=[
   {'n':'1','title':('The proof burden on the deletions','O ônus de prova nas remoções'),
-   'loc':'node-reference-substitution.service.ts:241–267 · api-caller-polling.ts',
+   'loc':'node-reference-substitution.service.ts · api-caller-polling.ts',
    'purpose':('Two of these defects are deletions, and a deletion made on a bad grep is the most expensive mistake on this list.',
               'Dois destes defeitos são remoções, e uma remoção feita com um grep ruim é o erro mais caro desta lista.'),
    'body':('<p>Items 3 and 5 both claim code is unreachable. That claim needs <strong>owner-anchored greps across <code>back</code>, <code>front</code>, <code>worker</code>, <code>mcp-server</code> and <code>origin/production</code></strong> — not just the local checkout.</p>'
@@ -72,8 +72,8 @@ C3=dict(
  ],
  DONE=('Each defect has <strong>a test that failed before the fix</strong>, the trim&#x27;s data impact is <strong>measured rather than assumed</strong>, and the dead-code claim is <strong>proven across every repo</strong> before anything is deleted.',
        'Cada defeito tem <strong>um teste que falhou antes da correção</strong>, o impacto de dados do corte é <strong>medido em vez de suposto</strong>, e a afirmação de código morto é <strong>provada em todos os repos</strong> antes de qualquer remoção.'),
- FILES=[('back/src/app-api/flux/flux.service.ts:3276, 3868, 4537, 4553, 4881–4884, 7978, 8031, 8083, 8210',False),
-        ('back/src/app-api/node-reference-substitution/node-reference-substitution.service.ts:241–267',False),
+ FILES=[('back/src/app-api/flux/flux.service.ts (responses.length === 10 ×6 · the two consecutive endNode calls on genericRunLogNode · the friendly-error timestamp)',False),
+        ('back/src/app-api/node-reference-substitution/node-reference-substitution.service.ts (processFlowWithSubstitution)',False),
         ('back/src/app-api/flux/api-caller-polling.ts',False),
         ('back/.env.example and every environment carrying the Google client secret',False)],
 )

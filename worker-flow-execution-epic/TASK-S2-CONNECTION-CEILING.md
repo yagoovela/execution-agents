@@ -7,10 +7,10 @@
 
 ## Why this is the first thing that breaks
 
-`worker/src/modules/database/database.service.ts:13` constructs
+`worker/src/modules/database/database.service.ts` constructs
 `new Pool({host, port, user, password, database})` — **no `max`**. node-postgres defaults to ten
 connections per pool, per process. The worker runs
-`maxConcurrentActivityTaskExecutions: 10` (`worker.service.ts:22`), so a replica can hold ten busy
+`maxConcurrentActivityTaskExecutions: 10` (`worker.service.ts`), so a replica can hold ten busy
 connections, and total connections scale linearly with replicas.
 
 `max_connections` is a hard wall, and the wall is **shared with the API** — the failure mode is not
@@ -39,7 +39,7 @@ the deliverable — the config change is trivial once it exists.
 **In.** A decision on a connection proxy. **Recommendation: PgBouncer in transaction mode**, because
 it decouples replica count from connection count and is the only thing that makes "many workers"
 open-ended. Note the constraint honestly: transaction mode forbids session-level state, and
-`pg_advisory_xact_lock` — already used in `oauth-token.repo.ts:7` and planned for A7 — is
+`pg_advisory_xact_lock` — already used in `oauth-token.repo.ts` and planned for A7 — is
 transaction-scoped, so it survives. Session-level advisory locks would not.
 
 **Out.** Tuning Postgres itself. This task sizes the client side and states what the server side
@@ -63,5 +63,5 @@ supported replica count is stated, and the proxy decision is recorded either way
 
 ## Files
 
-`worker/src/modules/database/database.service.ts:13` ·
-`worker/src/modules/temporal/worker.service.ts:20–22` · infra/compose · `env-vars-sync`
+`worker/src/modules/database/database.service.ts` (`new Pool`) ·
+`worker/src/modules/temporal/worker.service.ts` (`maxConcurrentActivityTaskExecutions`, the task queue) · infra/compose · `env-vars-sync`

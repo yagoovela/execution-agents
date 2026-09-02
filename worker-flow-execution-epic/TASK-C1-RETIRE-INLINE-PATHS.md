@@ -6,6 +6,9 @@
 node's twin is deleted as part of proving that node, while the behaviour is fresh. This file is
 the shared procedure those tasks follow, plus the two pieces that only make sense once.
 
+**Card (PLAN §3.1):** one, in Wave 6, for the once-only half below. The per-node deletions are a
+Done-when line of each A-track card, not cards of their own.
+
 ## Why deletion is part of the migration, not cleanup
 
 Two implementations of one node do not coexist neutrally. They diverge, and the divergence is
@@ -24,8 +27,7 @@ duplicated Slack message (PLAN §6, R1).
 3. The A1 registry entry loses `hasInlineTwin`.
 
 **Once, and this is the load-bearing half — the cross-node writes.** Every inline handler ends
-with `addConnectToNodes` (`back/src/app-api/folw/contants.ts:2032`), which calls `modifyData`
-(`:2018–2024`, `:2056–2062`) to merge the producer's output into the **target** node's data. That
+with `addConnectToNodes` (`back/src/app-api/folw/contants.ts`), which calls `modifyData` to merge the producer's output into the **target** node's data. That
 is the mechanism that makes mixed-mode parallelism unsafe (analysis §7.4b) and the reason B5 needs
 its gate.
 
@@ -63,4 +65,4 @@ path; `flux.service.ts` is materially smaller and the reduction is stated in the
 ## Files
 
 `back/src/app-api/flux/flux.service.ts` (all inline handlers) ·
-`back/src/app-api/folw/contants.ts:2018–2062, 2032` · the A1 registry
+`back/src/app-api/folw/contants.ts` (`addConnectToNodes`, `modifyData`) · the A1 registry

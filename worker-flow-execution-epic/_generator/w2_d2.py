@@ -20,11 +20,11 @@ GLANCE=[
 ]
 
 LEDE=(
- '<p><code>skills/node-worker-migration/SKILL.md</code> is the guidance an agent loads when it is asked to migrate a node. It states the worker enum covers ten types “as of 2026-07”, says nothing about '
+ '<p><code>skills/node-worker-migration/SKILL.md</code> is the guidance an agent loads when it is asked to migrate a node. It states the worker enum covers ten types “as of 2026-07” — it has thirteen today, in <code>worker@origin/main</code> — says nothing about '
  '<code>isTemporalNode</code>, nothing about the integration gate, nothing about the prefetch executor, and nothing about the blocking wait.</p>'
  '<p>It also tells the agent the worker “does NOT receive engine in-memory state” — true — while presenting the activity template as <em>the only shape</em>, which will be wrong the moment B4 lands. The skill even carries '
  'a worked example whose verdict this epic overturns. <strong>An agent that follows it will confidently produce a migration that ignores three of the four dispatch lists.</strong></p>',
- '<p>O <code>skills/node-worker-migration/SKILL.md</code> é a orientação que um agente carrega quando é encarregado de migrar um node. Ele afirma que o enum do worker cobre dez tipos “em 2026-07”, não diz nada sobre '
+ '<p>O <code>skills/node-worker-migration/SKILL.md</code> é a orientação que um agente carrega quando é encarregado de migrar um node. Ele afirma que o enum do worker cobre dez tipos “em 2026-07” — hoje são treze, em <code>worker@origin/main</code> —, não diz nada sobre '
  '<code>isTemporalNode</code>, nada sobre o gate de integração, nada sobre o executor de prefetch, e nada sobre a espera bloqueante.</p>'
  '<p>Ele também diz ao agente que o worker “NÃO recebe estado em memória da engine” — o que é verdade — enquanto apresenta o template de activity como <em>a única forma</em>, o que ficará errado no momento em que a B4 entrar. A skill ainda carrega '
  'um exemplo resolvido cujo veredito este épico reverte. <strong>Um agente que a seguir vai produzir, com confiança, uma migração que ignora três das quatro listas de dispatch.</strong></p>')

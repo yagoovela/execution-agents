@@ -113,9 +113,10 @@ E1 = dict(
  ],
  DONE=('The timeline is <strong>identical for nested runs</strong>, secrets are still redacted, billing matches under concurrency, and <strong>no run-scoped state depends on AsyncLocalStorage</strong>.',
        'A linha do tempo é <strong>idêntica para runs aninhados</strong>, segredos continuam redigidos, a cobrança bate sob concorrência, e <strong>nenhum estado de escopo de run depende de AsyncLocalStorage</strong>.'),
- FILES=[('back/src/app-api/space_run_logs/',False),
+ FILES=[('back/src/app-api/space_run_logs/ (run-log-collector.ts — RunLogCollector, redactSecrets)',False),
+       ('back/src/jobs/apiV2Job/apiV2Job.processor.ts (writes flow_execution_status today — B4 and E1 decide who writes it after)',False),
         ('the RunLogCollector implementation',False),
-        ('back/src/app-api/flux/flux.service.ts:2290–2293, 3281–3316, 4537–4562, 4824–4862',False),
+        ('back/src/app-api/flux/flux.service.ts (runLogCollector start/end/finalize/flushNow · chargeContext)',False),
         ('back/src/app-api/token_transaction/',False),
         ('back/src/temporal/worker.controller.ts',False),
         ('the worker flow workflow',True),
@@ -174,7 +175,7 @@ E2 = dict(
          'Ou seja: a migração ganha o cancelamento <strong>quase de graça</strong>, e o trabalho é convergir para ele em vez de reconstruí-lo. O que <em>não</em> é de graça é a parte que o Temporal não faz: escrever o estado do produto. O Temporal cancela um workflow; ele não registra em qual node o run estava quando o usuário clicou.'),
  DECINTRO=('One decision. It is the default any team reaches for when a mechanism has to keep working somewhere else — <em>port it</em> — and the spec answers it in its own title. The page records the two facts that make the answer stick.',
            'Uma decisão. É o reflexo de qualquer time quando um mecanismo precisa continuar funcionando em outro lugar — <em>portar</em> — e a spec responde isso no próprio título. A página registra os dois fatos que sustentam a resposta.'),
- LPARTS=('What the task does, in three parts','O que a task faz, em três partes'),
+ LPARTS=('What the task does, in five parts','O que a task faz, em cinco partes'),
  PARTS=[
   {'n':'1','title':('Cancel becomes a workflow call','Cancelar vira uma chamada de workflow'),
    'loc':'back/src/temporal/temporal.service.ts · flux/node-cancel-watch.ts',
@@ -192,7 +193,7 @@ E2 = dict(
      ('<p>Changing what cancellation <em>means</em> to the user, or cancelling side effects that already committed. <strong>A cancelled push that already reached Stripe stays sent.</strong></p>',
       '<p>Mudar o que cancelamento <em>significa</em> para o usuário, ou cancelar efeitos colaterais já efetivados. <strong>Um push cancelado que já chegou ao Stripe continua enviado.</strong></p>'))]},
   {'n':'2','title':('What the product keeps','O que o produto mantém'),
-   'loc':'flux.service.ts:3192–3194, 4516–4530',
+   'loc':'flux.service.ts',
    'purpose':('Temporal cancels a workflow; it does not write the product&#x27;s state. That part stays ours.',
               'O Temporal cancela um workflow; ele não escreve o estado do produto. Essa parte continua sendo nossa.'),
    'body':('<p>Two things survive the convergence unchanged. The <strong>cancel footprint</strong> — which node the run was on when it was cancelled — is shown to the user and stays. And <code>finishCancelledNode</code> must still mark state correctly, <strong>so a cancelled run does not look stalled</strong>: a run that was cancelled and a run that hung look identical from the outside unless someone writes the difference down.</p>'
@@ -203,7 +204,45 @@ E2 = dict(
           'A pegada e o estado cancelado são escritos pelo laço do backend que era dono do run e observou o cancelamento.'),
          ('The same footprint and the same terminal state are written from the worker-owned run — <strong>the UX is unchanged, which is the point</strong>.',
           'A mesma pegada e o mesmo estado terminal são escritos a partir do run conduzido pelo worker — <strong>a UX não muda, e esse é o objetivo</strong>.'))},
-  {'n':'3','title':('State the latency, do not assume it','Declarar a latência, não presumir'),
+  {'n':'3','title':('What the ledger records when a generation is cancelled','O que o extrato registra quando uma geração é cancelada'),
+   'loc':('D22','D22'),
+   'purpose':('Make a cancelled generation legible in the ledger instead of silently free.',
+              'Tornar uma geração cancelada legível no extrato em vez de silenciosamente gratuita.'),
+   'body':('<p>We ask the provider to cancel, and what we can record depends on what it answers.</p>'
+           '<p><strong>If it reports the tokens spent up to that point</strong>, record the charge <em>normally</em> — exactly as a generation that completed. '
+           'The work was really done and really cost. <strong>If it reports nothing</strong>, record what is available and mark the entry as cancelled or aborted '
+           'by the user.</p>',
+           '<p>Pedimos ao provider que cancele, e o que conseguimos registrar depende do que ele responde.</p>'
+           '<p><strong>Se ele informa os tokens gastos até ali</strong>, registre a cobrança <em>normalmente</em> — exatamente como uma geração que terminou. '
+           'O trabalho foi mesmo feito e mesmo custou. <strong>Se ele não informa nada</strong>, registre o que estiver disponível e marque o lançamento como '
+           'cancelado ou abortado pelo usuário.</p>'),
+   'callouts':[('warn',('Never record zero','Nunca registrar zero'),
+     ('<p>Zero for a cancelled generation that consumed tokens is the case that makes the ledger disagree with the provider&#x27;s invoice — '
+      '<strong>and it disagrees silently</strong>, which is why it is worth a rule rather than a habit.</p>',
+      '<p>Zero para uma geração cancelada que consumiu tokens é o caso que faz o extrato divergir da fatura do provider — '
+      '<strong>e diverge em silêncio</strong>, e é por isso que merece uma regra e não um hábito.</p>'))]},
+
+  {'n':'4','title':('Cancellation reaches the children','O cancelamento alcança os filhos'),
+   'loc':('D23 · D20','D23 · D20'),
+   'purpose':('Stop a container node instead of letting it finish, because what it would finish is unbounded.',
+              'Parar um node contêiner em vez de deixá-lo terminar, porque o que ele terminaria é ilimitado.'),
+   'body':('<p><code>D20</code> lets an in-flight node finish, because a generation is short, already paid for, and yields a result. '
+           '<strong>A <code>fluxBox</code>, <code>libraryNode</code> or <code>arrayNode</code> is not that:</strong> its execution is an open-ended amount of '
+           'further work, which is exactly what is being refused.</p>'
+           '<p>So a container node is <strong>cancelled</strong>, and the cancellation propagates down the chain — native for Temporal child workflows, and what '
+           'the <code>parentRunId</code> chain from <code>S1</code> exists to carry. For <code>arrayNode</code>, the element already generating finishes; '
+           '<strong>the remaining elements never start</strong>.</p>',
+           '<p>A <code>D20</code> deixa um node em voo terminar, porque uma geração é curta, já foi paga e entrega um resultado. '
+           '<strong>Um <code>fluxBox</code>, <code>libraryNode</code> ou <code>arrayNode</code> não é isso:</strong> a execução dele é uma quantidade aberta de '
+           'trabalho futuro, que é exatamente o que se quer recusar.</p>'
+           '<p>Então um node contêiner é <strong>cancelado</strong>, e o cancelamento propaga pela cadeia — nativo em child workflow do Temporal, e é para isso '
+           'que a cadeia <code>parentRunId</code> da <code>S1</code> existe. No <code>arrayNode</code>, o elemento que já está gerando termina; '
+           '<strong>os elementos restantes nunca começam</strong>.</p>'),
+   'callouts':[('mig',('<code>nodesBox</code> is not in this list','<code>nodesBox</code> não entra nesta lista'),
+     ('<p>Checked against <code>back@origin/production</code>: <code>nodesBox</code> dispatches to <code>objectCaller</code>, whose body contains no <code>apiV2</code> and no node execution of any kind — it reads and writes an object&#x27;s session state. Cancelling it prevents no spend and leaves the object half-written, so under <code>D20</code> it finishes. Its hazard is concurrent writes once <code>B5</code> parallelises, which is <code>A7</code>&#x27;s ordering contract.</p>',
+      '<p>Verificado contra o <code>back@origin/production</code>: o <code>nodesBox</code> despacha para o <code>objectCaller</code>, cujo corpo não tem <code>apiV2</code> nem execução de node nenhuma — ele lê e escreve o estado de sessão de um objeto. Cancelá-lo não impede gasto nenhum e deixa o objeto pela metade, então pela <code>D20</code> ele termina. O risco dele é escrita concorrente quando o <code>B5</code> paralelizar, que é o contrato de ordenação da <code>A7</code>.</p>'))]},
+
+  {'n':'5','title':('State the latency, do not assume it','Declarar a latência, não presumir'),
    'loc':('a 1500 ms cache over a 2000 ms poll', 'um cache de 1500 ms sobre um poll de 2000 ms'),
    'purpose':('Today up to <strong>3.5 s</strong> can pass between the click and the effective cancel. Native cancellation should improve that — <em>should</em> is not a contract.',
               'Hoje podem passar até <strong>3,5 s</strong> entre o clique e o cancelamento efetivo. O cancelamento nativo deveria melhorar isso — <em>deveria</em> não é contrato.'),
@@ -224,8 +263,8 @@ E2 = dict(
    ('Cancel a run mid-node and assert <strong>the next node never starts</strong>. Then break the propagation and watch it start anyway — <strong>that is the regression this task exists to prevent, and it is invisible without the test</strong>.',
     'Cancele um run no meio de um node e afirme que <strong>o próximo node nunca começa</strong>. Depois quebre a propagação e veja-o começar assim mesmo — <strong>essa é a regressão que esta task existe para evitar, e ela é invisível sem o teste</strong>.')),
   (False,('Cancel during a child workflow','Cancelar durante um child workflow'),
-   ('With a <code>fluxBox</code> or <code>libraryNode</code> running, cancel the parent: <strong>the child must stop too</strong>. Cancellation propagation is native for child workflows, so this test is cheap — and it is what <strong>proves the design choice</strong> rather than the implementation.',
-    'Com um <code>fluxBox</code> ou <code>libraryNode</code> rodando, cancele o pai: <strong>o filho precisa parar também</strong>. A propagação de cancelamento é nativa para child workflows, então este teste é barato — e é o que <strong>prova a escolha de desenho</strong>, não a implementação.')),
+   ('With a <code>fluxBox</code> or <code>libraryNode</code> running, cancel the parent: <strong>the child must stop too</strong>. Propagation is native for child workflows, so the test is cheap — but <strong>no child workflow exists until <code>B6</code> (Wave 5)</strong>, so this proof is <code>B6</code>&#x27;s Done-when clause, not this task&#x27;s. <code>E2</code> proves cancellation for a single-level run.',
+    'Com um <code>fluxBox</code> ou <code>libraryNode</code> rodando, cancele o pai: <strong>o filho precisa parar também</strong>. A propagação é nativa para child workflows, então o teste é barato — mas <strong>não existe child workflow até a <code>B6</code> (Onda 5)</strong>, então esta prova é a cláusula de Done da <code>B6</code>, não desta task. A <code>E2</code> prova o cancelamento para um run de um nível só.')),
   (False,('Measure click-to-effective-cancel','Medir clique até cancelamento efetivo'),
    ('Before and after. Today a <strong>1500 ms cache over a 2000 ms poll</strong> can leave up to <strong>3.5 s</strong>; native cancellation should improve that — <strong>state the number rather than assuming</strong>.',
     'Antes e depois. Hoje um <strong>cache de 1500 ms sobre um poll de 2000 ms</strong> pode deixar até <strong>3,5 s</strong>; o cancelamento nativo deveria melhorar isso — <strong>declare o número em vez de supor</strong>.')),
@@ -233,10 +272,10 @@ E2 = dict(
    ('Run a <strong>sixty-node agent</strong> and count active timers and the database query rate against the pre-change baseline. One <code>setInterval</code> per node is the cost this task removes; if the count does not drop, it was not removed.',
     'Rode um <strong>agente de sessenta nodes</strong> e conte timers ativos e a taxa de consultas ao banco contra a linha de base anterior. Um <code>setInterval</code> por node é o custo que esta task remove; se a contagem não cair, ele não foi removido.')),
  ],
- DONE=('Cancellation is <strong>Temporal-native end to end</strong>, including child workflows; the poller and the ALS context are <strong>removed</strong>; the footprint UX is unchanged; and the latency is <strong>measured</strong>.',
-       'O cancelamento é <strong>nativo do Temporal ponta a ponta</strong>, inclusive em child workflows; o poller e o contexto ALS estão <strong>removidos</strong>; a UX da pegada não muda; e a latência está <strong>medida</strong>.'),
+ DONE=('Cancellation is <strong>Temporal-native end to end for a single-level run</strong> (the child-workflow proof lands with <code>B6</code>, which creates the first child workflow); the poller and the ALS context are <strong>removed</strong>; the footprint UX is unchanged; and the latency is <strong>measured</strong>.',
+       'O cancelamento é <strong>nativo do Temporal ponta a ponta para um run de um nível só</strong> (a prova em child workflow chega com a <code>B6</code>, que cria o primeiro child workflow); o poller e o contexto ALS estão <strong>removidos</strong>; a UX da pegada não muda; e a latência está <strong>medida</strong>.'),
  FILES=[('back/src/app-api/flux/node-cancel-watch.ts',False),
-        ('back/src/app-api/flux/flux.service.ts:3192–3194, 4516–4530',False),
+        ('back/src/app-api/flux/flux.service.ts (NODE_CANCEL_IN_FLIGHT_FLAG · nodeCancelContext.enterWith · finishCancelledNode)',False),
         ('back/src/temporal/temporal.service.ts',False),
         ('the worker flow workflow and its activities',False),
         ('NODE_CANCEL_IN_FLIGHT_FLAG (validate, then retire)',False)],

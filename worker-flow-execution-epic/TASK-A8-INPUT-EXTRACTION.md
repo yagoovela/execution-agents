@@ -11,9 +11,8 @@ The census classified `varInputNode` as inert: its front component only calls th
 configuration time. That is true of the component and false of the run.
 
 During a run, **before the loop**, the engine iterates every `varInputNode`
-(`back/src/app-api/flux/flux.service.ts:2772, 2806`) and does real external I/O:
-`extractionService.extractTextFromLink` per link and `awsService.uploadFile` per file
-(`:2834–2990`), with an OCR mode chosen per input (`typeOCR`).
+(`back/src/app-api/flux/flux.service.ts`) and does real external I/O:
+`extractionService.extractTextFromLink` per link and `awsService.uploadFile` per file, with an OCR mode chosen per input (`typeOCR`).
 
 It is invisible to every dispatch gate because it is resolved *before* `nextReady` ever runs — so
 it is not in `isTemporalNode`, not in the prefetch whitelist, and not in the census. It is
@@ -34,6 +33,10 @@ a large win for agents with several files.
 
 **Out.** Renaming `extractText` — the field holds URLs when `isExtraction` is false, which is
 confusing, but renaming a persisted field is its own migration.
+
+**Out.** An OCR *node*. `imageReaderNode` is deprecated (D24) and an OCR node is wanted in its place,
+but it is not built in this epic and not here: this task moves the OCR that `varInputNode` already
+does off the request path; it does not add a node type.
 
 ## Egress policy — decided here, not later
 
@@ -64,5 +67,5 @@ the before/after latency is recorded.
 
 ## Files
 
-`back/src/app-api/flux/flux.service.ts:2772–2990` · `back/src/app-api/extraction/` ·
+`back/src/app-api/flux/flux.service.ts` (the pre-loop `varInputNode` resolution: `extractTextFromLink`, `uploadFile`, `typeOCR`) · `back/src/app-api/extraction/` ·
 `back/src/app-api/google_ocr/` · `back/src/app-api/aws/` · new worker module · the A1 registry
