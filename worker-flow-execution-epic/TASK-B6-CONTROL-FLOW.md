@@ -3,7 +3,7 @@
 **Goal:** `conditionNode` and `arrayNode` become workflow control flow; `fluxBox` and `libraryNode`
 become child workflows. The last four node types leave the back.
 
-**Depends on:** B4. Can run alongside B5.
+**Depends on:** B4, S1. Development can overlap B5's, but it ships after B5 (D17).
 
 ## Why these four are not activities
 
@@ -12,10 +12,10 @@ return value cannot reshape the caller's iteration (analysis §3.3–§3.7):
 
 | Type | What it actually does | Where it belongs |
 |---|---|---|
-| `conditionNode` (`flux.service.ts:6742`) | evaluates `conditions[]`, mutates `currentLoopCounter` in place, and **rewrites the engine's work queue** via `newIds = findConnectedNodes(...)` | workflow control flow, calling `completeCondition(state, id, handle)` |
-| `arrayNode` (inline `:3738`) | slices a sub-range of the ordered node list between `firstId` and `loopingToId` and re-executes it per array item | a workflow loop; possibly a child workflow per iteration |
-| `fluxBox` (`:5400`) | executes another whole flow inside the node, inheriting the parent's run-log collector, cancel key and trigger counters | child workflow |
-| `libraryNode` (`:5717`) | structurally the same as `fluxBox`; the engine already treats them together (`:2660`, `:3287`) | child workflow — **migrate as one unit with `fluxBox`**, or the contract gets written twice |
+| `conditionNode` (`flux.service.ts`) | evaluates `conditions[]`, mutates `currentLoopCounter` in place, and **rewrites the engine's work queue** via `newIds = findConnectedNodes(...)` | workflow control flow, calling `completeCondition(state, id, handle)` |
+| `arrayNode` (inline branch, no handler method) | slices a sub-range of the ordered node list between `firstId` and `loopingToId` and re-executes it per array item | a workflow loop; possibly a child workflow per iteration |
+| `fluxBox` (`flowCallerNode()`) | executes another whole flow inside the node, inheriting the parent's run-log collector, cancel key and trigger counters | child workflow |
+| `libraryNode` (`libraryNode()`) | structurally the same as `fluxBox`; the engine already treats them together | child workflow — **migrate as one unit with `fluxBox`**, or the contract gets written twice |
 
 Once B4 exists, these stop being blocked and become the natural content of the workflow. That is
 the inversion this epic is built on.
@@ -59,10 +59,11 @@ behaviour, including the maximum-iteration guard, ports as-is.
 ## Done when
 
 All four types run in the worker; a replay test passes; nested runs keep their logs, cancellation
-and billing; no executable node type remains inline.
+and billing — **cancelling a parent stops its child workflows, proven here because no child workflow
+exists before this task** (moved from E2); no executable node type remains inline.
 
 ## Files
 
-`back/src/app-api/flux/flux.service.ts:3540, 3738, 4013, 5400, 5717, 6742` ·
+`back/src/app-api/flux/flux.service.ts` (`conditionNode()`, `flowCallerNode()`, `libraryNode()`, the inline `arrayNode` branch) ·
 `back/src/app-api/flux/scheduler.ts` (`completeCondition`, `computeLoopBody`) ·
 worker flow workflow + new child workflow · the A1 registry

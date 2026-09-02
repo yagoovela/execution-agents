@@ -1,10 +1,16 @@
-# A6 — Give the nine front-driven types server-side execution
+# A6 — Give the front-driven types server-side execution
 
-**Goal:** the nine node types that today run only from the browser get an activity and, for the
-first time, engine dispatch.
+**Goal:** the eight node types that today run only from the browser get an activity and, for the
+first time, engine dispatch. (The census counted nine; `imageReaderNode` is deprecated — D24.)
 
-**Depends on:** A1. **Blocked on:** decision **D3**. **Ship in three stages** — they are one task
-because they share the same three-part scope, not because they are one deploy.
+**Depends on:** A1. **Blocked on:** decision **D3**. **One card, one PR per stage** (PLAN §3.1) —
+they are one task because they share the same three-part scope, not because they are one deploy;
+each stage is independently deployable behind the flag.
+
+**Partial D3 input, 2026-09-02 — awaiting product confirmation.** `documentSummarizer` and
+`commandMusicNode` are discontinued; `webAmazon` and `secApiNode` are broken today; `fileSave` is
+under review. If confirmed, Stage 2 loses two of its three and Stage 3 loses one — record the
+confirmation in PLAN §7 (D3) before Stage 1 starts, and re-cut the stages then, not now.
 
 ## Why this is not an ordinary migration
 
@@ -39,11 +45,11 @@ the worker.
 | `fileSave` | `GoogleDriveService.uploadFile` and `TokenProviderService` already exist in the worker |
 
 `fileSave` is the most valuable of the three and the worst offender: it is listed in
-`SIDE_EFFECT_TYPES` (`flux/scheduler.ts:29–36`), so the scheduler protects it from being pruned —
+`SIDE_EFFECT_TYPES` (`flux/scheduler.ts`), so the scheduler protects it from being pruned —
 yet nothing executes it server-side. Its `uploadToDrive()` runs in the browser against a
 `localStorage` OAuth token, so it **cannot** run headless even in principle. The server-side token
 already exists (`user.googleRefreshToken`) and the engine already refreshes it — but only when the
-flow has `pullData`/`pushData` with `provider = google` (`flux.service.ts:2621–2641`). Extend that
+flow has `pullData`/`pushData` with `provider = google` (`flux.service.ts`). Extend that
 condition; do not build a second refresh path.
 
 **Stage 2 — port a small client.** `secApiNode` (`app-api/sec`), `usCensusNode`
@@ -55,7 +61,8 @@ model-access callbacks.
 Both produce assets, so both use `/worker/generate-file`; both are long-running, so both need
 their `startToCloseTimeout` and `heartbeatTimeout` chosen deliberately rather than inherited.
 
-(`imageReaderNode` is the ninth and is migrated in A5, over the shared image provider layer.)
+(`imageReaderNode` was the ninth of the census. It is **deprecated (D24)** and leaves the migration;
+an OCR node is wanted later and will be specified when it is built, not here.)
 
 ## Egress policy — decided here, not later
 
@@ -82,11 +89,11 @@ move is what changes the risk.
 
 ## Done when
 
-All nine satisfy PLAN §3.4; a headless run produces output for each; no front component calls a
+All eight satisfy PLAN §3.4; a headless run produces output for each; no front component calls a
 provider service directly for execution.
 
 ## Files
 
 `front/src/components/nodes/{WebTrends,WebAmazon,SecApiNode,UsCensusNode,AiTextSummarizer,AiMusicGenerator,AiVideoGenerator}.tsx` ·
 `front/src/components/FileSave/FileSave.tsx` · `back/src/app-api/{sec,census_data,summarize,scraper,serpApi,repiclate,luma_labs,runwayML}/` ·
-`back/src/app-api/flux/flux.service.ts:2621–2641` · `back/src/app-api/flux/scheduler.ts` · new worker modules · the A1 registry
+`back/src/app-api/flux/flux.service.ts` (the Google refresh-token condition on `pullData`/`pushData`) · `back/src/app-api/flux/scheduler.ts` (`SIDE_EFFECT_TYPES`) · new worker modules · the A1 registry

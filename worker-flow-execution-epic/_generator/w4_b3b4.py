@@ -18,9 +18,9 @@ B3 = dict(
    ('How many production flows satisfy the 17-type whitelist, and what the prefetch path actually saved.',
     'Quantos fluxos em produção satisfazem a whitelist de 17 tipos, e o que o caminho de prefetch de fato economizou.')),
  ],
- LEDE=('<p>Today the API resolves a node&#x27;s input and pre-saves it before dispatch: <code>openNodeExecution</code> INSERTs <code>node_executions.input</code>, and the worker only reads it — <code>fetch-node-row.ts:6–10</code> selects <code>input</code> when <code>execId</code> is present, and <strong>never reads the live row</strong>.</p>'
+ LEDE=('<p>Today the API resolves a node&#x27;s input and pre-saves it before dispatch: <code>openNodeExecution</code> INSERTs <code>node_executions.input</code>, and the worker only reads it — <code>fetch-node-row.ts</code> selects <code>input</code> when <code>execId</code> is present, and <strong>never reads the live row</strong>.</p>'
        '<p><strong>This is partly built already.</strong> The prefetch executor is in production behind <code>FLUX_EXEC_MEMORY_MODE=prefetch</code> (analysis §9.2.1). So this is not a design task. It is: <strong>measure what exists, decide whether it is the destination, and move it to the worker side of the boundary.</strong></p>',
-       '<p>Hoje a API resolve a entrada de um node e a pré-salva antes do dispatch: o <code>openNodeExecution</code> faz INSERT em <code>node_executions.input</code>, e o worker apenas lê — o <code>fetch-node-row.ts:6–10</code> seleciona <code>input</code> quando há <code>execId</code>, e <strong>nunca lê a linha viva</strong>.</p>'
+       '<p>Hoje a API resolve a entrada de um node e a pré-salva antes do dispatch: o <code>openNodeExecution</code> faz INSERT em <code>node_executions.input</code>, e o worker apenas lê — o <code>fetch-node-row.ts</code> seleciona <code>input</code> quando há <code>execId</code>, e <strong>nunca lê a linha viva</strong>.</p>'
        '<p><strong>Isso já está parcialmente construído.</strong> O executor de prefetch está em produção atrás de <code>FLUX_EXEC_MEMORY_MODE=prefetch</code> (análise §9.2.1). Então esta não é uma task de projeto. É: <strong>medir o que existe, decidir se é o destino, e mover para o lado do worker na fronteira.</strong></p>'),
  L1=('What the prefetch executor already does','O que o executor de prefetch já faz'),
  TABLES=[
@@ -50,7 +50,7 @@ B3 = dict(
  LPARTS=('What the task does, in three parts','O que a task faz, em três partes'),
  PARTS=[
   {'n':'1','title':('<code>node_executions.input</code> changes meaning','O <code>node_executions.input</code> muda de significado'),
-   'loc':'node-execution-store.ts · fetch-node-row.ts:6–10',
+   'loc':'node-execution-store.ts · fetch-node-row.ts',
    'purpose':('It stops being a <strong>precondition for running</strong> and becomes a <strong>record of what the node ran with</strong>.',
               'Ele deixa de ser <strong>pré-condição para rodar</strong> e passa a ser <strong>registro do que o node rodou</strong>.'),
    'body':('<p>Today the column is load-bearing in the worst way: a node is not runnable until the API has resolved its input and written it, and the worker reads that write rather than the live row. That single fact is why the worker cannot own the graph — every node needs a round trip through the back to become runnable.</p>'
@@ -104,7 +104,7 @@ B3 = dict(
        'Um node pode ficar executável <strong>sem a API resolver a entrada dele</strong>; a equivalência está provada; e o caminho do back <strong>continua presente e reversível por flag</strong>.'),
  FILES=[('back/src/app-api/flux/prefetch/**',False),
         ('back/src/temporal/single-node-legacy/node-execution-store.ts',False),
-        ('worker/src/modules/nodes/shared/fetch-node-row.ts:6–10',False),
+        ('worker/src/modules/nodes/shared/fetch-node-row.ts',False),
         ('the substitution module from B2',False),
         ('worker-side resolution (new)',True)],
 )
@@ -113,14 +113,14 @@ B3_DEC = {
  'k':'decision','id':'B3-a','plan':'D2','status':'open','open':True,
  'q':('Is the prefetch executor the destination for worker-side input resolution, or a stopgap to retire?',
       'O executor de prefetch é o destino da resolução de entrada no worker, ou um paliativo a aposentar?'),
- 'intro':('<strong>D2 in <code>DELIVERY-PLAN.md</code> — and it carries an assumption the table itself flags: it needs C2&#x27;s measurement first.</strong> '
+ 'intro':('<strong>D2 in <code>PLAN.md</code> §7 — and the measurement it needs is <code>A1</code>&#x27;s, taken in Wave 2 while <code>A1</code> runs <code>canUsePrefetchForFlow</code> against every stored flow.</strong> '
           'The executor ships behind <code>FLUX_EXEC_MEMORY_MODE</code>, defaulting to <code>legacy</code>, with a <strong>17-type whitelist that excludes every Temporal type and every control-flow type</strong>. '
           'A flag defaulting to <code>legacy</code> whose whitelist excludes every LLM node may be <strong>shipped but dormant</strong> — and dormant code generalises badly. '
-          'C2 owns the count: how many production flows satisfy <code>canUsePrefetchForFlow</code>, how many of those ran with the flag on, and what it saved — memory, latency, row size.',
-          '<strong>A D2 do <code>DELIVERY-PLAN.md</code> — e ela carrega uma premissa que a própria tabela sinaliza: precisa antes da medição da C2.</strong> '
+          'A1 reports the count: how many stored flows satisfy <code>canUsePrefetchForFlow</code>, how many of those ran with the flag on, and what it saved — memory, latency, row size.',
+          '<strong>A D2 do <code>PLAN.md</code> §7 — e a medição de que ela precisa é da <code>A1</code>, feita na onda 2 enquanto a <code>A1</code> roda o <code>canUsePrefetchForFlow</code> contra todo fluxo guardado.</strong> '
           'O executor está em produção atrás de <code>FLUX_EXEC_MEMORY_MODE</code>, com padrão <code>legacy</code>, e uma <strong>whitelist de 17 tipos que exclui todo tipo Temporal e todo tipo de controle de fluxo</strong>. '
           'Uma flag com padrão <code>legacy</code> cuja whitelist exclui todo node de LLM pode estar <strong>entregue mas dormente</strong> — e código dormente generaliza mal. '
-          'A C2 é dona da contagem: quantos fluxos em produção satisfazem o <code>canUsePrefetchForFlow</code>, quantos deles rodaram com a flag ligada, e o que isso economizou — memória, latência, tamanho de linha.'),
+          'A A1 reporta a contagem: quantos fluxos guardados satisfazem o <code>canUsePrefetchForFlow</code>, quantos deles rodaram com a flag ligada, e o que isso economizou — memória, latência, tamanho de linha.'),
  'opts':[
   {'ltr':'A','name':('Destination — widen it and relocate it','Destino — ampliar e realocar'),
    'tag':('needs the number','depende do número'),
@@ -144,12 +144,12 @@ B3_DEC = {
            ('The worker-side resolver must reproduce all three key shapes exactly, alias collision included','O resolvedor no worker precisa reproduzir as três formas de chave exatamente, colisão de alias inclusa')],
    'cost':[('lo',('Client effort: <b>none</b>','Esforço do cliente: <b>nenhum</b>')),
            ('hi',('Ours: <b>a resolver that must match the old one exactly</b>','Nosso: <b>um resolvedor que precisa bater exatamente com o antigo</b>'))]},
-  {'ltr':'C','pick':True,'name':('Do not decide yet — gate B3 on C2&#x27;s count','Não decidir ainda — condicionar a B3 à contagem da C2'),
+  {'ltr':'C','pick':True,'name':('Do not decide yet — gate B3 on A1&#x27;s count','Não decidir ainda — condicionar a B3 à contagem da C2'),
    'tag':('recommended','recomendada'),
    'how':('Run C2&#x27;s measurement first — eligible flows, flows that actually ran with the flag on, and what it saved — and let the number choose between A and B. Nothing in B3 is written against the prefetch executor until it exists.',
           'Rodar antes a medição da C2 — fluxos elegíveis, fluxos que realmente rodaram com a flag ligada, e o que economizou — e deixar o número escolher entre A e B. Nada da B3 é escrito contra o executor de prefetch até esse número existir.'),
    'pros':[('The decision becomes a <strong>measurement, not a preference</strong> — which is what the PLAN row already says it must be','A decisão vira uma <strong>medição, não uma preferência</strong> — que é o que a linha do PLAN já diz que ela precisa ser'),
-           ('C2 owes the same count regardless, so this is <strong>not extra work</strong>, only extra ordering','A C2 deve a mesma contagem de qualquer forma, então isto <strong>não é trabalho extra</strong>, só ordem extra'),
+           ('A1 owes the same count regardless, so this is <strong>not extra work</strong>, only extra ordering','A A1 deve a mesma contagem de qualquer forma, então isto <strong>não é trabalho extra</strong>, só ordem extra'),
            ('A wrong answer is expensive in <em>both</em> directions — generalising dead code, or discarding a working path','Uma resposta errada é cara nos <em>dois</em> sentidos — generalizar código morto, ou descartar um caminho que funciona')],
    'cons':[('It puts a dependency on C2&#x27;s timeline in the middle of Wave 4','Coloca uma dependência do cronograma da C2 no meio da Onda 4'),
            ('If the measurement cannot be produced, someone still has to choose — and then it is B by default','Se a medição não puder ser produzida, alguém ainda precisa escolher — e aí é B por padrão')],
@@ -162,7 +162,7 @@ B3_DEC = {
         '<p><strong>C primeiro, depois A ou B pelo número.</strong> Esta é a única decisão da Onda 4 cujos insumos ainda não existem, e fingir o contrário é escolher entre um caminho provado em produção e um dormente no feeling.</p>'
         '<p>Duas condições sobre a própria medição. Reporte como <strong>não verificáveis, não inelegíveis</strong>, os fluxos cuja elegibilidade não puder ser determinada — a verificação da própria C2 diz isso, e uma contagem que arredonda desconhecidos para zero é como &#x27;ninguém usa&#x27; vira conclusão autorrealizável. E meça <em>uso</em>, não só <em>elegibilidade</em>: um fluxo que poderia ter usado prefetch mas rodou em <code>legacy</code> não prova nada sobre o prefetch funcionar.</p>'
         '<p><strong>Se a medição nunca chegar, escolha B.</strong> O módulo de substituição existe de qualquer forma depois da B2, e um resolvedor é mais barato de manter que dois — a whitelist é uma quarta lista de tipos de node num código que a A1 existe para reduzir a uma.</p>'),
- 'who':[('Engineering','Engenharia'),('C2 owns the measurement','A C2 é dona da medição')],
+ 'who':[('Engineering','Engenharia'),('A1 owns the measurement (Wave 2)','A A1 é dona da medição (onda 2)')],
 }
 
 B4 = dict(
@@ -184,9 +184,9 @@ B4 = dict(
     '<code>allReady()</code> devolvendo um único id <em>é</em> o comportamento de hoje. Nada fica mais rápido — esse é o critério de sucesso.')),
  ],
  LEDE=('<p>Two changes hide inside &#x27;move the graph&#x27;: <strong>relocating the loop</strong>, and <strong>letting it dispatch more than one node</strong>. Shipped together, a rollback cannot tell you which one broke the run. Shipped apart, each one is a one-line flag.</p>'
-       '<p>Sequential is also nearly free to express: <code>allReady()</code> returning a single id <em>is</em> today&#x27;s behaviour. B4 builds the batch-capable machinery and configures it to a batch size of one. What it does pay back is the blocking wait — <code>await handle.result()</code> at <code>flux.service.ts:507</code>, which makes every migrated node a synchronous round trip today (analysis §9.2.2).</p>',
+       '<p>Sequential is also nearly free to express: <code>allReady()</code> returning a single id <em>is</em> today&#x27;s behaviour. B4 builds the batch-capable machinery and configures it to a batch size of one. What it does pay back is the blocking wait — <code>await handle.result()</code> at <code>flux.service.ts</code>, which makes every migrated node a synchronous round trip today (analysis §9.2.2).</p>',
        '<p>Duas mudanças se escondem em &#x27;mover o grafo&#x27;: <strong>realocar o laço</strong>, e <strong>deixá-lo despachar mais de um node</strong>. Entregues juntas, um rollback não consegue dizer qual delas quebrou o run. Entregues separadas, cada uma é uma flag de uma linha.</p>'
-       '<p>E expressar o modo sequencial é quase de graça: <code>allReady()</code> devolvendo um único id <em>é</em> o comportamento de hoje. A B4 constrói a maquinaria capaz de lote e a configura com lote de tamanho um. O que ela paga de volta é a espera bloqueante — o <code>await handle.result()</code> em <code>flux.service.ts:507</code>, que hoje faz de cada node migrado uma ida e volta síncrona (análise §9.2.2).</p>'),
+       '<p>E expressar o modo sequencial é quase de graça: <code>allReady()</code> devolvendo um único id <em>é</em> o comportamento de hoje. A B4 constrói a maquinaria capaz de lote e a configura com lote de tamanho um. O que ela paga de volta é a espera bloqueante — o <code>await handle.result()</code> em <code>flux.service.ts</code>, que hoje faz de cada node migrado uma ida e volta síncrona (análise §9.2.2).</p>'),
  L1=('What already exists, and what B4 does with it','O que já existe, e o que a B4 faz com isso'),
  TABLES=[
   dict(head=[('Asset','O que existe'),('Where','Onde'),('State today','Estado hoje'),('What B4 does with it','O que a B4 faz com ele')],
@@ -200,7 +200,7 @@ B4 = dict(
      {'t':('Written, then commented out','Escrito, e comentado'),'pill':'weak'},
      ('<strong>Read it before writing a new one</strong> — in-degree per node, a <code>readyToRun</code> filter, <code>Promise.all</code> over the batch','<strong>Leia antes de escrever outro</strong> — in-degree por node, um filtro <code>readyToRun</code>, <code>Promise.all</code> sobre o lote')],
     [{'t':('The blocking wait','A espera bloqueante')},
-     ('<code>back/src/app-api/flux/flux.service.ts:507</code>','<code>back/src/app-api/flux/flux.service.ts:507</code>'),
+     ('<code>back/src/app-api/flux/flux.service.ts</code>','<code>back/src/app-api/flux/flux.service.ts</code>'),
      {'t':('<code>await handle.result()</code> per node','<code>await handle.result()</code> por node'),'pill':'no'},
      ('Removed — this is the task that pays back the round trip in analysis §9.2.2','Removida — esta é a task que paga de volta a ida e volta da análise §9.2.2')],
    ]),
@@ -216,11 +216,11 @@ B4 = dict(
    'purpose':('Everything the API&#x27;s loop does with the scheduler, the workflow does — with a batch size of one.',
               'Tudo o que o laço da API faz com o scheduler, o workflow passa a fazer — com lote de tamanho um.'),
    'body':('<p>The workflow owns the state, calls <code>allReady()</code>, dispatches, and applies <code>markCompleted</code> / <code>markDead</code> / <code>completeCondition</code> as results arrive.</p>'
-           '<p><code>allReady(state): string[]</code> is added alongside <code>nextReady</code>, draining every eligible id and marking each <code>scheduled</code>. <strong><code>nextReady</code> stays</strong> — <code>mcp-write.service.ts:1327</code> uses the scheduler too and is not part of this epic.</p>'
-           '<p>The back&#x27;s role shrinks to three things: <strong>start the flow workflow</strong>, <strong>serve the callbacks it already owns</strong> — billing, model access, S3, file generation — and <strong>read the result</strong>. It stops being the loop. A flag selects engine-in-back versus engine-in-workflow, <strong>per flow</strong>, defaulting to back.</p>',
+           '<p><code>allReady(state): string[]</code> is added alongside <code>nextReady</code>, draining every eligible id and marking each <code>scheduled</code>. <strong><code>nextReady</code> stays while the backend loop exists</strong> — it is that loop&#x27;s primitive, and <code>C2</code> retires it with the loop. <code>mcp-write.service.ts</code> uses the scheduler too, but only <code>buildSchedulerState</code> and <code>classifyEdge</code>, so it is unaffected either way. Before writing <code>allReady()</code>, check whether the Temporal SDK offers a primitive for ready-set dispatch; decide during development — <code>D16</code> is unchanged whichever way it goes.</p>'
+           '<p>The back&#x27;s role shrinks to three things: <strong>start the flow workflow</strong>, <strong>serve the callbacks it already owns</strong> — billing, model access, S3, file generation — and <strong>read the result</strong>. It stops being the loop. One more thing needs a writer once the loop leaves: <code>flow_execution_status</code> (PR #1902, read by <code>GET /flux/executions/:id</code>) — the workflow reports it through a callback, or <code>E1</code>&#x27;s collector writes it; decide and state it in the PR. A flag selects engine-in-back versus engine-in-workflow, <strong>per flow</strong>, defaulting to back.</p>',
            '<p>O workflow é dono do estado, chama <code>allReady()</code>, despacha, e aplica <code>markCompleted</code> / <code>markDead</code> / <code>completeCondition</code> conforme os resultados chegam.</p>'
-           '<p><code>allReady(state): string[]</code> é adicionado ao lado do <code>nextReady</code>, drenando todos os ids elegíveis e marcando cada um como <code>scheduled</code>. <strong>O <code>nextReady</code> fica</strong> — o <code>mcp-write.service.ts:1327</code> também usa o scheduler e não faz parte deste épico.</p>'
-           '<p>O papel do back encolhe para três coisas: <strong>iniciar o workflow do fluxo</strong>, <strong>servir os callbacks de que já é dono</strong> — cobrança, acesso a modelo, S3, geração de arquivo — e <strong>ler o resultado</strong>. Ele deixa de ser o laço. Uma flag seleciona motor-no-back contra motor-no-workflow, <strong>por fluxo</strong>, com padrão no back.</p>'),
+           '<p><code>allReady(state): string[]</code> é adicionado ao lado do <code>nextReady</code>, drenando todos os ids elegíveis e marcando cada um como <code>scheduled</code>. <strong>O <code>nextReady</code> fica enquanto o laço do backend existir</strong> — é a primitiva desse laço, e a <code>C2</code> o aposenta junto com o laço. O <code>mcp-write.service.ts</code> também usa o scheduler, mas só <code>buildSchedulerState</code> e <code>classifyEdge</code>, então não é afetado de nenhum jeito. Antes de escrever o <code>allReady()</code>, verifique se o SDK do Temporal já oferece uma primitiva para dispatch por conjunto pronto; decida durante o desenvolvimento — a <code>D16</code> não muda em nenhum dos casos.</p>'
+           '<p>O papel do back encolhe para três coisas: <strong>iniciar o workflow do fluxo</strong>, <strong>servir os callbacks de que já é dono</strong> — cobrança, acesso a modelo, S3, geração de arquivo — e <strong>ler o resultado</strong>. Ele deixa de ser o laço. Mais uma coisa precisa de um escritor quando o laço sair: o <code>flow_execution_status</code> (PR #1902, lido por <code>GET /flux/executions/:id</code>) — o workflow o reporta por callback, ou o coletor da <code>E1</code> o escreve; decida e declare no PR. Uma flag seleciona motor-no-back contra motor-no-workflow, <strong>por fluxo</strong>, com padrão no back.</p>'),
    'ba':(('The API&#x27;s loop calls <code>nextReady</code>, dispatches one node, and blocks on <code>await handle.result()</code> before asking for the next one.',
           'O laço da API chama <code>nextReady</code>, despacha um node, e bloqueia em <code>await handle.result()</code> antes de pedir o próximo.'),
          ('The workflow calls <code>allReady()</code> and dispatches the batch it returns — configured to one. <strong>Identical order, no blocking round trip through the back.</strong>',
@@ -241,12 +241,12 @@ B4 = dict(
          ('The workflow continues at a <strong>stated boundary</strong> and carries ids, not payloads. The ceiling is a number someone wrote down and proved by running a graph past it.',
           'O workflow continua num <strong>limite declarado</strong> e carrega ids, não payloads. O teto é um número que alguém escreveu e provou rodando um grafo além dele.'))},
   {'n':'3','title':('A skipped node has to be loud','Um node pulado precisa ser barulhento'),
-   'loc':'flux.service.ts:4735–4778 · flux/node-cancel-watch.ts',
+   'loc':'flux.service.ts · flux/node-cancel-watch.ts',
    'purpose':('The characteristic failure of a scheduler port is a node that is silently never run.',
               'A falha característica de um port de scheduler é um node que simplesmente nunca roda, em silêncio.'),
-   'body':('<p>The back warns today when a node ends outside <code>completed</code> or <code>dead</code> (<code>flux.service.ts:4735–4778</code>). The workflow needs the equivalent, because <strong>unprocessed-node detection must survive the move</strong>.</p>'
+   'body':('<p>The back warns today when a node ends outside <code>completed</code> or <code>dead</code> (<code>flux.service.ts</code>). The workflow needs the equivalent, because <strong>unprocessed-node detection must survive the move</strong>.</p>'
            '<p>The related property is failing fast. A graph engine whose failure mode is &#x27;hangs for thirty minutes until the Temporal timeout&#x27; is not shippable — the stall has to be detected by the engine, not by the platform. Cancellation must also still work end to end, including the in-flight flag in <code>flux/node-cancel-watch.ts</code>; <strong>E2</strong> is what makes that native rather than ported.</p>',
-           '<p>O back avisa hoje quando um node termina fora de <code>completed</code> ou <code>dead</code> (<code>flux.service.ts:4735–4778</code>). O workflow precisa do equivalente, porque <strong>a detecção de node não processado precisa sobreviver à mudança</strong>.</p>'
+           '<p>O back avisa hoje quando um node termina fora de <code>completed</code> ou <code>dead</code> (<code>flux.service.ts</code>). O workflow precisa do equivalente, porque <strong>a detecção de node não processado precisa sobreviver à mudança</strong>.</p>'
            '<p>A propriedade irmã é falhar rápido. Um motor de grafo cujo modo de falha é &#x27;trava por trinta minutos até o timeout do Temporal&#x27; não é entregável — a paralisação precisa ser detectada pelo motor, não pela plataforma. O cancelamento também precisa continuar funcionando ponta a ponta, incluindo a flag de in-flight em <code>flux/node-cancel-watch.ts</code>; a <strong>E2</strong> é o que torna isso nativo em vez de portado.</p>'),
    'ba':(('The back warns about a node that ended outside <code>completed</code> or <code>dead</code>. In a workflow-owned run, nobody is watching for it.',
           'O back avisa sobre um node que terminou fora de <code>completed</code> ou <code>dead</code>. Num run conduzido pelo workflow, ninguém está olhando isso.'),
@@ -261,8 +261,8 @@ B4 = dict(
    ('For a corpus of stored flows, assert the workflow executes nodes in the <strong>same order the back&#x27;s loop does, node for node</strong>. With batch size one this must be <em>exact</em>: any divergence is a defect in the port, and this is the last moment it is cheap to see.',
     'Para um corpus de fluxos guardados, afirme que o workflow executa os nodes na <strong>mesma ordem do laço do back, node a node</strong>. Com lote de tamanho um isso precisa ser <em>exato</em>: qualquer divergência é defeito de port, e este é o último momento em que é barato enxergar.')),
   (False,('Unprocessed-node detection survives','A detecção de node não processado sobrevive'),
-   ('The back warns today when a node ends outside <code>completed</code> or <code>dead</code> (<code>flux.service.ts:4735–4778</code>). The workflow needs the equivalent — <strong>a silently skipped node is the characteristic failure of a scheduler port</strong>.',
-    'O back avisa hoje quando um node termina fora de <code>completed</code> ou <code>dead</code> (<code>flux.service.ts:4735–4778</code>). O workflow precisa do equivalente — <strong>um node pulado em silêncio é a falha característica de um port de scheduler</strong>.')),
+   ('The back warns today when a node ends outside <code>completed</code> or <code>dead</code> (<code>flux.service.ts</code>). The workflow needs the equivalent — <strong>a silently skipped node is the characteristic failure of a scheduler port</strong>.',
+    'O back avisa hoje quando um node termina fora de <code>completed</code> ou <code>dead</code> (<code>flux.service.ts</code>). O workflow precisa do equivalente — <strong>um node pulado em silêncio é a falha característica de um port de scheduler</strong>.')),
   (False,('Cancellation still works end to end','O cancelamento continua funcionando ponta a ponta'),
    ('Including the in-flight flag in <code>flux/node-cancel-watch.ts</code>. <strong>E2</strong> converges this on Temporal&#x27;s native mechanism; B4 must not break it in the meantime.',
     'Incluindo a flag de in-flight em <code>flux/node-cancel-watch.ts</code>. A <strong>E2</strong> converge isso para o mecanismo nativo do Temporal; a B4 não pode quebrá-lo no meio do caminho.')),
@@ -274,7 +274,7 @@ B4 = dict(
        'Um fluxo roda do início ao fim sob o workflow, <strong>em ordem idêntica</strong>, atrás de uma flag <strong>desligada por padrão</strong>; o laço do back fica intocado e ainda selecionável.'),
  FILES=[('worker/src/modules/temporal/workflows/process-agent.workflow.ts',False),
         ('worker/src/modules/temporal/{activities,worker.service.ts,workflows/configs.ts}',False),
-        ('back/src/app-api/flux/flux.service.ts:507, 3227, 4735–4778',False),
+        ('back/src/app-api/flux/flux.service.ts (await handle.result() in processNodeViaTemporal · the while (scheduledId !== null) loop · the unprocessed-node warning)',False),
         ('the scheduler module from B2 (allReady)',False),
         ('new flow workflow',True)],
 )

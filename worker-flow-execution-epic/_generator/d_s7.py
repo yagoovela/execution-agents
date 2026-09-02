@@ -27,8 +27,8 @@ DEC_TRANSPORT = {
            ('hi',('Ours: <b>log scrubbing is mandatory</b>','Nosso: <b>scrub de log é obrigatório</b>'))]},
   {'ltr':'B','name':('Same token, in a header','Mesmo token, num header'),
    'tag':('already the pattern','já é o padrão'),
-   'how':('The customer sends the token as a request header. <strong>This mechanism already exists</strong> — <code>ApiKeyGuard</code> reads <code>headers[&#x27;api-key&#x27;]</code> today (<code>apikey.guard.ts:25</code>).',
-          'O cliente manda o token como header da requisição. <strong>Esse mecanismo já existe</strong> — o <code>ApiKeyGuard</code> lê <code>headers[&#x27;api-key&#x27;]</code> hoje (<code>apikey.guard.ts:25</code>).'),
+   'how':('The customer sends the token as a request header. <strong>This mechanism already exists</strong> — <code>ApiKeyGuard</code> reads <code>headers[&#x27;api-key&#x27;]</code> today (<code>apikey.guard.ts</code>).',
+          'O cliente manda o token como header da requisição. <strong>Esse mecanismo já existe</strong> — o <code>ApiKeyGuard</code> lê <code>headers[&#x27;api-key&#x27;]</code> hoje (<code>apikey.guard.ts</code>).'),
    'pros':[('Does not land in access logs, Referer or analytics','Não cai em access log, Referer nem analytics'),
            ('No new transport to build — the guard pattern is already in the codebase','Nenhum transporte novo — o padrão do guard já está no código')],
    'cons':[('Some callers cannot set headers at all — a CRM field, a legacy form, a no-code step','Alguns chamadores não conseguem definir headers — um campo de CRM, um formulário legado, um passo no-code'),
@@ -110,11 +110,11 @@ DEC_EMAIL = {
  'q':('How is the email sender verified, without asking anyone to configure anything?',
       'Como o remetente do e-mail é verificado, sem pedir configuração a ninguém?'),
  'intro':(
-  'Agents are started by email too. The flow is resolved from a UUID in the recipient&#x27;s local part (<code>mail.service.ts:404–405</code>), '
+  'Agents are started by email too. The flow is resolved from a UUID in the recipient&#x27;s local part (<code>mail.service.ts</code>), '
   'then <code>From</code>, <code>Subject</code>, the body and the attachments are fed into the flow&#x27;s <code>varInputNode</code>. '
   'For a <strong>private</strong> flow the only check is that the <code>From</code> header matches the owner — and greps for <code>dkim</code>, <code>spf</code>, <code>dmarc</code> in <code>app-api/mail/</code> return nothing. '
   'For a <strong>public</strong> flow there is no sender check at all.',
-  'Agentes também são iniciados por e-mail. O fluxo é resolvido a partir de um UUID na parte local do destinatário (<code>mail.service.ts:404–405</code>), '
+  'Agentes também são iniciados por e-mail. O fluxo é resolvido a partir de um UUID na parte local do destinatário (<code>mail.service.ts</code>), '
   'e então <code>From</code>, <code>Subject</code>, o corpo e os anexos são injetados no <code>varInputNode</code> do fluxo. '
   'Para um fluxo <strong>privado</strong> a única checagem é o <code>From</code> casar com o dono — e buscas por <code>dkim</code>, <code>spf</code>, <code>dmarc</code> em <code>app-api/mail/</code> não retornam nada. '
   'Para um fluxo <strong>público</strong> não há checagem de remetente nenhuma.'),
@@ -165,9 +165,9 @@ DEC_ADMISSION = {
  'q':('At the limit, does the caller get a <code>429</code> or does the run get queued?',
       'No limite, o chamador recebe <code>429</code> ou o run é enfileirado?'),
  'intro':(
-  'The Bull processor&#x27;s single concurrency already throttles <strong>execution</strong>. It does not throttle <strong>admission</strong> — '
+  'The Bull processor&#x27;s concurrency (<code>AGENT_CONCURRENCY</code>, default five per replica) already throttles <strong>execution</strong>. It does not throttle <strong>admission</strong> — '
   'the queue still grows, and a row, a log line and a dedup key are written for every call on the way in. This decision is about what happens at the door.',
-  'A concorrência 1 do processador Bull já limita a <strong>execução</strong>. Ela não limita a <strong>admissão</strong> — '
+  'A concorrência do processador Bull (<code>AGENT_CONCURRENCY</code>, cinco por réplica por padrão) já limita a <strong>execução</strong>. Ela não limita a <strong>admissão</strong> — '
   'a fila continua crescendo, e uma linha, uma linha de log e uma chave de dedup são gravadas para cada chamada na entrada. Esta decisão é sobre o que acontece na porta.'),
  'opts':[
   {'ltr':'A','pick':True,'name':('Reject with <code>429</code> and <code>Retry-After</code>','Recusar com <code>429</code> e <code>Retry-After</code>'),

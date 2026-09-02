@@ -20,14 +20,14 @@ GLANCE = [
 ]
 
 LEDE = (
- '<p><code>/flux/batch-process</code> calls <code>this.processBatch(...).catch(...)</code> (<code>flux.controller.ts:560</code>) — <strong>unawaited</strong>. '
+ '<p><code>/flux/batch-process</code> calls <code>this.processBatch(...).catch(...)</code> (<code>flux.controller.ts</code>) — <strong>unawaited</strong>. '
  'The request returns immediately and the work continues <strong>detached inside the backend process</strong>.</p>'
- '<p><code>processBatch</code> (<code>:574–706</code>) is a sequential <code>for</code> loop over CSV rows. Per row it re-reads the batch, re-reads the row record, '
+ '<p><code>processBatch</code> is a sequential <code>for</code> loop over CSV rows. Per row it re-reads the batch, re-reads the row record, '
  'runs a <strong>complete flow</strong> via <code>await this.fluxService.apiV2(…)</code>, writes the output, re-reads the batch and saves the pointer — '
  '<strong>four to five database round trips on bookkeeping before the run itself</strong>.</p>',
- '<p>O <code>/flux/batch-process</code> chama <code>this.processBatch(...).catch(...)</code> (<code>flux.controller.ts:560</code>) — <strong>sem await</strong>. '
+ '<p>O <code>/flux/batch-process</code> chama <code>this.processBatch(...).catch(...)</code> (<code>flux.controller.ts</code>) — <strong>sem await</strong>. '
  'A requisição retorna na hora e o trabalho continua <strong>solto dentro do processo do backend</strong>.</p>'
- '<p>O <code>processBatch</code> (<code>:574–706</code>) é um laço <code>for</code> sequencial sobre as linhas do CSV. Por linha ele relê o lote, relê o registro da linha, '
+ '<p>O <code>processBatch</code> é um laço <code>for</code> sequencial sobre as linhas do CSV. Por linha ele relê o lote, relê o registro da linha, '
  'roda um <strong>fluxo completo</strong> via <code>await this.fluxService.apiV2(…)</code>, escreve a saída, relê o lote e salva o ponteiro — '
  '<strong>quatro a cinco idas e voltas de banco em contabilidade antes do run em si</strong>.</p>')
 
@@ -123,7 +123,7 @@ DEC_RESUME = {
 
 PARTS = [
 {'n':'1','title':('One child workflow per row, and the pointer becomes state','Um child workflow por linha, e o ponteiro vira estado'),
- 'loc':'flux.controller.ts:560, 574–706',
+ 'loc':'flux.controller.ts',
  'purpose':('Replace a detached loop with a durable one, and let the per-row bookkeeping collapse because the loop can finally trust its own memory.',
             'Substituir um laço solto por um durável, e deixar a contabilidade por linha desaparecer porque o laço finalmente pode confiar na própria memória.'),
  'body':('<p>The shape is a batch workflow with <strong>one child workflow per row</strong>, a <strong>concurrency cap</strong>, and the row pointer held as '
@@ -170,7 +170,7 @@ PARTS = [
     'Uma comparação de saída linha a linha contra um run anterior à mudança é o que prova isso.</p>'))]},
 
 {'n':'3','title':('Stop becomes cancellation','Parar vira cancelamento'),
- 'loc':'flux.controller.ts:513–517, 710–800',
+ 'loc':'flux.controller.ts',
  'purpose':('Honour the stop endpoint through workflow cancellation, which reaches the rows already in flight.',
             'Honrar o endpoint de parada via cancelamento de workflow, que alcança as linhas já em voo.'),
  'body':('<p>Today <code>/batch-process/:id/stop</code> <strong>sets a flag the loop checks</strong>. That means a row already running finishes, and a loop that '
@@ -186,24 +186,20 @@ PARTS = [
        ('Stop cancels the workflow, which cancels the row children in flight, and the batch reaches a <strong>terminal</strong> status the endpoint can report.',
         'O stop cancela o workflow, que cancela os filhos de linha em voo, e o lote chega a um status <strong>terminal</strong> que o endpoint consegue reportar.'))},
 
-{'n':'4','title':('A screen to create a batch and watch it run','Uma tela para criar um lote e acompanhá-lo'),
- 'loc':('front · reads the five existing endpoints','front · lê os cinco endpoints existentes'),
- 'purpose':('Give the stop and status endpoints a consumer. Cancellation nobody can reach is not a feature.',
-            'Dar um consumidor aos endpoints de stop e status. Cancelamento que ninguém alcança não é funcionalidade.'),
- 'body':('<p>A batch is created from a CSV and watched while it runs: <strong>rows done, rows failed, the current row, and the output per row</strong>. '
-         'The endpoints already exist — <code>POST /batch-process</code>, <code>GET /:id/status</code>, <code>GET /all</code>, <code>POST /:id/stop</code> and '
-         '<code>GET /:ids/download</code>. What has never existed is a surface that reads them.</p>'
-         '<p><strong>This is why <code>D18</code> keeps the route instead of retiring it.</strong> The five endpoints gain a consumer in this epic rather than '
-         'losing one, so none of them is deprecated — and <code>C2</code> must not sweep them up with the legacy endpoint, which looks similar and is not.</p>',
-         '<p>Um lote é criado a partir de um CSV e acompanhado enquanto roda: <strong>linhas concluídas, linhas falhadas, a linha atual e a saída por linha</strong>. '
-         'Os endpoints já existem — <code>POST /batch-process</code>, <code>GET /:id/status</code>, <code>GET /all</code>, <code>POST /:id/stop</code> e '
-         '<code>GET /:ids/download</code>. O que nunca existiu é uma superfície que os leia.</p>'
-         '<p><strong>É por isso que a <code>D18</code> mantém a rota em vez de aposentá-la.</strong> Os cinco endpoints ganham um consumidor neste épico em vez de '
-         'perder um, então nenhum deles é depreciado — e a <code>C2</code> não pode varrê-los junto com o endpoint legado, que é parecido e não é a mesma coisa.</p>'),
- 'ba':(('Stop and status are endpoints with no caller. A stalled batch is discovered by someone noticing.',
-        'Stop e status são endpoints sem chamador. Um lote travado é descoberto por alguém que percebe.'),
-       ('The batch is visible while it runs, and stopping it is a button rather than a request somebody has to compose.',
-        'O lote é visível enquanto roda, e pará-lo é um botão em vez de uma requisição que alguém precisa montar.'))},
+{'n':'4','title':('A batch screen — out of this epic','Uma tela de lote — fora deste épico'),
+ 'loc':('front · not built here','front · não é feita aqui'),
+ 'purpose':('Say plainly what this task does not build, so the endpoints are not mistaken for a feature with a UI.',
+            'Dizer com clareza o que esta task não constrói, para que os endpoints não sejam confundidos com uma funcionalidade com interface.'),
+ 'body':('<p>The screen does not exist today and is <strong>not built in this migration/refactor</strong> (decided 2026-09-02). When it is built it reads what already exists — <code>POST /batch-process</code>, <code>GET /:id/status</code>, <code>GET /all</code>, <code>POST /:id/stop</code> and '
+         '<code>GET /:ids/download</code>: rows done, rows failed, the current row, the output per row, and stop.</p>'
+         '<p><strong>The route stays regardless — <code>D18</code>.</strong> The five endpoints are the batch&#x27;s only surface and this task makes what runs behind them durable, so none of them is deprecated — and <code>C2</code> must not sweep them up with the legacy endpoint, which looks similar and is not.</p>',
+         '<p>A tela não existe hoje e <strong>não é construída nesta migração/refatoração</strong> (decidido em 2026-09-02). Quando for construída, ela lê o que já existe — <code>POST /batch-process</code>, <code>GET /:id/status</code>, <code>GET /all</code>, <code>POST /:id/stop</code> e '
+         '<code>GET /:ids/download</code>: linhas concluídas, linhas falhadas, a linha atual, a saída por linha, e o stop.</p>'
+         '<p><strong>A rota fica de qualquer forma — <code>D18</code>.</strong> Os cinco endpoints são a única superfície do lote e esta task torna durável o que roda atrás deles, então nenhum deles é depreciado — e a <code>C2</code> não pode varrê-los junto com o endpoint legado, que é parecido e não é a mesma coisa.</p>'),
+ 'ba':(('Stop and status are endpoints with no screen. A stalled batch is discovered by someone noticing.',
+        'Stop e status são endpoints sem tela. Um lote travado é descoberto por alguém que percebe.'),
+       ('Still no screen — but the batch behind the endpoints is durable, stop is honoured through cancellation, and the status tells the truth when a screen is eventually built.',
+        'Ainda sem tela — mas o lote atrás dos endpoints é durável, o stop é honrado por cancelamento, e o status diz a verdade quando uma tela for construída.'))},
 
 {'n':'5','title':('Stop after too many failures, if the customer asks for it','Parar após falhas demais, se o cliente pedir'),
  'loc':('new — batch configuration','novo — configuração do lote'),
@@ -268,13 +264,15 @@ VERIF = [
    'Um número que ninguém mediu é o tipo de afirmação que se repete por anos.')),
 ]
 
-DONE = ('A batch <strong>survives a restart and resumes</strong>; <code>lastProcessedLine</code> and the status columns still tell the truth and reach a '
-        '<strong>terminal</strong> state; stop cancels the rows in flight; outputs match a pre-change run row for row; and the bookkeeping reduction is '
-        '<strong>measured, not asserted</strong>.',
-        'Um lote <strong>sobrevive a um restart e retoma</strong>; o <code>lastProcessedLine</code> e as colunas de status continuam dizendo a verdade e chegam a um '
-        'estado <strong>terminal</strong>; o stop cancela as linhas em voo; as saídas batem linha a linha com um run anterior à mudança; e a redução de contabilidade é '
-        '<strong>medida, não afirmada</strong>.')
+DONE = ('A batch <strong>survives a backend restart and resumes</strong>; the workflow is the <strong>sole writer</strong> of <code>lastProcessedLine</code> and the status columns, and they reach a '
+        '<strong>terminal</strong> state; stop cancels the rows in flight and the status says so; the stop-on-failure policy trips at the row it should — and demonstrably does not trip when unset or before its minimum sample; '
+        'a batch that would exceed the tenant&#x27;s ceiling is stopped by <code>S3</code> with the completed rows kept; outputs match a pre-change run row for row; and the bookkeeping reduction is '
+        '<strong>measured, not asserted</strong>. The batch screen is not part of this task&#x27;s done.',
+        'Um lote <strong>sobrevive a um restart do backend e retoma</strong>; o workflow é o <strong>único escritor</strong> do <code>lastProcessedLine</code> e das colunas de status, e elas chegam a um '
+        'estado <strong>terminal</strong>; o stop cancela as linhas em voo e o status diz isso; a política de parar-por-falhas dispara na linha certa — e comprovadamente não dispara quando não está definida ou antes da amostra mínima; '
+        'um lote que estouraria o teto do tenant é parado pela <code>S3</code> com as linhas concluídas preservadas; as saídas batem linha a linha com um run anterior à mudança; e a redução de contabilidade é '
+        '<strong>medida, não afirmada</strong>. A tela de lote não faz parte do done desta task.')
 
-FILES = [('back/src/app-api/flux/flux.controller.ts:513–517, 560, 574–706, 710–800', False),
+FILES = [('back/src/app-api/flux/flux.controller.ts (the /batch-process handler · processBatch() · status/listing/stop/download handlers)', False),
          ('back/src/entities/batch_processing_file*.ts', False),
          ('new batch workflow in the worker', True)]

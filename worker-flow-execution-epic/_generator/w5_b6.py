@@ -9,8 +9,8 @@ GLANCE = [
   ('<strong>A child workflow started without the run chain is a child workflow with no ceilings at all.</strong>',
    '<strong>Um child workflow iniciado sem a cadeia do run é um child workflow sem teto algum.</strong>')),
  ('dep', ('Depends on','Depende de'), ('B4 · S1','B4 · S1'),
-  ('Can run alongside <code>B5</code>. <code>S1</code>&#x27;s guard has to exist before sub-flows become child workflows.',
-   'Pode andar junto da <code>B5</code>. A guarda da <code>S1</code> precisa existir antes de sub-fluxos virarem child workflows.')),
+  ('Development can overlap <code>B5</code>&#x27;s, but it ships after <code>B5</code> (<code>D17</code>). <code>S1</code>&#x27;s guard has to exist before sub-flows become child workflows.',
+   'O desenvolvimento pode se sobrepor ao da <code>B5</code>, mas ela sobe depois da <code>B5</code> (<code>D17</code>). A guarda da <code>S1</code> precisa existir antes de sub-fluxos virarem child workflows.')),
  ('wave', ('Wave','Onda'), ('Wave 5','Onda 5'),
   ('Once <code>B4</code> exists these stop being blocked and become the natural content of the workflow.',
    'Uma vez que a <code>B4</code> existe, estes deixam de estar bloqueados e viram o conteúdo natural do workflow.')),
@@ -34,23 +34,23 @@ LEDE = (
 TABLE = dict(
  head=[('Type','Tipo'),('What it actually does','O que ele de fato faz'),('Where it belongs','Onde ele pertence')],
  rows=[
-  [{'t':'conditionNode  (:6742)','mono':True},
+  [{'t':'conditionNode ','mono':True},
    ('Evaluates <code>conditions[]</code>, mutates <code>currentLoopCounter</code> in place, and <strong>rewrites the engine&#x27;s work queue</strong> via <code>newIds = findConnectedNodes(...)</code>',
     'Avalia <code>conditions[]</code>, muta <code>currentLoopCounter</code> no lugar, e <strong>reescreve a fila de trabalho do motor</strong> via <code>newIds = findConnectedNodes(...)</code>'),
    ('Workflow control flow, calling <code>completeCondition(state, id, handle)</code>',
     'Controle de fluxo no workflow, chamando <code>completeCondition(state, id, handle)</code>')],
-  [{'t':'arrayNode  (inline :3738)','mono':True},
+  [{'t':'arrayNode  (inline branch)','mono':True},
    ('Slices a sub-range of the ordered node list between <code>firstId</code> and <code>loopingToId</code> and re-executes it per array item',
     'Fatia um sub-intervalo da lista ordenada de nodes entre <code>firstId</code> e <code>loopingToId</code> e o re-executa por item do array'),
    ('A workflow loop; <strong>possibly a child workflow per iteration</strong>',
     'Um laço de workflow; <strong>possivelmente um child workflow por iteração</strong>')],
-  [{'t':'fluxBox  (:5400)','mono':True},
+  [{'t':'fluxBox ','mono':True},
    ('Executes another whole flow inside the node, inheriting the parent&#x27;s run-log collector, cancel key and trigger counters',
     'Executa um outro fluxo inteiro dentro do node, herdando o coletor de run-log, a chave de cancelamento e os contadores de gatilho do pai'),
    ('Child workflow','Child workflow')],
-  [{'t':'libraryNode  (:5717)','mono':True},
-   ('Structurally the same as <code>fluxBox</code>; the engine already treats them together (<code>:2660</code>, <code>:3287</code>)',
-    'Estruturalmente igual ao <code>fluxBox</code>; o motor já os trata juntos (<code>:2660</code>, <code>:3287</code>)'),
+  [{'t':'libraryNode ','mono':True},
+   ('Structurally the same as <code>fluxBox</code>; the engine already treats them together',
+    'Estruturalmente igual ao <code>fluxBox</code>; o motor já os trata juntos'),
    ('Child workflow — <strong>migrate as one unit with <code>fluxBox</code></strong>, or the contract gets written twice',
     'Child workflow — <strong>migrar como uma unidade com o <code>fluxBox</code></strong>, ou o contrato é escrito duas vezes')],
  ])
@@ -279,15 +279,15 @@ PARTS = [
         'A condição relata um handle, o scheduler é dono da fila, e o conjunto inteiro replaya para a mesma resposta — o que um teste afirma, não uma pessoa.'))},
 
 {'n':'2','title':('Child workflows for <code>fluxBox</code> and <code>libraryNode</code>','Child workflows para <code>fluxBox</code> e <code>libraryNode</code>'),
- 'loc':'flux.service.ts:5400, 5717 · :2660, :3287',
+ 'loc':'flux.service.ts · flowCallerNode() / libraryNode()',
  'purpose':('Carry across the boundary everything the parameter list carries today — and lose none of the three things that can be lost independently.',
             'Levar pela fronteira tudo o que a lista de parâmetros carrega hoje — e não perder nenhuma das três coisas que podem se perder independentemente.'),
  'body':('<p><code>fluxBox</code> executes another whole flow inside the node, <strong>inheriting the parent&#x27;s run-log collector, cancel key and trigger counters</strong>. '
-         '<code>libraryNode</code> is structurally the same, and the engine already treats them together (<code>:2660</code>, <code>:3287</code>) — so they '
+         '<code>libraryNode</code> is structurally the same, and the engine already treats them together — so they '
          '<strong>migrate as one unit</strong>, or the contract gets written twice and the two copies drift.</p>'
          '<p>Three properties travel today because everything shares a process. Each is carried by a different parameter, and <strong>each can be lost independently</strong>:</p>',
          '<p>O <code>fluxBox</code> executa um outro fluxo inteiro dentro do node, <strong>herdando o coletor de run-log, a chave de cancelamento e os contadores de gatilho do pai</strong>. '
-         'O <code>libraryNode</code> é estruturalmente igual, e o motor já os trata juntos (<code>:2660</code>, <code>:3287</code>) — então eles '
+         'O <code>libraryNode</code> é estruturalmente igual, e o motor já os trata juntos — então eles '
          '<strong>migram como uma unidade</strong>, ou o contrato é escrito duas vezes e as duas cópias divergem.</p>'
          '<p>Três propriedades viajam hoje porque tudo compartilha um processo. Cada uma é carregada por um parâmetro diferente, e <strong>cada uma pode se perder sozinha</strong>:</p>'),
  'list':[('<strong>Cancellation propagation</strong> — native to Temporal child workflows, so this one gets easier, not harder.',
@@ -355,12 +355,12 @@ VERIF = [
    'lugar mais barato para pegar um.')),
 ]
 
-DONE = ('All four types run in the worker; a <strong>replay test passes</strong>; nested runs keep their logs, cancellation and billing; '
+DONE = ('All four types run in the worker; a <strong>replay test passes</strong>; nested runs keep their logs, cancellation and billing — <strong>cancelling a parent stops its child workflows, proven here because no child workflow exists before this task</strong> (moved from <code>E2</code>); '
         'and <strong>no executable node type remains inline</strong>.',
         'Os quatro tipos rodam no worker; um <strong>teste de replay passa</strong>; runs aninhados mantêm seus logs, cancelamento e cobrança; '
         'e <strong>nenhum tipo de node executável continua inline</strong>.')
 
-FILES = [('back/src/app-api/flux/flux.service.ts:3540, 3738, 4013, 5400, 5717, 6742', False),
+FILES = [('back/src/app-api/flux/flux.service.ts (conditionNode() · flowCallerNode() · libraryNode() · inline arrayNode branch)', False),
          ('back/src/app-api/flux/scheduler.ts (completeCondition, computeLoopBody)', False),
          ('worker flow workflow + new child workflow', True),
          ('the A1 registry', False)]

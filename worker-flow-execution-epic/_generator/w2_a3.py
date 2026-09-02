@@ -22,11 +22,11 @@ GLANCE=[
 LEDE=(
  '<p>Both node types are in the worker&#x27;s <code>NodeType</code> enum on <code>origin/main</code> and have complete modules. Neither is in <code>isTemporalNode</code>, and neither resolves to a migrated integration provider — '
  'so <strong>nothing in the back ever starts a workflow for them</strong> (analysis §9.4).</p>'
- '<p><code>audioReaderNode</code> still has its inline handler in <code>flux.service.ts</code> (~7911), and that is what actually runs. This is the concrete case the A1 invariant spec flags: '
+ '<p><code>audioReaderNode</code> still has its inline handler in <code>flux.service.ts</code>, and that is what actually runs. This is the concrete case the A1 invariant spec flags: '
  '<strong><code>workerModule: true</code> with <code>dispatch: &#x27;inline&#x27;</code></strong>. The code exists, ships to every replica, and cannot be reached.</p>',
  '<p>Os dois tipos de node estão no enum <code>NodeType</code> do worker em <code>origin/main</code> e têm módulos completos. Nenhum está no <code>isTemporalNode</code>, e nenhum resolve para um provedor de integração migrado — '
  'então <strong>nada no back jamais inicia um workflow para eles</strong> (análise §9.4).</p>'
- '<p>O <code>audioReaderNode</code> ainda tem o handler inline dele em <code>flux.service.ts</code> (~7911), e é isso que de fato roda. Este é o caso concreto que o teste de invariante da A1 acusa: '
+ '<p>O <code>audioReaderNode</code> ainda tem o handler inline dele em <code>flux.service.ts</code>, e é isso que de fato roda. Este é o caso concreto que o teste de invariante da A1 acusa: '
  '<strong><code>workerModule: true</code> com <code>dispatch: &#x27;inline&#x27;</code></strong>. O código existe, vai para toda réplica, e não pode ser alcançado.</p>')
 
 TABLE={'k':'table',
@@ -48,7 +48,7 @@ TABLE={'k':'table',
    {'t':('No','Não'),'pill':'no'},{'t':('No','Não'),'pill':'no'},
    ('The integration gate does not pick them up either','O gate de integração também não os pega')],
   [('Inline twin in <code>flux.service.ts</code>','Gêmeo inline em <code>flux.service.ts</code>'),
-   {'t':('~4479','~4479'),'pill':'weak'},{'t':('~7911','~7911'),'pill':'weak'},
+   {'t':('sqlQuerierNode()','sqlQuerierNode()'),'pill':'weak'},{'t':('audioReaderNode()','audioReaderNode()'),'pill':'weak'},
    ('<strong>This is what actually runs today</strong>','<strong>É isto que de fato roda hoje</strong>')],
  ]}
 
@@ -141,7 +141,7 @@ PARTS=[
 
 {'n':'2','title':('Route them behind the flag, and prove them against the twin',
                   'Roteá-los atrás da flag, e prová-los contra o gêmeo'),
- 'loc':('flux.service.ts — inline audioReaderNode ~7911 · sqlQuerier ~4479', 'flux.service.ts — audioReaderNode inline ~7911 · sqlQuerier ~4479'),
+ 'loc':('flux.service.ts — inline audioReaderNode() · sqlQuerierNode()', 'flux.service.ts — audioReaderNode() · sqlQuerierNode() inline'),
  'purpose':('<code>audioReaderNode</code> has an inline version to diff against — a luxury the other migrations do not have. Use it.',
             'O <code>audioReaderNode</code> tem uma versão inline para comparar — um luxo que as outras migrações não têm. Use.'),
  'body':('<p>Registry entries go in <strong>behind the flag, deployed disabled</strong> (PLAN §3.2). Then each type is proved against the real inline behaviour: <strong>same input, worker output compared to inline output field by field</strong>, '
@@ -193,7 +193,7 @@ DONE=('Neither type has <code>workerModule: true</code> with <code>dispatch: &#x
       'Nenhum dos tipos tem <code>workerModule: true</code> com <code>dispatch: &#x27;inline&#x27;</code>; o teste de invariante da A1 passa <strong>sem nenhuma entrada <code>strandedReason</code></strong>; e <strong>os gêmeos inline não existem mais</strong>.')
 
 FILES=[('worker/src/modules/nodes/{sql-querier,audio-transcriber}/',False),
-       ('back/src/app-api/flux/flux.service.ts (inline audioReaderNode ~7911, sqlQuerier ~4479)',False),
+       ('back/src/app-api/flux/flux.service.ts (inline audioReaderNode(), sqlQuerierNode())',False),
        ('the A1 registry',False),
        ('new flag + env-vars-sync',True)]
 

@@ -10,9 +10,13 @@ None of the four is rate limited. Every other ceiling in this epic is downstream
 **Depends on:** nothing. **Ship the first half immediately** — it is a live, unauthenticated spend
 vector, not a scaling concern. **Severity:** critical (review §9.1, §9.2).
 
+**Cards (PLAN §3.1):** two. Parts 1 and 3 are one card and ship together from Wave 0; part 2 is its
+own card in Wave 1 — rate limiting is admission work with its own report-only cycle, and tying it to
+the webhook fix would hold the fix hostage.
+
 ## Part 1 — the webhook entry point (ship first, on its own)
 
-`POST /flux/api-v2-webhook` is `@Public()` (`flux.controller.ts:340–341`), so it opts out of the
+`POST /flux/api-v2-webhook` is `@Public()` (`flux.controller.ts`), so it opts out of the
 global auth guard, and it resolves the flow like this:
 
 ```
@@ -44,7 +48,8 @@ There is no `ThrottlerModule`, no `@Throttle` and no `ThrottlerGuard` anywhere i
 run-creating route accepts unlimited requests: `/flux/api-v2` (API key),
 `/flux/api-v2-webhook` (public), `/flux/batch-process`, `/flux/execute-from-canvas`.
 
-The Bull processor's single concurrency throttles **execution**, not **admission** — the queue
+The Bull processor's concurrency (`AGENT_CONCURRENCY`, default five per replica) throttles
+**execution**, not **admission** — the queue
 still grows, and rows, logs and dedup keys are written on the way in.
 
 **Scope.** Limits keyed by the thing that pays: API key, organisation, and flow for the webhook
@@ -58,11 +63,10 @@ already entitled to the work.
 ## Part 3 — the email trigger (ship with part 1)
 
 Agents are also started by email. `mail.service.ts` resolves the flow from the **local part of the
-recipient address** — the format the service itself advertises is `uuid@upload.fluxprompt.com`
-(`:434`) — then feeds `From`, `Subject`, the body and any attachments into the flow's
-`varInputNode` and enqueues a run (`:503–556`).
+recipient address** — the format the service itself advertises is `uuid@upload.fluxprompt.com` — then feeds `From`, `Subject`, the body and any attachments into the flow's
+`varInputNode` and enqueues a run.
 
-Its authorisation is the weakest of the four entry points (`:453–487`):
+Its authorisation is the weakest of the four entry points:
 
 - **Public flow → no sender check at all.** Anyone who emails the address runs the flow, charged to
   the owner, **and controls the prompt** — which, in a flow containing a push node or an
@@ -113,6 +117,6 @@ and no legitimate caller is refused.
 
 ## Files
 
-`back/src/app-api/flux/flux.controller.ts:158–160, 221–222, 340–362, 513–514` ·
-`back/src/app-api/mail/mail.service.ts:132, 314, 434, 453–487, 503–556` ·
+`back/src/app-api/flux/flux.controller.ts` (`apiWebhook()`, `api()`, `executeFromCanvas()`, the `/batch-process` handler) ·
+`back/src/app-api/mail/mail.service.ts` (the POP3 poll cron, the sender check, `deleteEmailsSequentially`) ·
 `back/src/app-auth/guards/` · new throttler configuration · `env-vars-sync`

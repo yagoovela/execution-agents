@@ -9,8 +9,8 @@ GLANCE = [
   ('While both implementations exist, a flag misconfiguration means <strong>double execution</strong>: a duplicated Stripe charge, a duplicated Slack message.',
    'Enquanto as duas implementações existirem, uma flag mal configurada significa <strong>dupla execução</strong>: uma cobrança Stripe duplicada, uma mensagem Slack duplicada.')),
  ('dep', ('Depends on','Depende de'), ('Each node&#x27;s A-track task','A task de trilha A de cada node'),
-  ('<strong>This is not a sweep at the end.</strong> Each twin is deleted as part of proving that node, while the behaviour is fresh.',
-   '<strong>Isto não é uma varredura no fim.</strong> Cada gêmeo é apagado como parte de provar aquele node, enquanto o comportamento está fresco.')),
+  ('<strong>This is not a sweep at the end.</strong> Each twin is deleted as part of proving that node, while the behaviour is fresh. One card, in Wave 6, for the once-only half; the per-node deletions are a Done-when line of each A-track card (PLAN §3.1).',
+   '<strong>Isto não é uma varredura no fim.</strong> Cada gêmeo é apagado como parte de provar aquele node, enquanto o comportamento está fresco. Um card, na onda 6, para a metade que só acontece uma vez; as deleções por node são uma linha de Done de cada card da trilha A (PLAN §3.1).')),
  ('wave', ('Wave','Onda'), ('Wave 6','Onda 6'),
   ('The per-node half rides Wave 3, node by node. Only the <strong>cross-node writes</strong> wait for the last inline caller to leave.',
    'A metade por node anda na onda 3, node a node. Só as <strong>escritas cross-node</strong> esperam o último chamador inline sair.')),
@@ -77,16 +77,16 @@ PARTS = [
     'e um efeito colateral duplicado na primeira vez que a flag estiver errada.</p>'))]},
 
 {'n':'2','title':('The cross-node writes — the load-bearing half','As escritas cross-node — a metade estrutural'),
- 'loc':'back/src/app-api/folw/contants.ts:2018–2062, 2032',
+ 'loc':'back/src/app-api/folw/contants.ts',
  'purpose':('Stop a second writer from merging into a row someone else owns — the mechanism that makes mixed-mode parallelism unsafe.',
             'Impedir que um segundo escritor faça merge numa linha que é de outro — o mecanismo que torna o paralelismo em modo misto inseguro.'),
- 'body':('<p>Every inline handler ends with <code>addConnectToNodes</code> (<code>folw/contants.ts:2032</code>), which calls <code>modifyData</code> '
-         '(<code>:2018–2024</code>, <code>:2056–2062</code>) to merge the producer&#x27;s output into the <strong>target</strong> node&#x27;s data. '
+ 'body':('<p>Every inline handler ends with <code>addConnectToNodes</code> (<code>folw/contants.ts</code>), which calls <code>modifyData</code> '
+         ' to merge the producer&#x27;s output into the <strong>target</strong> node&#x27;s data. '
          'That is the mechanism that makes mixed-mode parallelism unsafe (analysis §7.4b), and it is <strong>the reason <code>B5</code> needs its gate</strong>.</p>'
          '<p>Once a node runs in the worker, its output reaches downstream nodes through <code>persistNodeSuccess</code> writing its <strong>own</strong> row. '
          'The cross-node write is then not merely redundant — <strong>it is a second writer on a row someone else owns</strong>.</p>',
-         '<p>Todo handler inline termina com <code>addConnectToNodes</code> (<code>folw/contants.ts:2032</code>), que chama o <code>modifyData</code> '
-         '(<code>:2018–2024</code>, <code>:2056–2062</code>) para fazer merge da saída do produtor no dado do node <strong>alvo</strong>. '
+         '<p>Todo handler inline termina com <code>addConnectToNodes</code> (<code>folw/contants.ts</code>), que chama o <code>modifyData</code> '
+         ' para fazer merge da saída do produtor no dado do node <strong>alvo</strong>. '
          'É esse o mecanismo que torna o paralelismo em modo misto inseguro (análise §7.4b), e é <strong>a razão de a <code>B5</code> precisar do gate dela</strong>.</p>'
          '<p>Quando um node passa a rodar no worker, a saída dele chega aos nodes a jusante pelo <code>persistNodeSuccess</code> escrevendo na <strong>própria</strong> linha. '
          'A escrita cross-node então não é apenas redundante — <strong>ela é um segundo escritor numa linha que é de outro</strong>.</p>'),
@@ -153,5 +153,5 @@ DONE = ('<strong>No executable node type has two implementations</strong>; <code
         'e o <code>flux.service.ts</code> está materialmente menor, com a redução declarada no PR.')
 
 FILES = [('back/src/app-api/flux/flux.service.ts (all inline handlers)', False),
-         ('back/src/app-api/folw/contants.ts:2018–2062, 2032', False),
+         ('back/src/app-api/folw/contants.ts (addConnectToNodes · modifyData)', False),
          ('the A1 registry', False)]

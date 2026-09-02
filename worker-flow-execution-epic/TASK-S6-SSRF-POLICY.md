@@ -8,7 +8,7 @@ host with more privileges.
 
 ## Why the timing matters more than the finding
 
-`/downloader?url=` takes a user URL (`downloader.controller.ts:34`), and the scraper, api-caller and
+`/downloader?url=` takes a user URL (`downloader.controller.ts`), and the scraper, api-caller and
 crawling paths take user URLs too. Searching those modules for private-range or metadata blocking —
 `127.0.0.1`, `169.254`, `localhost`, `isPrivate` — returns **nothing**. A node pointing at the cloud
 metadata endpoint or an internal hostname is the textbook case.
@@ -42,6 +42,16 @@ customer will have one and a policy with no exception path gets disabled wholesa
 **Out.** Auditing every existing customer URL. That is the measurement below, not a remediation
 project.
 
+## Scope decision — left to the implementer (D25)
+
+How wide the first cut is — the full resolved-address deny-list with redirect re-checks above, or a
+narrower first step — is **the decision of whoever picks up this task**, made at the start and
+recorded in this file before implementation. The requester's stated preference, for the record:
+begin with limits on URL *consumption* (what a node may fetch, how much, how often) and add the
+address blocklist as a second step. Whichever cut ships first, the three properties above remain the
+target, and PLAN §3.3.2 applies to each step separately: measure against stored URLs, drive false
+refusals to zero, then enforce.
+
 ## Verification
 
 - **Negative control (required).** Point an `apiCaller` node at `169.254.169.254` and confirm it
@@ -62,5 +72,5 @@ report-only mode before enforcement.
 
 ## Files
 
-`back/src/app-api/downloader/downloader.controller.ts:34` · `back/src/app-api/scraper/` ·
+`back/src/app-api/downloader/downloader.controller.ts` (`@Query('url')`) · `back/src/app-api/scraper/` ·
 `back/src/app-api/api_call/` · the worker's HTTP layer · infra network/subnet definitions

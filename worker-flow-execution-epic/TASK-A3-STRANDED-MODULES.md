@@ -10,7 +10,7 @@ that no dispatch gate routes to.
 Both node types are in the worker's `NodeType` enum on `origin/main` and have complete modules.
 Neither is in `isTemporalNode`'s seven, and neither resolves to a migrated integration provider — so
 nothing in the back ever starts a workflow for them (analysis §9.4). `audioReaderNode` still has
-its inline handler in `flux.service.ts` (~7911), and that is what actually runs. This is the
+its inline handler in `flux.service.ts`, and that is what actually runs. This is the
 concrete case the A1 invariant spec flags: `workerModule: true` with `dispatch: 'inline'`.
 
 This task is where the analysis stopped and a decision is required: **was the migration paused
@@ -57,4 +57,4 @@ no `strandedReason` entries; the inline twins are gone.
 ## Files
 
 `worker/src/modules/nodes/{sql-querier,audio-transcriber}/` · `back/src/app-api/flux/flux.service.ts`
-(inline `audioReaderNode` ~7911, `sqlQuerier` ~4479) · the A1 registry
+(inline handlers `audioReaderNode()` and `sqlQuerierNode()`) · the A1 registry

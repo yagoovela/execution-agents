@@ -58,18 +58,19 @@ effects. A cancelled push that already reached Stripe stays sent.
   Then break the propagation and watch it start anyway — that is the regression this task exists to
   prevent, and it is invisible without the test.
 - Cancel during a **child workflow** (`fluxBox` / `libraryNode`): the child must stop too.
-  Cancellation propagation is native for child workflows, so this test is cheap and proves the
-  design choice.
+  Propagation is native for child workflows, so the test is cheap — but **no child workflow exists
+  until B6 (Wave 5)**, so this proof is B6's Done-when clause, not this task's. E2 proves
+  cancellation for a single-level run.
 - Measure click-to-effective-cancel before and after.
 - Confirm the per-node timers are gone: run a sixty-node agent and count active timers and the
   database query rate against the pre-change baseline.
 
 ## Done when
 
-Cancellation is Temporal-native end to end including child workflows, the poller and the ALS
-context are removed, the footprint UX is unchanged, and the latency is measured.
+Cancellation is Temporal-native end to end for a single-level run (the child-workflow proof lands
+with B6, which creates the first child workflow), the poller and the ALS context are removed, the footprint UX is unchanged, and the latency is measured.
 
 ## Files
 
-`back/src/app-api/flux/node-cancel-watch.ts` · `back/src/app-api/flux/flux.service.ts:3192–3194, 4516–4530` ·
+`back/src/app-api/flux/node-cancel-watch.ts` · `back/src/app-api/flux/flux.service.ts` (`NODE_CANCEL_IN_FLIGHT_FLAG`, `nodeCancelContext.enterWith`, `finishCancelledNode`) ·
 `back/src/temporal/temporal.service.ts` · the worker flow workflow and its activities

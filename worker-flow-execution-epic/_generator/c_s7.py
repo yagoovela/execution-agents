@@ -18,8 +18,8 @@ GLANCE = [
    ('Ships before any migration work — the entry points are already exposed today.',
     'Entra antes de qualquer migração — as entradas já estão expostas hoje.')),
   ('ship', ('Ship order','Ordem de entrega'), ('Parts 1 + 3 first','Partes 1 + 3 primeiro'),
-   ('The two authentication holes go out together, on their own. Rate limiting follows.',
-    'Os dois furos de autenticação saem juntos, sozinhos. O rate limiting vem depois.')),
+   ('The two authentication holes go out together, on their own. Rate limiting follows. Two cards (PLAN §3.1): parts 1 and 3 together in Wave 0, part 2 on its own in Wave 1.',
+    'Os dois furos de autenticação saem juntos, sozinhos. O rate limiting vem depois. Dois cards (PLAN §3.1): partes 1 e 3 juntas na onda 0, parte 2 sozinha na onda 1.')),
 ]
 
 T['lede'] = (
@@ -60,12 +60,12 @@ PARTS = [
  'n':'1',
  'title':('The webhook entry point','A entrada de webhook'),
  'tag':('ship first, on its own','entrega primeiro, sozinha'),
- 'loc':'flux.controller.ts:340–362',
+ 'loc':'flux.controller.ts',
  'purpose':('Close a route that lets anyone who knows a flow id execute that flow and charge its owner.',
             'Fechar uma rota que permite a qualquer um que saiba um id de fluxo executar esse fluxo e cobrar do dono.'),
  'body':(
-  """<p><code>POST /flux/api-v2-webhook</code> is <code>@Public()</code> (<code>flux.controller.ts:340–341</code>), so it opts out of the global auth guard. It then resolves the flow like this:</p>""",
-  """<p><code>POST /flux/api-v2-webhook</code> é <code>@Public()</code> (<code>flux.controller.ts:340–341</code>), então sai do guard global de autenticação. Em seguida resolve o fluxo assim:</p>"""),
+  """<p><code>POST /flux/api-v2-webhook</code> is <code>@Public()</code> (<code>flux.controller.ts</code>), so it opts out of the global auth guard. It then resolves the flow like this:</p>""",
+  """<p><code>POST /flux/api-v2-webhook</code> é <code>@Public()</code> (<code>flux.controller.ts</code>), então sai do guard global de autenticação. Em seguida resolve o fluxo assim:</p>"""),
  'code':("""where: [ { id: query.flowId }, { id: query.flowId, public: true } ]""",
          """where: [ { id: query.flowId }, { id: query.flowId, public: true } ]"""),
  'body2':(
@@ -90,14 +90,14 @@ PARTS = [
  'n':'2',
  'title':('Rate limiting, on every entry point','Rate limiting, em todas as entradas'),
  'tag':('all four routes','as quatro rotas'),
- 'loc':'flux.controller.ts:158–160, 221–222, 513–514',
+ 'loc':'flux.controller.ts',
  'purpose':('Cap admission by the thing that pays, so a flood is refused at the door instead of being written to the database first.',
             'Limitar a admissão pelo que paga, para que uma enxurrada seja recusada na porta em vez de ser gravada no banco primeiro.'),
  'body':(
   """<p>There is no <code>ThrottlerModule</code>, no <code>@Throttle</code> and no <code>ThrottlerGuard</code> anywhere in <code>back/src</code>. Every run-creating route accepts unlimited requests: <code>/flux/api-v2</code> (API key), <code>/flux/api-v2-webhook</code> (public), <code>/flux/batch-process</code> and <code>/flux/execute-from-canvas</code>.</p>
-<p>The Bull processor&#x27;s single concurrency throttles <strong>execution</strong>, not <strong>admission</strong> — the queue still grows, and rows, logs and dedup keys are written on the way in.</p>""",
+<p>The Bull processor&#x27;s concurrency (<code>AGENT_CONCURRENCY</code>, default five per replica) throttles <strong>execution</strong>, not <strong>admission</strong> — the queue still grows, and rows, logs and dedup keys are written on the way in.</p>""",
   """<p>Não existe <code>ThrottlerModule</code>, nem <code>@Throttle</code>, nem <code>ThrottlerGuard</code> em lugar nenhum de <code>back/src</code>. Toda rota que cria run aceita requisições ilimitadas: <code>/flux/api-v2</code> (chave de API), <code>/flux/api-v2-webhook</code> (pública), <code>/flux/batch-process</code> e <code>/flux/execute-from-canvas</code>.</p>
-<p>A concorrência 1 do processador Bull limita a <strong>execução</strong>, não a <strong>admissão</strong> — a fila continua crescendo, e linhas, logs e chaves de dedup são gravados na entrada.</p>"""),
+<p>A concorrência do processador Bull (<code>AGENT_CONCURRENCY</code>, cinco por réplica por padrão) limita a <strong>execução</strong>, não a <strong>admissão</strong> — a fila continua crescendo, e linhas, logs e chaves de dedup são gravados na entrada.</p>"""),
  'code':None,
  'body2':(
   """<p><strong>Scope.</strong> Limits keyed by the thing that pays: <strong>API key</strong>, <strong>organisation</strong>, and <strong>flow</strong> for the webhook route. Not by IP, which is meaningless for server-to-server callers.</p>""",
@@ -116,14 +116,14 @@ PARTS = [
  'n':'3',
  'title':('The email trigger','O disparo por e-mail'),
  'tag':('ship with Part 1','entrega com a Parte 1'),
- 'loc':'mail.service.ts:434, 453–487, 503–556',
+ 'loc':'mail.service.ts',
  'purpose':('Stop trusting a header anyone can type, and decide what a public flow&#x27;s email address is actually allowed to do.',
             'Parar de confiar num cabeçalho que qualquer um digita, e decidir o que o endereço de e-mail de um fluxo público pode de fato fazer.'),
  'body':(
-  """<p>Agents are also started by email. <code>mail.service.ts</code> resolves the flow from the <strong>local part of the recipient address</strong> — the format the service itself advertises is <code>uuid@upload.fluxprompt.com</code> (<code>:434</code>) — then feeds <code>From</code>, <code>Subject</code>, the body and any attachments into the flow&#x27;s <code>varInputNode</code> and enqueues a run (<code>:503–556</code>).</p>
-<p>Its authorisation is the weakest of the four entry points (<code>:453–487</code>):</p>""",
-  """<p>Agentes também são iniciados por e-mail. O <code>mail.service.ts</code> resolve o fluxo a partir da <strong>parte local do endereço destinatário</strong> — o formato que o próprio serviço anuncia é <code>uuid@upload.fluxprompt.com</code> (<code>:434</code>) — e então injeta <code>From</code>, <code>Subject</code>, o corpo e quaisquer anexos no <code>varInputNode</code> do fluxo e enfileira um run (<code>:503–556</code>).</p>
-<p>Sua autorização é a mais fraca das quatro entradas (<code>:453–487</code>):</p>"""),
+  """<p>Agents are also started by email. <code>mail.service.ts</code> resolves the flow from the <strong>local part of the recipient address</strong> — the format the service itself advertises is <code>uuid@upload.fluxprompt.com</code> — then feeds <code>From</code>, <code>Subject</code>, the body and any attachments into the flow&#x27;s <code>varInputNode</code> and enqueues a run.</p>
+<p>Its authorisation is the weakest of the four entry points:</p>""",
+  """<p>Agentes também são iniciados por e-mail. O <code>mail.service.ts</code> resolve o fluxo a partir da <strong>parte local do endereço destinatário</strong> — o formato que o próprio serviço anuncia é <code>uuid@upload.fluxprompt.com</code> — e então injeta <code>From</code>, <code>Subject</code>, o corpo e quaisquer anexos no <code>varInputNode</code> do fluxo e enfileira um run.</p>
+<p>Sua autorização é a mais fraca das quatro entradas:</p>"""),
  'code':None,
  'list':[
    ('<strong>Public flow → no sender check at all.</strong> Anyone who emails the address runs the flow, charged to the owner, <strong>and controls the prompt</strong> — which, in a flow containing a push node or an integration, means driving side effects with the owner&#x27;s credentials.',
@@ -173,8 +173,8 @@ T['done'] = (
  'A rota de webhook <strong>autentica</strong>, o predicado <code>public</code> <strong>significa o que diz</strong>, toda rota que cria run é <strong>limitada pela entidade que paga</strong>, as duas metades rodaram antes em <strong>modo somente-relatório contra tráfego real</strong> — e <strong>nenhum chamador legítimo é recusado</strong>.')
 
 FILES = [
- ('back/src/app-api/flux/flux.controller.ts:158–160, 221–222, 340–362, 513–514', False),
- ('back/src/app-api/mail/mail.service.ts:132, 314, 434, 453–487, 503–556', False),
+ ('back/src/app-api/flux/flux.controller.ts (apiWebhook() · api() · executeFromCanvas() · the /batch-process handler)', False),
+ ('back/src/app-api/mail/mail.service.ts (POP3 poll cron · sender check · deleteEmailsSequentially)', False),
  ('back/src/app-auth/guards/', False),
  ('new throttler configuration', True),
  ('env-vars-sync', True),

@@ -34,12 +34,12 @@ TABLE={'k':'table',
          ('What it actually governs','O que ela de fato governa'),('Does anything check it?','Algo confere?')],
  'rows':[
   [{'t':'isTemporalNode(type)','mono':True},
-   ('<code>flux.service.ts:740</code>','<code>flux.service.ts:740</code>'),
+   ('<code>flux.service.ts</code>','<code>flux.service.ts</code>'),
    ('7 types','7 tipos'),
    ('The flow loop <strong>and</strong> <code>executeSingleNode</code>','O laço do fluxo <strong>e</strong> o <code>executeSingleNode</code>'),
    {'t':('Nothing','Nada'),'pill':'no'}],
   [{'t':'isWorkerRoutedIntegration(node)','mono':True},
-   ('<code>integration-executable-node.ts:38</code>','<code>integration-executable-node.ts:38</code>'),
+   ('<code>integration-executable-node.ts</code>','<code>integration-executable-node.ts</code>'),
    ('provider ∈ {stripe, wordpress, slack, notion, zapier, hubspot, supabase, pinecone, mcp}',
     'provedor ∈ {stripe, wordpress, slack, notion, zapier, hubspot, supabase, pinecone, mcp}'),
    ('The same two paths, in addition','Os mesmos dois caminhos, em adição'),
@@ -50,12 +50,12 @@ TABLE={'k':'table',
    ('Only <code>/process/single-node-legacy</code> validation','Apenas a validação de <code>/process/single-node-legacy</code>'),
    {'t':('Nothing','Nada'),'pill':'no'}],
   [{'t':'PREFETCH_SUPPORTED_NODE_TYPES','mono':True},
-   ('<code>flux.service.ts:1402–1421</code>','<code>flux.service.ts:1402–1421</code>'),
+   ('<code>flux.service.ts</code>','<code>flux.service.ts</code>'),
    ('17 types','17 tipos'),
    ('Whether a flow may use the prefetch executor at all','Se um fluxo pode sequer usar o executor de prefetch'),
    {'t':('Nothing','Nada'),'pill':'no'}],
   [{'t':'basedOnType','mono':True},
-   ('<code>node-reference-substitution.service.ts:25–80</code>','<code>node-reference-substitution.service.ts:25–80</code>'),
+   ('<code>node-reference-substitution.service.ts</code>','<code>node-reference-substitution.service.ts</code>'),
    ('Per node type, which fields a placeholder may reference','Por tipo de node, quais campos um placeholder pode referenciar'),
    ('Whether a node&#x27;s field can be referenced at all','Se um campo do node pode sequer ser referenciado'),
    {'t':('Nothing','Nada'),'pill':'no'}],
@@ -73,10 +73,10 @@ DEC_D5={
  'k':'decision','id':'A1-a','plan':'D5','status':'open','open':True,
  'q':('What are <code>comment</code>, <code>label</code> and <code>group</code>?',
       'O que são <code>comment</code>, <code>label</code> e <code>group</code>?'),
- 'intro':('These three sit in <code>PREFETCH_SUPPORTED_NODE_TYPES</code> (<code>flux.service.ts:1402–1421</code>) and are <strong>not among the 48 registered front node types</strong> (analysis §9.2). '
+ 'intro':('These three sit in <code>PREFETCH_SUPPORTED_NODE_TYPES</code> (<code>flux.service.ts</code>) and are <strong>not among the 48 registered front node types</strong> (analysis §9.2). '
           'The plan is blunt about why that blocks this task: <em>the registry cannot be authoritative while three types in a live whitelist are unaccounted for</em>. '
           'And the whitelist is all-or-nothing — <code>canUsePrefetchForFlow</code> requires <strong>every</strong> node in a flow to be in it — so whatever these three are, they decide whether a flow containing one gets the prefetch executor at all.',
-          'Os três estão em <code>PREFETCH_SUPPORTED_NODE_TYPES</code> (<code>flux.service.ts:1402–1421</code>) e <strong>não estão entre os 48 tipos de node registrados no front</strong> (análise §9.2). '
+          'Os três estão em <code>PREFETCH_SUPPORTED_NODE_TYPES</code> (<code>flux.service.ts</code>) e <strong>não estão entre os 48 tipos de node registrados no front</strong> (análise §9.2). '
           'O plano é direto sobre por que isso bloqueia esta task: <em>o registro não pode ser autoritativo enquanto três tipos numa whitelist viva estiverem sem explicação</em>. '
           'E a whitelist é tudo-ou-nada — o <code>canUsePrefetchForFlow</code> exige que <strong>todo</strong> node do fluxo esteja nela — então, sejam o que forem, esses três decidem se um fluxo que contém um deles usa o executor de prefetch.'),
  'opts':[
@@ -140,7 +140,7 @@ DEC_D5={
 
 PARTS=[
 {'n':'1','title':('One registry, and six predicates that read it','Um registro, e seis predicados que o leem'),
- 'loc':'flux.service.ts:740 · integration-executable-node.ts:38',
+ 'loc':'flux.service.ts · integration-executable-node.ts',
  'purpose':('One entry per node type, carrying the facts each caller already needs — so the callers stop carrying their own copy.',
             'Uma entrada por tipo de node, carregando os fatos de que cada chamador já precisa — para os chamadores pararem de carregar a própria cópia.'),
  'body':('<p>The registry module lives in <code>back</code>, keyed by node type, and holds exactly what the existing callers ask for:</p>',
@@ -160,7 +160,7 @@ PARTS=[
 
 {'n':'2','title':('<code>basedOnType</code> becomes a projection, with its contents unchanged',
                   'O <code>basedOnType</code> vira uma projeção, com o conteúdo inalterado'),
- 'loc':'node-reference-substitution.service.ts:25–80',
+ 'loc':'node-reference-substitution.service.ts',
  'purpose':('Fold the fifth list in now, while it is only a projection — before B3 makes it the thing that decides what a consumer may resolve.',
             'Trazer a quinta lista agora, enquanto ela é só uma projeção — antes de a B3 torná-la a coisa que decide o que um consumidor pode resolver.'),
  'body':('<p>It stops being a parallel hand-maintained map and becomes a view over the registry. <strong>Its contents must not change in this task</strong>: the same fields referenceable, the same behaviour, node for node.</p>'
@@ -217,8 +217,8 @@ VERIF=[
   ('For all <strong>48 registered types plus the 3 unaccounted ones</strong>, assert the new predicates return exactly what the old lists returned. Table-driven, one case per type — <strong>this is the test that makes the refactor safe</strong>, and it is the only artefact that can prove the claim in the fourth glance tile.',
    'Para todos os <strong>48 tipos registrados mais os 3 sem explicação</strong>, afirme que os novos predicados retornam exatamente o que as listas antigas retornavam. Dirigido por tabela, um caso por tipo — <strong>é este o teste que torna o refactor seguro</strong>, e é o único artefato capaz de provar a afirmação do quarto card.')),
  (True,('Measure before refusing','Medir antes de recusar'),
-  ('<strong>PLAN §3.3.2.</strong> <code>canUsePrefetchForFlow</code> is a refusing rule. Run the new implementation against real stored flows and confirm the set of flows it accepts is <strong>identical</strong> to today&#x27;s. Report any difference <strong>as a defect in this task, not as an improvement</strong> — a refactor that quietly accepts one more flow has changed behaviour, whichever direction it changed it in.',
-   '<strong>PLAN §3.3.2.</strong> O <code>canUsePrefetchForFlow</code> é uma regra que recusa. Rode a nova implementação contra fluxos reais guardados e confirme que o conjunto de fluxos aceitos é <strong>idêntico</strong> ao de hoje. Reporte qualquer diferença <strong>como defeito desta task, não como melhoria</strong> — um refactor que aceita um fluxo a mais em silêncio mudou o comportamento, em qualquer direção que tenha mudado.')),
+  ('<strong>PLAN §3.3.2.</strong> <code>canUsePrefetchForFlow</code> is a refusing rule. Run the new implementation against real stored flows and confirm the set of flows it accepts is <strong>identical</strong> to today&#x27;s. Report any difference <strong>as a defect in this task, not as an improvement</strong> — a refactor that quietly accepts one more flow has changed behaviour, whichever direction it changed it in. While that run is open, <strong>record <code>D2</code>&#x27;s numbers</strong>: how many stored flows satisfy the whitelist, how many ran with <code>FLUX_EXEC_MEMORY_MODE=prefetch</code>, and what it saved. Report them in the PR — <code>B3</code> answers <code>D2</code> with them (Wave 4) and <code>C2</code> executes the answer (Wave 6).',
+   '<strong>PLAN §3.3.2.</strong> O <code>canUsePrefetchForFlow</code> é uma regra que recusa. Rode a nova implementação contra fluxos reais guardados e confirme que o conjunto de fluxos aceitos é <strong>idêntico</strong> ao de hoje. Reporte qualquer diferença <strong>como defeito desta task, não como melhoria</strong> — um refactor que aceita um fluxo a mais em silêncio mudou o comportamento, em qualquer direção que tenha mudado. Com essa rodada aberta, <strong>registre os números da <code>D2</code></strong>: quantos fluxos guardados satisfazem a whitelist, quantos rodaram com <code>FLUX_EXEC_MEMORY_MODE=prefetch</code>, e o que isso economizou. Informe-os no PR — a <code>B3</code> responde a <code>D2</code> com eles (onda 4) e a <code>C2</code> executa a resposta (onda 6).')),
  (False,('No second source survives','Nenhuma segunda fonte sobrevive'),
   ('“Done when” says the registry is the <strong>only</strong> place a node type&#x27;s dispatch is declared. After the refactor, grep for the old list names: a predicate that still keeps its own copy makes the registry advisory rather than authoritative, and advisory is how this started.',
    'O “pronto quando” diz que o registro é o <strong>único</strong> lugar onde o dispatch de um tipo de node é declarado. Depois do refactor, faça grep dos nomes das listas antigas: um predicado que ainda guarda a própria cópia torna o registro consultivo em vez de autoritativo, e consultivo é como isto começou.')),
@@ -227,10 +227,10 @@ VERIF=[
 DONE=('The registry is the <strong>only</strong> place a node type&#x27;s dispatch is declared; the six predicates read from it; the drift spec is green; the behaviour-neutrality table covers every type; and <strong>no production behaviour changed</strong>.',
       'O registro é o <strong>único</strong> lugar onde o dispatch de um tipo de node é declarado; os seis predicados leem dele; o teste de drift está verde; a tabela de neutralidade cobre todo tipo; e <strong>nenhum comportamento de produção mudou</strong>.')
 
-FILES=[('back/src/app-api/flux/flux.service.ts:740, 1402–1421',False),
-       ('back/src/shared/integration/integration-executable-node.ts:38',False),
+FILES=[('back/src/app-api/flux/flux.service.ts (isTemporalNode · PREFETCH_SUPPORTED_NODE_TYPES · canUsePrefetchForFlow)',False),
+       ('back/src/shared/integration/integration-executable-node.ts (MIGRATED_INTEGRATION_PROVIDERS · isWorkerRoutedIntegration)',False),
        ('back/src/temporal/single-node-legacy/legacy-allowlist.ts',False),
-       ('back/src/app-api/.../node-reference-substitution.service.ts:25–80',False),
+       ('back/src/app-api/.../node-reference-substitution.service.ts',False),
        ('new registry module + node_types.contract.json + specs',True),
        ('worker/src/modules/nodes/nodes.types.ts (read only)',False)]
 

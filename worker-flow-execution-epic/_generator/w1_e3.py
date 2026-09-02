@@ -20,9 +20,9 @@ GLANCE = [
 ]
 
 LEDE = (
- """<p><strong>The socket path is process-local.</strong> <code>chatbotSocketByRun</code> is a plain <code>Map</code> in the backend process (<code>flux.service.ts:2288</code>, registered at <code>:5293–5307</code>, cleaned up at <code>:5392–5395</code>). A run whose socket was registered on replica A <strong>cannot be notified from replica B</strong>.</p>
+ """<p><strong>The socket path is process-local.</strong> <code>chatbotSocketByRun</code> is a plain <code>Map</code> in the backend process (<code>flux.service.ts</code> — set when the run starts, deleted in the run&#x27;s <code>finally</code>). A run whose socket was registered on replica A <strong>cannot be notified from replica B</strong>.</p>
 <p><strong>And there are two mechanisms.</strong> The worker publishes to Redis — <code>room_status_updated</code>, <code>room_stream_chunk</code>, <code>completion_stream_chunk</code> — which the backend relays via <code>@EventPattern</code> to Socket.io; the inline path writes to the socket directly. Two paths to maintain, two places to fix a bug, and they will drift — the same failure this epic is trying to end for dispatch lists.</p>""",
- """<p><strong>O caminho de socket é local ao processo.</strong> O <code>chatbotSocketByRun</code> é um <code>Map</code> comum dentro do processo do backend (<code>flux.service.ts:2288</code>, registrado em <code>:5293–5307</code>, limpo em <code>:5392–5395</code>). Um run cujo socket foi registrado na réplica A <strong>não pode ser notificado a partir da réplica B</strong>.</p>
+ """<p><strong>O caminho de socket é local ao processo.</strong> O <code>chatbotSocketByRun</code> é um <code>Map</code> comum dentro do processo do backend (<code>flux.service.ts</code> — preenchido quando o run começa, apagado no <code>finally</code> do run). Um run cujo socket foi registrado na réplica A <strong>não pode ser notificado a partir da réplica B</strong>.</p>
 <p><strong>E existem dois mecanismos.</strong> O worker publica no Redis — <code>room_status_updated</code>, <code>room_stream_chunk</code>, <code>completion_stream_chunk</code> — e o backend repassa via <code>@EventPattern</code> para o Socket.io; o caminho inline escreve direto no socket. Dois caminhos para manter, dois lugares para corrigir um bug, e eles vão divergir — a mesma falha que este épico tenta encerrar nas listas de dispatch.</p>""")
 
 TABLE = {
@@ -37,8 +37,8 @@ TABLE = {
    ('A run registered on replica A cannot be notified from replica B',
     'Um run registrado na réplica A não pode ser notificado a partir da réplica B')],
   [{'t': ('Worker → Redis → <code>@EventPattern</code>', 'Worker → Redis → <code>@EventPattern</code>')},
-   ('<code>room_status_updated</code>, <code>room_stream_chunk</code>, <code>completion_stream_chunk</code> (<code>temporal.controller.ts:88–97</code>)',
-    '<code>room_status_updated</code>, <code>room_stream_chunk</code>, <code>completion_stream_chunk</code> (<code>temporal.controller.ts:88–97</code>)'),
+   ('<code>room_status_updated</code>, <code>room_stream_chunk</code>, <code>completion_stream_chunk</code> (<code>temporal.controller.ts</code>; the last one in <code>router.controller.ts</code>)',
+    '<code>room_status_updated</code>, <code>room_stream_chunk</code>, <code>completion_stream_chunk</code> (<code>temporal.controller.ts</code>; o último em <code>router.controller.ts</code>)'),
    {'t': ('crosses processes, not replicas', 'cruza processos, não réplicas'), 'pill': 'weak'},
    ('It is the survivor — but the <em>last</em> hop still ends in one process&#x27;s memory',
     'É o sobrevivente — mas o <em>último</em> salto ainda termina na memória de um processo')],
@@ -134,7 +134,7 @@ DEC_FANOUT = {
 PARTS = [
 {'n': '1',
  'title': ('One publish path, and a socket layer that only consumes', 'Um caminho de publicação, e uma camada de socket que só consome'),
- 'loc': 'flux.service.ts:2288, 5293–5307, 5392–5395',
+ 'loc': 'flux.service.ts',
  'purpose': ('Collapse two mechanisms into one, so a bug has one place to be fixed instead of two places to drift.',
              'Colapsar dois mecanismos em um, para que um bug tenha um lugar para ser corrigido em vez de dois para divergir.'),
  'body': (
@@ -145,13 +145,13 @@ PARTS = [
  'body2': (
   '<p><strong>The worker&#x27;s mechanism is the survivor.</strong> It already works across processes, which is the property being bought. Everything publishes to Redis; the socket layer only consumes.</p>',
   '<p><strong>O mecanismo do worker é o sobrevivente.</strong> Ele já funciona entre processos, e é essa a propriedade que está sendo comprada. Tudo publica no Redis; a camada de socket só consome.</p>'),
- 'ba': (('Two mechanisms. <code>chatbotSocketByRun</code> is a plain <code>Map</code> in the backend process (<code>:2288</code>), registered at <code>:5293–5307</code> and cleaned up at <code>:5392–5395</code>, and the inline path writes into it directly.',
-         'Dois mecanismos. O <code>chatbotSocketByRun</code> é um <code>Map</code> comum no processo do backend (<code>:2288</code>), registrado em <code>:5293–5307</code> e limpo em <code>:5392–5395</code>, e o caminho inline escreve nele direto.'),
+ 'ba': (('Two mechanisms. <code>chatbotSocketByRun</code> is a plain <code>Map</code> in the backend process, set when the run starts and deleted in the run&#x27;s <code>finally</code>, and the inline path writes into it directly.',
+         'Dois mecanismos. O <code>chatbotSocketByRun</code> é um <code>Map</code> comum no processo do backend, preenchido quando o run começa e apagado no <code>finally</code> do run, e o caminho inline escreve nele direto.'),
         ('One publish path. The inline path&#x27;s direct socket writes are <strong>gone, not merely unused</strong>, and the socket layer has one job.',
          'Um caminho de publicação. As escritas diretas no socket do caminho inline estão <strong>apagadas, não apenas sem uso</strong>, e a camada de socket tem uma função só.'))},
 {'n': '2',
  'title': ('The last hop is the part that is still process-local', 'O último salto é a parte que continua local ao processo'),
- 'loc': 'back/src/app-api/gateway/gateway.ts:69, 76',
+ 'loc': 'back/src/app-api/gateway/gateway.ts',
  'purpose': ('Make the delivery step replica-independent, so unifying on Redis solves the problem instead of moving it.',
              'Tornar o passo de entrega independente de réplica, para que unificar no Redis resolva o problema em vez de deslocá-lo.'),
  'body': (
@@ -165,7 +165,7 @@ PARTS = [
          'Qualquer réplica pode entregar a qualquer cliente conectado, e o mapa local ao processo deixa de ser o que decide quem pode ser alcançado.'))},
 {'n': '3',
  'title': ('Type the status strings', 'Tipar as strings de status'),
- 'loc': 'worker/src/modules/notification/notification.service.ts · temporal.controller.ts:88–97',
+ 'loc': 'worker/src/modules/notification/notification.service.ts · temporal.controller.ts · router.controller.ts',
  'purpose': ('Make a typo across the process boundary a compile error instead of a status the UI silently ignores.',
              'Fazer de um erro de digitação atravessando a fronteira de processo um erro de compilação em vez de um status que a UI ignora em silêncio.'),
  'body': (
@@ -199,9 +199,9 @@ DONE = ('<strong>One publish path</strong>, delivery works across replicas, stat
         '<strong>Um caminho de publicação</strong>, a entrega funciona entre réplicas, os status são <strong>tipados</strong>, e a ordenação se mantém sob dispatch paralelo.')
 
 FILES = [
- ('back/src/app-api/gateway/gateway.ts:69, 76', False),
- ('back/src/temporal/temporal.controller.ts:88–97', False),
- ('back/src/app-api/flux/flux.service.ts:2288, 5293–5307, 5392–5395', False),
+ ('back/src/app-api/gateway/gateway.ts (response() · responseToUser())', False),
+ ('back/src/temporal/temporal.controller.ts (@EventPattern relays: room_status_updated, room_stream_chunk) · back/src/app-api/router/router.controller.ts (completion_stream_chunk)', False),
+ ('back/src/app-api/flux/flux.service.ts (chatbotSocketByRun)', False),
  ('worker/src/modules/notification/notification.service.ts', False),
  ('a shared run-status union', True),
 ]

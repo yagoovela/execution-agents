@@ -12,18 +12,18 @@
 if (typeof body.key !== 'string' || !body.key.startsWith('node-exec/')) throw ...
 const stream = await this.awsService.getFile(body.key);
 ```
-(`worker.controller.ts:87–95`)
+(`worker.controller.ts`)
 
 There is no check that the key belongs to the caller's run, tenant, or anything else. Any holder of
 the internal API key can read **any** node output of **any** customer, by key.
 
-The route is behind `InternalApiGuard` (`:45`), which is the right boundary and should stay. But it
+The route is behind `InternalApiGuard`, which is the right boundary and should stay. But it
 is a **single shared secret**, and this epic puts that secret on every worker replica — the blast
 radius grows with the fleet, and "we trust everything inside the perimeter" gets weaker with every
 host added to the perimeter.
 
 The fix is cheap because the key already encodes what is needed: `claimCheckKey(execId, nodeId, …)`
-builds it (`node-execution-store.ts:45`).
+builds it (`node-execution-store.ts`).
 
 ## Scope
 
@@ -60,6 +60,6 @@ existing large-payload path still works.
 
 ## Files
 
-`back/src/temporal/worker.controller.ts:70–95` ·
-`back/src/temporal/single-node-legacy/node-execution-store.ts:43–45` (`claimCheckKey`) ·
+`back/src/temporal/worker.controller.ts` (`/worker/get-payload`, `/worker/store-payload`, `InternalApiGuard`) ·
+`back/src/temporal/single-node-legacy/node-execution-store.ts` (`claimCheckKey`) ·
 `worker/src/modules/nodes/shared/{resolve-claim-ref,persist-node-success}.ts`

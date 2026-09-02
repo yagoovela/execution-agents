@@ -9,11 +9,11 @@ once, deliberately, rather than by whoever writes B3 first.
 
 Both modules are **pure** — no NestJS injection, no database, no I/O:
 
-- `back/src/app-api/flux/scheduler.ts` — `buildSchedulerState` (`:152`), `classifyEdge` (`:46`),
-  `isDependencyEdge` (`:59`), `nextReady` (`:295`), `markCompleted` (`:352`), `markDead` (`:359`),
-  `completeCondition` (`:366`), `computeLoopBody` (`:393`), `planOrder` (`:412`). Already the
-  single source of ordering truth, consumed by `flux.service.ts:1463, 3136, 3227` and by
-  `app-mcp/mcp-write.service.ts:1327`.
+- `back/src/app-api/flux/scheduler.ts` — `buildSchedulerState`, `classifyEdge`,
+  `isDependencyEdge`, `nextReady`, `markCompleted`, `markDead`,
+  `completeCondition`, `computeLoopBody`, `planOrder`. Already the
+  single source of ordering truth, consumed by `flux.service.ts` and by
+  `app-mcp/mcp-write.service.ts`.
 - `back/src/app-api/node-reference-substitution/node-reference-substitution.service.ts` — 268
   lines, no injected dependencies: `replacePlaceholders`, `generateSchemaFromNodes`,
   `applySubstitutionToObject`, `updateSchemaWithNodeOutput`, `resolveTextDataFromSchema`,
@@ -42,6 +42,11 @@ the back has no CI test run (PLAN §3.5), state plainly how the drift test will 
 
 **Out.** Changing either module's behaviour. Extraction is behaviour-neutral; `nextReady`'s batch
 sibling belongs to B4.
+
+**Check during development, before B4 writes `allReady()`:** whether the Temporal SDK already offers
+a primitive for ready-set dispatch — a workflow-side helper, or a pattern in its samples that
+replaces a hand-written drain of the ready set. If it does, decide then whether to adopt it. D16 is
+unchanged either way: the DAG decides what is ready, whatever drains the set.
 
 ## Verification
 

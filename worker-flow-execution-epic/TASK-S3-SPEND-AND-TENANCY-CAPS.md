@@ -7,16 +7,24 @@ provides both today.
 
 ## Why the current protection is accidental
 
-**Spend.** `assertCompletionCredits` (`product.service.ts:265–284`) is a boolean gate: for `INTRO`
+**Spend.** `assertCompletionCredits` (`product.service.ts`) is a boolean gate: for `INTRO`
 products it checks `trialTokens > 0`; otherwise, having a subscription is enough. Per node,
 `getUserProductFromFlow` checks *entitlement to a model*, not remaining budget. Charges are recorded
 after the fact into `token_transactions`. **Nothing decrements an allowance, and nothing aborts a
 run that has already overspent.** For a paid account the first signal is the invoice.
 
-**Tenancy.** There is no per-tenant concurrency cap anywhere. Today this is masked: the Bull
-processor declares `@Process` with no concurrency option
-(`jobs/apiV2Job/apiV2Job.processor.ts:33`), so each backend replica runs one queued run at a time.
-That accidental serialisation is doing real protective work — and B5 removes it deliberately.
+**Tenancy.** There is no per-tenant concurrency cap anywhere. **Corrected 2026-09-02.** The first
+draft said the Bull processor declared `@Process` with no concurrency option, so each backend
+replica ran one queued run at a time, and that this accidental serialisation was doing protective
+work. That stopped being true on 2026-08-21 — PR #1902 landed two hours after this spec's snapshot:
+`apiV2Job.processor.ts` now declares `@Process({ concurrency: parseConcurrency(AGENT_CONCURRENCY) })`,
+default **5** per replica. So the throttle is explicit, five times looser, and still not per
+tenant: one organisation can hold all five slots on every replica. It caps *how many* runs execute,
+not *whose*. The fairness bug this task fixes is unchanged; the protection it was said to be
+replacing is smaller than described. Keep the two limits distinct in the code and in the prose —
+the tenant cap admits, `AGENT_CONCURRENCY` executes — and start by emitting the per-tenant
+concurrency metric, so that the number five stops being a guess. B5 removes the remaining
+back-pressure deliberately.
 
 ## Scope
 
@@ -75,6 +83,6 @@ cannot occupy the fleet, and both limits are observable before they are hit.
 
 ## Files
 
-`back/src/app-api/product/product.service.ts:265–284` · `back/src/temporal/worker.controller.ts:126`
+`back/src/app-api/product/product.service.ts` (`assertCompletionCredits`) · `back/src/temporal/worker.controller.ts`
 (`/worker/charge-tokens`) · `back/src/app-api/token_transaction/` ·
-`back/src/jobs/apiV2Job/apiV2Job.processor.ts:33` · product/plan schema + migration
+`back/src/jobs/apiV2Job/apiV2Job.processor.ts` (`@Process` concurrency, `AGENT_CONCURRENCY`) · product/plan schema + migration

@@ -9,8 +9,8 @@ GLANCE = [
   ('Nothing decrements an allowance and nothing aborts an overspent run. For a paid account, the first signal is the invoice. Review §1.3, §1.4.',
    'Nada decrementa uma cota e nada aborta um run que já gastou demais. Numa conta paga, o primeiro sinal é a fatura. Review §1.3, §1.4.')),
  ('dep', ('Depends on', 'Depende de'), ('Nothing', 'Nada'),
-  ('But it <strong>blocks B5</strong> — parallel dispatch removes the accidental serialisation protecting both limits today.',
-   'Mas <strong>bloqueia a B5</strong> — o dispatch paralelo remove a serialização acidental que hoje protege os dois limites.')),
+  ('But it <strong>blocks B5</strong> — parallel dispatch removes what is left of the back-pressure protecting both limits today.',
+   'Mas <strong>bloqueia a B5</strong> — o dispatch paralelo remove o que resta da contrapressão que hoje protege os dois limites.')),
  ('wave', ('Wave', 'Onda'), ('Wave 1', 'Onda 1'),
   ('With S2: the two ceilings that have to exist before the fleet is allowed to grow.',
    'Junto da S2: os dois tetos que precisam existir antes de a frota poder crescer.')),
@@ -20,10 +20,10 @@ GLANCE = [
 ]
 
 LEDE = (
- """<p><strong>Spend.</strong> <code>assertCompletionCredits</code> (<code>product.service.ts:265–284</code>) is a boolean gate: for <code>INTRO</code> products it checks <code>trialTokens &gt; 0</code>; otherwise, having a subscription is enough. Per node, <code>getUserProductFromFlow</code> checks <em>entitlement to a model</em>, not remaining budget. Charges are recorded after the fact into <code>token_transactions</code>. <strong>Nothing decrements an allowance, and nothing aborts a run that has already overspent.</strong></p>
-<p><strong>Tenancy.</strong> There is no per-tenant concurrency cap anywhere. Today it is masked: the Bull processor declares <code>@Process</code> with no concurrency option (<code>apiV2Job.processor.ts:33</code>), so each backend replica runs one queued run at a time. That accidental serialisation is doing real protective work — and <code>B5</code> removes it deliberately.</p>""",
- """<p><strong>Gasto.</strong> O <code>assertCompletionCredits</code> (<code>product.service.ts:265–284</code>) é uma porta booleana: para produtos <code>INTRO</code> ele checa <code>trialTokens &gt; 0</code>; fora disso, ter assinatura basta. Por node, o <code>getUserProductFromFlow</code> checa <em>direito a um modelo</em>, não orçamento restante. As cobranças são registradas depois do fato em <code>token_transactions</code>. <strong>Nada decrementa uma cota, e nada aborta um run que já gastou demais.</strong></p>
-<p><strong>Tenancy.</strong> Não existe teto de concorrência por tenant em lugar nenhum. Hoje isso está mascarado: o processador Bull declara <code>@Process</code> sem opção de concorrência (<code>apiV2Job.processor.ts:33</code>), então cada réplica de backend roda um run enfileirado por vez. Essa serialização acidental faz trabalho protetivo real — e a <code>B5</code> a remove de propósito.</p>""")
+ """<p><strong>Spend.</strong> <code>assertCompletionCredits</code> (<code>product.service.ts</code>) is a boolean gate: for <code>INTRO</code> products it checks <code>trialTokens &gt; 0</code>; otherwise, having a subscription is enough. Per node, <code>getUserProductFromFlow</code> checks <em>entitlement to a model</em>, not remaining budget. Charges are recorded after the fact into <code>token_transactions</code>. <strong>Nothing decrements an allowance, and nothing aborts a run that has already overspent.</strong></p>
+<p><strong>Tenancy.</strong> There is no per-tenant concurrency cap anywhere. <strong>Corrected 2026-09-02.</strong> The first draft said the Bull processor declared <code>@Process</code> with no concurrency option, so each replica ran one queued run at a time and that accident was doing protective work. Since 2026-08-21 (PR #1902) <code>apiV2Job.processor.ts</code> declares <code>@Process({ concurrency: parseConcurrency(AGENT_CONCURRENCY) })</code>, default <strong>5</strong> per replica — explicit, five times looser, and still not per tenant: one organisation can hold all five slots on every replica. It caps <em>how many</em> runs execute, not <em>whose</em>. Keep the two limits distinct — the tenant cap admits, <code>AGENT_CONCURRENCY</code> executes — and start with the per-tenant metric, so five stops being a guess. <code>B5</code> removes the remaining back-pressure deliberately.</p>""",
+ """<p><strong>Gasto.</strong> O <code>assertCompletionCredits</code> (<code>product.service.ts</code>) é uma porta booleana: para produtos <code>INTRO</code> ele checa <code>trialTokens &gt; 0</code>; fora disso, ter assinatura basta. Por node, o <code>getUserProductFromFlow</code> checa <em>direito a um modelo</em>, não orçamento restante. As cobranças são registradas depois do fato em <code>token_transactions</code>. <strong>Nada decrementa uma cota, e nada aborta um run que já gastou demais.</strong></p>
+<p><strong>Tenancy.</strong> Não existe teto de concorrência por tenant em lugar nenhum. <strong>Corrigido em 2026-09-02.</strong> A primeira versão dizia que o processador Bull declarava <code>@Process</code> sem opção de concorrência, então cada réplica rodava um run por vez e esse acidente fazia trabalho protetivo. Desde 2026-08-21 (PR #1902) o <code>apiV2Job.processor.ts</code> declara <code>@Process({ concurrency: parseConcurrency(AGENT_CONCURRENCY) })</code>, padrão <strong>5</strong> por réplica — explícito, cinco vezes mais frouxo, e ainda não por tenant: uma organização pode ocupar as cinco vagas em toda réplica. Ele limita <em>quantos</em> runs executam, não <em>de quem</em>. Mantenha os dois limites separados — o teto de tenant admite, o <code>AGENT_CONCURRENCY</code> executa — e comece pela métrica por tenant, para que cinco deixe de ser chute. A <code>B5</code> remove o que resta de contrapressão de propósito.</p>""")
 
 TABLE = {
  'k': 'table',
@@ -43,8 +43,8 @@ TABLE = {
    ('Records the charge after it happened', 'Registra a cobrança depois que ela aconteceu'),
    {'t': ('after the fact', 'a posteriori'), 'pill': 'no'},
    ('Nothing decrements it, so nothing can abort on it', 'Nada o decrementa, então nada pode abortar com base nele')],
-  [{'t': ('Bull <code>@Process</code>, no concurrency option', 'Bull <code>@Process</code>, sem opção de concorrência')},
-   ('One queued run per backend replica (<code>:33</code>)', 'Um run enfileirado por réplica de backend (<code>:33</code>)'),
+  [{'t': ('Bull <code>@Process</code>, <code>AGENT_CONCURRENCY</code> = 5 (none until 2026-08-21)', 'Bull <code>@Process</code>, <code>AGENT_CONCURRENCY</code> = 5 (nenhuma até 2026-08-21)')},
+   ('Five queued runs per backend replica, none of them per tenant', 'Cinco runs enfileirados por réplica de backend, nenhum deles por tenant'),
    {'t': ('accidental', 'acidental'), 'pill': 'weak'},
    ('It is doing real work — and <code>B5</code> removes it on purpose', 'Ele faz trabalho real — e a <code>B5</code> o remove de propósito')],
  ]}
@@ -272,7 +272,7 @@ PARTS = [
     '<p>Dois contadores que percorrem a cadeia cada um por si vão, cedo ou tarde, discordar sobre a raiz — num retry, numa cadeia gravada pela metade, ou quando um sub-fluxo é cancelado no meio. <strong>Uma resolução, lida pelos dois limites.</strong></p>'))]},
 {'n': '2',
  'title': ('The check goes where the charge already is', 'A checagem vai onde a cobrança já está'),
- 'loc': 'back/src/temporal/worker.controller.ts:126',
+ 'loc': 'back/src/temporal/worker.controller.ts',
  'purpose': ('Put the ceiling in the one call that keeps working after the loop moves into the worker.',
              'Colocar o teto na única chamada que continua funcionando depois que o laço muda para o worker.'),
  'body': (
@@ -293,19 +293,19 @@ PARTS = [
          'Toda cobrança é checada contra o total da cadeia antes de ser registrada, e o aborto carrega <strong>o teto e o gasto</strong>.'))},
 {'n': '3',
  'title': ('The tenancy cap, enforced where runs are admitted', 'O teto de tenancy, imposto onde os runs são admitidos'),
- 'loc': 'back/src/jobs/apiV2Job/apiV2Job.processor.ts:33',
- 'purpose': ('Keep one organisation from occupying the fleet once the accidental serialisation is gone.',
-             'Impedir que uma organização ocupe a frota quando a serialização acidental sumir.'),
+ 'loc': 'back/src/jobs/apiV2Job/apiV2Job.processor.ts',
+ 'purpose': ('Keep one organisation from occupying the fleet once the remaining back-pressure is gone.',
+             'Impedir que uma organização ocupe a frota quando a contrapressão que resta sumir.'),
  'body': (
   '<p>A cap on <strong>concurrent runs per organisation</strong>, enforced where runs are admitted, with excess runs <strong>queued rather than rejected</strong>.</p>'
-  '<p>The reason it is not needed today is an accident: <code>@Process</code> is declared with no concurrency option (<code>:33</code>), so each backend replica runs one queued run at a time. <code>B5</code> removes that on purpose. Until then the fairness bug is latent; after it, one organisation&#x27;s wide graph can occupy the whole worker fleet.</p>',
+  '<p>It is needed today. <strong>Corrected 2026-09-02:</strong> <code>@Process</code> declares <code>concurrency: parseConcurrency(AGENT_CONCURRENCY)</code>, default 5 per replica (PR #1902, 2026-08-21) — a cap on <em>how many</em> runs execute, not on <em>whose</em>, so one organisation can already hold every slot on every replica. <code>B5</code> removes the remaining back-pressure on purpose; after it, one organisation&#x27;s wide graph can occupy the whole worker fleet.</p>',
   '<p>Um teto de <strong>runs concorrentes por organização</strong>, imposto onde os runs são admitidos, com os excedentes <strong>enfileirados em vez de recusados</strong>.</p>'
-  '<p>O motivo de não ser necessário hoje é um acidente: o <code>@Process</code> é declarado sem opção de concorrência (<code>:33</code>), então cada réplica de backend roda um run enfileirado por vez. A <code>B5</code> remove isso de propósito. Até lá o bug de justiça é latente; depois dela, o grafo largo de uma organização pode ocupar a frota inteira de workers.</p>'),
+  '<p>É necessário hoje. <strong>Corrigido em 2026-09-02:</strong> o <code>@Process</code> declara <code>concurrency: parseConcurrency(AGENT_CONCURRENCY)</code>, padrão 5 por réplica (PR #1902, 2026-08-21) — um teto de <em>quantos</em> runs executam, não de <em>quem</em>, então uma organização já pode ocupar toda vaga em toda réplica. A <code>B5</code> remove a contrapressão que resta de propósito; depois dela, o grafo largo de uma organização pode ocupar a frota inteira de workers.</p>'),
  'body2': (
   '<p><strong>Both limits emit a metric before they emit an error.</strong> A ceiling nobody can see being approached will be discovered by being hit — and the first person to discover it will be a customer.</p>',
   '<p><strong>Os dois limites emitem uma métrica antes de emitir um erro.</strong> Um teto que ninguém vê sendo alcançado será descoberto ao ser atingido — e quem descobre primeiro é um cliente.</p>'),
- 'ba': (('No per-tenant cap exists anywhere in the flux or job paths. One queued run per backend replica is the only thing standing in for one.',
-         'Não existe teto por tenant em nenhum ponto dos caminhos de flux ou de jobs. Um run enfileirado por réplica de backend é a única coisa fazendo esse papel.'),
+ 'ba': (('No per-tenant cap exists anywhere in the flux or job paths. Five queued runs per backend replica (<code>AGENT_CONCURRENCY</code>) is the only thing standing in for one, and it does not know who the tenant is.',
+         'Não existe teto por tenant em nenhum ponto dos caminhos de flux ou de jobs. Cinco runs enfileirados por réplica de backend (<code>AGENT_CONCURRENCY</code>) são a única coisa fazendo esse papel, e não sabem quem é o tenant.'),
         ('Concurrency is capped per organisation at admission, the excess waits instead of failing, and the approach to both limits is visible before either is reached.',
          'A concorrência é limitada por organização na admissão, o excedente espera em vez de falhar, e a aproximação dos dois limites é visível antes de qualquer um ser atingido.')),
  'callouts': [('mig', ('Out of scope', 'Fora de escopo'),
@@ -360,9 +360,9 @@ DONE = ('A run cannot exceed its ceiling, <strong>no historical run would have b
         'Um run não pode ultrapassar seu teto, <strong>nenhum run histórico teria sido abortado por engano</strong>, um tenant não pode ocupar a frota, e os dois limites são <strong>observáveis antes de serem atingidos</strong>.')
 
 FILES = [
- ('back/src/app-api/product/product.service.ts:265–284', False),
- ('back/src/temporal/worker.controller.ts:126 (/worker/charge-tokens)', False),
+ ('back/src/app-api/product/product.service.ts (assertCompletionCredits)', False),
+ ('back/src/temporal/worker.controller.ts (/worker/charge-tokens)', False),
  ('back/src/app-api/token_transaction/', False),
- ('back/src/jobs/apiV2Job/apiV2Job.processor.ts:33', False),
+ ('back/src/jobs/apiV2Job/apiV2Job.processor.ts (@Process concurrency · AGENT_CONCURRENCY)', False),
  ('product/plan schema + migration', True),
 ]
