@@ -33,6 +33,7 @@ def build_doc_nav(prefix: str, active: str) -> str:
         tab("arquitetura-v2.html", "v2 architecture", "Arquitetura v2", "v2"),
         tab("arquitetura-v2-complemento.html", "Plan as tasks", "Plano em tarefas", "plan"),
         tab("timeline/index.html", "Timeline", "Timeline", "timeline"),
+        tab("progresso-refatoracao.html", "Progress", "Progresso", "progress"),
     ]
 
     return (
@@ -189,6 +190,7 @@ def main() -> None:
         (["arquitetura-v2.html"], "", "v2"),
         (["arquitetura-v2-complemento.html"], "", "plan"),
         (["index.html"], "", "index"),
+        (["progresso-refatoracao.html"], "", "progress"),
         (["algoritmo-dag.html", "validacao-dag.html", "endpoint-api-v2.html", "flow-version-atual.html"], "", "v2"),
         (list(ROOT.glob("passos/*.html")), "../", "index"),
         (list(ROOT.glob("complemento/*.html")), "../", "plan"),
