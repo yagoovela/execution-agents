@@ -12,10 +12,10 @@ within a run" and that loops break it in general. That is only half true, and th
 more interesting: **`execId` means two different things depending on which path ran the node.**
 
 - **Temporal path** — `processNodeViaTemporal` does `const execId = uuid()` **per node dispatch**
-  (`flux.service.ts:681`). Each execution, including each loop iteration, gets its own id. Here the
+  (`flux.service.ts`). Each execution, including each loop iteration, gets its own id. Here the
   pair is already unique.
 - **Legacy path** — `recordLegacyNodeStart` is called with `execId: runLogProcessId`
-  (`flux.service.ts:3304`), which is **the same value for every node in the run**. Here the pair
+  (`flux.service.ts`), which is **the same value for every node in the run**. Here the pair
   collides on every loop iteration, exactly as originally described.
 
 So the defect is not "loops break the key". It is that **one column carries two incompatible
@@ -26,13 +26,13 @@ The mechanical hazards below are real on the legacy path today, and become gener
 paths converge (analysis §8.4):
 
 - `node_executions` has **no unique constraint** on `(execId, nodeId)`; only a plain index
-  (`1776400000000-AlterNodeExecutionsForRunScopedIpc.ts:28`).
+  (`1776400000000-AlterNodeExecutionsForRunScopedIpc.ts`).
 - `openNodeExecution` is a plain `INSERT`, no `ON CONFLICT`
-  (`back/src/temporal/single-node-legacy/node-execution-store.ts:26–39`), so repeated executions
+  (`back/src/temporal/single-node-legacy/node-execution-store.ts`), so repeated executions
   insert additional rows.
 - `persistNodeSuccess` updates `WHERE "execId" AND "nodeId"` — i.e. **every** such row
-  (`worker/src/modules/nodes/shared/persist-node-success.ts:7–9`).
-- `fetchNodeRow` takes `rows[0]` with **no `ORDER BY`** (`fetch-node-row.ts:31–47`); Postgres
+  (`worker/src/modules/nodes/shared/persist-node-success.ts`).
+- `fetchNodeRow` takes `rows[0]` with **no `ORDER BY`** (`fetch-node-row.ts`); Postgres
   ordering is not guaranteed.
 
 Contained today because the single-node path mints a fresh `execId` per click. It stops being
@@ -74,7 +74,7 @@ and two termination conditions. It gets its own run identity, **chained to the p
   `main`, force the row order (insert them out of order) until it fails, then fix and re-run.
 - Backfill check: existing `node_executions` rows must remain readable. A migration that orphans
   historical rows breaks run history and the MCP run-status surface.
-- `sumChargesByExecution(execId, nodeId)` (`flux.service.ts:710, 1998`) aggregates by the same
+- `sumChargesByExecution(execId, nodeId)` (`flux.service.ts`) aggregates by the same
   pair. Confirm billing totals are unchanged for loops — this is the one place where "every
   matching row" was arguably the intended behaviour.
 

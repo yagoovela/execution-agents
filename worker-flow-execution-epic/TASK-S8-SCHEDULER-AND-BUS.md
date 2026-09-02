@@ -6,9 +6,11 @@ schedules and the email poll alike.
 **Depends on:** nothing. **Blocks:** running more than one backend replica, and B5.
 **Severity:** high (review §9.3, §9.4, §9.5).
 
-## Part 1 — the fourteen crons
+## Part 1 — the thirteen crons
 
-`@Cron` is registered fourteen times across `back/src`, and there is no leader election: greps for
+`@Cron` is registered thirteen times across `back/src` (a fourteenth site, in
+`updateTechnologiesFromSheets.service.ts`, is commented out — corrected 2026-09-02 from thirteen),
+and there is no leader election: greps for
 `leader`, `isLeader`, `CRON_ENABLED` or an advisory-lock guard return nothing. **Every cron fires on
 every replica.**
 
@@ -16,9 +18,9 @@ Some of it is waste — five separate purges all at `EVERY_DAY_AT_3AM`, each run
 against the same tables in the same minute. Some of it is not: `mail.service.ts` polls POP3
 `EVERY_10_SECONDS` per replica, and `markStuckSpaceRunLogs` runs every ten minutes per replica.
 
-**Scope.** One mechanism for all fourteen, not fourteen guards. Two viable shapes:
+**Scope.** One mechanism for all thirteen, not thirteen guards. Two viable shapes:
 - **An advisory lock per job name**, taken at the top of each run and released at the end.
-  `pg_advisory_xact_lock` is already used in the codebase (`oauth-token.repo.ts:7`), needs no new
+  `pg_advisory_xact_lock` is already used in the codebase (`oauth-token.repo.ts`), needs no new
   dependency, and degrades correctly — a replica that cannot take the lock simply skips.
 - **A dedicated scheduler role**, one replica with cron enabled by env. Simpler, but it makes that
   replica special, and a deploy that loses it loses every cron silently.
@@ -31,18 +33,18 @@ self-inflicted load spike on the database this epic is already worried about.
 ## Part 2 — user-scheduled flows
 
 Scheduled runs do not use a durable scheduler. They are registered in NestJS's in-process registry
-— `schedulerRegistry.addCronJob` at `schedule.controller.ts:179` and `:332` — so each replica holds
+— `schedulerRegistry.addCronJob` at two sites in `schedule.controller.ts` (`create()` and `getAllSchedules()`) — so each replica holds
 its own copy and fires it independently. **N replicas means N runs of the same schedule, each
 charged to the customer.**
 
 Two defects in the same code, both to fix here:
 
-1. **The re-registration hides in a getter.** `getAllSchedules()` (`:242`) is a plain method with no
+1. **The re-registration hides in a getter.** `getAllSchedules()` is a plain method with no
    route decorator that walks every active schedule and registers crons as a side effect. Whatever
    calls it registers crons on that replica.
 2. **The queue is not doing the work.** The cron callback does
    `await this.scheduleQueue.add('schedule-job', { … job: await this.fluxService.apiV2({ … }) })`
-   (`:157–159`, `:309–311`). The run is **awaited as an argument to the enqueue call**, so the flow
+  . The run is **awaited as an argument to the enqueue call**, so the flow
    already executed synchronously inside the cron callback and only its result reaches the queue.
    Fixing the duplication without fixing this just duplicates it more efficiently.
 
@@ -52,16 +54,16 @@ return nothing, so the platform's native scheduling is unused, and it gives by c
 what this part is otherwise building by hand: one fire per schedule regardless of replica count,
 durability across restarts and deploys, plus pause, backfill and last-run visibility the in-process
 registry cannot offer (review §11.3). The advisory lock from Part 1 stays the right answer for the
-fourteen framework crons, which are internal maintenance and have no reason to become workflows. Either way the callback **stops awaiting the run**, so the scheduler owns the trigger and the
+thirteen framework crons, which are internal maintenance and have no reason to become workflows. Either way the callback **stops awaiting the run**, so the scheduler owns the trigger and the
 workflow owns the execution.
 
-**Keep the zombie-cron check** at `:283–297` — stop, delete, soft-delete when the flow is gone. It
+**Keep the zombie-cron check** inside `getAllSchedules()` — stop, delete, soft-delete when the flow is gone. It
 is the one part of this code already doing the right thing.
 
 ## Part 3 — Redis
 
 Redis backs the Bull queues, the worker→backend pub/sub, and the delivery dedup keys. The dedup is a
-correct pattern already (`SET key '1' EX 86400 NX`, run-scoped, `flux.service.ts:5030–5044`).
+correct pattern already (`SET key '1' EX 86400 NX`, run-scoped, `flux.service.ts`).
 
 Two things to confirm from infrastructure, not from this repo:
 - **Eviction policy.** Under `allkeys-lru` or `allkeys-random`, dedup keys are evictable, and the
@@ -73,10 +75,10 @@ Two things to confirm from infrastructure, not from this repo:
 
 ## Part 4 — the POP3 poll
 
-The email poll is one of the fourteen crons, so it fires every ten seconds **per replica**
-(`mail.service.ts:132`). There is no message-id dedup and no lock — greps for `messageId`, `dedup`,
+The email poll is one of the thirteen crons, so it fires every ten seconds **per replica**
+(`mail.service.ts`). There is no message-id dedup and no lock — greps for `messageId`, `dedup`,
 `lock` and `NX` return nothing. Messages are fetched, processed and only then deleted
-(`deleteEmailsSequentially`, `:314`), so the window between fetch and delete spans the whole batch,
+(`deleteEmailsSequentially`), so the window between fetch and delete spans the whole batch,
 including enqueueing the runs.
 
 **Be fair about today's risk.** POP3 requires the server to lock the maildrop exclusively for the
@@ -88,7 +90,7 @@ every replica past the first fails to acquire that lock every ten seconds.
 
 **Scope.** Part 1's advisory lock covers the polling. Independently of it, dedup by message id
 before enqueueing — the same `SET … NX` pattern already used for delivery
-(`flux.service.ts:5030–5044`) — so a message that is somehow fetched twice still produces one run.
+(`flux.service.ts`) — so a message that is somehow fetched twice still produces one run.
 Two independent guards, because the failure they prevent is a charge to a customer.
 
 **In.** Reconsider the ten-second interval while you are there. It is a poll against a mailbox, and
@@ -117,6 +119,6 @@ pressure.
 
 ## Files
 
-`back/src/cronJobs/**` (fourteen `@Cron` sites) · `back/src/app-api/mail/mail.service.ts` ·
-`back/src/app-api/schedule/schedule.controller.ts:157–159, 179, 242, 283–297, 309–311, 332` ·
-`back/src/app-api/flux/flux.service.ts:5030–5044` · Redis/infra configuration
+`back/src/cronJobs/**` (thirteen `@Cron` sites) · `back/src/app-api/mail/mail.service.ts` ·
+`back/src/app-api/schedule/schedule.controller.ts` (`create()`, `getAllSchedules()`) ·
+`back/src/app-api/flux/flux.service.ts` (the `email-sent:` dedup) · Redis/infra configuration

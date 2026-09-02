@@ -27,7 +27,7 @@ cell empty when there is nothing to say.
 |---|---|---|---|
 | S7 | planned | — | |
 | S1 | planned | — | |
-| S4 | planned | — | Blocked on the D15 measurement before the ceilings can be numbers. Y and the credit balance are separate ceilings stopping the same run for different reasons, and D20 makes both behave the same way. // Bloqueada pela medição da D15 até os tetos poderem virar números. O Y e o saldo de crédito são tetos distintos que param o mesmo run por motivos diferentes, e a D20 faz os dois se comportarem igual. |
+| S4 | planned | — | Needs the D15 measurement before the ceilings can be numbers. Y and the credit balance are separate ceilings stopping the same run for different reasons, and D20 makes both behave the same way. // Precisa da medição da D15 até os tetos poderem virar números. O Y e o saldo de crédito são tetos distintos que param o mesmo run por motivos diferentes, e a D20 faz os dois se comportarem igual. |
 | S5 | planned | — | Check whether the worker gets its own S3 credentials first — that would supersede it. // Verifique antes se o worker vai receber credenciais S3 próprias — isso dispensaria esta task. |
 | C3 | planned | — | |
 | S2 | planned | — | |
@@ -39,21 +39,21 @@ cell empty when there is nothing to say.
 | A2 | planned | — | |
 | A3 | planned | — | |
 | A4 | planned | — | |
-| A5 | planned | — | |
-| A6 | planned | — | Needs the D3 product sign-off before it becomes a behaviour change. // Precisa do aval de produto da D3 antes de virar mudança de comportamento. |
-| S6 | planned | — | |
+| A5 | planned | — | imageReaderNode left the task — deprecated (D24); an imageGenerator module is in progress on the dev line. // O imageReaderNode saiu da task — depreciado (D24); um módulo de imageGenerator está em andamento na linha de dev. |
+| A6 | blocked | — | Blocked on the D3 product sign-off; partial input recorded in PLAN §7 on 2026-09-02, awaiting confirmation. Eight types after D24. // Bloqueada pelo aval de produto da D3; entrada parcial registrada no PLAN §7 em 2026-09-02, aguardando confirmação. Oito tipos depois da D24. |
+| S6 | planned | — | The width of the first cut is the implementer's call (D25). // A largura do primeiro corte é decisão de quem implementar (D25). |
 | A8 | planned | — | |
 | A9 | planned | — | |
 | D1 | planned | — | |
 | B1 | planned | — | |
-| B2 | planned | — | Blocked on decision D1. // Bloqueada pela decisão D1. |
-| B3 | planned | — | Blocked on C2's measurement, which has to be pulled forward. // Bloqueada pela medição do C2, que precisa ser antecipada. |
+| B2 | planned | — | Starts by answering decision D1 — the decision is inside the task, not ahead of it. // Começa respondendo a decisão D1 — a decisão está dentro da task, não antes dela. |
+| B3 | planned | — | Needs D2's measurement, taken by A1 in Wave 2; B3 answers D2 with it. // Precisa da medição da D2, feita pela A1 na onda 2; a B3 responde a D2 com ela. |
 | B4 | planned | — | |
 | E1 | planned | — | |
 | E2 | planned | — | |
 | B5 | planned | — | Preconditions: S1, S2, S3, E3. When the credit balance runs out with N generations already in flight, D20 lets all N finish — the overshoot is N nodes, not one, so size the headroom. D21 applies only if the queue actually chooses what runs next — confirm that first. // Pré-requisitos: S1, S2, S3, E3. Quando o saldo de crédito acaba com N gerações já em voo, a D20 deixa as N terminarem — o estouro é de N nós, não de um, então dimensione a folga. A D21 só vale se a fila realmente escolher o próximo item — confirme isso antes. |
 | A7 | planned | — | |
-| B6 | planned | — | Inherits D13 and D14 from S1 — do not re-open them. D23 makes container nodes cancellable rather than allowed to finish. // Herda a D13 e a D14 do S1 — não reabra as duas. A D23 torna os nós contêiner canceláveis em vez de deixá-los terminar. |
-| B7 | planned | — | |
+| B6 | planned | — | Inherits D13 and D14 from S1 — do not re-open them. D23 makes container nodes cancellable rather than allowed to finish. Ships after B5 (D17). // Herda a D13 e a D14 do S1 — não reabra as duas. A D23 torna os nós contêiner canceláveis em vez de deixá-los terminar. Sobe depois da B5 (D17). |
+| B7 | planned | — | The batch screen is out of this epic (2026-09-02). // A tela de lote está fora deste épico (2026-09-02). |
 | C1 | planned | — | |
-| C2 | planned | — | Owns the measurement that settles decision D2. // É dona da medição que resolve a decisão D2. |
+| C2 | planned | — | Executes the D2 answer; the measurement is A1's (Wave 2) and the answer is B3's (Wave 4). // Executa a resposta da D2; a medição é da A1 (onda 2) e a resposta é da B3 (onda 4). |

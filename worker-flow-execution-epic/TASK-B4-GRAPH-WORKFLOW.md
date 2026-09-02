@@ -20,7 +20,7 @@ behaviour. B4 builds the batch-capable machinery and configures it to a batch si
   `worker/src/modules/temporal/workflows/process-agent.workflow.ts`, carrying in-degree per node,
   a `readyToRun` filter and `Promise.all` over the batch, under the line *"It will not be used for
   the time being; the logic has already been removed."* Read it before writing a new one.
-- The blocking wait to be removed: `await handle.result()` at `back/src/app-api/flux/flux.service.ts:507`.
+- The blocking wait to be removed: `await handle.result()` at `back/src/jobs/apiV2Job/apiV2Job.processor.ts` (writes `flow_execution_status` today — B4 and E1 decide who writes it after) · `back/src/app-api/flux/flux.service.ts`.
   Today every migrated node is a synchronous round trip (analysis §9.2.2) — this is the task that
   pays that back.
 
@@ -32,11 +32,19 @@ behaviour. B4 builds the batch-capable machinery and configures it to a batch si
 produces — no change needed there.
 
 **In.** `allReady(state): string[]` alongside `nextReady`, draining every eligible id and marking
-each `scheduled`. Keep `nextReady` — the MCP write service uses the scheduler too
-(`mcp-write.service.ts:1327`) and is not part of this epic.
+each `scheduled`. Keep `nextReady` while the backend loop exists — it is that loop's primitive, and
+C2 retires it with the loop. The MCP write service (`mcp-write.service.ts`) uses the scheduler too,
+but only `buildSchedulerState` and `classifyEdge`, so it is unaffected either way. Before writing
+`allReady()`, check whether the Temporal SDK offers a primitive for ready-set dispatch (B2 carries
+the same note); decide during development — D16 is unchanged whichever way it goes.
 
 **In.** The back's role shrinks to: start the flow workflow, serve the callbacks it already owns
 (billing, model access, S3, file generation), and read the result. It stops being the loop.
+
+**In.** A writer for `flow_execution_status` (PR #1902, 2026-08-21 — read by `GET /flux/executions/:id`).
+Today the api-v2 processor writes it from inside the loop; once the loop is a workflow, decide
+whether the workflow reports status through a callback or E1's collector becomes the writer, and
+state it in the PR. A table nobody writes is a status endpoint that lies.
 
 **In.** A flag selecting engine-in-back vs engine-in-workflow, per flow, defaulting to back.
 
@@ -65,7 +73,7 @@ back's loop — C1/C2, after this has soaked.
   same order the back's loop does, node for node. With batch size one this must be exact — any
   divergence is a defect in the port, and this is the last moment it is cheap to see.
 - **Unprocessed-node detection** must survive the move. The back warns today when a node ends
-  outside `completed` or `dead` (`flux.service.ts:4735–4778`); the workflow needs the equivalent,
+  outside `completed` or `dead` (`flux.service.ts`); the workflow needs the equivalent,
   because a silently skipped node is the characteristic failure of a scheduler port.
 - Cancellation must still work end to end, including the in-flight flag
   (`flux/node-cancel-watch.ts`).
@@ -83,4 +91,4 @@ the back's loop is untouched and still selectable.
 
 `worker/src/modules/temporal/workflows/process-agent.workflow.ts` · new flow workflow ·
 `worker/src/modules/temporal/{activities,worker.service.ts,workflows/configs.ts}` ·
-`back/src/app-api/flux/flux.service.ts:507, 3227` · the scheduler module from B2
+`back/src/jobs/apiV2Job/apiV2Job.processor.ts` (writes `flow_execution_status` today — B4 and E1 decide who writes it after) · `back/src/app-api/flux/flux.service.ts` (`await handle.result()` in `processNodeViaTemporal`; the `while (scheduledId !== null)` loop; the unprocessed-node warning) · the scheduler module from B2

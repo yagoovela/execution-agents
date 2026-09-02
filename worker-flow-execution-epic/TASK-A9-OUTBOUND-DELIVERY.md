@@ -7,7 +7,7 @@ retried.
 
 ## Why
 
-The block at the end of every run (`flux.service.ts:4907–5200`, ~300 lines) sends emails through
+The block at the end of every run (`flux.service.ts`, ~300 lines) sends emails through
 three paths — `mailService.sendMail`, `mailService.sendGmailEmail`,
 `microsoftMailService.sendMail` — and fires HTTP callbacks with `axios.post`, each wrapped in a
 `catch`. **Nothing is retried.** A customer's webhook endpoint being down for thirty seconds means
@@ -15,9 +15,17 @@ the notification is lost, with a log line as the only trace.
 
 This is the cleanest activity candidate left in the codebase: pure external I/O, no engine state,
 and the hard part is already done. **Idempotency exists**: the Redis dedup keys
-(`flux.service.ts:5030–5044`) are a run-scoped `SET … EX 86400 NX` plus a shorter content hash,
+(`flux.service.ts`) are a run-scoped `SET … EX 86400 NX` plus a shorter content hash,
 built exactly so a repeated attempt does not double-send. Retry with backoff is the missing half,
 and it is what Temporal provides.
+
+**What changed on 2026-08-21 (PR #1902).** The api-v2 *consolidated* callback — the one that
+summarises the run to the caller — moved out of `flux.service.ts` into `apiV2Job.processor.ts`
+(`CALLBACK_TIMEOUT_MS = 10_000`), and the run's state is now also written to `flow_execution_status`,
+read by `GET /flux/executions/:id`. So there are two callback sites, not one: the end-of-run block
+this task moves, and the processor's consolidated callback. **Cover both, or state which one
+stays fire-and-forget and why** — a customer whose per-run callback is retried while the
+consolidated one is not has a half-fixed integration.
 
 ## Scope
 
@@ -51,7 +59,16 @@ it does not redesign.
   after.
 - Confirm a terminal delivery failure appears in the run log rather than only in Winston.
 
+## Done when
+
+Email and callback delivery run as activities with per-channel retry policies; the Redis dedup keys
+(`email-sent:`, `email-content:`) moved unchanged and were proven load-bearing in both directions;
+email output matches across all three paths; a delivery that exhausted its retries is visible in
+the run log; the processor's consolidated callback (PR #1902) is either covered by the same activity
+or explicitly left fire-and-forget, with the reason in the PR; and payloads, recipients and triggers
+are unchanged.
+
 ## Files
 
-`back/src/app-api/flux/flux.service.ts:4907–5200, 5030–5075, 5164–5195` ·
-`back/src/app-api/mail/` · `back/src/app-api/microsoft/` · new worker delivery module · the A1 registry
+`back/src/app-api/flux/flux.service.ts` (the end-of-run delivery block: `mailService.sendMail`, `sendGmailEmail`, `microsoftMailService.sendMail`, `axios.post`, the `email-sent:` and `email-content:` dedup keys) ·
+`back/src/jobs/apiV2Job/apiV2Job.processor.ts` (the api-v2 consolidated callback, moved there on 2026-08-21) · `back/src/app-api/mail/` · `back/src/app-api/microsoft/` · new worker delivery module · the A1 registry

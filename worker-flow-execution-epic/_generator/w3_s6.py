@@ -131,8 +131,8 @@ DEC_POSITION = {
    'pros':[('The one branch where relocating without changes would be a regression, caught before it ships rather than after',
             'O único ramo em que relocar sem mudanças seria regressão, pego antes de entrar e não depois'),
            ('It gives A6 and A8 a concrete precondition instead of a vague worry','Dá à A6 e à A8 uma precondição concreta em vez de uma preocupação vaga')],
-   'cons':[('The nine front-driven types and the extraction activity wait on infra work',
-            'Os nove tipos só-front e a activity de extração ficam esperando trabalho de infra'),
+   'cons':[('The eight front-driven types and the extraction activity wait on infra work',
+            'Os oito tipos só-front e a activity de extração ficam esperando trabalho de infra'),
            ('The waiting is invisible unless someone states it as a dependency on the wave plan',
             'A espera é invisível a menos que alguém a declare como dependência no plano da onda')],
    'cost':[('hi',('Client impact: <b>headless execution waits</b>','Impacto no cliente: <b>execução sem interface espera</b>')),
@@ -159,8 +159,8 @@ TASK = {
    ('Review §3.2. A node pointing at the cloud metadata endpoint or an internal hostname is the textbook case, and nothing checks it.',
     'Review §3.2. Um node apontando para o endpoint de metadados da nuvem ou um hostname interno é o caso clássico, e nada checa isso.')),
   ('dep',('Depends on','Depende de'),('Nothing — but it is not standalone','Nada — mas não é isolada'),
-   ('It must be decided <strong>as part of</strong> <code>A6</code> and <code>A8</code>, not after them.',
-    'Precisa ser decidida <strong>como parte</strong> da <code>A6</code> e da <code>A8</code>, não depois delas.')),
+   ('It must be decided <strong>as part of</strong> <code>A6</code> and <code>A8</code>, not after them. How wide the first cut is — <strong>the implementer&#x27;s call, D25</strong>.',
+    'Precisa ser decidida <strong>como parte</strong> da <code>A6</code> e da <code>A8</code>, não depois delas. A largura do primeiro corte — <strong>decisão de quem implementar, D25</strong>.')),
   ('wave',('Wave','Onda'),('Wave 3','Onda 3'),
    ('The timing is the finding: the decision is made <em>with</em> the move, because the move is what changes the risk.',
     'O timing é o achado: a decisão é tomada <em>junto</em> com a mudança, porque é a mudança que altera o risco.')),
@@ -169,9 +169,9 @@ TASK = {
     'O tipo de recusa mais disruptivo que existe. O <strong>PLAN §3.3.2</strong> não é formalidade aqui — é o gate.')),
  ],
  'lede':(
-  '<p><code>/downloader?url=</code> takes a user URL (<code>downloader.controller.ts:34</code>), and the scraper, api-caller and crawling paths take user URLs too. Searching those modules for private-range or metadata blocking — <code>127.0.0.1</code>, <code>169.254</code>, <code>localhost</code>, <code>isPrivate</code> — returns <strong>nothing</strong>.</p>'
+  '<p><code>/downloader?url=</code> takes a user URL (<code>downloader.controller.ts</code>), and the scraper, api-caller and crawling paths take user URLs too. Searching those modules for private-range or metadata blocking — <code>127.0.0.1</code>, <code>169.254</code>, <code>localhost</code>, <code>isPrivate</code> — returns <strong>nothing</strong>.</p>'
   '<p>This is <strong>pre-existing; the epic did not create it</strong>. But the epic <em>moves these callers into the worker</em>, which sits in a different network position while holding the database password and the integrations encryption key — and today the tasks that do the moving say nothing about it.</p>',
-  '<p>O <code>/downloader?url=</code> recebe uma URL do usuário (<code>downloader.controller.ts:34</code>), e os caminhos de scraper, api-caller e crawling também recebem URLs do usuário. Buscar nesses módulos por bloqueio de faixa privada ou de metadados — <code>127.0.0.1</code>, <code>169.254</code>, <code>localhost</code>, <code>isPrivate</code> — não retorna <strong>nada</strong>.</p>'
+  '<p>O <code>/downloader?url=</code> recebe uma URL do usuário (<code>downloader.controller.ts</code>), e os caminhos de scraper, api-caller e crawling também recebem URLs do usuário. Buscar nesses módulos por bloqueio de faixa privada ou de metadados — <code>127.0.0.1</code>, <code>169.254</code>, <code>localhost</code>, <code>isPrivate</code> — não retorna <strong>nada</strong>.</p>'
   '<p>Isto é <strong>pré-existente; o épico não criou</strong>. Mas o épico <em>move esses chamadores para o worker</em>, que fica em outra posição de rede enquanto guarda a senha do banco e a chave de criptografia das integrações — e hoje as tasks que fazem a mudança não dizem nada sobre isso.</p>'),
  'blocks':[
   {'k':'label','n':'1','t':('Four things a policy has to get right','Quatro coisas que uma política precisa acertar')},
@@ -197,11 +197,14 @@ TASK = {
     'A lista acima é o que a spec resolve. O que ela deixa em aberto de propósito é o <strong>formato</strong> da política e a <strong>posição de rede do worker</strong> — '
     'e a segunda decide se este épico inteiro está movendo buscadores de URL para um lugar mais seguro ou mais perigoso. As duas estão abaixo, com o que cada opção recusa e o que deixa passar.')},
   {'k':'label','n':'2','t':('The decisions this task needs','As decisões que esta task precisa')},
+  {'k':'prose','t':(
+    '<strong>Scope width — left to the implementer (D25, 2026-09-02).</strong> How wide the first cut is — the full resolved-address deny-list with redirect re-checks, or a narrower first step — is the decision of whoever picks up this task, made at the start and recorded in the task file before implementation. The requester&#x27;s preference, for the record: begin with limits on URL <em>consumption</em> (what a node may fetch, how much, how often) and add the address blocklist as a second step. Whichever cut ships first, the three properties above remain the target, and PLAN §3.3.2 applies to each step separately.',
+    '<strong>Largura do escopo — decisão de quem implementar (D25, 2026-09-02).</strong> Quão largo é o primeiro corte — a deny-list completa sobre o endereço resolvido com recheque no redirect, ou um primeiro passo mais estreito — é decisão de quem pegar esta task, tomada no início e registrada no arquivo da task antes de implementar. A preferência de quem pediu, para registro: começar por limites de <em>consumo</em> de URL (o que um node pode buscar, quanto, com que frequência) e acrescentar a blocklist de endereços num segundo passo. Qualquer que seja o corte que suba primeiro, as três propriedades acima continuam sendo o alvo, e o PLAN §3.3.2 vale para cada passo separadamente.')},
   DEC_SHAPE, DEC_POSITION,
   {'k':'label','n':'3','t':('What the task does, in three parts','O que a task faz, em três partes')},
   {'k':'part','n':'1',
    'title':('One policy, at the fetch layer both repos share','Uma política, na camada de fetch que os dois repos compartilham'),
-   'loc':('downloader.controller.ts:34 · app-api/{scraper,api_call}/ · worker HTTP layer', 'downloader.controller.ts:34 · app-api/{scraper,api_call}/ · camada HTTP do worker'),
+   'loc':('downloader.controller.ts · app-api/{scraper,api_call}/ · worker HTTP layer', 'downloader.controller.ts · app-api/{scraper,api_call}/ · camada HTTP do worker'),
    'purpose':('Put the rule where every fetch passes, so a node cannot opt out of it by being written later.',
               'Colocar a regra onde toda busca passa, para que um node não escape dela por ter sido escrito depois.'),
    'body':('<p>Not per node — <strong>per fetch layer</strong>. The fetchers this epic relocates are <code>webCrawling</code>, <code>webAmazon</code>, <code>secApiNode</code>, <code>usCensusNode</code>, <code>documentSummarizer</code> and <code>fileSave</code> (via <code>/downloader</code>), plus <code>apiCaller</code>, which is already in the worker. A per-node check would have to be added seven times and remembered an eighth.</p>',
@@ -271,7 +274,7 @@ TASK = {
  'done':('Egress is <strong>policy-controlled at the shared fetch layer</strong>, redirects are re-checked, <strong>the worker&#x27;s network position is documented</strong>, <strong>no legitimate stored URL is blocked</strong>, and the policy ran in report-only mode before enforcement.',
          'O egresso é <strong>controlado por política na camada de fetch compartilhada</strong>, redirects são rechecados, <strong>a posição de rede do worker está documentada</strong>, <strong>nenhuma URL legítima guardada é bloqueada</strong>, e a política rodou em modo somente-relatório antes da imposição.'),
  'files':[
-  ('back/src/app-api/downloader/downloader.controller.ts:34',False),
+  ('back/src/app-api/downloader/downloader.controller.ts',False),
   ('back/src/app-api/scraper/',False),
   ('back/src/app-api/api_call/',False),
   ("the worker's HTTP layer",False),

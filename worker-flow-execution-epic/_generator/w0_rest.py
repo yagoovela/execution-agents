@@ -17,9 +17,9 @@ S4=dict(
    ('X per node, Y per run, and a chain total. None of them subsumes the others.',
     'X por node, Y por run, e um total de cadeia. Nenhum deles engloba os outros.')),
  ],
- LEDE=('<p><code>evaluateLoopCondition</code> (<code>folw/helpers/helpers.ts:2075–2110</code>) applies the limit <strong>on one branch only</strong>. On the other branch the limit is computed, reported to the UI through <code>loopStatus</code> and the <code>condition-loop-status</code> socket event — and then <strong>not applied</strong>.</p>'
+ LEDE=('<p><code>evaluateLoopCondition</code> (<code>folw/helpers/helpers.ts</code>) applies the limit <strong>on one branch only</strong>. On the other branch the limit is computed, reported to the UI through <code>loopStatus</code> and the <code>condition-loop-status</code> socket event — and then <strong>not applied</strong>.</p>'
        '<p>Worse, on the capped branch the limit itself is <code>node.data.loopCount</code> — <strong>user data</strong>. A system-level maximum should not be reachable from node configuration.</p>',
-       '<p>O <code>evaluateLoopCondition</code> (<code>folw/helpers/helpers.ts:2075–2110</code>) aplica o limite <strong>em apenas um ramo</strong>. No outro ramo o limite é calculado, reportado à UI via <code>loopStatus</code> e pelo evento de socket <code>condition-loop-status</code> — e então <strong>não é aplicado</strong>.</p>'
+       '<p>O <code>evaluateLoopCondition</code> (<code>folw/helpers/helpers.ts</code>) aplica o limite <strong>em apenas um ramo</strong>. No outro ramo o limite é calculado, reportado à UI via <code>loopStatus</code> e pelo evento de socket <code>condition-loop-status</code> — e então <strong>não é aplicado</strong>.</p>'
        '<p>Pior: no ramo limitado, o limite em si é <code>node.data.loopCount</code> — <strong>dado do usuário</strong>. Um máximo de sistema não deveria ser alcançável pela configuração de um node.</p>'),
  TABLE=dict(head=[('Limit','Limite'),('Catches','Pega'),('Misses','Não pega'),('Why it cannot be dropped','Por que não pode sair')],
   rows=[
@@ -35,7 +35,7 @@ S4=dict(
   ]),
  PARTS=[
   {'n':'1','title':('Why the static check is not enough','Por que a checagem estática não basta'),
-   'loc':'flux.service.ts:6742–6812 · :3738',
+   'loc':'flux.service.ts · inline arrayNode branch',
    'purpose':('Three defences, in this order — and the third is the only one that answers the question that matters at 3 a.m.',
               'Três defesas, nesta ordem — e a terceira é a única que responde a pergunta que importa às 3 da manhã.'),
    'body':('<p><strong>1. Before the run — graph validation.</strong> Refuse what can be proven wrong without spending anything: cycles inside the graph, and a flow already on the call chain (<code>S1</code>).</p>'
@@ -84,8 +84,8 @@ S4=dict(
  ],
  DONE=('No node configuration and no graph shape can produce an unbounded run: <strong>X bounds one node, Y bounds the run, and the chain total bounds nesting</strong>. Every ceiling sits <strong>above the largest real value in the stored data</strong>. A run that hits any of them ends in a terminal state that names which one, and the three reasons are distinguishable from each other and from the node&#x27;s own limit.',
        'Nenhuma configuração de node e nenhuma forma de grafo pode produzir um run ilimitado: <strong>X limita um node, Y limita o run, e o total da cadeia limita o aninhamento</strong>. Todo teto fica <strong>acima do maior valor real no dado guardado</strong>. Um run que bate em qualquer um termina num estado terminal que nomeia qual, e as três razões são distinguíveis entre si e do limite do próprio node.'),
- FILES=[('back/src/app-api/folw/helpers/helpers.ts:2075–2110',False),
-        ('back/src/app-api/flux/flux.service.ts:6742–6812 (condition), :3738 (array)',False),
+ FILES=[('back/src/app-api/folw/helpers/helpers.ts (evaluateLoopCondition)',False),
+        ('back/src/app-api/flux/flux.service.ts (conditionNode(); inline arrayNode branch)',False),
         ('back/src/app-api/flux/scheduler.ts',False),
         ('chain-root accounting shared with TASK-S3',True),
         ('new env vars + env-vars-sync',True)],
@@ -156,13 +156,13 @@ S5=dict(
    ('Review §2.4 argues the worker should hold its own S3 credentials — that would delete these endpoints entirely.',
     'A review §2.4 defende que o worker tenha credenciais S3 próprias — isso apagaria estes endpoints por completo.')),
  ],
- LEDE=('<p><code>/worker/get-payload</code> validates <strong>a prefix and nothing else</strong> (<code>worker.controller.ts:87–95</code>). There is no check that the key belongs to the caller&#x27;s run, tenant, or anything else.</p>'
+ LEDE=('<p><code>/worker/get-payload</code> validates <strong>a prefix and nothing else</strong> (<code>worker.controller.ts</code>). There is no check that the key belongs to the caller&#x27;s run, tenant, or anything else.</p>'
        '<p>The route sits behind <code>InternalApiGuard</code>, which is the right boundary and should stay. But it is a <strong>single shared secret</strong>, and this epic puts that secret on every worker replica — “we trust everything inside the perimeter” gets weaker with every host added to the perimeter.</p>',
-       '<p>O <code>/worker/get-payload</code> valida <strong>um prefixo e nada mais</strong> (<code>worker.controller.ts:87–95</code>). Não há checagem de que a chave pertence ao run do chamador, ao tenant, ou a coisa alguma.</p>'
+       '<p>O <code>/worker/get-payload</code> valida <strong>um prefixo e nada mais</strong> (<code>worker.controller.ts</code>). Não há checagem de que a chave pertence ao run do chamador, ao tenant, ou a coisa alguma.</p>'
        '<p>A rota fica atrás do <code>InternalApiGuard</code>, que é a fronteira certa e deve permanecer. Mas é um <strong>segredo único compartilhado</strong>, e este épico coloca esse segredo em toda réplica de worker — “confiamos em tudo dentro do perímetro” enfraquece a cada host somado ao perímetro.</p>'),
  PARTS=[
   {'n':'1','title':('The key already carries the answer','A chave já carrega a resposta'),
-   'loc':'node-execution-store.ts:45',
+   'loc':'node-execution-store.ts',
    'purpose':('The endpoint refuses when the stated run and the key disagree — and the worker already has both values.',
               'O endpoint recusa quando o run declarado e a chave discordam — e o worker já tem os dois valores.'),
    'body':('<p><code>claimCheckKey(execId, nodeId, …)</code> builds the key, so parsing it back out is trivial. The caller states which <code>execId</code> and <code>nodeId</code> it is acting for; the endpoint parses the key and refuses on a mismatch. Both values are already in <code>ExecuteNodeActivityProps</code>.</p>'
@@ -190,8 +190,8 @@ S5=dict(
  ],
  DONE=('A key can only be redeemed <strong>for its own run</strong>, writes are equally bound, refusals are logged, and the existing large-payload path still works.',
        'Uma chave só pode ser resgatada <strong>para o próprio run</strong>, escritas ficam igualmente vinculadas, recusas são logadas, e o caminho de payload grande existente continua funcionando.'),
- FILES=[('back/src/temporal/worker.controller.ts:70–95',False),
-        ('back/src/temporal/single-node-legacy/node-execution-store.ts:43–45 (claimCheckKey)',False),
+ FILES=[('back/src/temporal/worker.controller.ts (/worker/get-payload · /worker/store-payload · InternalApiGuard)',False),
+        ('back/src/temporal/single-node-legacy/node-execution-store.ts (claimCheckKey)',False),
         ('worker/src/modules/nodes/shared/{resolve-claim-ref,persist-node-success}.ts',False)],
 )
 

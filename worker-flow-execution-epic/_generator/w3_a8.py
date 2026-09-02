@@ -22,9 +22,9 @@ TASK = {
     'Um cache de extração, escritas em lote, e a telemetria que torna a melhoria mensurável.')),
  ],
  'lede':(
-  '<p>During a run, <strong>before the loop</strong>, the engine iterates every <code>varInputNode</code> (<code>flux.service.ts:2772, 2806</code>) and does real external I/O: <code>extractionService.extractTextFromLink</code> per link and <code>awsService.uploadFile</code> per file (<code>:2834–2990</code>), with an OCR mode chosen per input (<code>typeOCR</code>).</p>'
+  '<p>During a run, <strong>before the loop</strong>, the engine iterates every <code>varInputNode</code> (<code>flux.service.ts</code>) and does real external I/O: <code>extractionService.extractTextFromLink</code> per link and <code>awsService.uploadFile</code> per file, with an OCR mode chosen per input (<code>typeOCR</code>).</p>'
   '<p>It is <strong>invisible to every dispatch gate</strong>, because it is resolved <em>before</em> <code>nextReady</code> ever runs — so it is not in <code>isTemporalNode</code>, not in the prefetch whitelist, and not in the census. It is nonetheless synchronous, external, and on the critical path of every run that has one.</p>',
-  '<p>Durante um run, <strong>antes do laço</strong>, o engine percorre cada <code>varInputNode</code> (<code>flux.service.ts:2772, 2806</code>) e faz I/O externo de verdade: <code>extractionService.extractTextFromLink</code> por link e <code>awsService.uploadFile</code> por arquivo (<code>:2834–2990</code>), com um modo de OCR escolhido por entrada (<code>typeOCR</code>).</p>'
+  '<p>Durante um run, <strong>antes do laço</strong>, o engine percorre cada <code>varInputNode</code> (<code>flux.service.ts</code>) e faz I/O externo de verdade: <code>extractionService.extractTextFromLink</code> por link e <code>awsService.uploadFile</code> por arquivo, com um modo de OCR escolhido por entrada (<code>typeOCR</code>).</p>'
   '<p>É <strong>invisível a todo gate de dispatch</strong>, porque é resolvido <em>antes</em> de o <code>nextReady</code> rodar — então não está no <code>isTemporalNode</code>, não está na whitelist de prefetch, e não estava no censo. Ainda assim é síncrono, externo, e está no caminho crítico de todo run que o contém.</p>'),
  'blocks':[
   {'k':'label','n':'1','t':('Why this was missed, in four places','Por que isto passou batido, em quatro lugares')},
@@ -51,7 +51,7 @@ TASK = {
   {'k':'label','n':'2','t':('What the task does, in three parts','O que a task faz, em três partes')},
   {'k':'part','n':'1',
    'title':('The extraction activity','A activity de extração'),
-   'loc':'flux.service.ts:2772–2990',
+   'loc':'flux.service.ts',
    'purpose':('Free the backend while OCR runs, which is this task&#x27;s entire justification.',
               'Liberar o backend enquanto o OCR roda, que é a justificativa inteira desta task.'),
    'body':('<p>The step documentation says it in one line — OCR <em>“é síncrono e cega o backend”</em>: it is synchronous, and it blinds the backend. A dedicated activity is a large win for agents with several files, because today the files are processed <strong>in the request</strong>, one after another, before a single node has run.</p>'
@@ -95,8 +95,10 @@ TASK = {
    'purpose':('Two things this task deliberately does not touch, and one it must wait for.',
               'Duas coisas que esta task deliberadamente não toca, e uma pela qual precisa esperar.'),
    'body':('<p><strong>Renaming <code>extractText</code> is out of scope.</strong> The field holds URLs when <code>isExtraction</code> is false, which is confusing — but renaming a persisted field is its own migration, with its own risk, and it does not belong inside a latency change.</p>'
+           '<p><strong>An OCR <em>node</em> is out too.</strong> <code>imageReaderNode</code> is deprecated (<code>D24</code>) and an OCR node is wanted in its place, but not in this epic and not here: this task moves the OCR that <code>varInputNode</code> already does; it does not add a node type.</p>'
            '<p><strong>The egress policy comes first.</strong> Several of these inputs are user-controlled URLs, and this task moves the fetching into the worker, which holds the database password and the integrations key. <code>S6</code> owns the policy, and this task <strong>does not ship a relocated fetcher until S6&#x27;s decision exists and applies to it</strong>.</p>',
            '<p><strong>Renomear o <code>extractText</code> está fora de escopo.</strong> O campo guarda URLs quando <code>isExtraction</code> é falso, o que confunde — mas renomear um campo persistido é uma migração própria, com risco próprio, e não cabe dentro de uma mudança de latência.</p>'
+           '<p><strong>Um <em>node</em> de OCR também está fora.</strong> O <code>imageReaderNode</code> está depreciado (<code>D24</code>) e um node de OCR é desejado no lugar dele, mas não neste épico e não aqui: esta task move o OCR que o <code>varInputNode</code> já faz; não acrescenta um tipo de node.</p>'
            '<p><strong>A política de egresso vem antes.</strong> Várias dessas entradas são URLs controladas pelo usuário, e esta task move a busca para o worker, que guarda a senha do banco e a chave das integrações. A <code>S6</code> é dona da política, e esta task <strong>não entrega um buscador relocado enquanto a decisão da S6 não existir e não se aplicar a ele</strong>.</p>'),
    'ba':(('A user-controlled link is fetched from the backend with nothing checking the address it resolves to.',
           'Um link controlado pelo usuário é buscado a partir do backend, sem nada checando o endereço para o qual ele resolve.'),
@@ -124,7 +126,7 @@ TASK = {
  'done':('Extraction and OCR run <strong>as an activity</strong>, parity is proven on real inputs, <strong>the backend no longer blocks on them</strong>, and the before/after latency is recorded.',
          'Extração e OCR rodam <strong>como activity</strong>, a paridade está provada em entradas reais, <strong>o backend não bloqueia mais nelas</strong>, e a latência antes/depois está registrada.'),
  'files':[
-  ('back/src/app-api/flux/flux.service.ts:2772–2990',False),
+  ('back/src/app-api/flux/flux.service.ts (pre-loop varInputNode resolution: extractTextFromLink · uploadFile · typeOCR)',False),
   ('back/src/app-api/extraction/',False),
   ('back/src/app-api/google_ocr/',False),
   ('back/src/app-api/aws/',False),

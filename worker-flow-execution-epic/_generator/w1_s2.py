@@ -21,9 +21,9 @@ GLANCE = [
 ]
 
 LEDE = (
- """<p><code>database.service.ts:13</code> constructs <code>new Pool({...})</code> with <strong>no <code>max</code></strong>. node-postgres then defaults to ten connections per pool, per process — and the worker runs <code>maxConcurrentActivityTaskExecutions: 10</code> (<code>worker.service.ts:22</code>), so a replica can hold ten busy connections and the total scales <strong>linearly with replicas</strong>.</p>
+ """<p><code>database.service.ts</code> constructs <code>new Pool({...})</code> with <strong>no <code>max</code></strong>. node-postgres then defaults to ten connections per pool, per process — and the worker runs <code>maxConcurrentActivityTaskExecutions: 10</code> (<code>worker.service.ts</code>), so a replica can hold ten busy connections and the total scales <strong>linearly with replicas</strong>.</p>
 <p><code>max_connections</code> is a hard wall, and <strong>the wall is shared with the API</strong>. The failure mode is not a slow worker — it is <code>too many clients already</code> on customer-facing requests. No connection proxy appears in the compose files or the infra.</p>""",
- """<p>O <code>database.service.ts:13</code> constrói <code>new Pool({...})</code> <strong>sem <code>max</code></strong>. O node-postgres então assume dez conexões por pool, por processo — e o worker roda <code>maxConcurrentActivityTaskExecutions: 10</code> (<code>worker.service.ts:22</code>), então uma réplica pode segurar dez conexões ocupadas e o total cresce <strong>linearmente com as réplicas</strong>.</p>
+ """<p>O <code>database.service.ts</code> constrói <code>new Pool({...})</code> <strong>sem <code>max</code></strong>. O node-postgres então assume dez conexões por pool, por processo — e o worker roda <code>maxConcurrentActivityTaskExecutions: 10</code> (<code>worker.service.ts</code>), então uma réplica pode segurar dez conexões ocupadas e o total cresce <strong>linearmente com as réplicas</strong>.</p>
 <p><code>max_connections</code> é um teto rígido, e <strong>o teto é compartilhado com a API</strong>. O modo de falha não é um worker lento — é <code>too many clients already</code> em requisições de cliente. Nenhum proxy de conexão aparece nos arquivos de compose nem na infra.</p>""")
 
 TABLE = {
@@ -36,7 +36,7 @@ TABLE = {
    {'t': ('implicit', 'implícito'), 'pill': 'weak'},
    ('A default nobody chose is doing the sizing.', 'Um padrão que ninguém escolheu está fazendo o dimensionamento.')],
   [{'t': ('<code>maxConcurrentActivityTaskExecutions</code>', '<code>maxConcurrentActivityTaskExecutions</code>')},
-   ('10, in <code>worker.service.ts:22</code>', '10, em <code>worker.service.ts:22</code>'),
+   ('10, in <code>worker.service.ts</code>', '10, em <code>worker.service.ts</code>'),
    {'t': ('explicit', 'explícito'), 'pill': 'ok'},
    ('The only number in the chain someone actually picked.', 'O único número da cadeia que alguém de fato escolheu.')],
   [{'t': ('<code>api_replicas × api_pool</code>', '<code>api_replicas × api_pool</code>')},
@@ -141,8 +141,8 @@ DEC_PROXY = {
            'Um pooler multiplexa muitas conexões de cliente em poucas conexões de servidor, então a contagem de réplicas deixa de ser o que consome o <code>max_connections</code>.'),
    'pros': [('<strong>The only option that makes “many workers” open-ended</strong> — replica count and connection count stop being the same number',
              '<strong>A única opção que torna “muitos workers” aberto</strong> — contagem de réplicas e de conexões deixam de ser o mesmo número'),
-            ('<code>pg_advisory_xact_lock</code> survives it: it is transaction-scoped, already used in <code>oauth-token.repo.ts:7</code>, and planned for A7',
-             'O <code>pg_advisory_xact_lock</code> sobrevive: tem escopo de transação, já é usado em <code>oauth-token.repo.ts:7</code>, e está planejado para a A7'),
+            ('<code>pg_advisory_xact_lock</code> survives it: it is transaction-scoped, already used in <code>oauth-token.repo.ts</code>, and planned for A7',
+             'O <code>pg_advisory_xact_lock</code> sobrevive: tem escopo de transação, já é usado em <code>oauth-token.repo.ts</code>, e está planejado para a A7'),
             ('No application change beyond a connection string', 'Nenhuma mudança de aplicação além de uma string de conexão')],
    'cons': [('Transaction mode forbids session-level state — prepared statements, session settings, and <strong>session-level advisory locks, which would not survive</strong>',
              'O modo transação proíbe estado de sessão — prepared statements, settings de sessão, e <strong>advisory locks de sessão, que não sobreviveriam</strong>'),
@@ -200,7 +200,7 @@ DEC_PROXY = {
 PARTS = [
 {'n': '1',
  'title': ('The pool that was never given a ceiling', 'O pool que nunca ganhou um teto'),
- 'loc': 'worker/src/modules/database/database.service.ts:13',
+ 'loc': 'worker/src/modules/database/database.service.ts',
  'purpose': ('Make the per-replica connection count an explicit number, and make a saturated pool fail fast instead of hanging.',
              'Tornar o número de conexões por réplica um número explícito, e fazer um pool saturado falhar rápido em vez de travar.'),
  'body': ('<p>The worker builds its pool like this:</p>', '<p>O worker monta o pool assim:</p>'),
@@ -217,7 +217,7 @@ PARTS = [
          'Um <code>max</code> explícito, mais <code>idleTimeoutMillis</code> e <code>connectionTimeoutMillis</code>, para que a saturação devolva um timeout de conexão <strong>nomeando o pool</strong>, em segundos e não em minutos.'))},
 {'n': '2',
  'title': ('The arithmetic is the deliverable', 'A conta é a entrega'),
- 'loc': 'worker/src/modules/temporal/worker.service.ts:20–22 · infra/compose',
+ 'loc': 'worker/src/modules/temporal/worker.service.ts · infra/compose',
  'purpose': ('Write the capacity sum down with real numbers, and state how many worker replicas this database supports.',
              'Escrever a soma de capacidade com números reais, e declarar quantas réplicas de worker este banco suporta.'),
  'body': ('<p>The sentence this task has to produce is this one:</p>', '<p>A frase que esta task precisa produzir é esta:</p>'),
@@ -237,14 +237,14 @@ PARTS = [
     '<p>Esta task dimensiona o lado <strong>cliente</strong> e declara o que o lado servidor precisa suportar. Se o próprio <code>max_connections</code> deve ser elevado é outra decisão — a segunda acima.</p>'))]},
 {'n': '3',
  'title': ('The one thing a transaction-mode pooler would break', 'A única coisa que um pooler em modo transação quebraria'),
- 'loc': 'oauth-token.repo.ts:7',
+ 'loc': 'oauth-token.repo.ts',
  'purpose': ('Name the constraint honestly before adopting the pooler, and prove it with the path that already relies on it.',
              'Nomear a restrição honestamente antes de adotar o pooler, e prová-la com o caminho que já depende dela.'),
  'body': (
   '<p>Transaction-mode pooling forbids session-level state: a client is given a server connection for the duration of a <em>transaction</em>, not of a session. Anything that outlives the transaction — a session setting, a prepared statement, a session-level advisory lock — does not survive.</p>'
-  '<p><code>pg_advisory_xact_lock</code> is <strong>transaction-scoped by name</strong>, so it does survive. It is already used at <code>oauth-token.repo.ts:7</code>, <code>A7</code> plans to use it for ordering, and <code>S8</code> proposes an advisory lock per cron job name. The answer to this question is load-bearing for three tasks, not one.</p>',
+  '<p><code>pg_advisory_xact_lock</code> is <strong>transaction-scoped by name</strong>, so it does survive. It is already used at <code>oauth-token.repo.ts</code>, <code>A7</code> plans to use it for ordering, and <code>S8</code> proposes an advisory lock per cron job name. The answer to this question is load-bearing for three tasks, not one.</p>',
   '<p>O pooling em modo transação proíbe estado de sessão: o cliente recebe uma conexão de servidor pela duração de uma <em>transação</em>, não de uma sessão. Tudo que sobrevive à transação — um setting de sessão, um prepared statement, um advisory lock de sessão — não sobrevive.</p>'
-  '<p>O <code>pg_advisory_xact_lock</code> tem <strong>escopo de transação já no nome</strong>, então sobrevive. Ele já é usado em <code>oauth-token.repo.ts:7</code>, a <code>A7</code> planeja usá-lo para ordenação, e a <code>S8</code> propõe um advisory lock por nome de job de cron. A resposta a esta pergunta é estrutural para três tasks, não uma.</p>'),
+  '<p>O <code>pg_advisory_xact_lock</code> tem <strong>escopo de transação já no nome</strong>, então sobrevive. Ele já é usado em <code>oauth-token.repo.ts</code>, a <code>A7</code> planeja usá-lo para ordenação, e a <code>S8</code> propõe um advisory lock por nome de job de cron. A resposta a esta pergunta é estrutural para três tasks, não uma.</p>'),
  'ba': (('No proxy exists, so the question has never been asked — and two other tasks are about to plan around advisory locks.',
          'Nenhum proxy existe, então a pergunta nunca foi feita — e outras duas tasks estão prestes a planejar em cima de advisory locks.'),
         ('The constraint is written down, and the OAuth refresh path is the test that proves <code>pg_advisory_xact_lock</code> still behaves under transaction pooling.',
@@ -275,8 +275,8 @@ DONE = ('The pool has <strong>explicit limits</strong>, the capacity arithmetic 
         'O pool tem <strong>limites explícitos</strong>, a conta de capacidade está <strong>escrita com números reais</strong>, a <strong>contagem de réplicas suportadas está declarada</strong>, e a decisão do proxy está <strong>registrada de qualquer forma</strong>.')
 
 FILES = [
- ('worker/src/modules/database/database.service.ts:13', False),
- ('worker/src/modules/temporal/worker.service.ts:20–22', False),
+ ('worker/src/modules/database/database.service.ts (new Pool)', False),
+ ('worker/src/modules/temporal/worker.service.ts (maxConcurrentActivityTaskExecutions · task queue)', False),
  ('infra/compose', False),
  ('the capacity arithmetic, written down', True),
  ('env-vars-sync', True),

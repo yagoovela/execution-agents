@@ -25,14 +25,14 @@ LEDE = (
  'the activity owns. Two siblings cannot lose each other&#x27;s writes.</p>'
  '<p>What is <strong>not</strong> safe is mixed mode. A node still running inline in the back does not write to its own row — '
  'it ends with <code>addConnectToNodes</code>, which merges the producer&#x27;s output straight into the <strong>target</strong> '
- 'node&#x27;s data (<code>folw/contants.ts:2032</code>, via <code>modifyData</code> at <code>:2018–2024, 2056–2062</code>). '
+ 'node&#x27;s data (<code>folw/contants.ts</code>, via <code>modifyData</code>). '
  '<strong>The gate is not a precaution, it is the correctness condition.</strong></p>',
  '<p>O modelo de persistência <strong>já suporta irmãos em paralelo</strong> (análise §7.3): '
  '<code>node_executions</code> é uma linha por execução, e o <code>persistNodeSuccess</code> só faz merge em linhas '
  'que a activity possui. Dois irmãos não conseguem perder a escrita um do outro.</p>'
  '<p>O que <strong>não</strong> é seguro é o modo misto. Um node que ainda roda inline no back não escreve na própria linha — '
  'ele termina com <code>addConnectToNodes</code>, que faz merge da saída do produtor direto no dado do node '
- '<strong>alvo</strong> (<code>folw/contants.ts:2032</code>, via <code>modifyData</code> em <code>:2018–2024, 2056–2062</code>). '
+ '<strong>alvo</strong> (<code>folw/contants.ts</code>, via <code>modifyData</code>). '
  '<strong>O gate não é precaução, é a condição de corretude.</strong></p>')
 
 TABLE = dict(
@@ -349,7 +349,7 @@ DECISIONS = [DEC_ROLLOUT, DEC_CANCEL, DEC_ORDER, DEC_ERROR]
 
 PARTS = [
 {'n':'1','title':('The eligibility gate is the whole task','O gate de elegibilidade é a task inteira'),
- 'loc':('A1 registry · folw/contants.ts:2032', 'registro da A1 · folw/contants.ts:2032'),
+ 'loc':('A1 registry · folw/contants.ts', 'registro da A1 · folw/contants.ts'),
  'purpose':('Run a flow in parallel only when every executable node in it is a migrated type — read from one registry, not guessed.',
             'Rodar um fluxo em paralelo só quando todo node executável dele é de um tipo migrado — lido de um registro, não adivinhado.'),
  'body':('<p>The check is <strong>per flow</strong>, and it is a conjunction: parallel dispatch is allowed only when '
@@ -422,8 +422,8 @@ PARTS = [
           '<strong><code>E3</code></strong> — notificações que atravessam réplicas, entregues <em>antes</em> de o paralelismo multiplicar a taxa de eventos.'),
          ('<strong>B5&#x27;s own per-provider budget</strong> — the one precondition this task owns itself.',
           '<strong>O orçamento por provedor da própria B5</strong> — a única precondição que esta task possui.')],
- 'ba':(('Three accidents provide the ceilings: one sequential engine loop, one queued run per backend replica, and a blocking wait on every Temporal node. None of them was designed as a safeguard.',
-        'Três acidentes fornecem os tetos: um laço de motor sequencial, um run enfileirado por réplica de backend, e uma espera bloqueante em todo node do Temporal. Nenhum deles foi projetado como proteção.'),
+ 'ba':(('Three accidents provide the ceilings: one sequential engine loop, five queued runs per backend replica (<code>AGENT_CONCURRENCY</code>; one until 2026-08-21), and a blocking wait on every Temporal node. None of them was designed as a per-tenant safeguard.',
+        'Três acidentes fornecem os tetos: um laço de motor sequencial, cinco runs enfileirados por réplica de backend (<code>AGENT_CONCURRENCY</code>; um até 2026-08-21), e uma espera bloqueante em todo node do Temporal. Nenhum deles foi projetado como proteção por tenant.'),
        ('All three are gone, and every ceiling they were accidentally providing has an explicit owner that shipped first.',
         'Os três desaparecem, e todo teto que eles forneciam por acidente tem um dono explícito que foi entregue antes.'))},
 

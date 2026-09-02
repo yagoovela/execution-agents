@@ -43,6 +43,9 @@ working — two siblings both move the accumulator. Billing must dedup by primar
 
 **In.** Preserve `redactSecrets` explicitly, with a test.
 
+**In, with B4.** Decide who writes `flow_execution_status` (PR #1902) once the loop leaves the back —
+the workflow through a callback, or this task's collector. B4 carries the same line; answer it once.
+
 **Out.** Redesigning the timeline UX or the `space_run_logs` schema. The JSONB there may need
 partitioning eventually; that is a separate concern.
 
@@ -66,6 +69,6 @@ concurrency, and no run-scoped state depends on AsyncLocalStorage.
 
 ## Files
 
-`back/src/app-api/space_run_logs/` · the `RunLogCollector` implementation ·
-`back/src/app-api/flux/flux.service.ts:2290–2293, 3281–3316, 4537–4562, 4824–4862` ·
+`back/src/app-api/space_run_logs/` (`run-log-collector.ts` — `RunLogCollector` and `redactSecrets`) · `back/src/jobs/apiV2Job/apiV2Job.processor.ts` (writes `flow_execution_status` today) ·
+`back/src/app-api/flux/flux.service.ts` (`runLogCollector` start/end/finalize/`flushNow`, `chargeContext`) ·
 `back/src/app-api/token_transaction/` · `back/src/temporal/worker.controller.ts` · the worker flow workflow

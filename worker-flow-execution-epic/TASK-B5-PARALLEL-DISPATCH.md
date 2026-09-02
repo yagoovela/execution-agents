@@ -15,8 +15,7 @@ cannot lose each other's writes.
 
 What is **not** safe is mixed mode. Nodes still running inline in the back do not write to their
 own row — they end with `addConnectToNodes`, which merges the producer's output straight into the
-**target** node's data (`back/src/app-api/folw/contants.ts:2032`, via `modifyData` at
-`:2018–2024, 2056–2062`). That is a cross-node write, safe today only because the engine is
+**target** node's data (`back/src/app-api/folw/contants.ts`, via `modifyData`). That is a cross-node write, safe today only because the engine is
 sequential and holds the whole node array in memory.
 
 So: **all-backend is safe because it is serial; all-worker is safe because every write is own-row;

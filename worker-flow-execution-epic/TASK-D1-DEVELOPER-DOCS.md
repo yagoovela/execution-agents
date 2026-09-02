@@ -24,11 +24,14 @@ obvious only at runtime.
   `generate-execution-logs`, `get-info-database`, `node-execution-error`
 - `node/` — `api-caller`, `audio-transcriber`, `counter`, `display-box`,
   `large-memory-dynamic-pod`, `math-function`, `mcp`, `scripting`, `sql-querier`, `text-generator`
+- `workflows/` — `process-agent`, `process-single-node`, `worker-service`
 
 Two gaps are visible from that listing alone. The `node/` pages document types the back does not
-route — `sql-querier` and `audio-transcriber` are the stranded modules of A3, and `mcp` is not in
-production — so **the docs already describe a system more migrated than the one that runs.** And
-`pt-br/` contains only `environment-variables.mdx`, so the pt-br side is a stub.
+route — `sql-querier` and `audio-transcriber` are the stranded modules of A3 (`mcp` was in the same
+position until it shipped on 2026-08-24) — so **the docs already describe a system more migrated
+than the one that runs.** And `docs/worker/pt-br/` contains only `environment-variables.mdx`, so the
+pt-br side is a stub. The `workflows/` pages describe the loop as it runs today; B4 changes that, and
+they are re-audited then.
 
 The first job of this task is therefore an **audit**: for each existing page, does it describe
 production, a branch, or an intention?
@@ -76,5 +79,5 @@ them at the end.
 
 ## Files
 
-`docs/worker/**` (+ `docs/pt-br/worker/**`) · `docs/docs.json` navigation ·
+`docs/worker/**` (+ `docs/worker/pt-br/**`) · `docs/docs.json` navigation ·
 the published pipeline artifacts as diagram sources

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-# A6 — Give the nine front-driven types server-side execution.
+# A6 — Give the eight front-driven types server-side execution.
 # Source: TASK-A6-FRONT-DRIVEN-NODES.md, PLAN §7 D3 + risk R8, analysis §4.1/§4.2/§4.3, DELIVERY-PLAN wave 3.
 
 DEC_D3 = {
  'k':'decision','id':'A6-a','plan':'D3','status':'open','open':True,
- 'q':('Do the nine front-driven types running headless count as a <em>fix</em>, or as a behaviour change customers must be told about?',
-      'Os nove tipos só-front rodando sem interface contam como <em>correção</em>, ou como mudança de comportamento que os clientes precisam saber?'),
+ 'q':('Do the eight front-driven types running headless count as a <em>fix</em>, or as a behaviour change customers must be told about?',
+      'Os oito tipos só-front rodando sem interface contam como <em>correção</em>, ou como mudança de comportamento que os clientes precisam saber?'),
  'intro':(
   'This is the strongest call in the wave, and the plan gates the whole wave on it: <strong>“it needs the D3 answer before this wave, not during it”</strong>. '
   'Today these nodes produce output only when someone clicks Run in the builder. In an API, cron, chatbot, form or MCP run the engine never dispatches them, '
@@ -37,8 +37,8 @@ DEC_D3 = {
            ('hi',('Ours: <b>every surprise arrives as a ticket</b>','Nosso: <b>cada surpresa chega como chamado</b>'))]},
   {'ltr':'B','pick':True,'name':('Treat it as a behaviour change, with comms and cohorts','Tratar como mudança de comportamento, com aviso e coortes'),
    'tag':('recommended','recomendada'),
-   'how':('Find the flows that contain one of the nine <em>and</em> have a headless trigger, tell their owners what will start happening, then enable per cohort behind the flag PLAN §3.2 already requires.',
-          'Encontrar os fluxos que contêm um dos nove <em>e</em> têm gatilho sem interface, avisar os donos do que passará a acontecer, e habilitar por coorte atrás da flag que o PLAN §3.2 já exige.'),
+   'how':('Find the flows that contain one of the eight <em>and</em> have a headless trigger, tell their owners what will start happening, then enable per cohort behind the flag PLAN §3.2 already requires.',
+          'Encontrar os fluxos que contêm um dos oito <em>e</em> têm gatilho sem interface, avisar os donos do que passará a acontecer, e habilitar por coorte atrás da flag que o PLAN §3.2 já exige.'),
    'pros':[('It is the answer the plan asks for — explicit, signed off, and recorded before the wave starts',
             'É a resposta que o plano pede — explícita, aprovada e registrada antes de a onda começar'),
            ('The owners of affected flows hear about the new spend before the invoice does',
@@ -53,14 +53,14 @@ DEC_D3 = {
    'cost':[('',('Client effort: <b>read one message</b>','Esforço do cliente: <b>ler uma mensagem</b>')),
            ('hi',('Ours: <b>a query, a message, a staged rollout</b>','Nosso: <b>uma consulta, uma mensagem, um rollout escalonado</b>'))]},
   {'ltr':'C','name':('Leave headless unsupported — but refuse it out loud','Deixar sem suporte headless — mas recusar em voz alta'),
-   'how':('Keep the nine builder-only, and make validation refuse a flow that pairs a headless trigger with one of them, instead of silently skipping the node at run time.',
-          'Manter os nove só no builder, e fazer a validação recusar um fluxo que junte gatilho sem interface com um deles, em vez de pular o node em silêncio no run.'),
+   'how':('Keep the eight builder-only, and make validation refuse a flow that pairs a headless trigger with one of them, instead of silently skipping the node at run time.',
+          'Manter os oito só no builder, e fazer a validação recusar um fluxo que junte gatilho sem interface com um deles, em vez de pular o node em silêncio no run.'),
    'pros':[('No behaviour change and no new spend','Sem mudança de comportamento e sem gasto novo'),
            ('It still fixes the <em>silent</em> half of the defect: the flow says so instead of passing a stale value off as output',
             'Ainda corrige a metade <em>silenciosa</em> do defeito: o fluxo avisa, em vez de passar um valor velho como se fosse saída'),
            ('Cheapest of the three — one validation rule','A mais barata das três — uma regra de validação')],
-   'cons':[('It refuses work customers are asking for, and giving these nine server-side execution is the entire point of <code>A6</code>',
-            'Recusa trabalho que os clientes estão pedindo, e dar execução no servidor a esses nove é o propósito inteiro da <code>A6</code>'),
+   'cons':[('It refuses work customers are asking for, and giving these eight server-side execution is the entire point of <code>A6</code>',
+            'Recusa trabalho que os clientes estão pedindo, e dar execução no servidor a esses oito é o propósito inteiro da <code>A6</code>'),
            ('It is a refusal, so <strong>PLAN §3.3.2</strong> applies: measure it against the stored flows first, or it becomes the false refusal',
             'É uma recusa, então vale o <strong>PLAN §3.3.2</strong>: medir contra os fluxos guardados antes, senão vira a recusa falsa'),
            ('Leaves <code>fileSave</code> permanently browser-bound even though the server-side token already exists',
@@ -82,9 +82,9 @@ DEC_D3 = {
 
 TASK = {
  'code':'A6','vnum':'4',
- 'title':('Give the nine front-driven types server-side execution','Dar execução no servidor aos nove tipos só-front'),
- 'goal':('Nine node types that today run <b>only from the browser</b> get an activity and, for the first time, <b>engine dispatch</b> — so a headless run produces output instead of reusing what a person last left behind.',
-         'Nove tipos de node que hoje rodam <b>só a partir do navegador</b> ganham uma activity e, pela primeira vez, <b>dispatch do engine</b> — para que um run sem interface produza saída em vez de reaproveitar o que alguém deixou por último.'),
+ 'title':('Give the front-driven types server-side execution','Dar execução no servidor aos tipos só-front'),
+ 'goal':('Eight node types that today run <b>only from the browser</b> get an activity and, for the first time, <b>engine dispatch</b> — so a headless run produces output instead of reusing what a person last left behind.',
+         'Oito tipos de node que hoje rodam <b>só a partir do navegador</b> ganham uma activity e, pela primeira vez, <b>dispatch do engine</b> — para que um run sem interface produza saída em vez de reaproveitar o que alguém deixou por último.'),
  'glance':[
   ('crit',('Severity','Severidade'),('A product change','Uma mudança de produto'),
    ('Risk <strong>R8</strong>: flows that silently produced stale output start producing fresh output. Sign-off first — <strong>PLAN §7, D3</strong>.',
@@ -100,12 +100,15 @@ TASK = {
     'Uma task só porque os três estágios compartilham o mesmo escopo de três partes — não porque sejam um deploy só.')),
  ],
  'lede':(
-  '<p>These nine types are <strong>front-driven</strong>: the component calls a backend endpoint directly and bypasses the flow engine (analysis §4.1). They produce output only when a user clicks Run in the builder. <strong>In an API, cron, chatbot, form or MCP run the engine never dispatches them</strong>, so the flow uses whatever the last manual run left behind — or nothing.</p>'
-  '<p><code>fileSave</code> is the sharpest case. It is listed in <code>SIDE_EFFECT_TYPES</code> (<code>flux/scheduler.ts:29–36</code>), so the scheduler deliberately protects it from being pruned — <strong>yet nothing executes it server-side.</strong> Its <code>uploadToDrive()</code> runs in the browser against a <code>localStorage</code> OAuth token, so it <em>cannot</em> run headless even in principle.</p>',
-  '<p>Estes nove tipos são <strong>só-front</strong>: o componente chama um endpoint do backend direto e contorna o engine de fluxo (análise §4.1). Só produzem saída quando um usuário clica em Run no builder. <strong>Num run por API, cron, chatbot, formulário ou MCP o engine nunca os despacha</strong>, então o fluxo usa o que o último run manual deixou — ou nada.</p>'
-  '<p>O <code>fileSave</code> é o caso mais agudo. Ele está listado em <code>SIDE_EFFECT_TYPES</code> (<code>flux/scheduler.ts:29–36</code>), então o scheduler o protege deliberadamente de ser podado — <strong>e mesmo assim nada o executa no servidor.</strong> O <code>uploadToDrive()</code> dele roda no navegador contra um token OAuth do <code>localStorage</code>, então <em>não pode</em> rodar sem interface nem em princípio.</p>'),
+  '<p>These eight types are <strong>front-driven</strong>: the component calls a backend endpoint directly and bypasses the flow engine (analysis §4.1). They produce output only when a user clicks Run in the builder. <strong>In an API, cron, chatbot, form or MCP run the engine never dispatches them</strong>, so the flow uses whatever the last manual run left behind — or nothing.</p>'
+  '<p><code>fileSave</code> is the sharpest case. It is listed in <code>SIDE_EFFECT_TYPES</code> (<code>flux/scheduler.ts</code>), so the scheduler deliberately protects it from being pruned — <strong>yet nothing executes it server-side.</strong> Its <code>uploadToDrive()</code> runs in the browser against a <code>localStorage</code> OAuth token, so it <em>cannot</em> run headless even in principle.</p>',
+  '<p>Estes oito tipos são <strong>só-front</strong>: o componente chama um endpoint do backend direto e contorna o engine de fluxo (análise §4.1). Só produzem saída quando um usuário clica em Run no builder. <strong>Num run por API, cron, chatbot, formulário ou MCP o engine nunca os despacha</strong>, então o fluxo usa o que o último run manual deixou — ou nada.</p>'
+  '<p>O <code>fileSave</code> é o caso mais agudo. Ele está listado em <code>SIDE_EFFECT_TYPES</code> (<code>flux/scheduler.ts</code>), então o scheduler o protege deliberadamente de ser podado — <strong>e mesmo assim nada o executa no servidor.</strong> O <code>uploadToDrive()</code> dele roda no navegador contra um token OAuth do <code>localStorage</code>, então <em>não pode</em> rodar sem interface nem em princípio.</p>'),
  'blocks':[
-  {'k':'label','n':'1','t':('The nine, and what each one actually needs','Os nove, e o que cada um de fato precisa')},
+  {'k':'label','n':'1','t':('The eight, and what each one actually needs','Os oito, e o que cada um de fato precisa')},
+  {'k':'prose','t':(
+    '<strong>Partial D3 input, 2026-09-02 — awaiting product confirmation.</strong> <code>documentSummarizer</code> and <code>commandMusicNode</code> are discontinued; <code>webAmazon</code> and <code>secApiNode</code> are broken today; <code>fileSave</code> is under review. If confirmed, Stage 2 loses two of its three and Stage 3 loses one. Record the confirmation in PLAN §7 (D3) before Stage 1 starts, and re-cut the stages then, not now. Eight types, not nine: <code>imageReaderNode</code> is deprecated (<strong>D24</strong>). One card, one PR per stage — each stage is independently deployable behind the flag (PLAN §3.1).',
+    '<strong>Entrada parcial da D3, 2026-09-02 — aguardando confirmação de produto.</strong> <code>documentSummarizer</code> e <code>commandMusicNode</code> estão descontinuados; <code>webAmazon</code> e <code>secApiNode</code> estão quebrados hoje; <code>fileSave</code> está em revisão. Se confirmado, o Estágio 2 perde dois dos três e o Estágio 3 perde um. Registre a confirmação no PLAN §7 (D3) antes de o Estágio 1 começar, e recorte os estágios então, não agora. Oito tipos, não nove: o <code>imageReaderNode</code> está depreciado (<strong>D24</strong>). Um card, um PR por estágio — cada estágio sobe de forma independente atrás da flag (PLAN §3.1).')},
   {'k':'table',
    'head':[('Type','Tipo'),('Stage','Estágio'),('What it needs','O que precisa'),('Why','Por quê')],
    'rows':[
@@ -134,10 +137,10 @@ TASK = {
     [{'t':'animationNode','mono':True},{'t':('Stage 3','Estágio 3'),'pill':'weak'},
      ('Luma + Runway, <code>/worker/generate-file</code>, chosen timeouts','Luma + Runway, <code>/worker/generate-file</code>, timeouts escolhidos'),
      ('Same shape as the music node, with two providers instead of one.','Mesmo formato do node de música, com dois provedores em vez de um.')],
-    [{'t':'imageReaderNode','mono':True},{'t':('In A5','Na A5'),'pill':'weak'},
-     ('The shared image provider layer','A camada de provedor de imagem compartilhada'),
-     ('The ninth type, migrated in <code>A5</code> over the layer built there — but gated by the same D3.',
-      'O nono tipo, migrado na <code>A5</code> sobre a camada construída lá — mas travado pela mesma D3.')],
+    [{'t':'imageReaderNode','mono':True},{'t':('Deprecated (D24)','Depreciado (D24)'),'pill':'no'},
+     ('Nothing — it leaves the migration','Nada — sai da migração'),
+     ('The ninth of the census. Deprecated on 2026-09-02; an OCR node is wanted later and will be specified when it is built, not here.',
+      'O nono do censo. Depreciado em 2026-09-02; um node de OCR é desejado depois e será especificado quando for construído, não aqui.')],
    ]},
   {'k':'label','n':'2','t':('The decision this task needs','A decisão que esta task precisa')},
   {'k':'prose','t':(
@@ -172,13 +175,13 @@ TASK = {
       '<p>Manter a chamada direta ao provedor “como caminho de preview” ao lado do dispatch novo é <strong>exatamente</strong> o padrão que produziu quatro listas de dispatch descoordenadas. O botão Run passa pela mesma execução que todo o resto, e a chamada direta é <strong>apagada, não apenas deixada sem uso</strong>.</p>'))]},
   {'k':'part','n':'2',
    'title':('Stage 1 — the three that are almost free','Estágio 1 — os três quase de graça'),
-   'loc':'flux/scheduler.ts:29–36 · flux.service.ts:2621–2641',
+   'loc':'flux/scheduler.ts · flux.service.ts',
    'purpose':('Ship the three types whose provider clients are already in the worker, and fix the one that cannot run headless even in principle.',
               'Entregar os três tipos cujos clientes de provedor já estão no worker, e corrigir o único que não pode rodar sem interface nem em princípio.'),
    'body':('<p><code>webTrends</code> and <code>webAmazon</code> need no provider work at all — the SerpApi and Scraper clients are already in the worker, inside <code>web-search</code> and <code>web-crawling</code>.</p>'
-           '<p><code>fileSave</code> is the most valuable of the three and the worst offender. The server-side token already exists (<code>user.googleRefreshToken</code>) and the engine already refreshes it — <strong>but only when the flow has <code>pullData</code>/<code>pushData</code> with <code>provider = google</code></strong> (<code>flux.service.ts:2621–2641</code>). <strong>Extend that condition; do not build a second refresh path.</strong></p>',
+           '<p><code>fileSave</code> is the most valuable of the three and the worst offender. The server-side token already exists (<code>user.googleRefreshToken</code>) and the engine already refreshes it — <strong>but only when the flow has <code>pullData</code>/<code>pushData</code> with <code>provider = google</code></strong> (<code>flux.service.ts</code>). <strong>Extend that condition; do not build a second refresh path.</strong></p>',
            '<p><code>webTrends</code> e <code>webAmazon</code> não exigem trabalho de provedor nenhum — os clientes do SerpApi e do Scraper já estão no worker, dentro do <code>web-search</code> e do <code>web-crawling</code>.</p>'
-           '<p>O <code>fileSave</code> é o mais valioso dos três e o pior infrator. O token de servidor já existe (<code>user.googleRefreshToken</code>) e o engine já o renova — <strong>mas só quando o fluxo tem <code>pullData</code>/<code>pushData</code> com <code>provider = google</code></strong> (<code>flux.service.ts:2621–2641</code>). <strong>Estenda essa condição; não construa um segundo caminho de refresh.</strong></p>'),
+           '<p>O <code>fileSave</code> é o mais valioso dos três e o pior infrator. O token de servidor já existe (<code>user.googleRefreshToken</code>) e o engine já o renova — <strong>mas só quando o fluxo tem <code>pullData</code>/<code>pushData</code> com <code>provider = google</code></strong> (<code>flux.service.ts</code>). <strong>Estenda essa condição; não construa um segundo caminho de refresh.</strong></p>'),
    'ba':(('The scheduler protects <code>fileSave</code> from being pruned as a dead branch, and then nothing runs it. The upload happens in a browser tab, against a token in <code>localStorage</code>.',
           'O scheduler protege o <code>fileSave</code> de ser podado como ramo morto, e depois nada o executa. O upload acontece numa aba do navegador, contra um token no <code>localStorage</code>.'),
          ('A scheduled run uploads to Drive with the server-side token, <strong>with no browser involved</strong> — and the refresh condition that already exists is the one that does it.',
@@ -208,9 +211,9 @@ TASK = {
          ('The generation is an activity with a timeout someone chose and a heartbeat that proves it is still alive.',
           'A geração é uma activity com timeout que alguém escolheu e um heartbeat que prova que ela ainda está viva.')),
    'callouts':[
-    ('mig',('The wave&#x27;s latency regression applies to all nine','A regressão de latência da onda vale para os nove'),
-     ('<p>Every node this wave migrates is a <strong>blocking round trip</strong> until Wave 5 turns on parallelism (review §4.5, risk <strong>R4</strong>). For these nine the comparison is unusual: the headless path had <em>no</em> latency because it did not run at all. <strong>Measure the builder path before and after</strong>, and state the number in the PR — that is the comparison a customer will actually feel.</p>',
-      '<p>Todo node migrado nesta onda é um <strong>round trip bloqueante</strong> até a Onda 5 ligar o paralelismo (review §4.5, risco <strong>R4</strong>). Para estes nove a comparação é atípica: o caminho sem interface não tinha latência <em>nenhuma</em> porque não rodava. <strong>Meça o caminho do builder antes e depois</strong>, e informe o número no PR — é essa a comparação que o cliente vai sentir.</p>'))]},
+    ('mig',('The wave&#x27;s latency regression applies to all eight','A regressão de latência da onda vale para os oito'),
+     ('<p>Every node this wave migrates is a <strong>blocking round trip</strong> until Wave 5 turns on parallelism (review §4.5, risk <strong>R4</strong>). For these eight the comparison is unusual: the headless path had <em>no</em> latency because it did not run at all. <strong>Measure the builder path before and after</strong>, and state the number in the PR — that is the comparison a customer will actually feel.</p>',
+      '<p>Todo node migrado nesta onda é um <strong>round trip bloqueante</strong> até a Onda 5 ligar o paralelismo (review §4.5, risco <strong>R4</strong>). Para estes oito a comparação é atípica: o caminho sem interface não tinha latência <em>nenhuma</em> porque não rodava. <strong>Meça o caminho do builder antes e depois</strong>, e informe o número no PR — é essa a comparação que o cliente vai sentir.</p>'))]},
   {'k':'part','n':'5',
    'title':('The egress policy ships with the move, not after it','A política de egresso entra junto com a mudança, não depois'),
    'loc':'TASK-S6-SSRF-POLICY.md',
@@ -243,17 +246,17 @@ TASK = {
    ('Once the front&#x27;s Run button is rerouted, the direct provider call must be <strong>gone, not merely unused</strong>. A dead code path that still compiles is the shape risk <strong>R1</strong> describes.',
     'Depois de redirecionar o botão Run do front, a chamada direta ao provedor precisa estar <strong>removida, não apenas sem uso</strong>. Um caminho morto que ainda compila é o formato que o risco <strong>R1</strong> descreve.')),
   (False,('The affected-flow count is recorded','A contagem de fluxos afetados é registrada'),
-   ('D3&#x27;s answer needs a number: <strong>how many stored flows contain one of the nine and have a headless trigger</strong>. Record it — it decides the cohort order, and it is the same query the wave&#x27;s exit gate asks for.',
-    'A resposta da D3 precisa de um número: <strong>quantos fluxos guardados contêm um dos nove e têm gatilho sem interface</strong>. Registre — ele decide a ordem das coortes, e é a mesma consulta que o gate de saída da onda pede.')),
+   ('D3&#x27;s answer needs a number: <strong>how many stored flows contain one of the eight and have a headless trigger</strong>. Record it — it decides the cohort order, and it is the same query the wave&#x27;s exit gate asks for.',
+    'A resposta da D3 precisa de um número: <strong>quantos fluxos guardados contêm um dos oito e têm gatilho sem interface</strong>. Registre — ele decide a ordem das coortes, e é a mesma consulta que o gate de saída da onda pede.')),
  ],
- 'done':('All nine satisfy <strong>PLAN §3.4</strong>, <strong>a headless run produces output for each</strong>, and <strong>no front component calls a provider service directly for execution</strong> — with D3 answered and recorded before Stage 1 began.',
-         'Os nove satisfazem o <strong>PLAN §3.4</strong>, <strong>um run sem interface produz saída para cada um</strong>, e <strong>nenhum componente do front chama um serviço de provedor direto para executar</strong> — com a D3 respondida e registrada antes de o Estágio 1 começar.'),
+ 'done':('All eight satisfy <strong>PLAN §3.4</strong>, <strong>a headless run produces output for each</strong>, and <strong>no front component calls a provider service directly for execution</strong> — with D3 answered and recorded before Stage 1 began.',
+         'Os oito satisfazem o <strong>PLAN §3.4</strong>, <strong>um run sem interface produz saída para cada um</strong>, e <strong>nenhum componente do front chama um serviço de provedor direto para executar</strong> — com a D3 respondida e registrada antes de o Estágio 1 começar.'),
  'files':[
   ('front/src/components/nodes/{WebTrends,WebAmazon,SecApiNode,UsCensusNode,AiTextSummarizer,AiMusicGenerator,AiVideoGenerator}.tsx',False),
   ('front/src/components/FileSave/FileSave.tsx',False),
   ('back/src/app-api/{sec,census_data,summarize,scraper,serpApi,repiclate,luma_labs,runwayML}/',False),
-  ('back/src/app-api/flux/flux.service.ts:2621–2641',False),
-  ('back/src/app-api/flux/scheduler.ts',False),
+  ('back/src/app-api/flux/flux.service.ts (the Google refresh-token condition on pullData/pushData)',False),
+  ('back/src/app-api/flux/scheduler.ts (SIDE_EFFECT_TYPES)',False),
   ('new worker modules — 8 types across 3 stages',True),
   ('the A1 dispatch registry',False),
  ],

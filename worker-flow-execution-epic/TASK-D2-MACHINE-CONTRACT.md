@@ -9,7 +9,8 @@ produces wrong work now (PLAN §6, R7).
 ## Why this is urgent rather than tidy
 
 `skills/node-worker-migration/SKILL.md` is the guidance an agent loads when asked to migrate a
-node. It currently states the worker enum covers ten types "as of 2026-07", says nothing about
+node. It currently states the worker enum covers ten types "as of 2026-07" — it has thirteen today,
+in `worker@origin/main` — says nothing about
 `isTemporalNode`, nothing about the integration gate, nothing about the prefetch executor, and
 nothing about the blocking wait. It also tells the agent the worker "does NOT receive engine
 in-memory state" — true — while presenting the activity template as the only shape, which will be

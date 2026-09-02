@@ -92,6 +92,42 @@ translation defect found in this project was invisible in the markup and obvious
 **Triage the language scan** — identifiers, file paths and code listings are legitimately identical
 in both languages. What you are looking for is prose.
 
+## 3b. Publishing to `execution-agents`, and the step that is easy to lose
+
+The pages are mirrored into the `execution-agents` repo, which wraps every page in a **shared
+header** — a four-tab doc-nav and one language switcher, added by that repo's own scripts. The
+generator here knows nothing about it and emits the old `top-nav`, so **every regeneration strips
+the shared header from whatever it rebuilds.**
+
+That is what produced the conflict on PR #3 on 2026-09-01: eleven regenerated pages arrived without
+the header while the other twenty-one had it.
+
+After copying pages across, run that repo's two scripts, in this order:
+
+```bash
+python3 _assets/link_header_css.py     # idempotent — skips pages that already link it
+python3 _assets/unify_header.py        # strips any existing doc-nav and re-inserts it
+```
+
+**`unify_header.py` is not byte-idempotent:** it appends two blank lines to every page on every run,
+and it rewrites all 99 pages whether they needed it or not. So after running it, restore the pages
+you did not actually change — otherwise the diff claims edits you never made, and the files grow a
+little each time.
+
+The durable fix is either to teach `tasklib.py` to emit that header, or to make `unify_header.py`
+leave an unchanged page untouched. Until one of those happens, this step is manual and is the first
+thing to check when a page loses its navigation.
+
+## 3c. Code references: file and symbol, never a line number
+
+Production moved ~40 commits in the ten days after the first draft, and about sixty of the
+seventy-five `file:line` anchors drifted by −14 to +78 while every fact they pointed at held. A
+reader following a stale line lands on confidently wrong code, which is worse than no reference.
+So a reference is `flux.service.ts` plus the method (`objectCaller()`), the constant
+(`PREFETCH_SUPPORTED_NODE_TYPES`) or the literal to grep for (`responses.length === 10`). State the
+SHA the spec was read against in `PLAN.md`'s header, and refresh it when facts are re-verified.
+This applies to the content modules in `_generator/` as well — they mirror the spec by hand.
+
 ## 4. The one rule behind all of the above
 
 **A check you have not seen fail is not a check.** Both gates in `_generator/` were vacuous when

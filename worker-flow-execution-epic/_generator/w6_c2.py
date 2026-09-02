@@ -15,7 +15,7 @@ GLANCE = [
  ('wave', ('Wave','Onda'), ('Wave 6','Onda 6'),
   ('Last. <strong>This is where the old road is removed</strong> — the legacy endpoint, the second execution path, and every flag this epic created.',
    'Por último. <strong>É aqui que a estrada velha é removida</strong> — a entrada legada, a segunda via de execução, e toda flag que este épico criou.')),
- ('ship', ('Answers','Responde'), ('Decision D2','Decisão D2'),
+ ('ship', ('Executes','Executa'), ('Decision D2','Decisão D2'),
   ('And it owns the measurement that answers it — <strong>the decision cannot be made anywhere else</strong>.',
    'E é dona da medição que a responde — <strong>a decisão não pode ser tomada em outro lugar</strong>.')),
 ]
@@ -34,7 +34,7 @@ TABLE = dict(
  head=[('Piece','Peça'),('Where','Onde'),('What removing it buys','O que remover traz'),('Blocked until','Bloqueada até')],
  rows=[
   [{'t':('The legacy single-node endpoint','A entrada legada de node único')},
-   {'t':'temporal.controller.ts:71','mono':True},
+   {'t':'temporal.controller.ts','mono':True},
    ('One less way for the same node to take a different path depending on how it was started',
     'Uma forma a menos de o mesmo node tomar um caminho diferente conforme foi iniciado'),
    {'t':('Every executable type runs in the worker','Todo tipo executável roda no worker'),'pill':'weak'}],
@@ -51,22 +51,22 @@ TABLE = dict(
  ])
 
 PROSE = (
- 'One decision this task exists to answer — <code>D2</code>, the prefetch executor — and one smaller either/or the spec names outright. '
- '<code>D2</code> is settled <strong>here</strong> and nowhere else, because this task owns the measurement that answers it.',
- 'Uma decisão que esta task existe para responder — a <code>D2</code>, o executor de prefetch — e um menor “ou isto ou aquilo” que a spec nomeia diretamente. '
- 'A <code>D2</code> é resolvida <strong>aqui</strong> e em nenhum outro lugar, porque é esta task que possui a medição que a responde.')
+ 'One decision this task exists to <em>execute</em> — <code>D2</code>, the prefetch executor — and one smaller either/or the spec names outright. '
+ '<code>D2</code>&#x27;s measurement is <code>A1</code>&#x27;s (Wave 2) and its answer is <code>B3</code>&#x27;s (Wave 4); this task carries out whichever answer won.',
+ 'Uma decisão que esta task existe para <em>executar</em> — a <code>D2</code>, o executor de prefetch — e um menor “ou isto ou aquilo” que a spec nomeia diretamente. '
+ 'A medição da <code>D2</code> é da <code>A1</code> (onda 2) e a resposta é da <code>B3</code> (onda 4); esta task executa a resposta que venceu.')
 
 DEC_PREFETCH = {
  'k':'decision','id':'C2-a','plan':'D2','status':'open','open':True,
  'q':('Is the prefetch executor the destination for worker-side input resolution, or a stopgap to retire?',
       'O executor de prefetch é o destino da resolução de entrada no worker, ou um paliativo a aposentar?'),
  'intro':(
-  '<strong>This is where <code>D2</code> is finally settled, because this task owns the measurement that answers it.</strong> '
+  '<strong>This is where <code>D2</code>&#x27;s answer is executed. The measurement is <code>A1</code>&#x27;s (Wave 2) and the answer is <code>B3</code>&#x27;s (Wave 4) — ownership split on 2026-09-02.</strong> '
   '<code>back/src/app-api/flux/prefetch/</code> is in production behind <code>FLUX_EXEC_MEMORY_MODE</code>, defaulting to <code>legacy</code>, with a '
   '17-type whitelist that <code>canUsePrefetchForFlow</code> requires <em>every</em> node in a flow to satisfy. '
   '<strong>Nothing below can be chosen before the measurement runs.</strong> Two numbers decide it: '
   '<em>how many production flows satisfy the whitelist</em>, and <em>of those, how many actually ran with the flag on — and what did it save, in memory, latency or row size</em>.',
-  '<strong>É aqui que a <code>D2</code> é finalmente resolvida, porque é esta task que possui a medição que a responde.</strong> '
+  '<strong>É aqui que a resposta da <code>D2</code> é executada. A medição é da <code>A1</code> (onda 2) e a resposta é da <code>B3</code> (onda 4) — divisão de responsabilidade feita em 2026-09-02.</strong> '
   'O <code>back/src/app-api/flux/prefetch/</code> está em produção atrás do <code>FLUX_EXEC_MEMORY_MODE</code>, com padrão <code>legacy</code>, e um '
   'whitelist de 17 tipos que o <code>canUsePrefetchForFlow</code> exige que <em>todo</em> node do fluxo satisfaça. '
   '<strong>Nada abaixo pode ser escolhido antes de a medição rodar.</strong> Dois números decidem: '
@@ -128,19 +128,17 @@ DEC_PREFETCH = {
   '<p>Two conditions on whichever answer wins. <strong>If <code>A</code>:</strong> the whitelist has to stop being a hand-maintained list and become derived from the '
   '<code>A1</code> registry, or the epic ends with the fourth list it set out to remove. <strong>If <code>C</code>:</strong> a named owner and an expiry date, '
   'or it is <code>A</code> by neglect.</p>'
-  '<p>One sequencing note that is easy to miss: <code>D2</code> is listed as gating <strong>Wave 4</strong> because <code>B3</code> needs the answer — '
-  'but the measurement lives in this task, in <strong>Wave 6</strong>. <strong>The measurement has to be pulled forward, ahead of its own task.</strong> '
-  'It is a query and a report, not a code change, so it can be.</p>',
+  '<p>Sequencing, corrected 2026-09-02: <code>D2</code> gates <strong>Wave 4</strong> because <code>B3</code> needs the answer. The measurement is no longer pulled forward from here — '
+  'it is <code>A1</code>&#x27;s, in Wave 2, where <code>canUsePrefetchForFlow</code> is already run against every stored flow. This task executes the answer in <strong>Wave 6</strong>.</p>',
   '<p><strong>Rode a medição primeiro, e deixe que ela escolha.</strong> A evidência disponível hoje aponta para a <code>B</code>: o whitelist exige que <em>todo</em> node de um '
   'fluxo esteja nele, e nenhum node de LLM está — então um fluxo com <code>commandTextNode</code> é inelegível por construção. Se isso deixar a contagem de elegíveis perto '
   'de zero, não há o que promover nem o que manter.</p>'
   '<p>Duas condições sobre qualquer resposta que vencer. <strong>Se for <code>A</code>:</strong> o whitelist precisa deixar de ser uma lista mantida à mão e passar a ser derivado do '
   'registro da <code>A1</code>, ou o épico termina com a quarta lista que ele se propôs a remover. <strong>Se for <code>C</code>:</strong> um dono nomeado e uma data de validade, '
   'ou vira <code>A</code> por descuido.</p>'
-  '<p>Uma nota de sequenciamento fácil de perder: a <code>D2</code> está listada como bloqueadora da <strong>onda 4</strong> porque a <code>B3</code> precisa da resposta — '
-  'mas a medição vive nesta task, na <strong>onda 6</strong>. <strong>A medição precisa ser antecipada, à frente da própria task.</strong> '
-  'É uma consulta e um relatório, não uma mudança de código, então dá para antecipar.</p>'),
- 'who':[('Engineering, from the measurement','Engenharia, a partir da medição'),('B3&#x27;s owner, since D2 gates it','O dono da B3, já que a D2 o bloqueia')],
+  '<p>Sequenciamento, corrigido em 2026-09-02: a <code>D2</code> bloqueia a <strong>onda 4</strong> porque a <code>B3</code> precisa da resposta. A medição não é mais antecipada a partir daqui — '
+  'é da <code>A1</code>, na onda 2, onde o <code>canUsePrefetchForFlow</code> já é rodado contra todo fluxo guardado. Esta task executa a resposta na <strong>onda 6</strong>.</p>'),
+ 'who':[('A1 measures (Wave 2)','A A1 mede (onda 2)'),('B3 answers (Wave 4)','A B3 responde (onda 4)'),('C2 executes (Wave 6)','A C2 executa (onda 6)')],
 }
 
 DEC_TPI = {
@@ -203,16 +201,16 @@ DECISIONS = [DEC_PREFETCH, DEC_TPI]
 
 PARTS = [
 {'n':'1','title':('The legacy single-node endpoint','A entrada legada de node único'),
- 'loc':'temporal.controller.ts:71 · single-node-legacy.service.ts:132–150',
+ 'loc':'temporal.controller.ts · single-node-legacy.service.ts',
  'purpose':('Retire a router whose destination set becomes empty the moment every executable type runs in the worker.',
             'Aposentar um roteador cujo conjunto de destinos fica vazio no momento em que todo tipo executável roda no worker.'),
- 'body':('<p><code>/process/single-node-legacy</code> lives at <code>back/src/temporal/temporal.controller.ts:71</code>, backed by '
-         '<code>single-node-legacy/single-node-legacy.service.ts</code>. Its <code>validateNode</code> (<code>:132–150</code>) does three things: it '
+ 'body':('<p><code>/process/single-node-legacy</code> lives at <code>back/src/temporal/temporal.controller.ts</code>, backed by '
+         '<code>single-node-legacy/single-node-legacy.service.ts</code>. Its <code>validateNode</code> does three things: it '
          '<strong>refuses migrated types</strong>, it <strong>refuses mutating types</strong>, and it accepts only <code>LEGACY_SINGLE_RUN_NODE_TYPES</code>.</p>'
          '<p>Follow that to its conclusion. Once every executable type runs in the worker, <strong>this endpoint accepts nothing</strong> — '
          'it becomes a router with an empty destination set. Retire it, and retire the allowlist that feeds it.</p>',
-         '<p>O <code>/process/single-node-legacy</code> vive em <code>back/src/temporal/temporal.controller.ts:71</code>, apoiado no '
-         '<code>single-node-legacy/single-node-legacy.service.ts</code>. O <code>validateNode</code> dele (<code>:132–150</code>) faz três coisas: '
+         '<p>O <code>/process/single-node-legacy</code> vive em <code>back/src/temporal/temporal.controller.ts</code>, apoiado no '
+         '<code>single-node-legacy/single-node-legacy.service.ts</code>. O <code>validateNode</code> dele faz três coisas: '
          '<strong>recusa tipos migrados</strong>, <strong>recusa tipos mutantes</strong>, e aceita apenas o <code>LEGACY_SINGLE_RUN_NODE_TYPES</code>.</p>'
          '<p>Leve isso à conclusão. Quando todo tipo executável rodar no worker, <strong>esta entrada não aceita mais nada</strong> — '
          'ela vira um roteador com conjunto de destinos vazio. Aposente a entrada, e aposente a allowlist que a alimenta.</p>'),
@@ -228,31 +226,29 @@ PARTS = [
         'Uma forma de rodar um node. A entrada legada retorna um <code>404</code>/<code>410</code> claro, e o front já parou de chamá-la.'))},
 
 {'n':'2','title':('What this task must not remove','O que esta task não pode remover'),
- 'loc':('D18 · flux.controller.ts:643, 839, 872, 888, 923','D18 · flux.controller.ts:643, 839, 872, 888, 923'),
+ 'loc':('D18 · flux.controller.ts','D18 · flux.controller.ts'),
  'purpose':('Name the endpoints that look legacy and are not, before a sweep takes them with the ones that are.',
             'Nomear os endpoints que parecem legados e não são, antes que uma varredura os leve junto com os que são.'),
  'body':('<p><strong><code>D18</code> keeps the whole batch-process family.</strong> None of the five is deprecated: '
-         '<code>POST /batch-process</code> (<code>:643</code>), <code>GET /batch-process/:id/status</code> (<code>:839</code>), '
-         '<code>GET /batch-process/all</code> (<code>:872</code>), <code>POST /batch-process/:id/stop</code> (<code>:888</code>) and '
-         '<code>GET /batch-process/:ids/download</code> (<code>:923</code>).</p>'
+         '<code>POST /batch-process</code>, <code>GET /batch-process/:id/status</code>, '
+         '<code>GET /batch-process/all</code>, <code>POST /batch-process/:id/stop</code> and '
+         '<code>GET /batch-process/:ids/download</code>.</p>'
          '<p>The route stays as the entry point and its body moves into <code>B7</code>&#x27;s durable workflow. The status, listing, stop and download endpoints '
-         'are the surface a batch screen reads, so in this epic they <strong>gain a consumer rather than losing one</strong>.</p>',
+         'are the batch&#x27;s only surface; the screen that would read them is <strong>not built in this epic</strong> (B7, 2026-09-02), and they stay regardless.</p>',
          '<p><strong>A <code>D18</code> mantém toda a família batch-process.</strong> Nenhum dos cinco é depreciado: '
-         '<code>POST /batch-process</code> (<code>:643</code>), <code>GET /batch-process/:id/status</code> (<code>:839</code>), '
-         '<code>GET /batch-process/all</code> (<code>:872</code>), <code>POST /batch-process/:id/stop</code> (<code>:888</code>) e '
-         '<code>GET /batch-process/:ids/download</code> (<code>:923</code>).</p>'
+         '<code>POST /batch-process</code>, <code>GET /batch-process/:id/status</code>, '
+         '<code>GET /batch-process/all</code>, <code>POST /batch-process/:id/stop</code> e '
+         '<code>GET /batch-process/:ids/download</code>.</p>'
          '<p>A rota permanece como porta de entrada e o miolo dela vai para o workflow durável da <code>B7</code>. Os endpoints de status, listagem, stop e download '
-         'são a superfície que uma tela de lote lê, então neste épico eles <strong>ganham um consumidor em vez de perder um</strong>.</p>'),
+         'são a única superfície do lote; a tela que os leria <strong>não é construída neste épico</strong> (B7, 2026-09-02), e eles ficam de qualquer forma.</p>'),
  'callouts':[('warn',('They look like the legacy endpoint and are not','Eles parecem o endpoint legado e não são'),
-   ('<p>Both are older routes on the same controller, and both predate the worker. The difference is that one has no caller left and the other is about to get '
-    'its first real one. <strong>Check the list above before deleting anything named <code>batch</code>.</strong></p>',
-    '<p>Os dois são rotas antigas no mesmo controller, e os dois são anteriores ao worker. A diferença é que um não tem mais chamador e o outro está prestes a '
-    'ganhar o primeiro de verdade. <strong>Confira a lista acima antes de apagar qualquer coisa chamada <code>batch</code>.</strong></p>'))]},
+   ('<p>Both are older routes on the same controller, and both predate the worker. The difference is that one has no caller left and the other is the batch&#x27;s only surface. <strong>Check the list above before deleting anything named <code>batch</code>.</strong></p>',
+    '<p>Os dois são rotas antigas no mesmo controller, e os dois são anteriores ao worker. A diferença é que um não tem mais chamador e o outro é a única superfície do lote. <strong>Confira a lista acima antes de apagar qualquer coisa chamada <code>batch</code>.</strong></p>'))]},
 
 {'n':'3','title':('The prefetch executor — measure, then decide','O executor de prefetch — medir, e então decidir'),
- 'loc':'app-api/flux/prefetch/ · flux.service.ts:1402–1431, 3198–3226',
- 'purpose':('Answer D2 with two numbers instead of an opinion — and report what could not be determined as unverifiable, not as zero.',
-            'Responder a D2 com dois números em vez de uma opinião — e reportar o que não pôde ser determinado como não verificável, não como zero.'),
+ 'loc':'app-api/flux/prefetch/ · flux.service.ts',
+ 'purpose':('Execute D2&#x27;s answer — the two numbers behind it were A1&#x27;s to report, and whatever could not be determined stays unverifiable, not zero.',
+            'Executar a resposta da D2 — os dois números por trás dela eram da A1 reportar, e o que não pôde ser determinado continua não verificável, não zero.'),
  'body':('<p><code>back/src/app-api/flux/prefetch/</code> is <strong>in production</strong>, behind <code>FLUX_EXEC_MEMORY_MODE</code>, which defaults to '
          '<code>legacy</code>. <code>canUsePrefetchForFlow</code> then requires <strong>every</strong> node in a flow to be in this 17-type whitelist:</p>',
          '<p>O <code>back/src/app-api/flux/prefetch/</code> está <strong>em produção</strong>, atrás do <code>FLUX_EXEC_MEMORY_MODE</code>, cujo padrão é '
@@ -277,8 +273,8 @@ PARTS = [
           'e o que isso economizou em memória, latência ou tamanho de linha.</p>'),
  'ba':(('A second execution path is live in production, dormant by default, and nobody can say how many flows it would even apply to.',
         'Uma segunda via de execução está viva em produção, dormente por padrão, e ninguém sabe dizer a quantos fluxos ela sequer se aplicaria.'),
-       ('<code>D2</code> is answered <strong>in writing, with the numbers behind it</strong> — and whichever answer wins, there is one execution path fewer to explain.',
-        'A <code>D2</code> é respondida <strong>por escrito, com os números por trás</strong> — e qualquer que seja a resposta vencedora, há uma via de execução a menos para explicar.')),
+       ('<code>D2</code>&#x27;s answer is <strong>executed, with A1&#x27;s numbers behind it</strong> — and whichever answer won, there is one execution path fewer to explain.',
+        'A resposta da <code>D2</code> é <strong>executada, com os números da A1 por trás</strong> — e qualquer que tenha sido a resposta vencedora, há uma via de execução a menos para explicar.')),
  'callouts':[('decide',('Unknown is not zero','Desconhecido não é zero'),
    ('<p><code>PLAN §3.3.2</code> applied to the measurement itself: report flows whose eligibility you <strong>could not determine</strong> as '
     '<em>unverifiable</em>, not as ineligible. <strong>The prefetch decision must not rest on a count that quietly rounded unknowns to zero.</strong></p>',
@@ -328,13 +324,13 @@ VERIF = [
    'Uma flag esquecida é o mecanismo por trás do <code>R1</code>, ainda armado.')),
 ]
 
-DONE = ('The legacy endpoint and its allowlist are gone; <strong><code>D2</code> is answered in writing with the numbers behind it</strong>; '
+DONE = ('The legacy endpoint and its allowlist are gone; <strong><code>D2</code>&#x27;s answer is executed, with the numbers behind it recorded</strong>; '
         'and <strong>no migration flag from this epic remains</strong>.',
-        'A entrada legada e sua allowlist sumiram; <strong>a <code>D2</code> está respondida por escrito, com os números por trás</strong>; '
+        'A entrada legada e sua allowlist sumiram; <strong>a resposta da <code>D2</code> está executada, com os números por trás registrados</strong>; '
         'e <strong>nenhuma flag de migração deste épico permanece</strong>.')
 
-FILES = [('back/src/temporal/temporal.controller.ts:71', False),
+FILES = [('back/src/temporal/temporal.controller.ts (/process/single-node-legacy)', False),
          ('back/src/temporal/single-node-legacy/**', False),
-         ('back/src/app-api/flux/prefetch/**', False),
-         ('back/src/app-api/flux/flux.service.ts:1402–1431, 3198–3226', False),
+         ('back/src/app-api/flux/prefetch/** (memory-mode.ts owns FLUX_EXEC_MEMORY_MODE)', False),
+         ('back/src/app-api/flux/flux.service.ts (PREFETCH_SUPPORTED_NODE_TYPES · canUsePrefetchForFlow · the isPrefetchMode() switch)', False),
          ('front/src/service/processService.ts', False)]
