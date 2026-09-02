@@ -1,16 +1,19 @@
 # A6 — Give the front-driven types server-side execution
 
-**Goal:** the eight node types that today run only from the browser get an activity and, for the
-first time, engine dispatch. (The census counted nine; `imageReaderNode` is deprecated — D24.)
+**Goal:** the front-driven node types that today run only from the browser get an activity and, for
+the first time, engine dispatch. Eight after D24 (the census counted nine); **six after D3**, which
+discontinues `documentSummarizer` and `commandMusicNode`.
 
-**Depends on:** A1. **Blocked on:** decision **D3**. **One card, one PR per stage** (PLAN §3.1) —
+**Depends on:** A1. **D3 answered on 2026-09-02** (PLAN §7) — the wave's product sign-off exists.
+**One card, one PR per stage** (PLAN §3.1) —
 they are one task because they share the same three-part scope, not because they are one deploy;
 each stage is independently deployable behind the flag.
 
-**Partial D3 input, 2026-09-02 — awaiting product confirmation.** `documentSummarizer` and
-`commandMusicNode` are discontinued; `webAmazon` and `secApiNode` are broken today; `fileSave` is
-under review. If confirmed, Stage 2 loses two of its three and Stage 3 loses one — record the
-confirmation in PLAN §7 (D3) before Stage 1 starts, and re-cut the stages then, not now.
+**D3, as answered on 2026-09-02.** `documentSummarizer` and `commandMusicNode` are discontinued and
+leave this task. `webAmazon` and `secApiNode` are broken today: giving them execution includes making
+them work, or dropping them — decide per type in its stage and record the decision here. `fileSave`
+is under review and stays in scope until that review says otherwise. The stages below are re-cut
+accordingly: six types.
 
 ## Why this is not an ordinary migration
 
@@ -30,8 +33,8 @@ things, and the second does not exist for any other task in this epic:
    the direct provider call. **Keeping both paths is exactly how the four lists diverged.**
 
 **This changes behaviour for existing customers.** A scheduled flow containing one of these nodes
-starts producing fresh output where it produced stale output before. That is almost certainly the
-fix — but it is a product decision (D3), not a refactor, and it must be answered before stage 1.
+starts producing fresh output where it produced stale output before. That is the fix — and it is a
+product decision (D3), answered on 2026-09-02, not a refactor.
 
 ## Stages
 
@@ -41,7 +44,7 @@ the worker.
 | Type | Why it is free |
 |---|---|
 | `webTrends` | the SerpApi client is already in the worker, inside `web-search` |
-| `webAmazon` | the Scraper client is already in the worker, inside `web-crawling` |
+| `webAmazon` | the Scraper client is already in the worker, inside `web-crawling` — **broken today** (D3): fix it as part of giving it execution, or drop it, and record which |
 | `fileSave` | `GoogleDriveService.uploadFile` and `TokenProviderService` already exist in the worker |
 
 `fileSave` is the most valuable of the three and the worst offender: it is listed in
@@ -52,14 +55,14 @@ already exists (`user.googleRefreshToken`) and the engine already refreshes it �
 flow has `pullData`/`pushData` with `provider = google` (`flux.service.ts`). Extend that
 condition; do not build a second refresh path.
 
-**Stage 2 — port a small client.** `secApiNode` (`app-api/sec`), `usCensusNode`
-(`app-api/census_data`), `documentSummarizer` (`app-api/summarize`). No credentials beyond an env
-key, except `documentSummarizer`, which is LLM-backed and therefore uses the existing billing and
-model-access callbacks.
+**Stage 2 — port a small client.** `secApiNode` (`app-api/sec`; **broken today**, D3 — fix or drop,
+and record which) and `usCensusNode` (`app-api/census_data`). No credentials beyond an env key.
+`documentSummarizer` (`app-api/summarize`) was here; it is **discontinued (D3)** and leaves the task.
 
-**Stage 3 — asset providers.** `commandMusicNode` (Replicate) and `animationNode` (Luma + Runway).
-Both produce assets, so both use `/worker/generate-file`; both are long-running, so both need
-their `startToCloseTimeout` and `heartbeatTimeout` chosen deliberately rather than inherited.
+**Stage 3 — asset provider.** `animationNode` (Luma + Runway). It produces an asset, so it uses
+`/worker/generate-file`; it is long-running, so its `startToCloseTimeout` and `heartbeatTimeout` are
+chosen deliberately rather than inherited. `commandMusicNode` (Replicate) was here; it is
+**discontinued (D3)** and leaves the task.
 
 (`imageReaderNode` was the ninth of the census. It is **deprecated (D24)** and leaves the migration;
 an OCR node is wanted later and will be specified when it is built, not here.)
@@ -89,11 +92,13 @@ move is what changes the risk.
 
 ## Done when
 
-All eight satisfy PLAN §3.4; a headless run produces output for each; no front component calls a
-provider service directly for execution.
+All six that remain after D3 satisfy PLAN §3.4; a headless run produces output for each; no front
+component calls a provider service directly for execution; `documentSummarizer` and
+`commandMusicNode` are recorded as discontinued in the A1 registry, not left as front-driven; and
+the fix-or-drop call for `webAmazon` and `secApiNode` is written in this file.
 
 ## Files
 
-`front/src/components/nodes/{WebTrends,WebAmazon,SecApiNode,UsCensusNode,AiTextSummarizer,AiMusicGenerator,AiVideoGenerator}.tsx` ·
-`front/src/components/FileSave/FileSave.tsx` · `back/src/app-api/{sec,census_data,summarize,scraper,serpApi,repiclate,luma_labs,runwayML}/` ·
+`front/src/components/nodes/{WebTrends,WebAmazon,SecApiNode,UsCensusNode,AiVideoGenerator}.tsx` ·
+`front/src/components/FileSave/FileSave.tsx` · `back/src/app-api/{sec,census_data,scraper,serpApi,luma_labs,runwayML}/` ·
 `back/src/app-api/flux/flux.service.ts` (the Google refresh-token condition on `pullData`/`pushData`) · `back/src/app-api/flux/scheduler.ts` (`SIDE_EFFECT_TYPES`) · new worker modules · the A1 registry
