@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Flux — Task status by wave</title>
+<link rel="stylesheet" href="_assets/i18n.css">
+<link rel="stylesheet" href="_assets/header.css">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #F1F5F9;
+    color: #0F172A;
+    margin: 0;
+    padding: 32px 24px 80px;
+    line-height: 1.5;
+  }
+  .container { max-width: 1400px; margin: 0 auto; }
+
+  /* Unified top tabs (shared) */
+  .doc-nav { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+  .doc-tabs {
+    display: flex; gap: 4px; background: #fff; padding: 5px; border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(15,23,42,0.08); flex-wrap: wrap;
+    border: 1px solid #E2E8F0; flex: 1 1 auto; min-width: 0;
+  }
+  .doc-tabs .doc-tab {
+    flex: 1 1 auto; text-align: center; padding: 9px 16px; border-radius: 8px;
+    text-decoration: none; color: #475569; font-size: 13px; font-weight: 600;
+    letter-spacing: -0.1px; transition: background 0.15s, color 0.15s; white-space: nowrap;
+  }
+  .doc-tabs .doc-tab:hover { background: #F1F5F9; color: #0F172A; }
+  .doc-tabs .doc-tab.is-active {
+    background: #0F172A; color: #fff; box-shadow: 0 1px 2px rgba(15,23,42,0.15);
+  }
+  .doc-tabs .doc-tab.is-active:hover { background: #0F172A; color: #fff; }
+
+  /* Hero */
+  .hero {
+    background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+    color: white;
+    border-radius: 16px;
+    padding: 32px 36px;
+    margin-bottom: 28px;
+    box-shadow: 0 4px 20px rgba(15,23,42,0.15);
+  }
+  .hero .kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 100px;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: #CBD5E1;
+    margin-bottom: 14px;
+  }
+  .hero h1 {
+    margin: 0 0 10px 0;
+    font-size: 30px;
+    letter-spacing: -0.6px;
+  }
+  .hero .subtitle {
+    font-size: 14.5px;
+    color: #CBD5E1;
+    max-width: 900px;
+    line-height: 1.65;
+  }
+
+  /* Global summary */
+  .summary {
+    background: white;
+    border-radius: 14px;
+    padding: 22px 26px;
+    margin-bottom: 28px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .summary-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .summary-title {
+    font-size: 15px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #334155;
+  }
+  .summary-counts {
+    font-size: 13px;
+    color: #64748B;
+  }
+  .summary-counts strong { color: #0F172A; }
+
+  .progress-bar {
+    display: flex;
+    height: 14px;
+    background: #E2E8F0;
+    border-radius: 100px;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .progress-seg { height: 100%; transition: width 0.3s; }
+  .progress-seg.done  { background: #10B981; }
+  .progress-seg.doing { background: #F59E0B; }
+  .progress-seg.planned { background: #CBD5E1; }
+
+  .summary-legend {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    font-size: 12.5px;
+    color: #475569;
+  }
+  .summary-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .summary-legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+  }
+  .summary-legend-dot.done { background: #10B981; }
+  .summary-legend-dot.doing { background: #F59E0B; }
+  .summary-legend-dot.planned { background: #CBD5E1; }
+
+  /* Wave cards */
+  .wave {
+    background: white;
+    border-radius: 14px;
+    padding: 22px 26px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    border-left: 5px solid #94A3B8;
+  }
+  .wave.w-done { border-left-color: #10B981; }
+  .wave.w-doing { border-left-color: #F59E0B; }
+  .wave.w-planned { border-left-color: #CBD5E1; }
+
+  .wave-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .wave-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #0F172A;
+    letter-spacing: -0.3px;
+  }
+  .wave-title .num {
+    color: #94A3B8;
+    font-weight: 500;
+    margin-right: 6px;
+  }
+  .wave-mini {
+    display: flex;
+    gap: 12px;
+    font-size: 12px;
+    color: #64748B;
+  }
+  .wave-mini .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-weight: 600;
+  }
+  .wave-mini .chip.done { background: #D1FAE5; color: #065F46; }
+  .wave-mini .chip.doing { background: #FEF3C7; color: #92400E; }
+  .wave-mini .chip.planned { background: #F1F5F9; color: #475569; }
+
+  .wave-desc {
+    color: #64748B;
+    font-size: 13px;
+    margin-bottom: 16px;
+    max-width: 900px;
+  }
+
+  /* Wave-level progress bar (thin) */
+  .wave-progress {
+    height: 6px;
+    background: #E2E8F0;
+    border-radius: 100px;
+    overflow: hidden;
+    display: flex;
+    margin-bottom: 16px;
+  }
+  .wave-progress .seg.done  { background: #10B981; }
+  .wave-progress .seg.doing { background: #F59E0B; }
+  .wave-progress .seg.planned { background: #CBD5E1; }
+
+  /* Task grid */
+  .task-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 10px;
+  }
+  .task {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: #F8FAFC;
+    border-radius: 10px;
+    border-left: 4px solid #94A3B8;
+    transition: transform 0.1s;
+  }
+  .task:hover { transform: translateY(-1px); }
+  .task.done    { border-left-color: #10B981; background: #F0FDF4; }
+  .task.doing   { border-left-color: #F59E0B; background: #FFFBEB; }
+  .task.planned { border-left-color: #94A3B8; }
+
+  .task-status-icon {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: white;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+  }
+  .task.done    .task-status-icon { background: #10B981; }
+  .task.doing   .task-status-icon { background: #F59E0B; }
+  .task.planned .task-status-icon { background: #CBD5E1; color: #64748B; }
+
+  .task-body { flex: 1; min-width: 0; }
+  .task-id {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-weight: 700;
+    font-size: 12.5px;
+    color: #0F172A;
+  }
+  .task-part {
+    font-size: 10.5px;
+    color: #64748B;
+    font-weight: 500;
+    margin-left: 4px;
+  }
+  .task-title {
+    font-size: 12.5px;
+    color: #334155;
+    margin-top: 2px;
+    line-height: 1.35;
+  }
+  .task-badge {
+    font-size: 9.5px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .task-badge.done    { background: #D1FAE5; color: #065F46; }
+  .task-badge.doing   { background: #FEF3C7; color: #92400E; }
+  .task-badge.planned { background: #F1F5F9; color: #64748B; }
+
+  /* Note */
+  .note {
+    background: #EFF6FF;
+    border-left: 4px solid #3B82F6;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    color: #1E3A8A;
+    margin: 8px 0 20px;
+  }
+  .note strong { color: #1E3A8A; }
+
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="doc-nav">
+  <nav class="doc-tabs" aria-label="Documentation sections">
+    <a href="index.html" class="doc-tab"><span data-en="Current architecture" data-pt="Arquitetura atual">Current architecture</span></a>
+    <a href="arquitetura-v2.html" class="doc-tab"><span data-en="v2 architecture" data-pt="Arquitetura v2">v2 architecture</span></a>
+    <a href="arquitetura-v2-complemento.html" class="doc-tab"><span data-en="Plan as tasks" data-pt="Plano em tarefas">Plan as tasks</span></a>
+    <a href="timeline/index.html" class="doc-tab"><span data-en="Timeline" data-pt="Timeline">Timeline</span></a>
+    <a href="progresso-refatoracao.html" class="doc-tab"><span data-en="Progress" data-pt="Progresso">Progress</span></a>
+    <a href="status-tarefas.html" class="doc-tab is-active"><span data-en="Task status" data-pt="Status das tarefas">Task status</span></a>
+  </nav>
+  <div class="lang-sw" role="group" aria-label="Language">
+    <button type="button" data-lang="en" aria-pressed="true">EN-US</button>
+    <button type="button" data-lang="pt" aria-pressed="false">PT-BR</button>
+  </div>
+</div>
+
+<div class="hero">
+  <div class="kicker">
+    <span data-en="Epic delivery status" data-pt="Status de entrega do épico">Epic delivery status</span>
+  </div>
+  <h1><span data-en="Task status by wave" data-pt="Status das tarefas por wave">Task status by wave</span></h1>
+  <div class="subtitle">
+    <span data-en="Every task from the worker-flow-execution epic, grouped by the wave that ships it. Each card shows whether the task is done, in progress, or still planned. Status of Wave 0 is up to date; every other wave is pending." data-pt="Todas as tarefas do épico worker-flow-execution, agrupadas pela wave que as entrega. Cada card mostra se a tarefa está pronta, em andamento ou ainda planejada. O status da Wave 0 está atualizado; as demais waves seguem pendentes.">Every task from the worker-flow-execution epic, grouped by the wave that ships it. Each card shows whether the task is done, in progress, or still planned. Status of Wave 0 is up to date; every other wave is pending.</span>
+  </div>
+</div>
+
+<div class="summary">
+  <div class="summary-header">
+    <div class="summary-title"><span data-en="Overall progress" data-pt="Progresso geral">Overall progress</span></div>
+    <div class="summary-counts">
+      <strong>5</strong> <span data-en="done" data-pt="prontas">done</span>
+      &nbsp;·&nbsp;
+      <strong>1</strong> <span data-en="in progress" data-pt="em andamento">in progress</span>
+      &nbsp;·&nbsp;
+      <strong>28</strong> <span data-en="planned" data-pt="planejadas">planned</span>
+      &nbsp;·&nbsp;
+      <strong>34</strong> <span data-en="total items" data-pt="itens totais">total items</span>
+    </div>
+  </div>
+  <div class="progress-bar">
+    <div class="progress-seg done"    style="width: 14.7%"></div>
+    <div class="progress-seg doing"   style="width: 2.9%"></div>
+    <div class="progress-seg planned" style="width: 82.4%"></div>
+  </div>
+  <div class="summary-legend">
+    <div class="summary-legend-item"><span class="summary-legend-dot done"></span><span data-en="Done — shipped or merged" data-pt="Pronta — entregue ou mergeada">Done — shipped or merged</span></div>
+    <div class="summary-legend-item"><span class="summary-legend-dot doing"></span><span data-en="In progress — under active development" data-pt="Em andamento — em desenvolvimento ativo">In progress — under active development</span></div>
+    <div class="summary-legend-item"><span class="summary-legend-dot planned"></span><span data-en="Planned — not started" data-pt="Planejada — não iniciada">Planned — not started</span></div>
+  </div>
+</div>
+
+<div class="note">
+  <strong><span data-en="Splits worth naming." data-pt="Divisões que merecem citação.">Splits worth naming.</span></strong>
+  <span data-en="S7 is delivered in three parts (parts 1 and 3 in Wave 0, part 2 in Wave 1) and each part carries its own status. C1 is applied per node during Wave 3 and finished in Wave 6 — it appears in both waves. Totals above count each part as its own item." data-pt="S7 é entregue em três partes (partes 1 e 3 na Wave 0, parte 2 na Wave 1) e cada parte tem status próprio. C1 é aplicada por nó durante a Wave 3 e finalizada na Wave 6 — aparece nas duas waves. Os totais acima contam cada parte como um item separado."> S7 is delivered in three parts (parts 1 and 3 in Wave 0, part 2 in Wave 1) and each part carries its own status. C1 is applied per node during Wave 3 and finished in Wave 6 — it appears in both waves. Totals above count each part as its own item.</span>
+</div>
+
+<!-- ================ WAVE 0 ================ -->
+<div class="wave w-doing">
+  <div class="wave-header">
+    <div class="wave-title">
+      <span class="num">Wave 0</span>
+      <span data-en="Close what is already open" data-pt="Fechar o que já está aberto">Close what is already open</span>
+    </div>
+    <div class="wave-mini">
+      <span class="chip done">4 <span data-en="done" data-pt="prontas">done</span></span>
+      <span class="chip doing">1 <span data-en="in progress" data-pt="em andamento">in progress</span></span>
+    </div>
+  </div>
+  <div class="wave-desc">
+    <span data-en="Live gaps that ship without touching the migration. S7 part 1 was the single most urgent item in the epic — a flow id was enough to run someone's private flow at their expense." data-pt="Buracos vivos que sobem sem tocar na migração. A S7 parte 1 era o item mais urgente do épico — um id de flow bastava para rodar um flow privado alheio às custas do dono.">Live gaps that ship without touching the migration. S7 part 1 was the single most urgent item in the epic — a flow id was enough to run someone's private flow at their expense.</span>
+  </div>
+  <div class="wave-progress">
+    <div class="seg done"  style="width: 80%"></div>
+    <div class="seg doing" style="width: 20%"></div>
+  </div>
+  <div class="task-grid">
+    <div class="task done">
+      <div class="task-status-icon">&check;</div>
+      <div class="task-body">
+        <div class="task-id">S4</div>
+        <div class="task-title"><span data-en="Execution budget: per node, per run, per chain" data-pt="Orçamento de execução: por node, por run, por cadeia">Execution budget: per node, per run, per chain</span></div>
+      </div>
+      <span class="task-badge done"><span data-en="Done" data-pt="Pronta">Done</span></span>
+    </div>
+    <div class="task done">
+      <div class="task-status-icon">&check;</div>
+      <div class="task-body">
+        <div class="task-id">S5</div>
+        <div class="task-title"><span data-en="Authorise the claim check" data-pt="Autorizar o claim check">Authorise the claim check</span></div>
+      </div>
+      <span class="task-badge done"><span data-en="Done" data-pt="Pronta">Done</span></span>
+    </div>
+    <div class="task done">
+      <div class="task-status-icon">&check;</div>
+      <div class="task-body">
+        <div class="task-id">C3</div>
+        <div class="task-title"><span data-en="Fix the defects before they get ported" data-pt="Corrigir os defeitos antes de serem portados">Fix the defects before they get ported</span></div>
+      </div>
+      <span class="task-badge done"><span data-en="Done" data-pt="Pronta">Done</span></span>
+    </div>
+    <div class="task doing">
+      <div class="task-status-icon">•</div>
+      <div class="task-body">
+        <div class="task-id">S1</div>
+        <div class="task-title"><span data-en="Depth ceiling and cycle detection for sub-flows" data-pt="Teto de profundidade e detecção de ciclo em sub-fluxos">Depth ceiling and cycle detection for sub-flows</span></div>
+      </div>
+      <span class="task-badge doing"><span data-en="In progress" data-pt="Em andamento">In progress</span></span>
+    </div>
+    <div class="task done">
+      <div class="task-status-icon">&check;</div>
+      <div class="task-body">
+        <div class="task-id">S7<span class="task-part"><span data-en="parts 1 &amp; 3" data-pt="partes 1 e 3">parts 1 &amp; 3</span></span></div>
+        <div class="task-title"><span data-en="Authenticate the webhook route and the email trigger" data-pt="Autenticar a rota de webhook e o disparo por e-mail">Authenticate the webhook route and the email trigger</span></div>
+      </div>
+      <span class="task-badge done"><span data-en="Done" data-pt="Pronta">Done</span></span>
+    </div>
+  </div>
+</div>
+
+<!-- ================ WAVE 1 ================ -->
+<div class="wave w-planned">
+  <div class="wave-header">
+    <div class="wave-title">
+      <span class="num">Wave 1</span>
+      <span data-en="Make the fleet able to grow" data-pt="Deixar a frota poder crescer">Make the fleet able to grow</span>
+    </div>
+    <div class="wave-mini">
+      <span class="chip planned">5 <span data-en="planned" data-pt="planejadas">planned</span></span>
+    </div>
+  </div>
+  <div class="wave-desc">
+    <span data-en="Nothing here migrates a node. It removes the reasons the fleet cannot scale — connections, spend ceilings, cross-replica notifications, entry-point rate limiting, single-fire schedules." data-pt="Nada aqui migra um nó. Remove os motivos pelos quais a frota não pode escalar — conexões, tetos de gasto, notificações cross-replica, rate limit nas portas de entrada, disparo único de agendamentos.">Nothing here migrates a node. It removes the reasons the fleet cannot scale — connections, spend ceilings, cross-replica notifications, entry-point rate limiting, single-fire schedules.</span>
+  </div>
+  <div class="wave-progress">
+    <div class="seg planned" style="width: 100%"></div>
+  </div>
+  <div class="task-grid">
+    <div class="task planned">
+      <div class="task-status-icon">·</div>
+      <div class="task-body">
+        <div class="task-id">S2</div>
+        <div class="task-title"><span data-en="Size the database connections before adding workers" data-pt="Dimensionar as conexões de banco antes de somar workers">Size the database connections before adding workers</span></div>
+      </div>
+      <span class="task-badge planned"><span data-en="Planned" data-pt="Planejada">Planned</span></span>
+    </div>
+    <div class="task planned">
+      <div class="task-status-icon">·</div>
+      <div class="task-body">
+        <div class="task-id">S3</div>
+        <div class="task-title"><span data-en="A ceiling on what one run can spend" data-pt="Um teto para o que um run pode gastar">A ceiling on what one run can spend</span></div>
+      </div>
+      <span class="task-badge planned"><span data-en="Planned" data-pt="Planejada">Planned</span></span>
+    </div>
+    <div class="task planned">
+      <div class="task-status-icon">·</div>
+      <div class="task-body">
+        <div class="task-id">E3</div>
+        <div class="task-title"><span data-en="Make run notifications distributed" data-pt="Tornar as notificações de run distribuídas">Make run notifications distributed</span></div>
+      </div>
+      <span class="task-badge planned"><span data-en="Planned" data-pt="Planejada">Planned</span></span>
+    </div>
+    <div class="task planned">
+      <div class="task-status-icon">·</div>
+      <div class="task-body">
+        <div class="task-id">S7<span class="task-part"><span data-en="part 2" data-pt="parte 2">part 2</span></span></div>
+        <div class="task-title"><span data-en="Rate-limit every run-creating entry point" data-pt="Limitar cada porta de entrada que cria run">Rate-limit every run-creating entry point</span></div>
+      </div>
+      <span class="task-badge planned"><span data-en="Planned" data-pt="Planejada">Planned</span></span>
+    </div>
+    <div class="task planned">
+      <div class="task-status-icon">·</div>
+      <div class="task-body">
+        <div class="task-id">S8</div>
+        <div class="task-title"><span data-en="One fire per schedule, one run per cron" data-pt="Um disparo por agendamento, um run por cron">One fire per schedule, one run per cron</span></div>
+      </div>
+      <span class="task-badge planned"><span data-en="Planned" data-pt="Planejada">Planned</span></span>
+    </div>
+  </div>
+</div>
+
+<!-- ================ WAVE 2 ================ -->
+<div class="wave w-planned">
+  <div class="wave-header">
+    <div class="wave-title">
+      <span class="num">Wave 2</span>
+      <span data-en="Make coverage measurable" data-pt="Tornar a cobertura mensurável">Make coverage measurable</span>
+    </div>
+    <div class="wave-mini">
+      <span class="chip planned">4 <span data-en="planned" data-pt="planejadas">planned</span></span>
+    </div>
+  </div>
+  <div class="wave-desc">
+    <span data-en="One dispatch registry to end the four uncoordinated lists. Machine-readable contract so agents stop producing wrong work. Promote the six finished modules and reach the stranded worker modules." data-pt="Um registro de dispatch para acabar com as quatro listas descoordenadas. Contrato legível por máquina para os agentes pararem de gerar trabalho errado. Promover os seis módulos prontos e alcançar os módulos encalhados no worker.">One dispatch registry to end the four uncoordinated lists. Machine-readable contract so agents stop producing wrong work. Promote the six finished modules and reach the stranded worker modules.</span>
+  </div>
+  <div class="wave-progress"><div class="seg planned" style="width: 100%"></div></div>
+  <div class="task-grid">
+    <div class="task planned">
+      <div class="task-status-icon">·</div>
+      <div class="task-body">
+        <div class="task-id">A1</div>
+        <div class="task-title"><span data-en="One dispatch registry" data-pt="Um registro de dispatch">One dispatch registry</span></div>
+      </div>
+      <span class="task-badge planned"><span data-en="Planned" data-pt="Planejada">Planned</span></span>
+    </div>
+    <div class="task planned">
+      <div class="task-status-icon">·</div>
+      <div class="task-body">
+        <div class="task-id">D2</div>
+        <div class="task-title"><span data-en="One machine-readable contract" data-pt="Um contrato legível por máquina">One machine-readable contract</span></div>
+      </div>
+      <span class="task-badge planned"><span data-en="Planned" data-pt="Planejada">Planned</span></span>
+    </div>
+    <div class="task planned">
+      <div class="task-status-icon">·</div>
+      <div class="task-body">
+        <div class="task-id">A2</div>
+        <div class="task-title"><span data-en="Promote the finished modules and providers" data-pt="Promover os módulos e provedores prontos">Promote the finished modules and providers</span></div>
+      </div>
+      <span class="task-badge planned"><span data-en="Planned" data-pt="Planejada">Planned</span></span>
+    </div>
+    <div class="task planned">
+      <div class="task-status-icon">·</div>
+      <div class="task-body">
+        <div class="task-id">A3</div>
+        <div class="task-title"><span data-en="Reach the stranded worker modules" data-pt="Alcançar os módulos encalhados no worker">Reach the stranded worker modules</span></div>
+      </div>
+      <span class="task-badge planned"><span data-en="Planned" data-pt="Planejada">Planned</span></span>
+    </div>
+  </div>
+</div>
+
+<!-- ================ WAVE 3 ================ -->
+<div class="wave w-planned">
+  <div class="wave-header">
+    <div class="wave-title">
+      <span class="num">Wave 3</span>
+      <span data-en="Cover the remaining nodes" data-pt="Cobrir os nós restantes">Cover the remaining nodes</span>
+    </div>
+    <div class="wave-mini">
+      <span class="chip planned">8 <span data-en="planned" data-pt="planejadas">planned</span></span>
+    </div>
+  </div>
+  <div class="wave-desc">
+    <span data-en="Every executable node type in the worker or explicitly out of scope. Expect a latency regression through this wave — every migrated node is a blocking round trip until Wave 5 pays it back." data-pt="Todo tipo de nó executável vai para o worker ou é explicitamente escopo-fora. Espere regressão de latência nesta wave — todo nó migrado vira ida-e-volta bloqueante até a Wave 5 devolver.">Every executable node type in the worker or explicitly out of scope. Expect a latency regression through this wave — every migrated node is a blocking round trip until Wave 5 pays it back.</span>
+  </div>
+  <div class="wave-progress"><div class="seg planned" style="width: 100%"></div></div>
+  <div class="task-grid">
+    <div class="task planned">
+      <div class="task-status-icon">·</div>
+      <div class="task-body">
+        <div class="task-id">A4</div>
+        <div class="task-title"><span data-en="Migrate reportBuilder" data-pt="Migrar o reportBuilder">Migrate <code>reportBuilder</code></span></div>
+      </div>
+      <span class="task-badge planned"><span data-en="Planned" data-pt="Planejada">Planned</span></span>
+    </div>
+    <div class="task planned">
+      <div class="task-status-icon">·</div>
+      <div class="task-body">
+        <div class="task-id">A5</div>
+        <div class="task-title"><span data-en="Migrate imageGenerator" data-pt="Migrar o imageGenerator">Migrate <code>imageGenerator</code></span></div>
+      </div>
+      <span class="task-badge planned"><span data-en="Planned" data-pt="Planejada">Planned</span></span>
+    </div>
+    <div class="task planned">
+      <div class="task-status-icon">·</div>
+      <div class="task-body">
+        <div class="task-id">A6</div>
+        <div class="task-title"><span data-en="Give the front-driven types server-side execution" data-pt="Dar execução no servidor aos tipos só-front">Give the front-driven types server-side execution</span></div>
+      </div>
+      <span class="task-badge planned"><span data-en="Planned" data-pt="Planejada">Planned</span></span>
+    </div>
+    <div class="task planned">
+      <div class="task-status-icon">·</div>
+      <div class="task-body">
+        <div class="task-id">S6</div>
+        <div class="task-title"><span data-en="An egress policy for user-controlled URLs" data-pt="Uma política de egresso para URLs controladas pelo usuário">An egress policy for user-controlled URLs</span></div>
+      </div>
+      <span class="task-badge planned"><span data-en="Planned" data-pt="Planejada">Planned</span></span>
+    </div>
+    <div class="task planned">
+      <div class="task-status-icon">·</div>
+      <div class="task-body">
+        <div class="task-id">A8</div>
+        <div class="task-title"><span data-en="Move input extraction and OCR off the request path" data-pt="Tirar extração de entrada e OCR do caminho da requisição">Move input extraction and OCR off the request path</span></div>
+      </div>
+      <span class="task-badge planned"><span data-en="Planned" data-pt="Planejada">Planned</span></span>
+    </div>
+    <div class="task planned">
+      <div class="task-status-icon">·</div>
+      <div class="task-body">
+        <div class="task-id">A9</div>
+        <div class="task-title"><span data-en="Outbound delivery as activities" data-pt="Entrega de saída como activities">Outbound delivery as activities</span></div>
+      </div>
+      <span class="task-badge planned"><span data-en="Planned" data-pt="Planejada">Planned</span></span>
+    </div>
+    <div class="task planned">
+      <div class="task-status-icon">·</div>
+      <div class="task-body">
+        <div class="task-id">C1<span class="task-part"><span data-en="per node" data-pt="por nó">per node</span></span></div>
+        <div class="task-title"><span data-en="Retire the inline paths and the cross-node writes (applied per node)" data-pt="Aposentar os caminhos inline e as escritas cross-node (por nó)">Retire the inline paths and the cross-node writes (applied per node)</span></div>
+      </div>
+      <span class="task-badge planned"><span data-en="Planned" data-pt="Planejada">Planned</span></span>
+    </div>
+    <div class="task planned">
+      <div class="task-status-icon">·</div>
+      <div class="task-body">
+        <div class="task-id">D1</div>
+        <div class="task-title"><span data-en="Developer documentation" data-pt="Documentação para desenvolvedor">Developer documentation</span></div>
+      </div>
+      <span class="task-badge planned"><span data-en="Planned" data-pt="Planejada">Planned</span></span>
+    </div>
+  </div>
+</div>
+
+<!-- ================ WAVE 4 ================ -->
+<div class="wave w-planned">
+  <div class="wave-header">
+    <div class="wave-title">
+      <span class="num">Wave 4</span>
+      <span data-en="Move the engine, still sequential" data-pt="Mover o motor, ainda sequencial">Move the engine, still sequential</span>
+    </div>
+    <div class="wave-mini">
+      <span class="chip planned">6 <span data-en="planned" data-pt="planejadas">planned</span></span>
+    </div>
+  </div>
+  <div class="wave-desc">
+    <span data-en="The whole point of this wave is that nothing gets faster. A flow runs in the same order, node for node, with the same latency. What changes is where the loop lives." data-pt="O ponto todo desta wave é que nada fica mais rápido. Um flow roda na mesma ordem, nó por nó, com a mesma latência. O que muda é onde o laço vive.">The whole point of this wave is that nothing gets faster. A flow runs in the same order, node for node, with the same latency. What changes is where the loop lives.</span>
+  </div>
+  <div class="wave-progress"><div class="seg planned" style="width: 100%"></div></div>
+  <div class="task-grid">
+    <div class="task planned">
+      <div class="task-status-icon">·</div>
+      <div class="task-body">
+        <div class="task-id">B1</div>
+        <div class="task-title"><span data-en="One reference per execution, not per node" data-pt="Uma referência por execução, não por node">One reference per execution, not per node</span></div>
+      </div>
+      <span class="task-badge planned"><span data-en="Planned" data-pt="Planejada">Planned</span></span>
+    </div>
+    <div class="task planned">
+      <div class="task-status-icon">·</div>
+      <div class="task-body">
+        <div class="task-id">B2</div>
+        <div class="task-title"><span data-en="Decide code sharing, then extract the scheduler" data-pt="Decidir compartilhamento de código, e extrair o scheduler">Decide code sharing, then extract the scheduler</span></div>
+      </div>
+      <span class="task-badge planned"><span data-en="Planned" data-pt="Planejada">Planned</span></span>
+    </div>
+    <div class="task planned">
+      <div class="task-status-icon">·</div>
+      <div class="task-body">
+        <div class="task-id">B3</div>
+        <div class="task-title"><span data-en="The consumer resolves its own input" data-pt="O consumidor resolve a própria entrada">The consumer resolves its own input</span></div>
+      </div>
+      <span class="task-badge planned"><span data-en="Planned" data-pt="Planejada">Planned</span></span>
+    </div>
+    <div class="task planned">
+      <div class="task-status-icon">·</div>
+      <div class="task-body">
+        <div class="task-id">B4</div>
+        <div class="task-title"><span data-en="Move the DAG loop into a Temporal workflow" data-pt="Mover o laço do DAG para um workflow do Temporal">Move the DAG loop into a Temporal workflow</span></div>
+      </div>
+      <span class="task-badge planned"><span data-en="Planned" data-pt="Planejada">Planned</span></span>
+    </div>
+    <div class="task planned">
+      <div class="task-status-icon">·</div>
+      <div class="task-body">
+        <div class="task-id">E1</div>
+        <div class="task-title"><span data-en="Run observability when the worker owns the loop" data-pt="Observabilidade de run quando o worker é dono do laço">Run observability when the worker owns the loop</span></div>
+      </div>
+      <span class="task-badge planned"><span data-en="Planned" data-pt="Planejada">Planned</span></span>
+    </div>
+    <div class="task planned">
+      <div class="task-status-icon">·</div>
+      <div class="task-body">
+        <div class="task-id">E2</div>
+        <div class="task-title"><span data-en="Align cancellation with Temporal" data-pt="Alinhar cancelamento com o Temporal">Align cancellation with Temporal</span></div>
+      </div>
+      <span class="task-badge planned"><span data-en="Planned" data-pt="Planejada">Planned</span></span>
+    </div>
+  </div>
+</div>
+
+<!-- ================ WAVE 5 ================ -->
+<div class="wave w-planned">
+  <div class="wave-header">
+    <div class="wave-title">
+      <span class="num">Wave 5</span>
+      <span data-en="Turn on parallelism" data-pt="Ligar o paralelismo">Turn on parallelism</span>
+    </div>
+    <div class="wave-mini">
+      <span class="chip planned">4 <span data-en="planned" data-pt="planejadas">planned</span></span>
+    </div>
+  </div>
+  <div class="wave-desc">
+    <span data-en="Batch dispatch, nodesBox, control flow and sub-flows, and CSV batches — all released by cohort, not by switch. Preconditions all come from earlier waves." data-pt="Dispatch em lote, nodesBox, controle de fluxo e sub-fluxos, e batches CSV — tudo liberado por coorte, não por chave. Todos os pré-requisitos vêm de waves anteriores.">Batch dispatch, <code>nodesBox</code>, control flow and sub-flows, and CSV batches — all released by cohort, not by switch. Preconditions all come from earlier waves.</span>
+  </div>
+  <div class="wave-progress"><div class="seg planned" style="width: 100%"></div></div>
+  <div class="task-grid">
+    <div class="task planned">
+      <div class="task-status-icon">·</div>
+      <div class="task-body">
+        <div class="task-id">B5</div>
+        <div class="task-title"><span data-en="Turn on parallel dispatch" data-pt="Ligar o dispatch paralelo">Turn on parallel dispatch</span></div>
+      </div>
+      <span class="task-badge planned"><span data-en="Planned" data-pt="Planejada">Planned</span></span>
+    </div>
+    <div class="task planned">
+      <div class="task-status-icon">·</div>
+      <div class="task-body">
+        <div class="task-id">A7</div>
+        <div class="task-title"><span data-en="Migrate nodesBox (Object Caller)" data-pt="Migrar o nodesBox (Object Caller)">Migrate <code>nodesBox</code> (Object Caller)</span></div>
+      </div>
+      <span class="task-badge planned"><span data-en="Planned" data-pt="Planejada">Planned</span></span>
+    </div>
+    <div class="task planned">
+      <div class="task-status-icon">·</div>
+      <div class="task-body">
+        <div class="task-id">B6</div>
+        <div class="task-title"><span data-en="Control flow and sub-flows in the workflow" data-pt="Controle de fluxo e sub-fluxos no workflow">Control flow and sub-flows in the workflow</span></div>
+      </div>
+      <span class="task-badge planned"><span data-en="Planned" data-pt="Planejada">Planned</span></span>
+    </div>
+    <div class="task planned">
+      <div class="task-status-icon">·</div>
+      <div class="task-body">
+        <div class="task-id">B7</div>
+        <div class="task-title"><span data-en="Batch processing as a durable workflow" data-pt="Processamento em lote como workflow durável">Batch processing as a durable workflow</span></div>
+      </div>
+      <span class="task-badge planned"><span data-en="Planned" data-pt="Planejada">Planned</span></span>
+    </div>
+  </div>
+</div>
+
+<!-- ================ WAVE 6 ================ -->
+<div class="wave w-planned">
+  <div class="wave-header">
+    <div class="wave-title">
+      <span class="num">Wave 6</span>
+      <span data-en="Remove the old road" data-pt="Remover o caminho antigo">Remove the old road</span>
+    </div>
+    <div class="wave-mini">
+      <span class="chip planned">2 <span data-en="planned" data-pt="planejadas">planned</span></span>
+    </div>
+  </div>
+  <div class="wave-desc">
+    <span data-en="Finish C1 by dropping the cross-node writes as their last inline caller goes. Retire the legacy endpoint, the prefetch decision, and every flag this epic created." data-pt="Finalizar a C1 tirando as escritas cross-node conforme o último caller inline sai. Aposentar o endpoint legado, a decisão de prefetch e toda flag que este épico criou.">Finish C1 by dropping the cross-node writes as their last inline caller goes. Retire the legacy endpoint, the prefetch decision, and every flag this epic created.</span>
+  </div>
+  <div class="wave-progress"><div class="seg planned" style="width: 100%"></div></div>
+  <div class="task-grid">
+    <div class="task planned">
+      <div class="task-status-icon">·</div>
+      <div class="task-body">
+        <div class="task-id">C1<span class="task-part"><span data-en="finish" data-pt="finalização">finish</span></span></div>
+        <div class="task-title"><span data-en="Retire the inline paths and the cross-node writes (finish)" data-pt="Aposentar os caminhos inline e as escritas cross-node (finalizar)">Retire the inline paths and the cross-node writes (finish)</span></div>
+      </div>
+      <span class="task-badge planned"><span data-en="Planned" data-pt="Planejada">Planned</span></span>
+    </div>
+    <div class="task planned">
+      <div class="task-status-icon">·</div>
+      <div class="task-body">
+        <div class="task-id">C2</div>
+        <div class="task-title"><span data-en="Retire the legacy surfaces, and settle the prefetch question" data-pt="Aposentar as superfícies legadas, e resolver a questão do prefetch">Retire the legacy surfaces, and settle the prefetch question</span></div>
+      </div>
+      <span class="task-badge planned"><span data-en="Planned" data-pt="Planejada">Planned</span></span>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+  // Language switcher
+  (function () {
+    const KEY = 'flux-lang';
+    const btns = document.querySelectorAll('.lang-sw button[data-lang]');
+    function apply(lang) {
+      document.querySelectorAll('[data-en],[data-pt]').forEach(el => {
+        const val = el.dataset[lang];
+        if (val != null) el.innerHTML = val;
+      });
+      btns.forEach(b => b.setAttribute('aria-pressed', b.dataset.lang === lang ? 'true' : 'false'));
+      try { localStorage.setItem(KEY, lang); } catch (e) {}
+      document.documentElement.lang = lang;
+    }
+    btns.forEach(b => b.addEventListener('click', () => apply(b.dataset.lang)));
+    let initial = 'en';
+    try {
+      const saved = localStorage.getItem(KEY);
+      if (saved === 'en' || saved === 'pt') initial = saved;
+    } catch (e) {}
+    apply(initial);
+  })();
+</script>
+</body>
+</html>
