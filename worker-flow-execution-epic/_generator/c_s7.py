@@ -18,8 +18,8 @@ GLANCE = [
    ('Ships before any migration work — the entry points are already exposed today.',
     'Entra antes de qualquer migração — as entradas já estão expostas hoje.')),
   ('ship', ('Ship order','Ordem de entrega'), ('Parts 1 + 3 first','Partes 1 + 3 primeiro'),
-   ('The two authentication holes go out together, on their own. Rate limiting follows. Two cards (PLAN §3.1): parts 1 and 3 together in Wave 0, part 2 on its own in Wave 1.',
-    'Os dois furos de autenticação saem juntos, sozinhos. O rate limiting vem depois. Dois cards (PLAN §3.1): partes 1 e 3 juntas na onda 0, parte 2 sozinha na onda 1.')),
+   ('The two authentication holes go out together, on their own. Rate limiting follows. Three cards (PLAN §3.1): parts 1 and 3 together in Wave 0, part 2 on its own in Wave 1, and a follow-up opened after part 2 shipped for the five run-creating routes it did not cover (<code>868m48692</code>).',
+    'Os dois furos de autenticação saem juntos, sozinhos. O rate limiting vem depois. Três cards (PLAN §3.1): partes 1 e 3 juntas na onda 0, parte 2 sozinha na onda 1, e um follow-up aberto depois que a parte 2 entrou, para as cinco rotas que criam run e ficaram de fora (<code>868m48692</code>).')),
 ]
 
 T['lede'] = (
