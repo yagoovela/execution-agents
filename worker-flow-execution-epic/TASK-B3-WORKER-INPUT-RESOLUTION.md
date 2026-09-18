@@ -30,6 +30,11 @@ whitelist excludes every LLM node and every control-flow node may be shipped but
 **In.** Then either widen and relocate the prefetch executor, or implement resolution in the
 worker using the substitution service from B2 — with the prefetch path retired by C2.
 
+**In — and this is the whole of it: fetch.** Confirmed with the requester on 2026-09-02. The consumer
+loads what it needs, and only that, through the reference it was given — a `node_executions` row, or
+a claim-check payload in S3 (`get-payload`, the boundary S5 authorises). It does not transform,
+extract or OCR what it fetched: extraction is A8's, and an OCR node is out of the epic (D24).
+
 **In.** Either way: `node_executions.input` changes meaning. It stops being a **precondition for
 running** and becomes a **record of what the node ran with**. Keep writing it; the run history and
 debugging depend on it.
