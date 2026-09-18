@@ -3,17 +3,19 @@
 # Source: TASK-A6-FRONT-DRIVEN-NODES.md, PLAN §7 D3 + risk R8, analysis §4.1/§4.2/§4.3, DELIVERY-PLAN wave 3.
 
 DEC_D3 = {
- 'k':'decision','id':'A6-a','plan':'D3','status':'open','open':True,
+ 'k':'decision','id':'A6-a','plan':'D3','status':'set',
  'q':('Do the eight front-driven types running headless count as a <em>fix</em>, or as a behaviour change customers must be told about?',
       'Os oito tipos só-front rodando sem interface contam como <em>correção</em>, ou como mudança de comportamento que os clientes precisam saber?'),
  'intro':(
-  'This is the strongest call in the wave, and the plan gates the whole wave on it: <strong>“it needs the D3 answer before this wave, not during it”</strong>. '
+  '<strong>Answered by the requester on 2026-09-02:</strong> <code>documentSummarizer</code> and <code>commandMusicNode</code> are discontinued and leave the task; <code>webAmazon</code> and <code>secApiNode</code> are broken today, so giving them execution includes making them work, or dropping them — decided per type, recorded in the task; <code>fileSave</code> is under review and stays in scope. The six that remain run headless. The reasoning below is kept as the record of why this needed a product answer.<br><br>'
+  'This was the strongest call in the wave, and the plan gated the whole wave on it: <strong>“it needs the D3 answer before this wave, not during it”</strong>. '
   'Today these nodes produce output only when someone clicks Run in the builder. In an API, cron, chatbot, form or MCP run the engine never dispatches them, '
   'so the flow uses <strong>whatever the last manual run left behind — or nothing</strong>. Analysis §4.2 puts it plainly: if a customer has an <code>animationNode</code> '
   'or a <code>documentSummarizer</code> in a scheduled flow, <strong>that flow is silently producing stale output today</strong>.'
   '<p style="margin:10px 0 0">Fixing it is almost certainly right. It is also visible: a flow that has been quietly reusing an old value starts producing a fresh one — '
   'with fresh provider spend, and, for <code>fileSave</code>, a fresh upload into someone&#x27;s Drive folder. That is why <strong>PLAN §7 treats D3 as a product change requiring sign-off</strong>, not a refactor.</p>',
-  'Esta é a decisão mais forte da onda, e o plano trava a onda inteira nela: <strong>“precisa da resposta da D3 antes desta onda, não durante”</strong>. '
+  '<strong>Respondida por quem pediu em 2026-09-02:</strong> <code>documentSummarizer</code> e <code>commandMusicNode</code> estão descontinuados e saem da task; <code>webAmazon</code> e <code>secApiNode</code> estão quebrados hoje, então dar execução a eles inclui fazê-los funcionar, ou descartá-los — decidido por tipo, registrado na task; o <code>fileSave</code> está em revisão e continua no escopo. Os seis que restam rodam sem interface. O raciocínio abaixo fica como registro de por que isto precisava de resposta de produto.<br><br>'
+  'Esta era a decisão mais forte da onda, e o plano travava a onda inteira nela: <strong>“precisa da resposta da D3 antes desta onda, não durante”</strong>. '
   'Hoje esses nodes só produzem saída quando alguém clica em Run no builder. Num run por API, cron, chatbot, formulário ou MCP o engine nunca os despacha, '
   'então o fluxo usa <strong>o que o último run manual deixou — ou nada</strong>. A análise §4.2 é direta: se um cliente tem um <code>animationNode</code> '
   'ou um <code>documentSummarizer</code> num fluxo agendado, <strong>esse fluxo está produzindo saída velha em silêncio hoje</strong>.'
@@ -83,8 +85,8 @@ DEC_D3 = {
 TASK = {
  'code':'A6','vnum':'4',
  'title':('Give the front-driven types server-side execution','Dar execução no servidor aos tipos só-front'),
- 'goal':('Eight node types that today run <b>only from the browser</b> get an activity and, for the first time, <b>engine dispatch</b> — so a headless run produces output instead of reusing what a person last left behind.',
-         'Oito tipos de node que hoje rodam <b>só a partir do navegador</b> ganham uma activity e, pela primeira vez, <b>dispatch do engine</b> — para que um run sem interface produza saída em vez de reaproveitar o que alguém deixou por último.'),
+ 'goal':('The front-driven node types that today run <b>only from the browser</b> — eight after D24, <b>six after D3</b> — get an activity and, for the first time, <b>engine dispatch</b> — so a headless run produces output instead of reusing what a person last left behind.',
+         'Os tipos de node só-front que hoje rodam <b>só a partir do navegador</b> — oito depois da D24, <b>seis depois da D3</b> — ganham uma activity e, pela primeira vez, <b>dispatch do engine</b> — para que um run sem interface produza saída em vez de reaproveitar o que alguém deixou por último.'),
  'glance':[
   ('crit',('Severity','Severidade'),('A product change','Uma mudança de produto'),
    ('Risk <strong>R8</strong>: flows that silently produced stale output start producing fresh output. Sign-off first — <strong>PLAN §7, D3</strong>.',
@@ -107,36 +109,36 @@ TASK = {
  'blocks':[
   {'k':'label','n':'1','t':('The eight, and what each one actually needs','Os oito, e o que cada um de fato precisa')},
   {'k':'prose','t':(
-    '<strong>Partial D3 input, 2026-09-02 — awaiting product confirmation.</strong> <code>documentSummarizer</code> and <code>commandMusicNode</code> are discontinued; <code>webAmazon</code> and <code>secApiNode</code> are broken today; <code>fileSave</code> is under review. If confirmed, Stage 2 loses two of its three and Stage 3 loses one. Record the confirmation in PLAN §7 (D3) before Stage 1 starts, and re-cut the stages then, not now. Eight types, not nine: <code>imageReaderNode</code> is deprecated (<strong>D24</strong>). One card, one PR per stage — each stage is independently deployable behind the flag (PLAN §3.1).',
-    '<strong>Entrada parcial da D3, 2026-09-02 — aguardando confirmação de produto.</strong> <code>documentSummarizer</code> e <code>commandMusicNode</code> estão descontinuados; <code>webAmazon</code> e <code>secApiNode</code> estão quebrados hoje; <code>fileSave</code> está em revisão. Se confirmado, o Estágio 2 perde dois dos três e o Estágio 3 perde um. Registre a confirmação no PLAN §7 (D3) antes de o Estágio 1 começar, e recorte os estágios então, não agora. Oito tipos, não nove: o <code>imageReaderNode</code> está depreciado (<strong>D24</strong>). Um card, um PR por estágio — cada estágio sobe de forma independente atrás da flag (PLAN §3.1).')},
+    '<strong>D3, as answered on 2026-09-02.</strong> <code>documentSummarizer</code> and <code>commandMusicNode</code> are discontinued and leave this task; <code>webAmazon</code> and <code>secApiNode</code> are broken today — fix as part of giving them execution, or drop, decided per type and recorded here; <code>fileSave</code> is under review and stays in scope. Six types get execution. Eight after D24, not nine: <code>imageReaderNode</code> is deprecated (<strong>D24</strong>). One card, one PR per stage — each stage is independently deployable behind the flag (PLAN §3.1).',
+    '<strong>D3, como respondida em 2026-09-02.</strong> <code>documentSummarizer</code> e <code>commandMusicNode</code> estão descontinuados e saem desta task; <code>webAmazon</code> e <code>secApiNode</code> estão quebrados hoje — corrigir como parte de dar execução, ou descartar, decidido por tipo e registrado aqui; o <code>fileSave</code> está em revisão e continua no escopo. Seis tipos ganham execução. Oito depois da D24, não nove: o <code>imageReaderNode</code> está depreciado (<strong>D24</strong>). Um card, um PR por estágio — cada estágio sobe de forma independente atrás da flag (PLAN §3.1).')},
   {'k':'table',
    'head':[('Type','Tipo'),('Stage','Estágio'),('What it needs','O que precisa'),('Why','Por quê')],
    'rows':[
     [{'t':'webTrends','mono':True},{'t':('Stage 1','Estágio 1'),'pill':'ok'},
      ('Nothing but the activity and the dispatch','Nada além da activity e do dispatch'),
      ('The SerpApi client is already in the worker, inside <code>web-search</code>.','O cliente do SerpApi já está no worker, dentro do <code>web-search</code>.')],
-    [{'t':'webAmazon','mono':True},{'t':('Stage 1','Estágio 1'),'pill':'ok'},
-     ('The activity, the dispatch, and <code>S6</code>&#x27;s egress policy','A activity, o dispatch, e a política de egresso da <code>S6</code>'),
-     ('The Scraper client is already in the worker, inside <code>web-crawling</code>.','O cliente do Scraper já está no worker, dentro do <code>web-crawling</code>.')],
+    [{'t':'webAmazon','mono':True},{'t':('Stage 1 · broken today (D3)','Estágio 1 · quebrado hoje (D3)'),'pill':'weak'},
+     ('The activity, the dispatch, <code>S6</code>&#x27;s egress policy — and a fix-or-drop call, recorded','A activity, o dispatch, a política de egresso da <code>S6</code> — e uma decisão corrigir-ou-descartar, registrada'),
+     ('The Scraper client is already in the worker, inside <code>web-crawling</code>. The node is broken today; giving it execution includes making it work, or dropping it.','O cliente do Scraper já está no worker, dentro do <code>web-crawling</code>. O node está quebrado hoje; dar execução a ele inclui fazê-lo funcionar, ou descartá-lo.')],
     [{'t':'fileSave','mono':True},{'t':('Stage 1','Estágio 1'),'pill':'ok'},
      ('A server-side Google token on the run path','Um token do Google no servidor, no caminho do run'),
      ('<code>GoogleDriveService.uploadFile</code> and <code>TokenProviderService</code> already exist in the worker. The refresh condition is the work.',
       '<code>GoogleDriveService.uploadFile</code> e <code>TokenProviderService</code> já existem no worker. A condição de refresh é o trabalho.')],
-    [{'t':'secApiNode','mono':True},{'t':('Stage 2','Estágio 2'),'pill':'weak'},
-     ('Port a small client from <code>app-api/sec</code>','Portar um cliente pequeno de <code>app-api/sec</code>'),
-     ('No credentials beyond an env key.','Sem credenciais além de uma chave de ambiente.')],
+    [{'t':'secApiNode','mono':True},{'t':('Stage 2 · broken today (D3)','Estágio 2 · quebrado hoje (D3)'),'pill':'weak'},
+     ('Port a small client from <code>app-api/sec</code> — and a fix-or-drop call, recorded','Portar um cliente pequeno de <code>app-api/sec</code> — e uma decisão corrigir-ou-descartar, registrada'),
+     ('No credentials beyond an env key. The node is broken today; giving it execution includes making it work, or dropping it.','Sem credenciais além de uma chave de ambiente. O node está quebrado hoje; dar execução a ele inclui fazê-lo funcionar, ou descartá-lo.')],
     [{'t':'usCensusNode','mono':True},{'t':('Stage 2','Estágio 2'),'pill':'weak'},
      ('Port a small client from <code>app-api/census_data</code>','Portar um cliente pequeno de <code>app-api/census_data</code>'),
      ('No credentials beyond an env key.','Sem credenciais além de uma chave de ambiente.')],
-    [{'t':'documentSummarizer','mono':True},{'t':('Stage 2','Estágio 2'),'pill':'weak'},
-     ('<code>app-api/summarize</code>, plus billing and model access','<code>app-api/summarize</code>, mais cobrança e acesso a modelo'),
-     ('It is LLM-backed, so it uses the existing callbacks rather than new ones.','É baseado em LLM, então usa os callbacks existentes em vez de novos.')],
-    [{'t':'commandMusicNode','mono':True},{'t':('Stage 3','Estágio 3'),'pill':'weak'},
-     ('Replicate, <code>/worker/generate-file</code>, chosen timeouts','Replicate, <code>/worker/generate-file</code>, timeouts escolhidos'),
-     ('It produces an asset and is long-running, so the timeouts are decided, not inherited.','Produz um ativo e é demorado, então os timeouts são decididos, não herdados.')],
+    [{'t':'documentSummarizer','mono':True},{'t':('Discontinued (D3)','Descontinuado (D3)'),'pill':'no'},
+     ('Nothing — it leaves the task','Nada — sai da task'),
+     ('Discontinued on 2026-09-02; recorded as such in the A1 registry rather than left as front-driven.','Descontinuado em 2026-09-02; registrado como tal no registro da A1 em vez de ficar como só-front.')],
+    [{'t':'commandMusicNode','mono':True},{'t':('Discontinued (D3)','Descontinuado (D3)'),'pill':'no'},
+     ('Nothing — it leaves the task','Nada — sai da task'),
+     ('Discontinued on 2026-09-02; recorded as such in the A1 registry rather than left as front-driven.','Descontinuado em 2026-09-02; registrado como tal no registro da A1 em vez de ficar como só-front.')],
     [{'t':'animationNode','mono':True},{'t':('Stage 3','Estágio 3'),'pill':'weak'},
      ('Luma + Runway, <code>/worker/generate-file</code>, chosen timeouts','Luma + Runway, <code>/worker/generate-file</code>, timeouts escolhidos'),
-     ('Same shape as the music node, with two providers instead of one.','Mesmo formato do node de música, com dois provedores em vez de um.')],
+     ('The one asset provider left in Stage 3 (<code>commandMusicNode</code> is discontinued), with two providers.','O único provedor de ativos que sobrou no Estágio 3 (o <code>commandMusicNode</code> está descontinuado), com dois provedores.')],
     [{'t':'imageReaderNode','mono':True},{'t':('Deprecated (D24)','Depreciado (D24)'),'pill':'no'},
      ('Nothing — it leaves the migration','Nada — sai da migração'),
      ('The ninth of the census. Deprecated on 2026-09-02; an OCR node is wanted later and will be specified when it is built, not here.',
@@ -211,7 +213,7 @@ TASK = {
          ('The generation is an activity with a timeout someone chose and a heartbeat that proves it is still alive.',
           'A geração é uma activity com timeout que alguém escolheu e um heartbeat que prova que ela ainda está viva.')),
    'callouts':[
-    ('mig',('The wave&#x27;s latency regression applies to all eight','A regressão de latência da onda vale para os oito'),
+    ('mig',('The wave&#x27;s latency regression applies to all six that remain','A regressão de latência da onda vale para os seis que restam'),
      ('<p>Every node this wave migrates is a <strong>blocking round trip</strong> until Wave 5 turns on parallelism (review §4.5, risk <strong>R4</strong>). For these eight the comparison is unusual: the headless path had <em>no</em> latency because it did not run at all. <strong>Measure the builder path before and after</strong>, and state the number in the PR — that is the comparison a customer will actually feel.</p>',
       '<p>Todo node migrado nesta onda é um <strong>round trip bloqueante</strong> até a Onda 5 ligar o paralelismo (review §4.5, risco <strong>R4</strong>). Para estes oito a comparação é atípica: o caminho sem interface não tinha latência <em>nenhuma</em> porque não rodava. <strong>Meça o caminho do builder antes e depois</strong>, e informe o número no PR — é essa a comparação que o cliente vai sentir.</p>'))]},
   {'k':'part','n':'5',
@@ -249,8 +251,8 @@ TASK = {
    ('D3&#x27;s answer needs a number: <strong>how many stored flows contain one of the eight and have a headless trigger</strong>. Record it — it decides the cohort order, and it is the same query the wave&#x27;s exit gate asks for.',
     'A resposta da D3 precisa de um número: <strong>quantos fluxos guardados contêm um dos oito e têm gatilho sem interface</strong>. Registre — ele decide a ordem das coortes, e é a mesma consulta que o gate de saída da onda pede.')),
  ],
- 'done':('All eight satisfy <strong>PLAN §3.4</strong>, <strong>a headless run produces output for each</strong>, and <strong>no front component calls a provider service directly for execution</strong> — with D3 answered and recorded before Stage 1 began.',
-         'Os oito satisfazem o <strong>PLAN §3.4</strong>, <strong>um run sem interface produz saída para cada um</strong>, e <strong>nenhum componente do front chama um serviço de provedor direto para executar</strong> — com a D3 respondida e registrada antes de o Estágio 1 começar.'),
+ 'done':('All six that remain after D3 satisfy <strong>PLAN §3.4</strong>, <strong>a headless run produces output for each</strong>, and <strong>no front component calls a provider service directly for execution</strong> — with D3 answered and recorded before Stage 1 began.',
+         'Os seis que restam depois da D3 satisfazem o <strong>PLAN §3.4</strong>, <strong>um run sem interface produz saída para cada um</strong>, e <strong>nenhum componente do front chama um serviço de provedor direto para executar</strong> — com a D3 respondida e registrada antes de o Estágio 1 começar.'),
  'files':[
   ('front/src/components/nodes/{WebTrends,WebAmazon,SecApiNode,UsCensusNode,AiTextSummarizer,AiMusicGenerator,AiVideoGenerator}.tsx',False),
   ('front/src/components/FileSave/FileSave.tsx',False),

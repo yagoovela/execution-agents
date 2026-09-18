@@ -40,7 +40,7 @@ cell empty when there is nothing to say.
 | A3 | planned | — | |
 | A4 | planned | — | |
 | A5 | planned | — | imageReaderNode left the task — deprecated (D24); an imageGenerator module is in progress on the dev line. // O imageReaderNode saiu da task — depreciado (D24); um módulo de imageGenerator está em andamento na linha de dev. |
-| A6 | blocked | — | Blocked on the D3 product sign-off; partial input recorded in PLAN §7 on 2026-09-02, awaiting confirmation. Eight types after D24. // Bloqueada pelo aval de produto da D3; entrada parcial registrada no PLAN §7 em 2026-09-02, aguardando confirmação. Oito tipos depois da D24. |
+| A6 | planned | — | D3 answered on 2026-09-02: documentSummarizer and commandMusicNode discontinued; webAmazon and secApiNode broken today (fix or drop, per type); fileSave under review. Six types get execution. // D3 respondida em 2026-09-02: documentSummarizer e commandMusicNode descontinuados; webAmazon e secApiNode quebrados hoje (corrigir ou descartar, por tipo); fileSave em revisão. Seis tipos ganham execução. |
 | S6 | planned | — | The width of the first cut is the implementer's call (D25). // A largura do primeiro corte é decisão de quem implementar (D25). |
 | A8 | planned | — | |
 | A9 | planned | — | |

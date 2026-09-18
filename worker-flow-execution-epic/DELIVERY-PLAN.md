@@ -105,7 +105,7 @@ promotion — revert by not promoting.
 |---|---|
 | `A4` | `reportBuilder` — the canary. Cheapest node, re-validates the template |
 | `A5` | `imageGenerator`, over a provider layer built to be shared. `imageReaderNode` left the task — deprecated (D24) |
-| `A6` + `S6` | The eight front-driven types (nine in the census, minus the deprecated `imageReaderNode`). **S6's egress decision ships with them, not after** — its width is the implementer's call (D25) |
+| `A6` + `S6` | The front-driven types: eight after D24, six after D3 (two discontinued). **S6's egress decision ships with them, not after** — its width is the implementer's call (D25) |
 | `A8` | `varInputNode`'s extraction and OCR off the request path |
 | `A9` | Emails and callbacks as retried activities — today a customer's endpoint being down for thirty seconds loses the notification |
 | `C1` | Per node, as each lands — not a sweep at the end |
@@ -124,7 +124,7 @@ before enforcing.
 
 **Observable after.** Flows that silently produced stale output in headless runs — the eight
 front-driven types — start producing fresh output. That is a **behaviour change for customers**,
-and it needs the D3 answer from `PLAN.md` §7 before this wave, not during it.
+D3 was answered on 2026-09-02 (`PLAN.md` §7), so this wave is no longer gated on it.
 
 ---
 
@@ -272,7 +272,8 @@ The spec, its content modules and the published pages were regenerated together 
 A decision is listed under the **earliest wave that contains a task it blocks** — PLAN §7's Blocks
 column mapped through the wave tables above; `_generator/reconcile_facts.py` recomputes it, so this
 table cannot drift from PLAN §7 silently. Most decisions are settled and live inside their task. The
-ones that need an answer from outside engineering: D3 (product) and D15 (a measurement). D2 is
+one that still needs an answer from outside engineering is D15 (a measurement); D3 (product) was
+answered on 2026-09-02. D2 is
 spread across three tasks — A1 measures in Wave 2, B3 answers in Wave 4, C2 executes in Wave 6 —
 and is listed under Wave 4 because that is where the answer is needed.
 
