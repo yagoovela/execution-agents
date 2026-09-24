@@ -1,0 +1,905 @@
+<title>A1B — Reconcile basedOnType</title>
+<link rel="stylesheet" href="../_assets/header.css">
+<style>
+
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #F1F5F9;
+    color: #0F172A;
+    margin: 0;
+    padding: 32px 24px 80px;
+    line-height: 1.4;
+  }
+  .container { max-width: 1500px; margin: 0 auto; }
+
+  /* Top nav */
+  .page-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    flex-wrap: wrap;
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #64748B;
+  }
+  .breadcrumb a {
+    color: #3B82F6;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #CBD5E1; }
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #0F172A;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+
+  /* Page header */
+  .page-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 8px;
+  }
+  .page-header .icon { font-size: 32px; }
+  .page-header h1 {
+    margin: 0;
+    font-size: 26px;
+    color: #0F172A;
+    letter-spacing: -0.4px;
+  }
+  .page-sub {
+    color: #64748B;
+    font-size: 13px;
+    margin-bottom: 24px;
+    padding-left: 46px;
+  }
+  .page-sub code {
+    background: #E2E8F0;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 12px;
+    color: #334155;
+  }
+
+  /* Overview chain */
+  .overview-mini {
+    background: white;
+    padding: 16px 18px;
+    border-radius: 10px;
+    margin-bottom: 28px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .overview-mini-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 12px;
+  }
+  .overview-chain {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .overview-chip {
+    background: #F8FAFC;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border-left: 3px solid #3B82F6;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #0F172A;
+    text-decoration: none;
+    display: inline-block;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+  .overview-chip .lbl {
+    display: block;
+    font-size: 9.5px;
+    color: #64748B;
+    font-weight: 500;
+    margin-bottom: 2px;
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .overview-sep { color: #94A3B8; font-size: 18px; font-weight: bold; }
+
+  /* Boxes */
+  .box {
+    background: white;
+    border-radius: 8px;
+    padding: 9px 13px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border-left: 4px solid #94A3B8;
+    width: 100%;
+    max-width: 100%;
+  }
+  .box.backend    { border-left-color: #3B82F6; }
+  .box.worker     { border-left-color: #10B981; }
+  .box.db         { border-left-color: #F59E0B; }
+  .box.redis      { border-left-color: #EF4444; }
+  .box.s3         { border-left-color: #8B5CF6; }
+  .box.external   { border-left-color: #64748B; }
+  .box.decision { border-left-color: #EAB308; background: #FEFCE8; }
+  .box.cross { border-left-color: #A855F7; background: #FAF5FF; }
+
+  .box-title {
+    font-weight: 600;
+    font-size: 12.5px;
+    color: #0F172A;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .box-desc { font-size: 11.5px; color: #475569; }
+  .box-file {
+    font-size: 10px;
+    color: #94A3B8;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    margin-top: 3px;
+    word-break: break-all;
+  }
+  .box code {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    background: #F1F5F9;
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: #334155;
+    word-break: break-word;
+  }
+  .box-desc code { word-break: break-word; }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .badge.migrated { background: #D1FAE5; color: #065F46; }
+  .badge.legacy   { background: #FEE2E2; color: #991B1B; }
+  .badge.mixed    { background: #FEF3C7; color: #92400E; }
+  .badge.step     { background: #E0E7FF; color: #3730A3; font-size: 10px; }
+  .badge.cross    { background: #F3E8FF; color: #6B21A8; }
+
+  /* Arrows */
+  .arrow {
+    color: #64748B;
+    font-size: 22px;
+    line-height: 1;
+    margin: 1px 0;
+    text-align: center;
+  }
+  .converge { text-align: center; color: #64748B; font-size: 22px; margin: 6px 0; }
+
+  /* Function card */
+  .fn-card {
+    margin-top: 28px;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .fn-card-header {
+    background: linear-gradient(to right, #0F172A, #1E293B);
+    color: white;
+    padding: 14px 20px 14px 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .fn-card-header .fn-title {
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .fn-card-header .fn-title code {
+    background: rgba(255,255,255,0.15);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 13px;
+  }
+  .fn-card-header .fn-loc {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #CBD5E1;
+  }
+  .fn-card-header:hover { background: linear-gradient(to right, #1E293B, #334155); }
+  .fn-card-header::before {
+    content: "▾";
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+    font-size: 14px;
+    transition: transform 0.2s ease;
+    line-height: 1;
+  }
+  .fn-card.collapsed .fn-card-header::before {
+    transform: translateY(-50%) rotate(-90deg);
+  }
+  .fn-card.collapsed .fn-card-body { display: none; }
+  .fn-card-body { padding: 20px; }
+
+  .fn-signature {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    background: #F1F5F9;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: #334155;
+    margin-bottom: 16px;
+    overflow-x: auto;
+  }
+  .fn-purpose {
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    background: #EFF6FF;
+    border-left: 3px solid #3B82F6;
+    border-radius: 6px;
+  }
+  .fn-friendly {
+    font-size: 13px;
+    color: #334155;
+    margin-bottom: 20px;
+    padding: 12px 14px 12px 44px;
+    background: #F0FDF4;
+    border-left: 3px solid #10B981;
+    border-radius: 6px;
+    position: relative;
+    line-height: 1.55;
+  }
+  .fn-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 14px;
+    top: 10px;
+    font-size: 18px;
+  }
+  .fn-friendly strong {
+    color: #065F46;
+  }
+
+  /* Step-level friendly summary (page-wide, appears after page-sub) */
+  .step-friendly {
+    font-size: 13.5px;
+    color: #334155;
+    margin-bottom: 28px;
+    padding: 16px 18px 16px 52px;
+    background: #F0FDF4;
+    border-left: 4px solid #10B981;
+    border-radius: 10px;
+    position: relative;
+    line-height: 1.6;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.08);
+  }
+  .step-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 18px;
+    top: 14px;
+    font-size: 22px;
+  }
+  .step-friendly-title {
+    font-weight: 700;
+    color: #065F46;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 8px;
+  }
+  .step-friendly ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .step-friendly li {
+    margin-bottom: 6px;
+  }
+  .step-friendly li:last-child {
+    margin-bottom: 0;
+  }
+  .step-friendly strong {
+    color: #065F46;
+  }
+  .step-friendly code {
+    background: #DCFCE7;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: #065F46;
+  }
+  .step-friendly em {
+    color: #047857;
+    font-style: italic;
+  }
+
+  .fn-body-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 900px) {
+    .fn-body-cols { grid-template-columns: 1fr; }
+  }
+  .fn-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .fn-asides {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Aside panels */
+  .aside {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 11.5px;
+    color: #78350F;
+  }
+  .aside.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .aside.warn { background: #FEE2E2; border-left-color: #EF4444; color: #991B1B; }
+  .aside.helper { background: #F3E8FF; border-left-color: #A855F7; color: #6B21A8; }
+  .aside-title {
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .aside code {
+    background: rgba(255,255,255,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    word-break: break-word;
+  }
+
+  /* Cascade */
+  .cascade {
+    background: #FEFCE8;
+    border: 1px dashed #EAB308;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 6px 0;
+  }
+  .cascade-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #713F12;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .cascade-step {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 8px;
+    background: white;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    font-size: 11.5px;
+  }
+  .cascade-step .cond {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #334155;
+  }
+  .cascade-step .result {
+    font-weight: 700;
+    font-size: 10.5px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .cascade-step .result.pass  { background: #D1FAE5; color: #065F46; }
+  .cascade-step .result.deny  { background: #FEE2E2; color: #991B1B; }
+  .cascade-step .result.next  { background: #E0E7FF; color: #3730A3; }
+  .cascade-step .result.call  { background: #FEF3C7; color: #78350F; }
+  .cascade-num {
+    background: #EAB308;
+    color: white;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* Nested sub-flow */
+  .nested-flow {
+    margin: 6px 0;
+    padding: 12px;
+    background: #F0FDF4;
+    border: 1px dashed #10B981;
+    border-radius: 8px;
+  }
+  .nested-flow-title {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #065F46;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  /* Code block */
+  .code-block {
+    background: #0F172A;
+    color: #E2E8F0;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 6px 0;
+  }
+  .code-block .k { color: #93C5FD; }
+  .code-block .s { color: #86EFAC; }
+  .code-block .c { color: #64748B; font-style: italic; }
+  .code-block .t { color: #FDE68A; }
+
+  /* Notes */
+  .note {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    color: #78350F;
+    margin: 20px 0;
+  }
+  .note.info {
+    background: #EFF6FF;
+    border-left-color: #3B82F6;
+    color: #1E3A8A;
+  }
+  .note code {
+    background: rgba(255,255,255,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+  }
+
+  .page-footer-nav {
+    margin-top: 48px;
+    padding: 16px;
+    background: white;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .field-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin: 8px 0;
+  }
+  .field-table th {
+    text-align: left;
+    padding: 6px 8px;
+    background: #F1F5F9;
+    color: #334155;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    font-size: 10px;
+    border-bottom: 1px solid #CBD5E1;
+  }
+  .field-table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid #F1F5F9;
+    vertical-align: top;
+  }
+  .field-table td:first-child {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    color: #0F172A;
+    font-weight: 600;
+    white-space: nowrap;
+    font-size: 10.5px;
+  }
+
+    .code-block{white-space:pre-wrap;word-break:normal;overflow-wrap:anywhere}
+    .ba{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 4px}
+    @media(max-width:820px){.ba{grid-template-columns:1fr}}
+    .ba>div{border-radius:8px;padding:12px 14px;font-size:12px;line-height:1.62}
+    .ba .now{background:#FEF2F2;border-left:3px solid #EF4444;color:#450A0A}
+    .ba .nxt{background:#ECFDF5;border-left:3px solid #10B981;color:#052E16}
+    .ba h5{margin:0 0 7px;font-size:10px;letter-spacing:.8px;text-transform:uppercase;font-weight:800;opacity:.75}
+    .ba code{background:rgba(0,0,0,.06);padding:1px 4px;border-radius:3px}
+    .topic-nav{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 26px}
+    .topic-nav a{font-size:11px;padding:5px 11px;border-radius:20px;background:#fff;border:1px solid #CBD5E1;
+                 color:#334155;text-decoration:none}
+    .topic-nav a:hover{border-color:#3B82F6;color:#1E40AF}
+
+
+    /* padroniza o topo pelo complemento */
+    .top-nav{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+             max-width:1500px;margin:0 auto 20px;padding:0 4px}
+    .back-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:#fff;color:#334155;
+              text-decoration:none;border-radius:8px;border:1px solid #CBD5E1;font-size:12.5px;font-weight:600;
+              box-shadow:0 1px 3px rgba(0,0,0,.06);transition:transform .15s,background .15s}
+    .back-btn:hover{background:#EFF6FF;transform:translateY(-1px)}
+    .page-nav{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-start;background:transparent;
+              box-shadow:none;padding:18px 0 0;margin-top:26px;border-top:1px solid #E2E8F0}
+    .lang-sw{display:inline-flex;border:1px solid #CBD5E1;border-radius:8px;overflow:hidden;background:#fff;
+             box-shadow:0 1px 3px rgba(0,0,0,.06)}
+    .lang-sw button{font-family:'SF Mono',Menlo,monospace;font-size:11px;font-weight:700;letter-spacing:.5px;
+             padding:8px 12px;background:transparent;color:#64748B;border:0;cursor:pointer}
+    .lang-sw button+button{border-left:1px solid #E2E8F0}
+    .lang-sw button[aria-pressed="true"]{background:#0F172A;color:#fff}
+    .lang-sw button:focus-visible{outline:2px solid #3B82F6;outline-offset:2px}
+
+
+/* ---------- task page ---------- */
+body{background:#F1F5F9;color:#0F172A;margin:0;padding:28px 24px 72px;line-height:1.45;
+     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+.container{max-width:1500px;margin:0 auto}
+
+.hero{background:linear-gradient(135deg,#0F172A 0%,#1E293B 60%,#312E81 100%);color:#fff;
+      border-radius:16px;padding:26px 30px 24px;margin-bottom:18px;position:relative;overflow:hidden}
+.hero::after{content:'';position:absolute;right:-60px;top:-60px;width:260px;height:260px;
+      background:radial-gradient(circle,rgba(99,102,241,.35),transparent 70%);pointer-events:none}
+.hero .kicker{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.hero .code{font-family:'SF Mono',Menlo,monospace;font-size:13px;font-weight:700;letter-spacing:1px;
+      background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);color:#fff;
+      padding:5px 12px;border-radius:7px}
+.hero .st{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+      padding:5px 11px;border-radius:7px;border:1px solid;display:inline-flex;align-items:center;gap:6px}
+.hero .st::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor}
+.hero .st.st-planned{background:rgba(148,163,184,.18);border-color:rgba(203,213,225,.45);color:#CBD5E1}
+.hero .st.st-blocked{background:rgba(220,38,38,.2);border-color:rgba(248,113,113,.5);color:#FCA5A5}
+.hero .st.st-doing{background:rgba(59,130,246,.22);border-color:rgba(147,197,253,.5);color:#BFDBFE}
+.hero .st.st-review{background:rgba(245,158,11,.22);border-color:rgba(252,211,77,.5);color:#FDE68A}
+.hero .st.st-shipped{background:rgba(16,185,129,.24);border-color:rgba(110,231,183,.5);color:#A7F3D0}
+.hero .st.st-dropped{background:rgba(100,116,139,.18);border-color:rgba(148,163,184,.4);color:#94A3B8;
+      text-decoration:line-through}
+.hero .stnote{margin-top:12px;font-size:12.5px;line-height:1.6;color:#CBD5E1;
+      background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
+      border-left:3px solid #6366F1;border-radius:8px;padding:9px 13px;max-width:88ch}
+.hero .stnote b{color:#fff}
+.hero .wv{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+      padding:5px 11px;border-radius:7px;background:rgba(239,68,68,.22);border:1px solid rgba(248,113,113,.5);color:#FCA5A5}
+.hero h1{margin:0 0 12px;font-size:29px;line-height:1.22;letter-spacing:-.6px;font-weight:700;max-width:30ch}
+.hero .goal{font-size:15px;line-height:1.6;color:#CBD5E1;max-width:78ch;border-left:3px solid #6366F1;padding-left:14px}
+.hero .goal b{color:#fff;font-weight:600}
+.hero-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px;position:relative;z-index:2}
+.hero-links a{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
+      text-decoration:none;color:#E2E8F0;background:rgba(255,255,255,.09);
+      border:1px solid rgba(255,255,255,.16);padding:7px 13px;border-radius:8px}
+.hero-links a:hover{background:rgba(255,255,255,.17);color:#fff}
+
+.glance{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:20px}
+.gl{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px 16px;
+    border-top:3px solid #94A3B8;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.gl.crit{border-top-color:#DC2626}.gl.dep{border-top-color:#3B82F6}
+.gl.wave{border-top-color:#8B5CF6}.gl.ship{border-top-color:#059669}
+.gl .k{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#94A3B8;margin-bottom:7px}
+.gl .v{font-size:16px;font-weight:700;color:#0F172A;line-height:1.25;margin-bottom:5px}
+.gl .n{font-size:11.5px;color:#64748B;line-height:1.5}
+
+.lede{background:#fff;border:1px solid #E2E8F0;border-left:4px solid #DC2626;border-radius:12px;
+      padding:18px 22px;margin-bottom:22px;font-size:14.5px;line-height:1.7;color:#334155;
+      box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.lede strong{color:#0F172A}
+.lede p{margin:0 0 10px}.lede p:last-child{margin:0}
+
+.sec-label{display:flex;align-items:center;gap:11px;margin:30px 0 14px}
+.sec-label .n{width:25px;height:25px;border-radius:7px;background:#0F172A;color:#fff;flex:none;
+      display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+.sec-label h2{margin:0;font-size:17px;font-weight:700;color:#0F172A;letter-spacing:-.25px}
+.sec-label .rule{flex:1;height:1px;background:#E2E8F0}
+
+.entry-table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;
+      border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;font-size:12.5px;
+      box-shadow:0 1px 3px rgba(15,23,42,.05);margin-bottom:8px}
+.entry-table th{background:#0F172A;color:#fff;text-align:left;padding:11px 14px;font-size:10.5px;
+      font-weight:700;text-transform:uppercase;letter-spacing:.6px}
+.entry-table td{padding:12px 14px;border-bottom:1px solid #F1F5F9;vertical-align:top;color:#334155;line-height:1.55}
+.entry-table tr:last-child td{border-bottom:0}
+.entry-table tr:hover td{background:#F8FAFC}
+.entry-table td.rt{font-family:'SF Mono',Menlo,monospace;font-size:11.5px;font-weight:600;color:#0F172A;white-space:nowrap}
+.entry-table td.rt.lbl{font-family:inherit;font-size:12.5px;white-space:normal}
+.pill{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;
+      letter-spacing:.2px;white-space:nowrap}
+.pill.no{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA}
+.pill.weak{background:#FEF3C7;color:#92400E;border:1px solid #FDE68A}
+.pill.ok{background:#D1FAE5;color:#065F46;border:1px solid #A7F3D0}
+
+.part{background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;margin-bottom:16px;
+      box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.part-head{background:linear-gradient(to right,#0F172A,#1E293B);color:#fff;padding:14px 20px;
+      display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.part-head .num{width:26px;height:26px;border-radius:7px;background:rgba(255,255,255,.15);
+      border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;
+      font-size:12px;font-weight:700;flex:none}
+.part-head .t{font-size:15px;font-weight:600;letter-spacing:-.15px}
+.part-head .loc{margin-left:auto;font-family:'SF Mono',Menlo,monospace;font-size:10.5px;
+      color:#94A3B8;background:rgba(0,0,0,.28);padding:4px 9px;border-radius:6px}
+.part-body{padding:20px 22px}
+.purpose{font-size:14px;line-height:1.65;color:#0F172A;font-weight:500;
+      border-left:3px solid #6366F1;padding-left:13px;margin-bottom:16px}
+.part-body p{margin:0 0 12px;font-size:13.5px;line-height:1.72;color:#334155}
+.part-body p:last-child{margin-bottom:0}
+.part-body strong{color:#0F172A;font-weight:650}
+.part-body code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1.5px 5px;border-radius:4px;
+      font-family:'SF Mono',Menlo,monospace;font-size:11.5px;color:#0F172A}
+.part-body ul{margin:10px 0 14px;padding-left:0;list-style:none}
+.part-body ul li{position:relative;padding-left:20px;margin-bottom:9px;font-size:13.5px;
+      line-height:1.7;color:#334155}
+.part-body ul li::before{content:'';position:absolute;left:5px;top:9px;width:6px;height:6px;
+      border-radius:50%;background:#94A3B8}
+.code-block{white-space:pre-wrap;word-break:break-word}
+
+.ba{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0 4px}
+@media(max-width:900px){.ba{grid-template-columns:1fr}}
+.ba>div{border-radius:10px;padding:14px 16px;font-size:13px;line-height:1.65}
+.ba .now{background:#FEF2F2;border:1px solid #FECACA;color:#7F1D1D}
+.ba .nxt{background:#ECFDF5;border:1px solid #A7F3D0;color:#065F46}
+.ba h5{margin:0 0 8px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+      display:flex;align-items:center;gap:6px}
+.ba .now h5{color:#B91C1C}.ba .nxt h5{color:#047857}
+.ba code{background:rgba(255,255,255,.75);border:1px solid rgba(0,0,0,.07);padding:1px 5px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:11px}
+.ba p{margin:0 0 9px;font-size:13px;line-height:1.65}
+.ba p:last-child{margin:0}
+
+.callout{border-radius:10px;padding:14px 17px;margin:15px 0 4px;font-size:13px;line-height:1.7}
+.callout .ct{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px}
+.callout.decide{background:#EFF6FF;border:1px solid #BFDBFE;color:#1E3A8A}
+.callout.decide .ct{color:#1D4ED8}
+.callout.mig{background:#FFFBEB;border:1px solid #FDE68A;color:#78350F}
+.callout.mig .ct{color:#B45309}
+.callout p{margin:0 0 9px}.callout p:last-child{margin:0}
+.callout code{background:rgba(255,255,255,.7);border:1px solid rgba(0,0,0,.07);padding:1px 5px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:11px}
+
+.vcard{background:#fff;border:1px solid #FECACA;border-radius:14px;overflow:hidden;margin-bottom:16px;
+      box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.vcard-head{background:linear-gradient(to right,#7F1D1D,#B91C1C);color:#fff;padding:13px 20px;
+      font-size:15px;font-weight:600;display:flex;align-items:center;gap:10px}
+.vcard-body{padding:18px 22px}
+.vitem{display:grid;grid-template-columns:auto 1fr;gap:13px;padding:13px 0;border-bottom:1px solid #F1F5F9}
+.vitem:first-child{padding-top:0}
+.vitem:last-child{border-bottom:0;padding-bottom:0}
+.vitem .vn{width:24px;height:24px;border-radius:7px;background:#FEE2E2;color:#B91C1C;flex:none;
+      display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:1px}
+.vitem.req .vn{background:#B91C1C;color:#fff}
+.vitem .vt{font-size:13px;font-weight:700;color:#0F172A;margin-bottom:4px;display:flex;
+      align-items:center;gap:8px;flex-wrap:wrap}
+.vitem .vt .req-tag{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+      background:#B91C1C;color:#fff;padding:2px 7px;border-radius:20px}
+.vitem .vd{font-size:13px;line-height:1.68;color:#475569}
+.vitem .vd code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1px 5px;border-radius:4px;
+      font-family:'SF Mono',Menlo,monospace;font-size:11px}
+.vitem .vd strong{color:#0F172A}
+
+.done{background:linear-gradient(135deg,#064E3B,#047857);color:#fff;border-radius:14px;
+      padding:20px 24px;margin-bottom:16px}
+.done .dt{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+      color:#6EE7B7;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.done .dd{font-size:14.5px;line-height:1.72;color:#ECFDF5}
+.done .dd strong{color:#fff;font-weight:650}
+.done .dd code{background:rgba(255,255,255,.17);border:1px solid rgba(255,255,255,.28);padding:1.5px 6px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:12px;color:#fff}
+.hero .goal code{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);padding:1px 5px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:12.5px;color:#fff}
+.lede code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1.5px 5px;border-radius:4px;
+      font-family:'SF Mono',Menlo,monospace;font-size:12px;color:#0F172A}
+.lede em{font-style:italic;color:#0F172A}
+
+.filesbox{background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;
+      box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.filesbox-head{background:linear-gradient(to right,#334155,#475569);color:#fff;padding:12px 20px;
+      font-size:14px;font-weight:600;display:flex;align-items:center;gap:9px}
+.filesbox-body{padding:16px 20px;display:flex;flex-wrap:wrap;gap:8px}
+.fchip{font-family:'SF Mono',Menlo,monospace;font-size:11.5px;background:#F8FAFC;color:#334155;
+      border:1px solid #E2E8F0;border-left:3px solid #64748B;padding:7px 11px;border-radius:7px;line-height:1.4}
+.fchip.new{border-left-color:#059669;background:#F0FDF4;color:#065F46}
+
+.page-footer-nav{display:flex;justify-content:space-between;gap:12px;margin-top:26px;flex-wrap:wrap}
+.page-footer-nav a{display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid #E2E8F0;
+      color:#334155;padding:11px 17px;border-radius:9px;text-decoration:none;font-size:12.5px;font-weight:600;
+      box-shadow:0 1px 2px rgba(15,23,42,.05)}
+.page-footer-nav a:hover{border-color:#94A3B8;color:#0F172A}
+
+
+/* ---------- decisions ---------- */
+.dec{background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;margin-bottom:14px;
+     box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.dec>summary{list-style:none;cursor:pointer;padding:15px 20px;display:flex;align-items:flex-start;
+     gap:13px;background:linear-gradient(to right,#1E1B4B,#312E81);color:#fff}
+.dec>summary::-webkit-details-marker{display:none}
+.dec>summary:hover{background:linear-gradient(to right,#312E81,#3730A3)}
+.dec>summary:focus-visible{outline:2px solid #A5B4FC;outline-offset:-2px}
+.dec .chev{flex:none;width:22px;height:22px;border-radius:6px;background:rgba(255,255,255,.15);
+     border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;
+     font-size:11px;transition:transform .18s ease;margin-top:1px}
+.dec[open] .chev{transform:rotate(90deg)}
+.dec .dq{flex:1;min-width:0}
+.dec .dq .lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+     color:#A5B4FC;margin-bottom:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dec .dq .q{font-size:15px;font-weight:600;line-height:1.45;letter-spacing:-.15px}
+.dec .dq .q code{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.26);
+     padding:1px 6px;border-radius:5px;font-family:'SF Mono',Menlo,monospace;font-size:13px;
+     font-weight:600;color:#E0E7FF}
+.dstat{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+     padding:2.5px 8px;border-radius:20px;white-space:nowrap}
+.dstat.open{background:#F59E0B;color:#451A03}
+.dstat.rec{background:#38BDF8;color:#082F49}
+.dstat.set{background:#34D399;color:#022C22}
+.dec .dq .lbl .planid{font-family:'SF Mono',Menlo,monospace;font-size:9.5px;font-weight:700;
+     letter-spacing:.3px;color:#C7D2FE;background:rgba(255,255,255,.1);
+     border:1px solid rgba(255,255,255,.2);padding:2px 7px;border-radius:20px}
+.dec-body{padding:18px 20px 20px;background:#FAFAFF}
+.dec-intro{font-size:13px;line-height:1.7;color:#334155;margin-bottom:16px}
+.dec-intro strong{color:#0F172A}
+.dec-intro code{background:#EEF2FF;border:1px solid #C7D2FE;padding:1.5px 5px;border-radius:4px;
+     font-family:'SF Mono',Menlo,monospace;font-size:11.5px;color:#3730A3}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px}
+.opt{background:#fff;border:1px solid #E2E8F0;border-radius:11px;padding:0;overflow:hidden;
+     display:flex;flex-direction:column;position:relative}
+.opt.pick{border-color:#6366F1;box-shadow:0 0 0 2px rgba(99,102,241,.16)}
+.opt.no{opacity:.82}
+.opt-h{padding:12px 15px;display:flex;align-items:flex-start;gap:10px;background:#F8FAFC;
+     border-bottom:1px solid #E2E8F0}
+.opt.pick .opt-h{background:#EEF2FF;border-bottom-color:#C7D2FE}
+.opt.no .opt-h{background:#FEF2F2;border-bottom-color:#FECACA}
+.opt-h .ltr{width:23px;height:23px;border-radius:6px;background:#334155;color:#fff;flex:none;
+     display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;margin-top:1px}
+.opt.pick .opt-h .ltr{background:#4F46E5}
+.opt.no .opt-h .ltr{background:#B91C1C}
+.opt-h .on{font-size:13.5px;font-weight:700;color:#0F172A;line-height:1.35}
+.opt-h .tag{margin-left:auto;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+     padding:3px 8px;border-radius:20px;white-space:nowrap;margin-top:2px}
+.opt.pick .opt-h .tag{background:#4F46E5;color:#fff}
+.opt.no .opt-h .tag{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA}
+.opt-b{padding:13px 15px 14px;flex:1;display:flex;flex-direction:column;gap:11px}
+.opt-how{font-size:12.5px;line-height:1.6;color:#475569}
+.opt-how code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1px 4px;border-radius:3px;
+     font-family:'SF Mono',Menlo,monospace;font-size:11px;color:#0F172A;word-break:break-all}
+.opt-l{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px}
+.opt-l li{position:relative;padding-left:20px;font-size:12.5px;line-height:1.55;color:#334155}
+.opt-l li::before{position:absolute;left:0;top:0;font-size:12px;font-weight:700}
+.opt-l li.p::before{content:'✓';color:#059669}
+.opt-l li.c::before{content:'✕';color:#DC2626}
+.opt-cost{margin-top:auto;display:flex;gap:7px;flex-wrap:wrap;padding-top:4px}
+.cst{font-size:10px;font-weight:600;padding:4px 8px;border-radius:6px;background:#F1F5F9;
+     color:#475569;border:1px solid #E2E8F0;line-height:1.3}
+.cst b{font-weight:700;color:#0F172A}
+.cst.hi{background:#FEF3C7;border-color:#FDE68A;color:#78350F}
+.cst.hi b{color:#78350F}
+.cst.lo{background:#ECFDF5;border-color:#A7F3D0;color:#065F46}
+.cst.lo b{color:#065F46}
+.dec-rec{margin-top:15px;background:#EEF2FF;border:1px solid #C7D2FE;border-left:4px solid #4F46E5;
+     border-radius:10px;padding:14px 17px;font-size:13px;line-height:1.7;color:#312E81}
+.dec-rec .rt{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+     color:#4F46E5;margin-bottom:7px}
+.dec-rec strong{color:#1E1B4B}
+.dec-rec code{background:rgba(255,255,255,.75);border:1px solid #C7D2FE;padding:1.5px 5px;
+     border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:11.5px}
+.dec-rec p{margin:0 0 9px}.dec-rec p:last-child{margin:0}
+.dec-who{margin-top:11px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+     font-size:11.5px;color:#64748B}
+.dec-who .wk{font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:.5px;font-size:9.5px}
+.dec-who .wv2{background:#fff;border:1px solid #E2E8F0;padding:4px 10px;border-radius:20px;font-weight:600;color:#334155}
+
+</style>
+<div class="container">
+<div class="doc-nav">
+  <nav class="doc-tabs" aria-label="Documentation sections">
+    <a href="../index.html" class="doc-tab"><span data-en="Current architecture" data-pt="Arquitetura atual">Current architecture</span></a>
+    <a href="../arquitetura-v2.html" class="doc-tab"><span data-en="v2 architecture" data-pt="Arquitetura v2">v2 architecture</span></a>
+    <a href="../arquitetura-v2-complemento.html" class="doc-tab"><span data-en="Plan as tasks" data-pt="Plano em tarefas">Plan as tasks</span></a>
+    <a href="../timeline/index.html" class="doc-tab is-active"><span data-en="Timeline" data-pt="Timeline">Timeline</span></a>
+    <a href="../progresso-refatoracao.html" class="doc-tab"><span data-en="Progress" data-pt="Progresso">Progress</span></a>
+  </nav>
+  <div class="lang-sw" role="group" aria-label="Language">
+    <button type="button" data-lang="en" aria-pressed="true">EN-US</button>
+    <button type="button" data-lang="pt" aria-pressed="false">PT-BR</button>
+  </div>
+</div>
+
+
+
+<div class="top-nav"><a href="index.html" class="back-btn"><span>←</span> <span data-en="Timeline" data-pt="Timeline">Timeline</span></a></div>
+<div class="hero"><div class="kicker"><span class="code">A1B</span><span class="wv" data-en="wave 2" data-pt="onda 2">wave 2</span><span class="st st-shipped" data-en="Shipped" data-pt="Entregue">Shipped</span></div><h1 data-en="Reconcile &lt;code&gt;basedOnType&lt;/code&gt;" data-pt="Reconciliar o &lt;code&gt;basedOnType&lt;/code&gt;">Reconcile <code>basedOnType</code></h1><div class="goal" data-en="Decide, on a measurement, whether &lt;code&gt;basedOnType&lt;/code&gt;&amp;#x27;s two live copies become &lt;b&gt;one source&lt;/b&gt; or stay &lt;b&gt;two named projections&lt;/b&gt;, and delete the third, dead copy. &lt;strong&gt;Unlike A1, this task is not behaviour-neutral by construction.&lt;/strong&gt;" data-pt="Decidir, com base numa medição, se as duas cópias vivas do &lt;code&gt;basedOnType&lt;/code&gt; viram &lt;b&gt;uma fonte única&lt;/b&gt; ou continuam &lt;b&gt;duas projeções nomeadas&lt;/b&gt;, e apagar a terceira cópia, morta. &lt;strong&gt;Ao contrário da A1, esta task não é neutra em comportamento por construção.&lt;/strong&gt;">Decide, on a measurement, whether <code>basedOnType</code>&#x27;s two live copies become <b>one source</b> or stay <b>two named projections</b>, and delete the third, dead copy. <strong>Unlike A1, this task is not behaviour-neutral by construction.</strong></div><div class="stnote" data-en="&lt;b&gt;PR #1989&lt;/b&gt; · Merged to `production` 2026-09-23 (`173edf27`). Re-confirmed against `back@origin/production` `5333b4d3`: 26 vs 29 types, 24 identical, 3 divergent, as the task predicted. Decided by union into one source, `NODE_REFERENCEABLE_FIELDS` (`back/src/shared/node-fields/node-referenceable-fields.ts`) — see `D27` in `PLAN.md` and the Decision section of the task file for the per-divergence reasoning and the dev measurement (`mcpNode.inputMode`/`toolArguments`, `outputController.customFileName`: 0 placeholder references in 41,652 dev nodes, but `customFileName` is populated on 15 real rows, so it stays). Both call sites now read the single source; `THIRD_PARTY_INTEGRATION_DATA_PAYLOAD_KEYS` survives as a named slice of it. The dead `flux/constants.ts` copy is deleted, proven unreachable by module scope (unexported, no self-reference, absent from the file&amp;#x27;s own `export {}` block) before the cross-repo grep corroborated it. Negative-controlled: each of the 3 unions and the anti-drift assertion broken and observed red, then restored. A fourth, unrelated `nodeSchema`-shaped map in `front/src/util/myFunctionsCoreDisplay.tsx:429` was found outside this task&amp;#x27;s declared scope and left unresolved. Also folded into this PR: 5 pre-existing, unrelated test-suite failures found while validating (stale `node-types.service.spec.ts` literal, two missing constructor-arg stubs, one stale `toEqual` literal, one missing service stub) — all fixed; a sixth suite (`flow.controller.create-flow.spec.ts`) had 10 tests failing on real behavioral drift needing a product decision, not a mechanical fix — marked `it.skip` with the failure detail recorded rather than left red or deleted." data-pt="&lt;b&gt;PR #1989&lt;/b&gt; · Merged em `production` em 23/09/2026 (`173edf27`). Reconfirmada contra `back@origin/production` `5333b4d3`: 26 vs 29 tipos, 24 idênticos, 3 divergentes, como a task previa. Decidido por união numa única fonte, `NODE_REFERENCEABLE_FIELDS` (`back/src/shared/node-fields/node-referenceable-fields.ts`) — ver `D27` no `PLAN.md` e a seção Decision do arquivo da task para o raciocínio por divergência e a medição em dev (`mcpNode.inputMode`/`toolArguments`, `outputController.customFileName`: 0 referências por placeholder em 41.652 nodes de dev, mas `customFileName` está preenchido em 15 linhas reais, então fica). Os dois call sites agora leem a fonte única; `THIRD_PARTY_INTEGRATION_DATA_PAYLOAD_KEYS` sobrevive como um recorte nomeado dela. A cópia morta em `flux/constants.ts` foi apagada, provada inalcançável por escopo de módulo (não exportada, sem autorreferência, ausente do próprio bloco `export {}` do arquivo) antes de o grep cross-repo corroborar. Controlada negativamente: cada uma das 3 uniões e a asserção anti-drift quebradas e vistas vermelhas, depois restauradas. Um quarto mapa, no formato `nodeSchema`, sem relação, em `front/src/util/myFunctionsCoreDisplay.tsx:429` foi encontrado fora do escopo declarado desta task e ficou sem resolver. Também incorporadas nesta PR: 5 falhas pré-existentes e sem relação, encontradas ao validar (literal desatualizado em `node-types.service.spec.ts`, dois stubs de argumento de construtor faltando, um literal `toEqual` desatualizado, um stub de serviço faltando) — todas corrigidas; uma sexta suíte (`flow.controller.create-flow.spec.ts`) tinha 10 testes falhando por drift comportamental real que precisa de uma decisão de produto, não um ajuste mecânico — marcada `it.skip` com o detalhe da falha registrado, em vez de deixada vermelha ou apagada."><b>PR #1989</b> · Merged to `production` 2026-09-23 (`173edf27`). Re-confirmed against `back@origin/production` `5333b4d3`: 26 vs 29 types, 24 identical, 3 divergent, as the task predicted. Decided by union into one source, `NODE_REFERENCEABLE_FIELDS` (`back/src/shared/node-fields/node-referenceable-fields.ts`) — see `D27` in `PLAN.md` and the Decision section of the task file for the per-divergence reasoning and the dev measurement (`mcpNode.inputMode`/`toolArguments`, `outputController.customFileName`: 0 placeholder references in 41,652 dev nodes, but `customFileName` is populated on 15 real rows, so it stays). Both call sites now read the single source; `THIRD_PARTY_INTEGRATION_DATA_PAYLOAD_KEYS` survives as a named slice of it. The dead `flux/constants.ts` copy is deleted, proven unreachable by module scope (unexported, no self-reference, absent from the file&#x27;s own `export {}` block) before the cross-repo grep corroborated it. Negative-controlled: each of the 3 unions and the anti-drift assertion broken and observed red, then restored. A fourth, unrelated `nodeSchema`-shaped map in `front/src/util/myFunctionsCoreDisplay.tsx:429` was found outside this task&#x27;s declared scope and left unresolved. Also folded into this PR: 5 pre-existing, unrelated test-suite failures found while validating (stale `node-types.service.spec.ts` literal, two missing constructor-arg stubs, one stale `toEqual` literal, one missing service stub) — all fixed; a sixth suite (`flow.controller.create-flow.spec.ts`) had 10 tests failing on real behavioral drift needing a product decision, not a mechanical fix — marked `it.skip` with the failure detail recorded rather than left red or deleted.</div><div class="hero-links"><a href="../complemento/transversais.html"><span data-en="Where this lands in the flow →" data-pt="Onde isto entra no fluxo →">Where this lands in the flow →</span></a><a href="index.html#w2"><span data-en="Other tasks in wave 2 →" data-pt="Outras tasks da onda 2 →">Other tasks in wave 2 →</span></a><a href="task-A1C.html"><span data-en="Next: A1C — Decide &lt;code&gt;voiceNode&lt;/code&gt; →" data-pt="Próxima: A1C — Decidir o &lt;code&gt;voiceNode&lt;/code&gt; →">Next: A1C — Decide <code>voiceNode</code> →</span></a></div></div>
+<div class="glance"><div class="gl crit"><div class="k" data-en="Severity" data-pt="Severidade">Severity</div><div class="v" data-en="Moderate — silent data loss if rushed" data-pt="Moderada — perda silenciosa de dado se apressada">Moderate — silent data loss if rushed</div><div class="n" data-en="The two live copies already disagree on three points. Dropping a referenced field to force one map is data loss with no error." data-pt="As duas cópias vivas já divergem em três pontos. Apagar um campo referenciado para forçar um mapa único é perda de dado sem erro.">The two live copies already disagree on three points. Dropping a referenced field to force one map is data loss with no error.</div></div><div class="gl dep"><div class="k" data-en="Depends on" data-pt="Depende de">Depends on</div><div class="v" data-en="A1" data-pt="A1">A1</div><div class="n" data-en="The registry must exist first — this task&amp;#x27;s eventual entry is a projection of it, and A1&amp;#x27;s own steps that used to mention &lt;code&gt;basedOnType&lt;/code&gt; now point here." data-pt="O registro precisa existir primeiro — a eventual entrada desta task é uma projeção dele, e os passos da própria A1 que citavam &lt;code&gt;basedOnType&lt;/code&gt; agora apontam para cá.">The registry must exist first — this task&#x27;s eventual entry is a projection of it, and A1&#x27;s own steps that used to mention <code>basedOnType</code> now point here.</div></div><div class="gl wave"><div class="k" data-en="Wave" data-pt="Onda">Wave</div><div class="v" data-en="Wave 2" data-pt="Onda 2">Wave 2</div><div class="n" data-en="Split out of A1 the same day A1 was re-validated. It clears a defect A1&amp;#x27;s re-validation surfaced — not a precondition any other task&amp;#x27;s Done-when line names." data-pt="Desmembrada da A1 no mesmo dia em que a A1 foi revalidada. Limpa um defeito que a revalidação da A1 revelou — não é precondição que o “pronto quando” de nenhuma outra task cite.">Split out of A1 the same day A1 was re-validated. It clears a defect A1&#x27;s re-validation surfaced — not a precondition any other task&#x27;s Done-when line names.</div></div><div class="gl ship"><div class="k" data-en="Shape" data-pt="Formato">Shape</div><div class="v" data-en="Not behaviour-neutral by construction" data-pt="Não neutra em comportamento por construção">Not behaviour-neutral by construction</div><div class="n" data-en="The two copies already disagree, so someone has to decide which side is the truth for each divergence — and that decision needs evidence before it is made." data-pt="As duas cópias já divergem, então alguém precisa decidir qual lado é a verdade em cada divergência — e essa decisão precisa de evidência antes de ser tomada.">The two copies already disagree, so someone has to decide which side is the truth for each divergence — and that decision needs evidence before it is made.</div></div></div>
+<div class="lede" data-en="&lt;p&gt;&lt;strong&gt;Added 2026-09-21&lt;/strong&gt;, the same day TASK-A1 was corrected. TASK-A1&amp;#x27;s first correction pass called this &amp;quot;three divergent copies&amp;quot; needing &amp;quot;an explicit per-field decision table&amp;quot; and named it the single largest scope increase in the epic&amp;#x27;s re-validation. &lt;strong&gt;That framing was wrong&lt;/strong&gt;, found by a same-day field-by-field re-measurement. It is recorded here rather than silently fixed, the way TASK-A1&amp;#x27;s own history note carries the same pattern (&amp;quot;Corrected 2026-09-21&amp;quot;) — the way TASK-A1&amp;#x27;s D4/D5-style decisions are recorded once made, not silently in code.&lt;/p&gt;&lt;p&gt;&lt;code&gt;basedOnType&lt;/code&gt; answers, for a node type, which of its data fields a placeholder (&lt;code&gt;{{nodeId.field}}&lt;/code&gt;) may reference. It is hand-maintained, in &lt;strong&gt;three&lt;/strong&gt; places, not one map read from three call sites as the original A1 draft assumed. One of the three — &lt;code&gt;flux/constants.ts&lt;/code&gt;&amp;#x27;s unexported, unreferenced &lt;code&gt;nodeSchema&lt;/code&gt; — is &lt;strong&gt;dead code, not a divergent copy&lt;/strong&gt;. The two that are live serve genuinely different purposes: &lt;code&gt;node-reference-substitution.service.ts&lt;/code&gt;&amp;#x27;s copy (26 types) builds the placeholder-reference schema; &lt;code&gt;folw/contants.ts&lt;/code&gt;&amp;#x27;s copy (29 types) builds the node-to-node data-passing payload consumed by &lt;code&gt;addConnectToNodes&lt;/code&gt; (C1&amp;#x27;s territory).&lt;/p&gt;" data-pt="&lt;p&gt;&lt;strong&gt;Adicionada em 21/09/2026&lt;/strong&gt;, no mesmo dia em que a TASK-A1 foi corrigida. A primeira correção da TASK-A1 chamou isto de &amp;quot;três cópias divergentes&amp;quot;, exigindo &amp;quot;uma tabela de decisão explícita por campo&amp;quot;, e a apontou como o maior aumento de escopo isolado da revalidação do épico. &lt;strong&gt;Esse enquadramento estava errado&lt;/strong&gt;, achado por uma remedição campo a campo no mesmo dia. Fica registrado aqui em vez de silenciosamente corrigido, do mesmo jeito que a própria nota de histórico da TASK-A1 carrega o mesmo padrão (&amp;quot;Corrigida em 21/09/2026&amp;quot;) — do mesmo jeito que as decisões estilo D4/D5 da TASK-A1 são registradas quando tomadas, não em silêncio no código.&lt;/p&gt;&lt;p&gt;O &lt;code&gt;basedOnType&lt;/code&gt; responde, para um tipo de node, quais campos de dado um placeholder (&lt;code&gt;{{nodeId.field}}&lt;/code&gt;) pode referenciar. É mantido à mão, em &lt;strong&gt;três&lt;/strong&gt; lugares, não um mapa lido a partir de três pontos de chamada como o rascunho original da A1 assumia. Uma das três — o &lt;code&gt;nodeSchema&lt;/code&gt; não exportado e sem referência do &lt;code&gt;flux/constants.ts&lt;/code&gt; — é &lt;strong&gt;código morto, não uma cópia divergente&lt;/strong&gt;. As duas que estão vivas servem propósitos genuinamente diferentes: a cópia do &lt;code&gt;node-reference-substitution.service.ts&lt;/code&gt; (26 tipos) constrói o schema de referência de placeholder; a cópia do &lt;code&gt;folw/contants.ts&lt;/code&gt; (29 tipos) constrói o payload de passagem de dado node-a-node consumido pelo &lt;code&gt;addConnectToNodes&lt;/code&gt; (território da C1).&lt;/p&gt;"><p><strong>Added 2026-09-21</strong>, the same day TASK-A1 was corrected. TASK-A1&#x27;s first correction pass called this &quot;three divergent copies&quot; needing &quot;an explicit per-field decision table&quot; and named it the single largest scope increase in the epic&#x27;s re-validation. <strong>That framing was wrong</strong>, found by a same-day field-by-field re-measurement. It is recorded here rather than silently fixed, the way TASK-A1&#x27;s own history note carries the same pattern (&quot;Corrected 2026-09-21&quot;) — the way TASK-A1&#x27;s D4/D5-style decisions are recorded once made, not silently in code.</p><p><code>basedOnType</code> answers, for a node type, which of its data fields a placeholder (<code>{{nodeId.field}}</code>) may reference. It is hand-maintained, in <strong>three</strong> places, not one map read from three call sites as the original A1 draft assumed. One of the three — <code>flux/constants.ts</code>&#x27;s unexported, unreferenced <code>nodeSchema</code> — is <strong>dead code, not a divergent copy</strong>. The two that are live serve genuinely different purposes: <code>node-reference-substitution.service.ts</code>&#x27;s copy (26 types) builds the placeholder-reference schema; <code>folw/contants.ts</code>&#x27;s copy (29 types) builds the node-to-node data-passing payload consumed by <code>addConnectToNodes</code> (C1&#x27;s territory).</p></div>
+<div class="sec-label"><span class="n">1</span><h2 data-en="The measured divergence: five lines, not sixty-six" data-pt="A divergência medida: cinco linhas, não sessenta e seis">The measured divergence: five lines, not sixty-six</h2><span class="rule"></span></div>
+<div class="lede" style="border-left-color:#6366F1"><div data-en="&lt;strong&gt;24 of the shared types are byte-identical.&lt;/strong&gt; The 63-field &lt;code&gt;thirdPartyIntegration&lt;/code&gt; entry was flagged as alarming in TASK-A1&amp;#x27;s first correction pass; measured directly, it is not a conflict at all — &lt;code&gt;node-reference-substitution&lt;/code&gt; simply has no entry for &lt;code&gt;thirdPartyIntegration&lt;/code&gt;, so there is nothing to reconcile there beyond deciding whether the placeholder-reference schema should gain one." data-pt="&lt;strong&gt;24 dos tipos compartilhados são idênticos byte a byte.&lt;/strong&gt; A entrada de 63 campos do &lt;code&gt;thirdPartyIntegration&lt;/code&gt; foi apontada como alarmante na primeira correção da TASK-A1; medida diretamente, não é conflito nenhum — o &lt;code&gt;node-reference-substitution&lt;/code&gt; simplesmente não tem entrada para &lt;code&gt;thirdPartyIntegration&lt;/code&gt;, então não há o que reconciliar ali além de decidir se o schema de referência de placeholder deveria ganhar uma."><strong>24 of the shared types are byte-identical.</strong> The 63-field <code>thirdPartyIntegration</code> entry was flagged as alarming in TASK-A1&#x27;s first correction pass; measured directly, it is not a conflict at all — <code>node-reference-substitution</code> simply has no entry for <code>thirdPartyIntegration</code>, so there is nothing to reconcile there beyond deciding whether the placeholder-reference schema should gain one.</div></div>
+<table class="entry-table"><thead><tr><th><span data-en="Type" data-pt="Tipo">Type</span></th><th><span data-en="node-reference-substitution" data-pt="node-reference-substitution">node-reference-substitution</span></th><th><span data-en="folw/contants" data-pt="folw/contants">folw/contants</span></th><th><span data-en="Divergence" data-pt="Divergência">Divergence</span></th></tr></thead><tbody>
+<tr><td class="rt">mcpNode</td><td><span data-en="8 fields, incl. &lt;code&gt;inputMode&lt;/code&gt;" data-pt="8 campos, incl. &lt;code&gt;inputMode&lt;/code&gt;">8 fields, incl. <code>inputMode</code></span></td><td><span data-en="8 fields, incl. &lt;code&gt;toolArguments&lt;/code&gt;" data-pt="8 campos, incl. &lt;code&gt;toolArguments&lt;/code&gt;">8 fields, incl. <code>toolArguments</code></span></td><td><span data-en="The only genuine content conflict — same slot, different value" data-pt="O único conflito de conteúdo genuíno — mesmo slot, valor diferente">The only genuine content conflict — same slot, different value</span></td></tr>
+<tr><td class="rt">outputController</td><td><span data-en="&lt;code&gt;text&lt;/code&gt; only" data-pt="só &lt;code&gt;text&lt;/code&gt;"><code>text</code> only</span></td><td><span data-en="&lt;code&gt;text&lt;/code&gt; + &lt;code&gt;customFileName&lt;/code&gt;" data-pt="&lt;code&gt;text&lt;/code&gt; + &lt;code&gt;customFileName&lt;/code&gt;"><code>text</code> + <code>customFileName</code></span></td><td><span data-en="An addition, not a conflict" data-pt="Uma adição, não um conflito">An addition, not a conflict</span></td></tr>
+<tr><td class="rt">fluxBox · reportBuilder · thirdPartyIntegration</td><td><span class="pill no"><span data-en="Absent" data-pt="Ausente">Absent</span></span></td><td><span data-en="Present (&lt;code&gt;[&amp;#x27;sessionId&amp;#x27;]&lt;/code&gt;, &lt;code&gt;[&amp;#x27;text&amp;#x27;]&lt;/code&gt;, 63 fields)" data-pt="Presente (&lt;code&gt;[&amp;#x27;sessionId&amp;#x27;]&lt;/code&gt;, &lt;code&gt;[&amp;#x27;text&amp;#x27;]&lt;/code&gt;, 63 campos)">Present (<code>[&#x27;sessionId&#x27;]</code>, <code>[&#x27;text&#x27;]</code>, 63 fields)</span></td><td><span data-en="Nothing on the other side to disagree with" data-pt="Nada do outro lado para discordar">Nothing on the other side to disagree with</span></td></tr>
+</tbody></table>
+<div class="sec-label"><span class="n">2</span><h2 data-en="What the task does, in three parts" data-pt="O que a task faz, em três partes">What the task does, in three parts</h2><span class="rule"></span></div>
+<div class="part"><div class="part-head"><span class="num">1</span><span class="t"><span data-en="Prove the dead copy is dead, fresh, then delete it" data-pt="Provar que a cópia morta está morta, de forma recente, e apagar">Prove the dead copy is dead, fresh, then delete it</span></span><span class="loc">flux/constants.ts</span></div><div class="part-body"><div class="purpose" data-en="&lt;code&gt;flux/constants.ts&lt;/code&gt;&amp;#x27;s local, unexported &lt;code&gt;nodeSchema&lt;/code&gt; — and its embedded 14-type &lt;code&gt;basedOnType&lt;/code&gt; — has never executed in production." data-pt="O &lt;code&gt;nodeSchema&lt;/code&gt; local e não exportado do &lt;code&gt;flux/constants.ts&lt;/code&gt; — e o &lt;code&gt;basedOnType&lt;/code&gt; de 14 tipos embutido nele — nunca executou em produção."><code>flux/constants.ts</code>&#x27;s local, unexported <code>nodeSchema</code> — and its embedded 14-type <code>basedOnType</code> — has never executed in production.</div><div data-en="&lt;p&gt;An owner-anchored grep across &lt;code&gt;back&lt;/code&gt;, &lt;code&gt;front&lt;/code&gt;, &lt;code&gt;worker&lt;/code&gt;, &lt;code&gt;mcp-server&lt;/code&gt; &lt;strong&gt;and &lt;code&gt;origin/production&lt;/code&gt;&lt;/strong&gt; — the same proof burden C3 already applies to its own dead-code candidates (&lt;code&gt;processFlowWithSubstitution&lt;/code&gt;, &lt;code&gt;api-caller-polling.ts&lt;/code&gt;) — not just this checkout, since this task may start later than the numbers above were measured against (&lt;code&gt;back@origin/production&lt;/code&gt; &lt;code&gt;3804a524&lt;/code&gt;).&lt;/p&gt;" data-pt="&lt;p&gt;Um grep ancorado no dono, em &lt;code&gt;back&lt;/code&gt;, &lt;code&gt;front&lt;/code&gt;, &lt;code&gt;worker&lt;/code&gt;, &lt;code&gt;mcp-server&lt;/code&gt; &lt;strong&gt;e &lt;code&gt;origin/production&lt;/code&gt;&lt;/strong&gt; — o mesmo ônus de prova que a C3 já aplica aos próprios candidatos a código morto (&lt;code&gt;processFlowWithSubstitution&lt;/code&gt;, &lt;code&gt;api-caller-polling.ts&lt;/code&gt;) — não só neste checkout, já que esta task pode começar depois de os números acima terem sido medidos (&lt;code&gt;back@origin/production&lt;/code&gt; &lt;code&gt;3804a524&lt;/code&gt;).&lt;/p&gt;"><p>An owner-anchored grep across <code>back</code>, <code>front</code>, <code>worker</code>, <code>mcp-server</code> <strong>and <code>origin/production</code></strong> — the same proof burden C3 already applies to its own dead-code candidates (<code>processFlowWithSubstitution</code>, <code>api-caller-polling.ts</code>) — not just this checkout, since this task may start later than the numbers above were measured against (<code>back@origin/production</code> <code>3804a524</code>).</p></div><div class="ba"><div class="now"><h5>⚠ <span data-en="How it is today" data-pt="Como está hoje">How it is today</span></h5><p data-en="A third hand-maintained copy of the same fact sits in the codebase, unreferenced, and nobody has proven it unreferenced &lt;em&gt;fresh&lt;/em&gt;." data-pt="Uma terceira cópia mantida à mão do mesmo fato está no código, sem referência, e ninguém provou isso de forma recente.">A third hand-maintained copy of the same fact sits in the codebase, unreferenced, and nobody has proven it unreferenced <em>fresh</em>.</p></div><div class="nxt"><h5>✓ <span data-en="How it will be" data-pt="Como fica">How it will be</span></h5><p data-en="One fewer copy, deleted with its unreachability proof in the PR — not asserted after." data-pt="Uma cópia a menos, apagada com a prova de inalcançabilidade no PR — não afirmada depois.">One fewer copy, deleted with its unreachability proof in the PR — not asserted after.</p></div></div></div></div>
+<div class="part"><div class="part-head"><span class="num">2</span><span class="t"><span data-en="Measure each divergence against real stored flows, dev only" data-pt="Medir cada divergência contra fluxos reais guardados, só em dev">Measure each divergence against real stored flows, dev only</span></span><span class="loc">dev database — never staging, never production</span></div><div class="part-body"><div class="purpose" data-en="A field nobody references can be safely dropped; a field that is referenced must not be, regardless of which copy is judged canonical." data-pt="Um campo que ninguém referencia pode ser apagado com segurança; um campo referenciado não pode, seja qual for a cópia julgada canônica.">A field nobody references can be safely dropped; a field that is referenced must not be, regardless of which copy is judged canonical.</div><div data-en="&lt;p&gt;For each of the three divergences (&lt;code&gt;mcpNode.inputMode&lt;/code&gt;, &lt;code&gt;mcpNode.toolArguments&lt;/code&gt;, &lt;code&gt;outputController.customFileName&lt;/code&gt;), query whether any stored flow actually references it through a placeholder or through the data-passing payload. This is &lt;strong&gt;CLAUDE.md&amp;#x27;s &amp;quot;measure before refusing&amp;quot; rule&lt;/strong&gt;, applied to unification instead of refusal: a false unification that silently drops a referenced field is treated the same as a false refusal.&lt;/p&gt;" data-pt="&lt;p&gt;Para cada uma das três divergências (&lt;code&gt;mcpNode.inputMode&lt;/code&gt;, &lt;code&gt;mcpNode.toolArguments&lt;/code&gt;, &lt;code&gt;outputController.customFileName&lt;/code&gt;), consultar se algum fluxo guardado de fato a referencia, por placeholder ou pelo payload de passagem de dado. É a &lt;strong&gt;regra &amp;quot;medir antes de recusar&amp;quot; do CLAUDE.md&lt;/strong&gt;, aplicada à unificação em vez de à recusa: uma unificação falsa que apaga em silêncio um campo referenciado é tratada como uma falsa recusa.&lt;/p&gt;"><p>For each of the three divergences (<code>mcpNode.inputMode</code>, <code>mcpNode.toolArguments</code>, <code>outputController.customFileName</code>), query whether any stored flow actually references it through a placeholder or through the data-passing payload. This is <strong>CLAUDE.md&#x27;s &quot;measure before refusing&quot; rule</strong>, applied to unification instead of refusal: a false unification that silently drops a referenced field is treated the same as a false refusal.</p></div><div class="ba"><div class="now"><h5>⚠ <span data-en="How it is today" data-pt="Como está hoje">How it is today</span></h5><p data-en="Three divergences sit undecided, each a coin flip between &amp;quot;keep both&amp;quot; and &amp;quot;pick one&amp;quot; with no evidence either way." data-pt="Três divergências ficam indecididas, cada uma um cara-ou-coroa entre &amp;quot;manter as duas&amp;quot; e &amp;quot;escolher uma&amp;quot; sem evidência de nenhum lado.">Three divergences sit undecided, each a coin flip between &quot;keep both&quot; and &quot;pick one&quot; with no evidence either way.</p></div><div class="nxt"><h5>✓ <span data-en="How it will be" data-pt="Como fica">How it will be</span></h5><p data-en="Each divergence is resolved by a recorded, measurement-backed decision — not a silent pick — written into this task file the way it is made." data-pt="Cada divergência é resolvida por uma decisão registrada e apoiada em medição — não uma escolha silenciosa — escrita neste arquivo da task do jeito que é tomada.">Each divergence is resolved by a recorded, measurement-backed decision — not a silent pick — written into this task file the way it is made.</p></div></div></div></div>
+<div class="part"><div class="part-head"><span class="num">3</span><span class="t"><span data-en="Build the single source (or the two named projections) and repoint both call sites" data-pt="Construir a fonte única (ou as duas projeções nomeadas) e reapontar os dois call sites">Build the single source (or the two named projections) and repoint both call sites</span></span><span class="loc">node-reference-substitution.service.ts · folw/contants.ts</span></div><div class="part-body"><div class="purpose" data-en="Whichever way Part 2 lands, the answer goes into code the A1 registry can project from — not into a review comment." data-pt="Seja qual for o resultado da Parte 2, a resposta vai para código do qual o registro da A1 possa projetar — não para um comentário de revisão.">Whichever way Part 2 lands, the answer goes into code the A1 registry can project from — not into a review comment.</div><div data-en="&lt;p&gt;If nothing depends on the two purposes staying separate: &lt;strong&gt;one map&lt;/strong&gt;. If the placeholder-reference schema and the data-passing payload need to keep disagreeing on &lt;code&gt;mcpNode&lt;/code&gt;&amp;#x27;s or &lt;code&gt;outputController&lt;/code&gt;&amp;#x27;s fields: &lt;strong&gt;one source with two named projections&lt;/strong&gt; — a shared base plus a per-consumer overlay. Either way, update the A1 registry only if its shape needs a field for this; TASK-A1&amp;#x27;s shipped registry does not model &lt;code&gt;basedOnType&lt;/code&gt; itself, so this may stay a standalone module the registry does not need to know about.&lt;/p&gt;" data-pt="&lt;p&gt;Se nada depende de as duas finalidades continuarem separadas: &lt;strong&gt;um mapa&lt;/strong&gt;. Se o schema de referência de placeholder e o payload de passagem de dado precisarem continuar divergindo nos campos do &lt;code&gt;mcpNode&lt;/code&gt; ou do &lt;code&gt;outputController&lt;/code&gt;: &lt;strong&gt;uma fonte com duas projeções nomeadas&lt;/strong&gt; — uma base compartilhada mais uma camada por consumidor. De todo modo, atualizar o registro da A1 só se a forma dele precisar de um campo para isso; o registro já entregue pela TASK-A1 não modela o &lt;code&gt;basedOnType&lt;/code&gt; em si, então isto pode continuar um módulo à parte que o registro não precisa conhecer.&lt;/p&gt;"><p>If nothing depends on the two purposes staying separate: <strong>one map</strong>. If the placeholder-reference schema and the data-passing payload need to keep disagreeing on <code>mcpNode</code>&#x27;s or <code>outputController</code>&#x27;s fields: <strong>one source with two named projections</strong> — a shared base plus a per-consumer overlay. Either way, update the A1 registry only if its shape needs a field for this; TASK-A1&#x27;s shipped registry does not model <code>basedOnType</code> itself, so this may stay a standalone module the registry does not need to know about.</p></div><div class="ba"><div class="now"><h5>⚠ <span data-en="How it is today" data-pt="Como está hoje">How it is today</span></h5><p data-en="Two call sites each hand-maintain their own list, and the 24 types they agree on are agreement by coincidence, not by construction." data-pt="Dois call sites mantêm cada um a própria lista à mão, e os 24 tipos em que concordam concordam por coincidência, não por construção.">Two call sites each hand-maintain their own list, and the 24 types they agree on are agreement by coincidence, not by construction.</p></div><div class="nxt"><h5>✓ <span data-en="How it will be" data-pt="Como fica">How it will be</span></h5><p data-en="Both call sites read from the single source (or the two named projections) this task builds, so agreement is structural." data-pt="Os dois call sites leem da fonte única (ou das duas projeções nomeadas) que esta task constrói, então a concordância passa a ser estrutural.">Both call sites read from the single source (or the two named projections) this task builds, so agreement is structural.</p></div></div></div></div>
+<div class="sec-label"><span class="n">1</span><h2 data-en="How it is proved" data-pt="Como se prova">How it is proved</h2><span class="rule"></span></div>
+<div class="vcard"><div class="vcard-head">🔬 <span data-en="Verification" data-pt="Verificação">Verification</span></div><div class="vcard-body"><div class="vitem req"><div class="vn">1</div><div><div class="vt"><span data-en="Negative control" data-pt="Controle negativo">Negative control</span><span class="req-tag"><span data-en="required" data-pt="obrigatório">required</span></span></div><div class="vd" data-en="Before unifying a divergent field, break the current behaviour — e.g. temporarily remove &lt;code&gt;outputController&lt;/code&gt;&amp;#x27;s &lt;code&gt;customFileName&lt;/code&gt; from &lt;code&gt;folw&lt;/code&gt;&amp;#x27;s copy — and confirm a flow using that field&amp;#x27;s data-passing path actually fails or drops data. Then restore it and make the real, decided change." data-pt="Antes de unificar um campo divergente, quebre o comportamento atual — ex.: remova temporariamente o &lt;code&gt;customFileName&lt;/code&gt; do &lt;code&gt;outputController&lt;/code&gt; na cópia do &lt;code&gt;folw&lt;/code&gt; — e confirme que um fluxo usando aquele caminho de passagem de dado de fato falha ou perde dado. Depois restaure e faça a mudança real, decidida.">Before unifying a divergent field, break the current behaviour — e.g. temporarily remove <code>outputController</code>&#x27;s <code>customFileName</code> from <code>folw</code>&#x27;s copy — and confirm a flow using that field&#x27;s data-passing path actually fails or drops data. Then restore it and make the real, decided change.</div></div></div>
+<div class="vitem req"><div class="vn">2</div><div><div class="vt"><span data-en="Measurement against real stored flows, dev only" data-pt="Medição contra fluxos reais guardados, só em dev">Measurement against real stored flows, dev only</span><span class="req-tag"><span data-en="required" data-pt="obrigatório">required</span></span></div><div class="vd" data-en="For each divergence, query whether any stored flow actually references &lt;code&gt;mcpNode.inputMode&lt;/code&gt;, &lt;code&gt;mcpNode.toolArguments&lt;/code&gt;, or &lt;code&gt;outputController.customFileName&lt;/code&gt; through a placeholder or through the data-passing payload — dev only, never staging, never production." data-pt="Para cada divergência, consultar se algum fluxo guardado de fato referencia &lt;code&gt;mcpNode.inputMode&lt;/code&gt;, &lt;code&gt;mcpNode.toolArguments&lt;/code&gt; ou &lt;code&gt;outputController.customFileName&lt;/code&gt;, por placeholder ou pelo payload de passagem de dado — só em dev, nunca staging, nunca produção.">For each divergence, query whether any stored flow actually references <code>mcpNode.inputMode</code>, <code>mcpNode.toolArguments</code>, or <code>outputController.customFileName</code> through a placeholder or through the data-passing payload — dev only, never staging, never production.</div></div></div>
+<div class="vitem req"><div class="vn">3</div><div><div class="vt"><span data-en="Proof of unreachability for the dead copy" data-pt="Prova de inalcançabilidade da cópia morta">Proof of unreachability for the dead copy</span><span class="req-tag"><span data-en="required" data-pt="obrigatório">required</span></span></div><div class="vd" data-en="An owner-anchored grep across &lt;code&gt;back&lt;/code&gt;, &lt;code&gt;front&lt;/code&gt;, &lt;code&gt;worker&lt;/code&gt;, &lt;code&gt;mcp-server&lt;/code&gt; and &lt;code&gt;origin/production&lt;/code&gt;, stated in the PR before the deletion, not asserted after." data-pt="Um grep ancorado no dono, em &lt;code&gt;back&lt;/code&gt;, &lt;code&gt;front&lt;/code&gt;, &lt;code&gt;worker&lt;/code&gt;, &lt;code&gt;mcp-server&lt;/code&gt; e &lt;code&gt;origin/production&lt;/code&gt;, declarado no PR antes da remoção, não afirmado depois.">An owner-anchored grep across <code>back</code>, <code>front</code>, <code>worker</code>, <code>mcp-server</code> and <code>origin/production</code>, stated in the PR before the deletion, not asserted after.</div></div></div>
+</div></div>
+<div class="done"><span class="dt" data-en="✓  Done when" data-pt="✓  Pronto quando">✓  Done when</span><div class="dd" data-en="&lt;code&gt;flux/constants.ts&lt;/code&gt;&amp;#x27;s dead &lt;code&gt;basedOnType&lt;/code&gt; copy is deleted, with its unreachability proof in the PR. The two live copies&amp;#x27; three divergences are each resolved by a recorded, measurement-backed decision — not a silent pick. Both call sites (&lt;code&gt;node-reference-substitution.service.ts&lt;/code&gt;, &lt;code&gt;folw/contants.ts&lt;/code&gt;) read from the single source (or the two named projections) this task builds. &lt;strong&gt;No field referenced by a real stored flow was dropped.&lt;/strong&gt;" data-pt="A cópia morta do &lt;code&gt;basedOnType&lt;/code&gt; em &lt;code&gt;flux/constants.ts&lt;/code&gt; está apagada, com a prova de inalcançabilidade no PR. As três divergências das duas cópias vivas estão cada uma resolvida por uma decisão registrada e apoiada em medição — não uma escolha silenciosa. Os dois call sites (&lt;code&gt;node-reference-substitution.service.ts&lt;/code&gt;, &lt;code&gt;folw/contants.ts&lt;/code&gt;) leem da fonte única (ou das duas projeções nomeadas) que esta task constrói. &lt;strong&gt;Nenhum campo referenciado por um fluxo real guardado foi apagado.&lt;/strong&gt;"><code>flux/constants.ts</code>&#x27;s dead <code>basedOnType</code> copy is deleted, with its unreachability proof in the PR. The two live copies&#x27; three divergences are each resolved by a recorded, measurement-backed decision — not a silent pick. Both call sites (<code>node-reference-substitution.service.ts</code>, <code>folw/contants.ts</code>) read from the single source (or the two named projections) this task builds. <strong>No field referenced by a real stored flow was dropped.</strong></div></div>
+<div class="filesbox"><div class="filesbox-head">📂 <span data-en="Files this task touches" data-pt="Arquivos que esta task toca">Files this task touches</span></div><div class="filesbox-body"><span class="fchip">back/src/app-api/node-reference-substitution/node-reference-substitution.service.ts (basedOnType, generateSchemaFromNodes)</span><span class="fchip">back/src/app-api/folw/contants.ts (basedOnType, nodeSchema, THIRD_PARTY_INTEGRATION_DATA_PAYLOAD_KEYS)</span><span class="fchip">back/src/app-api/flux/constants.ts (dead, unexported nodeSchema — deleted once proven unreachable)</span><span class="fchip">back/src/app-api/flux/prefetch/prefetch-flow-executor.ts · back/src/temporal/single-node-legacy/legacy-context-builder.ts (read only)</span><span class="fchip">back/src/app-api/node-reference-substitution/node-reference-substitution.controller.ts · back/src/app-api/folw/helpers/helpers.ts · back/src/app-api/folw/flow.controller.ts (read only unless the chosen source changes their call shape)</span><span class="fchip new">the A1 registry (only if the chosen shape needs a registry field)</span></div></div>
+<div class="page-footer-nav"><a href="task-A1.html"><span data-en="← A1 — One dispatch registry" data-pt="← A1 — Um registro de dispatch">← A1 — One dispatch registry</span></a><a href="task-A1C.html"><span data-en="Next: A1C — Decide &lt;code&gt;voiceNode&lt;/code&gt; →" data-pt="Próxima: A1C — Decidir o &lt;code&gt;voiceNode&lt;/code&gt; →">Next: A1C — Decide <code>voiceNode</code> →</span></a></div>
+</div>
+<script>
+(function(){
+  var n=document.querySelectorAll('[data-en]'),b=document.querySelectorAll('.lang-sw button');
+  function apply(l){
+    n.forEach(function(el){var v=el.getAttribute('data-'+l); if(v===null)return; el.innerHTML=v;});
+    b.forEach(function(x){x.setAttribute('aria-pressed',String(x.getAttribute('data-lang')===l))});
+    document.documentElement.lang = l==='pt' ? 'pt-BR' : 'en';
+    try{localStorage.setItem('flux-lang',l)}catch(e){}
+  }
+  b.forEach(function(x){x.addEventListener('click',function(){apply(x.getAttribute('data-lang'))})});
+  var saved=null; try{saved=localStorage.getItem('flux-lang')}catch(e){}
+  apply(saved==='pt'?'pt':'en');
+})();
+</script>
