@@ -108,8 +108,9 @@ promotion — revert by not promoting.
 | `A6` + `S6` | The front-driven types: eight after D24, six after D3 (two discontinued). **S6's egress decision ships with them, not after** — its width is the implementer's call (D25) |
 | `A8` | `varInputNode`'s extraction and OCR off the request path |
 | `A9` | Emails and callbacks as retried activities — today a customer's endpoint being down for thirty seconds loses the notification |
-| `C1` | Per node, as each lands — not a sweep at the end |
 | `D1` | Continuous; each node's page is part of its own done |
+
+**Removed from Wave 3 on 2026-10-02.** C1 had a Wave 3 row for its per-node half, but that half is a Done-when line of each A-track card, not a deliverable of its own, so the row counted as an unstarted item in a wave whose nodes were already deleting their twins. Verified on `back@origin/production` `bc727827`: A4's `reportBuilderNode()` and dispatch case are gone, A5's `imageGenerator` dispatch case is gone (its dead method body stays, by precedent); A9's inline delivery block goes with its production deploy. C1 is tracked once, in Wave 6 ([868m0vm8g](https://app.clickup.com/t/9011479430/868m0vm8g)).
 
 **Expect a latency regression in this wave and say so.** Every migrated node is a blocking round
 trip until Wave 5 (review §4.5). Measure it per task and state the number in the PR. This is the
