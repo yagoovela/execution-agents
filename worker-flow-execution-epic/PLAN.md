@@ -143,8 +143,9 @@ throttle before adding the ceilings replaces a slow system with an unstable one.
 |---|---|---|
 | [`TASK-B1-EXECUTION-IDENTITY.md`](./TASK-B1-EXECUTION-IDENTITY.md) | Make the reference between nodes identify one **execution**, not one node in a run | — |
 | [`TASK-B2-CODE-SHARING.md`](./TASK-B2-CODE-SHARING.md) | Decide shared package vs copy-port, then extract the scheduler and the substitution service | — |
-| [`TASK-B3-WORKER-INPUT-RESOLUTION.md`](./TASK-B3-WORKER-INPUT-RESOLUTION.md) | Let the consumer resolve its own input, building on the prefetch executor | B1, B2 |
-| [`TASK-B4-GRAPH-WORKFLOW.md`](./TASK-B4-GRAPH-WORKFLOW.md) | Move the DAG loop into a Temporal workflow — **sequential first**, no parallelism yet | B2, B3 |
+| [`TASK-B3-WORKER-INPUT-RESOLUTION.md`](./TASK-B3-WORKER-INPUT-RESOLUTION.md) | Let the consumer resolve its own placeholders by reference; D2 answered — the prefetch executor is a stopgap | B1, B2 |
+| [`TASK-B3B-EDGE-PROJECTION.md`](./TASK-B3B-EDGE-PROJECTION.md) | Build each node's `*Data` from its upstreams' rows in the worker, instead of the back's in-memory edge projection (split out of B3, 2026-10-09) | B2, B3 |
+| [`TASK-B4-GRAPH-WORKFLOW.md`](./TASK-B4-GRAPH-WORKFLOW.md) | Move the DAG loop into a Temporal workflow — **sequential first**, no parallelism yet | B2, B3, B3b |
 | [`TASK-B5-PARALLEL-DISPATCH.md`](./TASK-B5-PARALLEL-DISPATCH.md) | Turn on batch dispatch, gated per flow on full coverage | A-track complete, B4, S2, S3, E3 |
 | [`TASK-B6-CONTROL-FLOW.md`](./TASK-B6-CONTROL-FLOW.md) | `conditionNode`, `arrayNode` as workflow control flow; `fluxBox`, `libraryNode` as child workflows | B4, S1; ships after B5 (D17) |
 | [`TASK-B7-BATCH-WORKFLOW.md`](./TASK-B7-BATCH-WORKFLOW.md) | CSV batches as durable workflows instead of a detached loop in the API process | B4, S3 |
@@ -189,9 +190,9 @@ A1 ──┬── A2 ── A3 ── A4 ── A5 ──┬── A6 ──┬
      ├── A9 (any time after A1)                         │
      └── D2 ── D1 (continuous)                          │
                                                         │
-B1 ── B2 ── B3 ── B4 ──┬── E1 (with B4) ──┬── A7 ─┬── B5 ──┬── B6 (after B5, D17)
-                       │                  │       │        └── B7 (also needs S3)
-                       └── E2             └── C1 ─┴── C2
+B1 ── B2 ── B3 ── B3b ── B4 ──┬── E1 (with B4) ──┬── A7 ─┬── B5 ──┬── B6 (after B5, D17)
+                              │                  │       │        └── B7 (also needs S3)
+                              └── E2             └── C1 ─┴── C2
 ```
 
 Read as seven rules:
@@ -241,8 +242,8 @@ Read as seven rules:
 
 | # | Decision | Blocks | Notes |
 |---|---|---|---|
-| D1 | Shared package between `back` and `worker`, or copy-port with a drift test? | B2, and therefore B3/B4 | The repos are separate submodules with no shared build graph; the integration migration chose copy-port for good reasons. The two modules here are *pure*, which is the case where sharing is cheapest. |
-| D2 | Is the prefetch executor the destination for worker-side input resolution, or a stopgap to retire? | B3, C2 | **Ownership split, 2026-09-02.** The measurement — how many stored flows satisfy the whitelist, how many ran with the flag on, what it saved — is taken by **A1** (Wave 2), which already runs `canUsePrefetchForFlow` against every stored flow for its neutrality check; **B3** (Wave 4) answers with those numbers in hand; **C2** (Wave 6) executes the answer. A flag defaulting to `legacy` whose whitelist excludes every LLM node may be shipped but dormant. |
+| D1 | Shared package between `back` and `worker`, or copy-port with a drift test? | B2, and therefore B3/B4 | **Answered 2026-10-02: copy-port with a drift test.** The repos are separate submodules with no shared build graph, and there is no registry or package plumbing to build on — both Dockerfiles build from their own repo — so a package needs new infra before it ships anything. Back is the source: `pnpm sync:ported-engine` copies a closed manifest byte-for-byte into `worker/src/ported/back/`, and `ported-engine-drift.spec.ts` fails on any divergence or on an import that leaves the manifest; it was seen red on a `classifyEdge` mutation. It runs locally, since neither repo runs tests in CI (§3.5). The shared package was the earlier recommendation and stays on B2's page with its reasons. Details: `TASK-B2-CODE-SHARING.md`. |
+| D2 | Is the prefetch executor the destination for worker-side input resolution, or a stopgap to retire? | B3, C2 | **Answered 2026-10-09: a stopgap.** 78 of 15,984 production flows are eligible (A1), and `FLUX_EXEC_MEMORY_MODE_PROD` was `prefetch` for about 73 minutes on 2026-08-20 and `legacy` ever since (SSM parameter history), so it has carried no traffic to measure. It also resolves in the back and dispatches inline, so it was never a consumer-side resolver. B3 moves placeholder resolution to the worker on B2's ported substitution service; C2 retires the executor. See `TASK-B3-WORKER-INPUT-RESOLUTION.md`. |
 | D3 | The front-driven types (eight, after D24) do not run in headless flows today. Intended, or a silent defect for customers with one in a scheduled flow? | A6 | Independent of the worker. Answer it on its own before A6 turns it into a behaviour change. **Answered by the requester, 2026-09-02.** `documentSummarizer` and `commandMusicNode` are discontinued and leave A6; `webAmazon` and `secApiNode` are broken today, so giving them execution includes making them work, or dropping them — A6 decides per type and records it; `fileSave` is under review and stays in scope until that review says otherwise. The six that remain run headless: that is the product answer, and A6 is no longer blocked on this row. |
 | D4 | Are `sqlQuerier` and `audioReaderNode` unreachable on purpose — a migration paused mid-way — or by oversight? | A3 | Changes whether A3 is "finish it" or "delete it". |
 | D15 | What are X, Y and the chain total? | S4 | **Open — must come from measurement.** X per node, Y node executions per run, and a chain total that nesting cannot reset. Set above the largest real value in stored runs. |
