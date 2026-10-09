@@ -65,6 +65,77 @@ dispatcher — instead of writing a second one. S6 names neither the delivery ca
 attachment fetches; A9 adds that coverage. Out of both tasks' scope and flagged separately: back's
 `/proxy?url=` route (`src/main.ts:135–180`, http-proxy-middleware to any origin).
 
+### D25 decision (2026-10-06)
+
+**Cut C — four controls ship together.** The implementer, in agreement with the requester, opted
+for a single wider cut instead of the two-step rollout the preference suggested, because the
+controls share one call site (the fetch layer) and splitting them into two passes would duplicate
+the refactor of the same six node modules.
+
+**The four controls (originally five — see note below on dropped rate-limit):**
+1. **Response size cap** enforced on the stream (aborts the connection on overflow).
+2. **Request timeout** via `AbortSignal.timeout`.
+3. **Deny-list on the resolved address** — resolves the hostname, checks every resolved IP against
+   `127.0.0.0/8`, `169.254.0.0/16`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `::1/128`,
+   `fc00::/7`, `fe80::/10`, and pins the connection to the IP that was checked (resolve-pin-connect,
+   the task's own option D-as-mechanism).
+4. **No redirects** — the HTTP clients are configured with `maxRedirects: 0`. A `3xx` response is
+   returned to the node as-is (with the `Location` header) and the node author issues the next GET
+   manually if intended. This is a stricter stance than the "re-check on redirect" the spec framed,
+   deliberately, because the follow-up GET at the node level makes the second hop visible to the
+   user rather than hidden inside the HTTP client.
+
+**Rate-limit per `{organization, nodeType}` was removed from scope (2026-10-07).** The requester
+decided a per-org rate limit is a product-level concern that belongs elsewhere (billing/quota, not
+the egress policy), and that forcing a worker-level cap would surprise customers whose legitimate
+use is bursty. The deny-list, size cap, timeout and no-redirect still cover the SSRF threat; the
+rate-limit was the only one of the five that did not address an SSRF vector directly.
+
+**Per-organisation allowlist was also removed from scope (2026-10-07).** The spec framed it as the
+escape hatch required to keep the deny-list from being disabled wholesale the first time a
+legitimate internal endpoint is refused. The requester accepted that risk for v1: no customer is
+known to need an internal endpoint today, and if one appears later we revisit then — either by
+reintroducing the allowlist, by punching a specific hole in the hardcoded deny-list, or by placing
+that customer's worker in a dedicated subnet. The hardcoded deny-list (RFC-based private, loopback,
+link-local, metadata ranges) is the only exception path that ships. If this causes real customer
+pain before S6-b is resolved, the allowlist is the first thing to bring back.
+
+**Per-organisation allowlist** stored in a new `organization_egress_allowlist` table — the required
+escape hatch for legitimate internal endpoints.
+
+**Report-only cycle (PLAN §3.3.2) was removed from scope (2026-10-07).** The requester opted to
+ship directly in enforce — no `EGRESS_MODE` env var, no `egress.would_block` log event, no soft
+rollout. The only mode is enforce. The negative-control test and the measurement script still
+exist for pre-deploy validation; the production report-only cycle is dropped as a conscious
+trade-off: we accept the risk of a legitimate customer URL being refused on first enforce in
+exchange for a simpler surface. If this causes real pain, re-introducing a toggle is a small code
+change (one env var + one branch).
+
+**Scope by node (from code analysis of the current branch):**
+
+| Node type   | URL comes from | SSRF checks  | Operational caps |
+|-------------|----------------|--------------|------------------|
+| `apiCaller` | user           | yes          | yes              |
+| `fileSave`  | user           | yes          | yes              |
+| `webCrawling` | system (ScrapingBee/OxyLabs/BuiltWith) | no | yes |
+| `webAmazon` | system (OxyLabs) | no         | yes              |
+| `secApiNode` | system (api.sec-api.io) | no   | yes              |
+| `usCensusNode` | system (api.census.gov) | no | yes              |
+
+Only `apiCaller` and `fileSave` connect the worker to a user-controlled URL, so the deny-list,
+DNS-pin and no-redirect controls apply only to those two. The other four already connect to a known
+host; they pass through `safeFetch` with `skipAddressChecks: true` so the rate-limit, size cap and
+timeout still apply.
+
+**Front-end exposure:** a discreet `<EgressPolicyTooltip>` on the Run button of the six affected
+node UIs, read-only, consuming `GET /egress-policy`. No per-node override. Policy errors render
+with specific `userMessage`s on the node error card (`"Request blocked: destination IP is in a
+blocked range (link-local)"` etc.), not generic failures.
+
+**Out of scope here** (deferred to follow-up tasks): admin UI to manage the allowlist (allowlist
+CRUD lives behind the API for v1); a dashboard of "what would be blocked in the last 24h"; a
+per-node override UI for limits.
+
 ## Verification
 
 - **Negative control (required).** Point an `apiCaller` node at `169.254.169.254` and confirm it
@@ -75,13 +146,41 @@ attachment fetches; A9 adds that coverage. Out of both tasks' scope and flagged 
   disruptive kind of refusal. Sample the real URLs stored in node configurations, classify each as
   *would still work* or *would now be blocked*, and drive the second to zero before enabling.
   Anything unresolvable is *unverifiable*, not *blocked*.
-- Enable in report-only mode first: log what would be blocked, for a full cycle, before enforcing.
+- Report-only cycle removed from scope (see "D25 decision"). The negative-control test and the
+  pre-deploy measurement script replace the production report-only window.
 
 ## Done when
 
-Egress is policy-controlled at the shared fetch layer, redirects are re-checked, the worker's
-network position is documented, no legitimate stored URL is blocked, and the policy ran in
-report-only mode before enforcement.
+Egress is policy-controlled at the shared fetch layer, redirects are refused, the worker's
+network position is documented, and the measurement script shows no legitimate stored URL would be
+blocked by the hardcoded deny-list before deploy.
+
+## Rollout (ship directly in enforce)
+
+The code changes land with the policy **always enforced**. There is no `EGRESS_MODE` env var and no
+report-only mode. The sequence is:
+
+1. **Run the measurement script in prod before merging.** `pnpm script:egress-measure` reads
+   `flow_node` rows, extracts the user URLs from `apiCaller` and `fileSave` configurations, and
+   classifies each as `wouldWork`, `wouldBlock`, or `unresolvable`. Review the `wouldBlock` list
+   with the team before deploy; if any entry looks like a legitimate customer URL, re-think the
+   deny-list before shipping.
+2. **Deploy to dev.** Negative control test (`safe-fetch.service.spec.ts`) must pass in CI.
+3. **Deploy to staging.** Monitor `node_executions.errorCategory = 'egress_policy'` for 48h.
+4. **Deploy to prod.** Monitor the same metric for the first week.
+5. **If a legitimate customer URL is refused**, we have three options to resolve: punch a hole in
+   the hardcoded deny-list (if the IP range truly is public but miscategorised), reintroduce the
+   per-organisation allowlist, or isolate that customer's worker in a dedicated subnet. Document
+   whichever path is taken, with the ticket number.
+
+## Files
+
+`back/src/app-api/downloader/downloader.controller.ts` (`@Query('url')`) · `back/src/app-api/scraper/` ·
+`back/src/app-api/api_call/` · the worker's HTTP layer · infra network/subnet definitions ·
+`worker/src/modules/safe-fetch/` (the new module shipped by this task) ·
+`back/src/app-api/egress_policy/` (the `GET /egress-policy` endpoint consumed by the front tooltip)
+· `front/src/components/EgressPolicyTooltip/` and the `EGRESS_POLICY_NODE_TYPES` registration in
+`front/src/components/UI/Node/Node.tsx`.
 
 ## Files
 

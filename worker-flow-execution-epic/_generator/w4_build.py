@@ -15,6 +15,7 @@ TASKS = [
  ('B1', w4_b1b2.B1, [w4_b1b2.B1_DEC]),
  ('B2', w4_b1b2.B2, [w4_b1b2.B2_DEC]),
  ('B3', w4_b3b4.B3, [w4_b3b4.B3_DEC]),
+ ('B3B', w4_b3b4.B3B, []),
  ('B4', w4_b3b4.B4, [w4_b3b4.B4_DEC]),
  ('E1', w4_e1e2.E1, []),
  ('E2', w4_e1e2.E2, [w4_e1e2.E2_DEC]),

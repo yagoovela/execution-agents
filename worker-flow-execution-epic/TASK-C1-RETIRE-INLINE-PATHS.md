@@ -9,6 +9,10 @@ the shared procedure those tasks follow, plus the two pieces that only make sens
 **Card (PLAN §3.1):** one, in Wave 6, for the once-only half below. The per-node deletions are a
 Done-when line of each A-track card, not cards of their own.
 
+**Removed from Wave 3 on 2026-10-02.** C1 had a Wave 3 row for its per-node half, but that half is a Done-when line of each A-track card, not a deliverable of its own, so the row counted as an unstarted item in a wave whose nodes were already deleting their twins. Verified on `back@origin/production` `bc727827`: A4's `reportBuilderNode()` and dispatch case are gone, A5's `imageGenerator` dispatch case is gone (its dead method body stays, by precedent); A9's inline delivery block goes with its production deploy. C1 is tracked once, in Wave 6 ([868m0vm8g](https://app.clickup.com/t/9011479430/868m0vm8g)).
+
+**Removida da Wave 3 em 02/10/2026.** A C1 tinha uma linha na Wave 3 para a metade por nó, mas essa metade é uma linha do Done-when de cada card da trilha A, não uma entrega própria, então a linha contava como item não iniciado numa wave cujos nós já apagavam seus gêmeos. Verificado em `back@origin/production` `bc727827`: o `reportBuilderNode()` e o case de dispatch da A4 sumiram, o case de dispatch do `imageGenerator` da A5 sumiu (o corpo morto do método fica, por precedente); o bloco de entrega inline da A9 sai com o deploy dela em produção. A C1 é acompanhada uma vez só, na Wave 6 ([868m0vm8g](https://app.clickup.com/t/9011479430/868m0vm8g)).
+
 ## Why deletion is part of the migration, not cleanup
 
 Two implementations of one node do not coexist neutrally. They diverge, and the divergence is

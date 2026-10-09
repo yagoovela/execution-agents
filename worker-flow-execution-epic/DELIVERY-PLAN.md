@@ -108,8 +108,9 @@ promotion — revert by not promoting.
 | `A6` + `S6` | The front-driven types: eight after D24, six after D3 (two discontinued). **S6's egress decision ships with them, not after** — its width is the implementer's call (D25) |
 | `A8` | `varInputNode`'s extraction and OCR off the request path |
 | `A9` | Emails and callbacks as retried activities — today a customer's endpoint being down for thirty seconds loses the notification |
-| `C1` | Per node, as each lands — not a sweep at the end |
 | `D1` | Continuous; each node's page is part of its own done |
+
+**Removed from Wave 3 on 2026-10-02.** C1 had a Wave 3 row for its per-node half, but that half is a Done-when line of each A-track card, not a deliverable of its own, so the row counted as an unstarted item in a wave whose nodes were already deleting their twins. Verified on `back@origin/production` `bc727827`: A4's `reportBuilderNode()` and dispatch case are gone, A5's `imageGenerator` dispatch case is gone (its dead method body stays, by precedent); A9's inline delivery block goes with its production deploy. C1 is tracked once, in Wave 6 ([868m0vm8g](https://app.clickup.com/t/9011479430/868m0vm8g)).
 
 **Expect a latency regression in this wave and say so.** Every migrated node is a blocking round
 trip until Wave 5 (review §4.5). Measure it per task and state the number in the PR. This is the
@@ -134,7 +135,8 @@ D3 was answered on 2026-09-02 (`PLAN.md` §7), so this wave is no longer gated o
 |---|---|
 | `B1` | Execution identity — before anything makes it the transport |
 | `B2` | The code-sharing decision, then the scheduler and substitution extraction |
-| `B3` | The consumer resolves its own input, building on the prefetch executor |
+| `B3` | The consumer resolves its own placeholders by reference; the prefetch executor is a stopgap (D2) |
+| `B3b` | The worker builds each node's `*Data` from its upstreams' rows — the edge projection leaves the back (split out of B3, 2026-10-09) |
 | `B4` + `E1` | The graph workflow — **shipped sequential** — with observability moving in the same wave |
 | `E2` | Cancellation aligned with Temporal's native mechanism |
 
@@ -203,7 +205,7 @@ remains. `flux.service.ts` is materially smaller and the reduction is stated.
 **Critical path** — the longest chain, and the one to staff first:
 
 ```
-S2 → A1 → A2 → A3 → A4 → A5 · A6 · A8 → B1 → B2 → B3 → B4+E1 → B5 → B6
+S2 → A1 → A2 → A3 → A4 → A5 · A6 · A8 → B1 → B2 → B3 → B3b → B4+E1 → B5 → B6
 ```
 
 **Runs in parallel with it, no contention:** S7 parts 1 and 3, S4, S5, C3 (Wave 0); S1 and S3 (Wave 1,
