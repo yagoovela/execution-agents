@@ -13,7 +13,7 @@ change then drifts away from the thing that produced it.
 |---|---|
 | `tasklib.py` | The renderer: the stylesheet (`BASE` + `EXTRA_CSS` + `DECISION_CSS`), the content model, and `render()`/`write()`. **Every page's look lives here.** |
 | `order.py` | Wave membership, the delivery order, the `complemento/` phase each task maps to, and `nav()` which resolves prev/next. |
-| `TITLES_ALL.py` | The canonical short title of all 32 tasks, in EN and PT. Used for prev/next labels. |
+| `TITLES_ALL.py` | The canonical short title of all 33 tasks, in EN and PT. Used for prev/next labels. |
 | `c_s7.py`, `d_s7.py`, `w0_*.py` … `w6_*.py` | Content modules, one group per wave. These are the text. |
 | `build_w0.py`, `w1_build.py` … `w5_build.py` | Assemble a wave's content into `TASK` dicts and write the HTML. |
 | `fase_realign.py` | The one-shot transform that brought `complemento/fase-*.html` onto this design system. |
