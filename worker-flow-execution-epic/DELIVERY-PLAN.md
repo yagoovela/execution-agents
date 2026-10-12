@@ -135,7 +135,8 @@ D3 was answered on 2026-09-02 (`PLAN.md` §7), so this wave is no longer gated o
 |---|---|
 | `B1` | Execution identity — before anything makes it the transport |
 | `B2` | The code-sharing decision, then the scheduler and substitution extraction |
-| `B3` | The consumer resolves its own input, building on the prefetch executor |
+| `B3` | The consumer resolves its own placeholders by reference; the prefetch executor is a stopgap (D2) |
+| `B3b` | The worker builds each node's `*Data` from its upstreams' rows — the edge projection leaves the back (split out of B3, 2026-10-09) |
 | `B4` + `E1` | The graph workflow — **shipped sequential** — with observability moving in the same wave |
 | `E2` | Cancellation aligned with Temporal's native mechanism |
 
@@ -204,7 +205,7 @@ remains. `flux.service.ts` is materially smaller and the reduction is stated.
 **Critical path** — the longest chain, and the one to staff first:
 
 ```
-S2 → A1 → A2 → A3 → A4 → A5 · A6 · A8 → B1 → B2 → B3 → B4+E1 → B5 → B6
+S2 → A1 → A2 → A3 → A4 → A5 · A6 · A8 → B1 → B2 → B3 → B3b → B4+E1 → B5 → B6
 ```
 
 **Runs in parallel with it, no contention:** S7 parts 1 and 3, S4, S5, C3 (Wave 0); S1 and S3 (Wave 1,

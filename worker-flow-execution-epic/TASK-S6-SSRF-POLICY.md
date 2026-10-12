@@ -52,6 +52,19 @@ address blocklist as a second step. Whichever cut ships first, the three propert
 target, and PLAN §3.3.2 applies to each step separately: measure against stored URLs, drive false
 refusals to zero, then enforce.
 
+**Added 2026-09-29 by A9 — a module to extend, not a decision taken for you.** A9 moves the delivery
+path's outbound fetches (node callback, api-v2 consolidated callback, email attachment downloads)
+into the worker and ships a guard for those call sites only: `worker/src/modules/egress/egress-policy.ts`
+(`assertEgressAllowed`, `safeLookup`, `EGRESS_DENY_RANGES`), checking the resolved and pinned
+address on every hop, behind `EGRESS_POLICY_MODE=off|report|enforce` defaulting to `report`, with an
+optional `allow` hook and no allowlist. The full rule set and its relation to this task are in
+`TASK-A9-OUTBOUND-DELIVERY.md` D-A9-5. It does not settle D25 for this task's call sites
+(downloader, scraper, api_call, apiCaller), which A9 does not touch: whoever picks up S6 still
+decides the first cut, and extends this module — adding the allowlist and apiCaller's undici
+dispatcher — instead of writing a second one. S6 names neither the delivery callbacks nor the mail
+attachment fetches; A9 adds that coverage. Out of both tasks' scope and flagged separately: back's
+`/proxy?url=` route (`src/main.ts:135–180`, http-proxy-middleware to any origin).
+
 ### D25 decision (2026-10-06)
 
 **Cut C — four controls ship together.** The implementer, in agreement with the requester, opted

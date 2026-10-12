@@ -2,7 +2,7 @@
 
 **Goal:** the worker owns the execution sequence. **This task ships with no parallelism at all.**
 
-**Depends on:** B2, B3. **Blocks:** B5, B6.
+**Depends on:** B2, B3, B3b. **Blocks:** B5, B6.
 
 ## Why sequential first is not caution, it is a requirement
 

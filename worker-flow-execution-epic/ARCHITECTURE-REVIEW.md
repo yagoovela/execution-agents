@@ -431,9 +431,10 @@ from emailing a customer twice.
 Two things to verify, because neither can be read from this repository:
 
 - **Eviction policy.** If the instance runs `allkeys-lru` or `allkeys-random`, the dedup keys are
-  evictable under memory pressure, and the failure mode is duplicate emails and duplicate outbound
-  webhooks. Dedup keys are correctness state, not cache, and must not share an eviction policy with
-  cache.
+  evictable under memory pressure, and the failure mode is duplicate emails. Dedup keys are
+  correctness state, not cache, and must not share an eviction policy with cache. *(Corrected
+  2026-09-29 by A9: this said "and duplicate outbound webhooks" — no webhook or callback has a dedup
+  key, so there is nothing to evict for them; see `TASK-A9-OUTBOUND-DELIVERY.md` correction 2.)*
 - **Availability.** With the queue, the notification bus and the dedup all on one instance, losing
   Redis loses run admission, run visibility and duplicate suppression together. Parallel dispatch
   increases the pub/sub rate substantially, so the sizing that holds today is not evidence for
@@ -557,6 +558,13 @@ free.
 
 Today, a customer's webhook endpoint being down for thirty seconds means the notification is simply
 lost, with a log line. New task: `TASK-A9-OUTBOUND-DELIVERY.md`.
+
+*Corrected 2026-09-29 by A9, re-validated against `back@origin/production` `94cb2e26`:* the block is
+now `flux.service.ts:5329–5599`; its idempotency is **not** solved — the email keys are claimed
+before the send and never released, so ported as they are they would suppress every retry, and
+callbacks have no key at all; and only the node callback is fire-and-forget (a Gmail/Microsoft
+failure fails the run, an SMTP failure is swallowed). The corrections and what replaces them are in
+the task file's correction list and D-A9-6.
 
 ### 11.2 Batch processing is detached background work in the API process — should be a workflow
 

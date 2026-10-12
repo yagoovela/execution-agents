@@ -19,7 +19,7 @@ LABELS = {
     'dropped': ('Dropped',     'Descartada',  'st-dropped'),
 }
 
-_ROW = re.compile(r'^\|\s*([A-Z]\d)\s*\|\s*([a-z-]+)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|$', re.M)
+_ROW = re.compile(r'^\|\s*([A-Z]\d+[a-z]?)\s*\|\s*([a-z-]+)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|$', re.M)
 
 def load():
     if not os.path.exists(_PATH):
@@ -40,9 +40,18 @@ def load():
     return out
 
 STATUS = load()
+_LOWER = {k.lower(): v for k, v in STATUS.items()}
 
 def of(code):
-    return STATUS.get(code, {'state': 'planned', 'ref': None, 'note': None, 'note_pt': None})
+    # STATUS.md's row regex only accepts a lowercase letter suffix (e.g. `A1b`),
+    # matching the convention every prose reference to that task uses. The
+    # published-page code, derived from the TASK-*.md filename, follows the
+    # filename's own all-caps convention instead (`TASK-A1B-...md` -> `A1B`).
+    # Same task, two casings by convention — fall back to a case-insensitive
+    # match rather than silently dropping the recorded state and note.
+    if code in STATUS:
+        return STATUS[code]
+    return _LOWER.get(code.lower(), {'state': 'planned', 'ref': None, 'note': None, 'note_pt': None})
 
 if __name__ == '__main__':
     from collections import Counter
