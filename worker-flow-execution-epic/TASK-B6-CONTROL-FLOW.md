@@ -40,8 +40,66 @@ result across the fleet.
 **In.** The loop-body computation already exists as `computeLoopBody` in the scheduler — use it
 rather than re-deriving the body from indices, which is what the inline `arrayNode` does.
 
+**In — each iteration receives its own item (added 2026-10-14).** Today a node wired straight to
+the `arrayNode` `output` handle receives the **whole list** in every iteration. The rebuilt loop
+delivers item *i* to iteration *i* on any wiring. This fixes a defect; it does not change what a
+loop means, so the **Out** below still holds. See
+[The item-per-iteration defect](#the-item-per-iteration-defect).
+
 **Out.** Changing what a condition means or how a loop terminates. The `evaluateLoopCondition`
 behaviour, including the maximum-iteration guard, ports as-is.
+
+## The item-per-iteration defect
+
+Found on 2026-10-14 while validating B1 in production. It predates B1: the overwrite below has run
+on every worker dispatch since `2e6e1f44` (2026-07-01).
+
+**What happens.** In each iteration the back writes the current item into the body node's
+`contentData` / `promptData` (`getOutputByType`, `arrayNode` branch: `processorArray[completed]`).
+Just before dispatch, `processNodeViaTemporal` → `fillRefArrayFields` → `resolveTextDataFromSchema`
+rewrites those entries from the substitution schema. The schema entry for an `arrayNode` holds only
+`content` (`NODE_REFERENCEABLE_FIELDS.arrayNode = ['content']`), which is the whole list, and no
+iteration updates it. So the item is replaced by the list.
+
+**Why a Text Box works around it.** A Text Box is a passthrough type: `syncPassthroughsFromNodes`
+refreshes its schema entry from its own `textData` (the current item) before each dispatch. Users
+put one between the loop and the AI node; with it, the loop behaves.
+
+**Evidence.**
+
+| Where | Flow | Result |
+|---|---|---|
+| Dev DB, `node_executions` | `a9933cf5-59f7-4a13-a9c6-a167f3711da0`, loop wired straight into the AI node | 3 AI executions; each input has `contentData[0].text = "red\ngreen\nblue"`; each output is all three colors |
+| Prod, same wiring | `48da9b41-…` (W4B1 T1b), runs `efc5e51d`, `0aa7c346` | The AI node returns all three colors on every call |
+| Prod, Text Box in between | `bb63e394-…` (W4B1 T1c), run `43f8976a` | Data Output `#0..#2` = `9`, `18`, `27`: one item per iteration |
+
+**Suggested fix.** Treat the current item as the `arrayNode`'s output for that iteration, resolved
+like any other upstream output. In today's back that is one call per iteration, before the body
+runs: `updateSchemaWithNodeOutput(schema, arrayNodeId, label, item)`. In B6's workflow loop, pass the
+item as the `arrayNode`'s per-iteration output to the body's input resolution (B3). A `{{<arrayNodeId>.text}}`
+placeholder then resolves to the item too.
+
+**How to validate.** Build this flow (no Text Box), set `arrayNode.executing` to the AI node's id,
+and run it once:
+
+```text
+globalStarter    --a-----------> arrayNode.input
+varInputNode     --output------> arrayNode.content          "red\ngreen\nblue", Custom Separator "\n"
+arrayNode        --outputFlow--> commandTextNode.input
+arrayNode        --output------> commandTextNode.contentIn  the item, no Text Box
+commandTextNode  --output------> outputObjectNode.input
+```
+
+```sql
+SELECT ne."execId", ne.input::jsonb -> 'contentData' -> 0 ->> 'text' AS item, left(ne.output, 40) AS output
+FROM node_executions ne
+WHERE ne."flowId" = '<flowId>' AND ne."nodeId" = '<commandTextNodeId>'
+ORDER BY ne."createdAt";
+```
+
+1. Expect 3 rows with `item` = `red`, `green`, `blue`, and one color per output.
+2. Negative control: revert the fix and run again. Expect `item` = `red\ngreen\nblue` on every row,
+   as observed on 2026-10-14.
 
 ## Verification
 
@@ -55,12 +113,16 @@ behaviour, including the maximum-iteration guard, ports as-is.
   from the parent, and attribute tokens to the parent — verify all three, since each is carried by
   a different parameter today and each can be lost independently.
 - Loop billing must match the pre-migration totals per iteration, using the identity from B1.
+- **Item per iteration.** Run the flow in
+  [The item-per-iteration defect](#the-item-per-iteration-defect) without a Text Box: each
+  iteration's input holds one item. Revert the fix and watch it receive the whole list.
 
 ## Done when
 
 All four types run in the worker; a replay test passes; nested runs keep their logs, cancellation
 and billing — **cancelling a parent stops its child workflows, proven here because no child workflow
-exists before this task** (moved from E2); no executable node type remains inline.
+exists before this task** (moved from E2); each loop iteration receives its own item on any
+wiring, without a Text Box; no executable node type remains inline.
 
 ## Files
 

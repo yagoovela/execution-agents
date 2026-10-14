@@ -328,6 +328,42 @@ PARTS = [
     'self-healing, fleet-wide, billed loop the day this task ships.</p>',
     '<p>A guarda precisa existir <strong>antes</strong> de a plataforma aprender a sustentar a recursão de forma confiável. O que hoje é um crash vira um '
     'laço auto-recuperável, distribuído pela frota e cobrado, no dia em que esta task subir.</p>'))]},
+{'n':'4','title':('Each iteration receives its own item','Cada iteração recebe o seu item'),
+ 'loc':'flux.service.ts · processNodeViaTemporal → fillRefArrayFields',
+ 'purpose':('Fix a defect found on 2026-10-14: a node wired straight to the loop gets the whole list in every iteration.',
+            'Corrigir um defeito achado em 2026-10-14: um node ligado direto no laço recebe a lista inteira em toda iteração.'),
+ 'body':('<p>In each iteration the back writes the current item into the body node&#x27;s <code>contentData</code> / <code>promptData</code>. '
+         'Just before dispatch, <code>fillRefArrayFields</code> → <code>resolveTextDataFromSchema</code> rewrites those entries from the substitution schema, '
+         'and the <code>arrayNode</code>&#x27;s schema entry holds only <code>content</code> — <strong>the whole list</strong>, never updated per iteration. '
+         'It predates B1: it has run on every worker dispatch since <code>2e6e1f44</code> (2026-07-01).</p>'
+         '<p>A Text Box between the loop and the AI node works around it, because passthrough types refresh their schema entry from the current item. '
+         'This fixes a defect; it does not change what a loop means.</p>',
+         '<p>Em cada iteração o back escreve o item atual no <code>contentData</code> / <code>promptData</code> do node do corpo. '
+         'Logo antes do despacho, <code>fillRefArrayFields</code> → <code>resolveTextDataFromSchema</code> reescreve essas entradas a partir do schema de substituição, '
+         'e a entrada do <code>arrayNode</code> no schema guarda só o <code>content</code> — <strong>a lista inteira</strong>, nunca atualizada por iteração. '
+         'É anterior à B1: roda em todo despacho para o worker desde o <code>2e6e1f44</code> (2026-07-01).</p>'
+         '<p>Um Text Box entre o laço e o node de IA contorna o problema, porque tipos passthrough atualizam a entrada no schema com o item atual. '
+         'Isto corrige um defeito; não muda o que um laço significa.</p>'),
+ 'list':[('<strong>Evidence.</strong> Dev DB, flow <code>a9933cf5-…</code> wired straight into the AI node: 3 executions, each with <code>contentData[0].text = "red\\ngreen\\nblue"</code>. '
+          'Prod W4B1 T1b (<code>48da9b41-…</code>), same wiring: every call returns all three colors. Prod W4B1 T1c (<code>bb63e394-…</code>), Text Box in between: <code>9</code>, <code>18</code>, <code>27</code>.',
+          '<strong>Evidência.</strong> Banco de dev, fluxo <code>a9933cf5-…</code> ligado direto no node de IA: 3 execuções, cada uma com <code>contentData[0].text = "red\\ngreen\\nblue"</code>. '
+          'Prod W4B1 T1b (<code>48da9b41-…</code>), mesma ligação: toda chamada devolve as três cores. Prod W4B1 T1c (<code>bb63e394-…</code>), com Text Box no meio: <code>9</code>, <code>18</code>, <code>27</code>.'),
+         ('<strong>Suggested fix.</strong> Treat the current item as the <code>arrayNode</code>&#x27;s output for that iteration, resolved like any upstream output. '
+          'In today&#x27;s back: <code>updateSchemaWithNodeOutput(schema, arrayNodeId, label, item)</code> once per iteration, before the body runs. '
+          'In the workflow loop: pass the item to the body&#x27;s input resolution (<code>B3</code>).',
+          '<strong>Correção sugerida.</strong> Tratar o item atual como a saída do <code>arrayNode</code> naquela iteração, resolvida como qualquer saída de upstream. '
+          'No back de hoje: <code>updateSchemaWithNodeOutput(schema, arrayNodeId, label, item)</code> uma vez por iteração, antes do corpo rodar. '
+          'No laço do workflow: passar o item para a resolução de entrada do corpo (<code>B3</code>).'),
+         ('<strong>How to validate.</strong> Data Input <code>red / green / blue</code> → Sequence Node (Custom Separator) → AI node <code>contentIn</code>, no Text Box, '
+          '<code>executing</code> = the AI node. Expect 3 <code>node_executions</code> rows whose <code>contentData[0].text</code> is <code>red</code>, <code>green</code>, <code>blue</code>. '
+          'Revert the fix: every row gets the whole list.',
+          '<strong>Como validar.</strong> Data Input <code>red / green / blue</code> → Sequence Node (Custom Separator) → <code>contentIn</code> do node de IA, sem Text Box, '
+          '<code>executing</code> = o node de IA. Espere 3 linhas em <code>node_executions</code> com <code>contentData[0].text</code> = <code>red</code>, <code>green</code>, <code>blue</code>. '
+          'Reverta a correção: toda linha recebe a lista inteira.')],
+ 'ba':(('A node wired straight to the loop receives the whole list in every iteration; users add a Text Box to get one item.',
+        'Um node ligado direto no laço recebe a lista inteira em toda iteração; o usuário põe um Text Box para receber um item.'),
+       ('Item <em>i</em> reaches iteration <em>i</em> on any wiring, and a test proves it by failing without the fix.',
+        'O item <em>i</em> chega à iteração <em>i</em> em qualquer ligação, e um teste prova isso falhando sem a correção.'))},
 ]
 
 VERIF = [
@@ -353,11 +389,16 @@ VERIF = [
    'cheapest place to catch one.',
    'Por iteração, usando a identidade de execução da <code>B1</code>. Um laço é onde um bug de identidade vira um bug de cobrança, e é o '
    'lugar mais barato para pegar um.')),
+ (True, ('Item per iteration','Item por iteração'),
+  ('Run the flow from part 4 without a Text Box: <strong>each iteration&#x27;s input holds one item</strong>. Revert the fix and watch it receive the whole list.',
+   'Rode o fluxo da parte 4 sem Text Box: <strong>a entrada de cada iteração tem um item</strong>. Reverta a correção e veja a entrada receber a lista inteira.')),
 ]
 
 DONE = ('All four types run in the worker; a <strong>replay test passes</strong>; nested runs keep their logs, cancellation and billing — <strong>cancelling a parent stops its child workflows, proven here because no child workflow exists before this task</strong> (moved from <code>E2</code>); '
+        '<strong>each loop iteration receives its own item on any wiring</strong>, without a Text Box; '
         'and <strong>no executable node type remains inline</strong>.',
         'Os quatro tipos rodam no worker; um <strong>teste de replay passa</strong>; runs aninhados mantêm seus logs, cancelamento e cobrança; '
+        '<strong>cada iteração do laço recebe o seu item em qualquer ligação</strong>, sem Text Box; '
         'e <strong>nenhum tipo de node executável continua inline</strong>.')
 
 FILES = [('back/src/app-api/flux/flux.service.ts (conditionNode() · flowCallerNode() · libraryNode() · inline arrayNode branch)', False),
