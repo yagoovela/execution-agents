@@ -364,6 +364,15 @@ PARTS = [
         'Um node ligado direto no laço recebe a lista inteira em toda iteração; o usuário põe um Text Box para receber um item.'),
        ('Item <em>i</em> reaches iteration <em>i</em> on any wiring, and a test proves it by failing without the fix.',
         'O item <em>i</em> chega à iteração <em>i</em> em qualquer ligação, e um teste prova isso falhando sem a correção.'))},
+ {'n':'5','title':('Carried over from B3b (validate first)','Herdado da B3b (validar antes)'),
+   'loc':'back/src/app-api/flux/node-input-projection.ts',
+   'purpose':('<code>BACK_ONLY_PROJECTION_NODE_TYPES</code> keeps a flow with an <code>arrayNode</code>, <code>fluxObject</code>, <code>nodesBox</code>, <code>libraryNode</code>, <code>fluxBox</code>, <code>tableProcessor</code> or <code>dynamicSettingsNode</code> on the back&#x27;s projection. It is a hand-kept list, apart from the dispatch registry.',
+              '<code>BACK_ONLY_PROJECTION_NODE_TYPES</code> mantém na projeção do back um fluxo com <code>arrayNode</code>, <code>fluxObject</code>, <code>nodesBox</code>, <code>libraryNode</code>, <code>fluxBox</code>, <code>tableProcessor</code> ou <code>dynamicSettingsNode</code>. É uma lista mantida à mão, fora do registro de dispatch.'),
+   'list':[
+           ('When this task moves those types, remove each one from the list, or derive the list from a registry field, and update <code>node-dispatch-contract.json</code>.',
+            'Quando esta task mover esses tipos, tire cada um da lista, ou derive a lista de um campo do registro, e atualize o <code>node-dispatch-contract.json</code>.'),
+           ('Check whether <code>fluxObject</code>, <code>tableProcessor</code> and <code>dynamicSettingsNode</code>, which are not among this task&#x27;s four types, still need it.',
+            'Confira se <code>fluxObject</code>, <code>tableProcessor</code> e <code>dynamicSettingsNode</code>, que não estão entre os quatro tipos desta task, ainda precisam dela.')]},
 ]
 
 VERIF = [

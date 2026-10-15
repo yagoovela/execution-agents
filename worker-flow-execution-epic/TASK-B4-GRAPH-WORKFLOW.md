@@ -87,6 +87,29 @@ back's loop — C1/C2, after this has soaked.
 A flow runs start to finish under the workflow, in identical order, behind a flag defaulting off;
 the back's loop is untouched and still selectable.
 
+## Carried over from B3b (validate first)
+
+B3b left these in the worker's input projection (`worker/src/modules/nodes/shared/project-node-input.ts`).
+Before you fix one, check that it still applies to the graph workflow; if it does not, record why
+and close it here.
+
+1. **A source with no seed row is dropped without an error.** `RunData.nodes` keeps only the sources
+   it finds in the run's outputs or in `run_seed_nodes`. A node added to the flow after the run
+   started has neither, so its edge projects nothing. Decide whether the graph workflow can see such
+   a node, and if it can, fail the target the way a completed source with no output does.
+2. **A cycle of nodes that have not run yet.** `RunData.fromSeed` skips an upstream node that is
+   already being loaded from the seed, so inside such a cycle a node is projected without that
+   source. `conditionNode` loops are not gated, so they reach the worker today. Compare against the
+   back on a `conditionNode` loop. Today the back's scheduler drops back edges, so a cycle meets the
+   projection only on its first pass, where dev run `842aeff8` matched (B3b, "Left out, and where
+   it goes"). Re-check it once the graph workflow runs a loop more than once.
+3. **The starter edges are dropped by id.** The worker drops edges whose source is
+   `starterSourceId`. The product's rule for which edges carry data is `isDependencyEdge`
+   (`flux/scheduler.ts`), which also leaves out `GLOBAL_HANDLE` sources and edges without a
+   `targetHandle`. Use the product's rule if the graph workflow reads edges the same way.
+4. **Small cleanups, when you touch the code.** `RunInputResolution.seedSnapshotId` can read
+   `snapshotIds[0]`; `backOnlyProjectionNodes(...).length === 0` can be a `some` check.
+
 ## Files
 
 `worker/src/modules/temporal/workflows/process-agent.workflow.ts` · new flow workflow ·

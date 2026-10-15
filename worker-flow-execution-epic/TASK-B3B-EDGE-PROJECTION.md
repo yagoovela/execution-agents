@@ -294,6 +294,47 @@ sources; equivalence is proven; the projection exists once, extracted and ported
 - (2026-10-14) The `runId` migration no longer backfills old rows (back `400dd9fd`). No reader needs
   them, and the backfill would rewrite `node_executions` at boot in prod.
 
+## Left out, and where it goes
+
+The 2026-10-14 reviews (`/simplify`, `/code-review`) found these items and left them out of this
+task. Each one sits in the task that owns the code, which validates it before fixing it.
+
+| Item | Where | Why it waits |
+|---|---|---|
+| A completed source with no `outputData` fails the target | Here, by design | Every writer stores `outputData` (see "Where the projection's data lives"). The dev equivalence check had no such failure in 101 targets. |
+| A source with no seed row is dropped without an error | B4 | It needs a node added after the run started. B4 decides what the graph workflow sees. |
+| A cycle of nodes that have not run yet | B4 | Loop order is B4's. `conditionNode` loops reach the worker today; the dev run below found no divergence. |
+| The starter edges are dropped by id, not by `isDependencyEdge` | B4 | Changing it changes which edges are projected. |
+| Serial reads, re-read edges, the `completedUpstream` scan, the seed insert, the second claim-check query | B5 | Cost only; measure under B5's parallel load first. |
+| `BACK_ONLY_PROJECTION_NODE_TYPES` is a hand-kept list | B6 | B6 moves those types out of the back. |
+| `runId` added by hand to four inserts | C1 | C1 removes inline paths; count the inserts left after it. |
+
+**`conditionNode` loop on dev (2026-10-14).** The dev equivalence check had no flow with a cycle, so
+a loop was built and run with the projection on, in apply mode: agent `878fc564` ("B3B dev check —
+conditionNode loop"), Text Generator A → `conditionNode` → Text Generator B → back to A, with A's
+output in B's `contentIn` and B's output in A's `contentIn`. Run `842aeff8` completed:
+
+- A ran first, while B had not run. The worker loaded B from the seed and gave A
+  `contentData: [{ "id": B, "text": "" }]`, the same cleared value the back holds for B.
+- B received A's output (`"2"`) from A's `node_executions` row.
+- A did not run a second time. The back's scheduler drops back edges (`findBackEdges` in
+  `flux/scheduler.ts`), so B → A never schedules A again, with or without the flags. A cycle can
+  therefore only meet the projection on its first pass, where it matched. Running a loop more than
+  once is B4's and B6's.
+- While building it, the MCP warned that only `outputHandle-1` of a `conditionNode` in statement
+  mode is reachable. The first run took `outputHandle-0` for a true condition, so the warning is
+  wrong. This task fixes it (back `892a7426`): statement mode reports both handles as reachable,
+  `true` through `outputHandle-0` and `false` through `outputHandle-1`.
+
+**MCP updates for the run id.** Because every `node_executions` insert now writes `runId`, the MCP
+can match a run's rows exactly:
+
+- `get_run_nodes` and `get_node_output` match on `runId`, worker nodes included, and fall back to
+  the run's time window for rows written before this release (back `892a7426`).
+- The two tool descriptions drop the warning that worker nodes are missing (mcp-server
+  `977f864`, Brad-EnhancedAi/FluxPrompt-MCP#21). Deploy it after the back.
+- The MCP docs replace the overlap warning and add a changelog entry (docs `36d3d53`).
+
 ## Files
 
 `back/src/app-api/folw/helpers/helpers.ts` · `back/src/app-api/folw/contants.ts` ·
@@ -301,4 +342,6 @@ sources; equivalence is proven; the projection exists once, extracted and ported
 `back/src/app-api/flux/node-output-reset.ts` · `back/src/entities/node_execution.entity.ts` and a
 generated migration · `back/scripts/sync-ported-engine.ts` · `worker/src/ported/back/` ·
 `worker/src/modules/nodes/shared/resolve-node-input.ts` and the worker-side projection (new) ·
-`front/src/util/autosave/utilis.ts`
+`front/src/util/autosave/utilis.ts` · `back/src/app-mcp/mcp-run-nodes.service.ts` ·
+`back/src/app-mcp/mcp-write.service.ts` · `back/src/app-mcp/node-types/node-type-metadata.ts` ·
+`mcp-server/src/tools/handlers/run-tools.handler.ts`
