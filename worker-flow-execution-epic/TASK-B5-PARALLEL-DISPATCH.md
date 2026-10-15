@@ -75,6 +75,27 @@ answer is to migrate its remaining nodes, never to make the check lenient.
 Eligible flows run their ready set concurrently; ineligible flows run sequentially and are counted;
 the corruption case is a passing test; latency is measured against the pre-epic baseline.
 
+## Carried over from B3b (validate first)
+
+B3b's input projection runs once per dispatch, so its cost grows with the ready set B5 runs in
+parallel. Measure each item under B5's load before you fix it, and close the ones the measurement
+does not justify.
+
+1. **Serial reads in `RunData`** (`worker/.../project-node-input.ts`). The seed of each not-run
+   sibling loads one after another, `fromOutput` waits before `fromSeed`, and the shadow path reads
+   the claim reference after the projection. Batch the seed ids per level, or run them with
+   `Promise.all` when their upstream sets do not overlap.
+2. **The edges are re-read on every dispatch** (`QUERY_FIND_EDGES`). Cache them per
+   `(flowId, flowVersionHistoryId)` when the version is not null, or let the back send the
+   target's ancestor edges in `NodeInputProjection`.
+3. **`completedUpstream` scans every edge per visited node** (`back/.../node-input-projection.ts`).
+   Build a reverse adjacency once per run.
+4. **The seed is inserted as one JSON parameter** (`INSERT_RUN_SNAPSHOT_SQL`). The largest prod flow
+   is about 53 MB. Insert it in chunks with `unnest` if the measured insert time or memory warrants it.
+5. **The claim-check same-run read runs a second query** (`ClaimCheckAuthzService.sharesRun`), and
+   `runToken` has no index. Fold it into `findTokens` as one query. Keep the current outcome when the
+   lookup fails: today a failed same-run lookup counts as a token mismatch, not `lookup_failed`.
+
 ## Files
 
 new eligibility predicate over the A1 registry · the flow workflow from B4 ·

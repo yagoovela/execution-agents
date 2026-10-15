@@ -124,6 +124,15 @@ and billing — **cancelling a parent stops its child workflows, proven here bec
 exists before this task** (moved from E2); each loop iteration receives its own item on any
 wiring, without a Text Box; no executable node type remains inline.
 
+## Carried over from B3b (validate first)
+
+`BACK_ONLY_PROJECTION_NODE_TYPES` (`back/src/app-api/flux/node-input-projection.ts`) keeps a flow
+with an `arrayNode`, `fluxObject`, `nodesBox`, `libraryNode`, `fluxBox`, `tableProcessor` or
+`dynamicSettingsNode` on the back's projection. It is a hand-kept list, apart from the dispatch
+registry. When this task moves those types, remove each one from the list, or derive the list from a
+registry field, and update `node-dispatch-contract.json`. Check whether `fluxObject`,
+`tableProcessor` and `dynamicSettingsNode`, which are not in this task's four types, still need it.
+
 ## Files
 
 `back/src/app-api/flux/flux.service.ts` (`conditionNode()`, `flowCallerNode()`, `libraryNode()`, the inline `arrayNode` branch) ·

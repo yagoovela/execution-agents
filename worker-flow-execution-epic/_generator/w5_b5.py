@@ -449,6 +449,21 @@ PARTS = [
         'Um fluxo com seis nodes independentes leva a soma de seis idas e voltas, e todo node que a trilha A migrou tornou essa soma maior, não menor.'),
        ('The same flow takes the time of its slowest node, and the regression the A track introduced is measured against the pre-epic baseline.',
         'O mesmo fluxo leva o tempo do seu node mais lento, e a regressão que a trilha A introduziu é medida contra a linha de base anterior ao épico.'))},
+ {'n':'5','title':('Carried over from B3b (validate first)','Herdado da B3b (validar antes)'),
+   'loc':'worker/src/modules/nodes/shared/project-node-input.ts',
+   'purpose':('B3b&#x27;s input projection runs once per dispatch, so its cost grows with the ready set B5 runs in parallel. Measure each item under B5&#x27;s load before you fix it, and close the ones the measurement does not justify.',
+              'A projeção de entrada da B3b roda uma vez por dispatch, então o custo cresce com o conjunto pronto que a B5 roda em paralelo. Meça cada item sob a carga da B5 antes de corrigir, e feche os que a medição não justificar.'),
+   'list':[
+           ('<strong>Serial reads in <code>RunData</code>.</strong> The seed of each not-run sibling loads one after another, <code>fromOutput</code> waits before <code>fromSeed</code>, and the shadow path reads the claim reference after the projection. Batch the seed ids per level, or use <code>Promise.all</code> when the upstream sets do not overlap.',
+            '<strong>Leituras em série no <code>RunData</code>.</strong> O seed de cada irmão não rodado carrega um depois do outro, <code>fromOutput</code> espera antes do <code>fromSeed</code>, e o caminho shadow lê a referência do claim depois da projeção. Agrupe os ids do seed por nível, ou use <code>Promise.all</code> quando os conjuntos de upstream não se sobrepõem.'),
+           ('<strong>The edges are re-read on every dispatch</strong> (<code>QUERY_FIND_EDGES</code>). Cache them per <code>(flowId, flowVersionHistoryId)</code> when the version is not null, or let the back send the target&#x27;s ancestor edges in <code>NodeInputProjection</code>.',
+            '<strong>As arestas são relidas a cada dispatch</strong> (<code>QUERY_FIND_EDGES</code>). Faça cache por <code>(flowId, flowVersionHistoryId)</code> quando a versão não for nula, ou deixe o back mandar as arestas ancestrais do destino em <code>NodeInputProjection</code>.'),
+           ('<strong><code>completedUpstream</code> scans every edge per visited node</strong> (<code>back/.../node-input-projection.ts</code>). Build a reverse adjacency once per run.',
+            '<strong><code>completedUpstream</code> varre todas as arestas por node visitado</strong> (<code>back/.../node-input-projection.ts</code>). Monte uma adjacência reversa uma vez por run.'),
+           ('<strong>The seed is inserted as one JSON parameter</strong> (<code>INSERT_RUN_SNAPSHOT_SQL</code>). The largest prod flow is about 53 MB. Insert it in chunks with <code>unnest</code> if the measured time or memory warrants it.',
+            '<strong>O seed é inserido como um único parâmetro JSON</strong> (<code>INSERT_RUN_SNAPSHOT_SQL</code>). O maior fluxo de prod tem cerca de 53 MB. Insira em partes com <code>unnest</code> se o tempo ou a memória medidos justificarem.'),
+           ('<strong>The claim-check same-run read runs a second query</strong> (<code>ClaimCheckAuthzService.sharesRun</code>), and <code>runToken</code> has no index. Fold it into <code>findTokens</code> as one query, and keep today&#x27;s outcome when the lookup fails: a failed same-run lookup counts as a token mismatch, not <code>lookup_failed</code>.',
+            '<strong>A leitura de mesmo run do claim check faz uma segunda consulta</strong> (<code>ClaimCheckAuthzService.sharesRun</code>), e <code>runToken</code> não tem índice. Junte em <code>findTokens</code> numa consulta só, e mantenha o resultado de hoje quando a busca falhar: uma busca de mesmo run que falha conta como token divergente, não <code>lookup_failed</code>.')]},
 ]
 
 VERIF = [

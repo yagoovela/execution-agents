@@ -125,6 +125,13 @@ PARTS = [
         'Ninguém sabe dizer quantos chamadores inline vivos um helper tem, então ninguém consegue apagá-lo com segurança — e ele fica para sempre.'),
        ('Each call site has a known set of live callers, the set empties as nodes migrate, and an empty set is the signal to delete.',
         'Cada ponto de chamada tem um conjunto conhecido de chamadores vivos, o conjunto esvazia conforme os nodes migram, e um conjunto vazio é o sinal para apagar.'))},
+ {'n':'4','title':('Carried over from B3b (validate first)','Herdado da B3b (validar antes)'),
+   'loc':'back/src/app-api/flux/flux.service.ts',
+   'purpose':('B3b added <code>runId</code> by hand to four raw <code>INSERT INTO "node_executions"</code> statements. A fifth insert would miss it silently.',
+              'A B3b acrescentou o <code>runId</code> à mão em quatro <code>INSERT INTO "node_executions"</code> crus. Um quinto insert ficaria sem ele, sem aviso.'),
+   'list':[
+           ('After the inline paths are gone, count the inserts that remain; if more than one does, route them through one helper.',
+            'Depois que os caminhos inline saírem, conte os inserts que sobrarem; se sobrar mais de um, passe todos por um helper.')]},
 ]
 
 VERIF = [
