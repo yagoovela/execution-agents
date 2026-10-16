@@ -1,0 +1,2203 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<title>B4 — Plano: mover o laço do DAG para um workflow do Temporal</title>
+<link rel="stylesheet" href="_assets/i18n.css">
+<link rel="stylesheet" href="_assets/header.css">
+<style>
+  /* ============================================
+     DESIGN TOKENS
+     ============================================ */
+  :root {
+    /* Palette — refined slate-based with semantic accents */
+    --ink-900: #0B1220;
+    --ink-800: #111827;
+    --ink-700: #1F2937;
+    --ink-600: #334155;
+    --ink-500: #475569;
+    --ink-400: #64748B;
+    --ink-300: #94A3B8;
+    --ink-200: #CBD5E1;
+    --ink-150: #DEE4EC;
+    --ink-100: #E2E8F0;
+    --ink-50:  #F1F5F9;
+    --ink-25:  #F8FAFC;
+    --paper:   #FFFFFF;
+
+    /* Semantic colors */
+    --emerald-900: #064E3B;
+    --emerald-700: #047857;
+    --emerald-600: #059669;
+    --emerald-500: #10B981;
+    --emerald-100: #D1FAE5;
+    --emerald-50:  #ECFDF5;
+
+    --sky-900: #0C4A6E;
+    --sky-700: #0369A1;
+    --sky-500: #0EA5E9;
+    --sky-100: #E0F2FE;
+    --sky-50:  #F0F9FF;
+
+    --indigo-900: #312E81;
+    --indigo-700: #4338CA;
+    --indigo-500: #6366F1;
+    --indigo-100: #E0E7FF;
+    --indigo-50:  #EEF2FF;
+
+    --violet-900: #4C1D95;
+    --violet-700: #6D28D9;
+    --violet-500: #8B5CF6;
+    --violet-100: #EDE9FE;
+    --violet-50:  #F5F3FF;
+
+    --amber-900: #78350F;
+    --amber-700: #B45309;
+    --amber-500: #F59E0B;
+    --amber-100: #FEF3C7;
+    --amber-50:  #FFFBEB;
+
+    --rose-900: #881337;
+    --rose-700: #BE123C;
+    --rose-500: #F43F5E;
+    --rose-100: #FFE4E6;
+    --rose-50:  #FFF1F2;
+
+    --red-900: #7F1D1D;
+    --red-700: #B91C1C;
+    --red-500: #EF4444;
+    --red-100: #FEE2E2;
+    --red-50:  #FEF2F2;
+
+    /* Type scale (fluid) */
+    --font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+
+    --fs-xs:  11px;
+    --fs-sm:  12px;
+    --fs-base: 13.5px;
+    --fs-md:  14.5px;
+    --fs-lg:  16px;
+    --fs-xl:  19px;
+    --fs-2xl: 22px;
+    --fs-3xl: 28px;
+    --fs-hero: clamp(26px, 3vw, 34px);
+
+    /* Spacing scale (8px rhythm) */
+    --sp-1: 4px;
+    --sp-2: 8px;
+    --sp-3: 12px;
+    --sp-4: 16px;
+    --sp-5: 20px;
+    --sp-6: 24px;
+    --sp-7: 32px;
+    --sp-8: 40px;
+    --sp-9: 56px;
+    --sp-10: 72px;
+
+    /* Radii */
+    --r-sm: 6px;
+    --r-md: 10px;
+    --r-lg: 14px;
+    --r-xl: 20px;
+    --r-pill: 999px;
+
+    /* Shadows — layered */
+    --sh-xs: 0 1px 2px rgba(15,23,42,0.04);
+    --sh-sm: 0 1px 3px rgba(15,23,42,0.08), 0 1px 2px rgba(15,23,42,0.04);
+    --sh-md: 0 4px 8px -2px rgba(15,23,42,0.08), 0 2px 4px -2px rgba(15,23,42,0.04);
+    --sh-lg: 0 12px 24px -8px rgba(15,23,42,0.10), 0 4px 8px -4px rgba(15,23,42,0.06);
+    --sh-xl: 0 24px 48px -16px rgba(15,23,42,0.14), 0 8px 16px -8px rgba(15,23,42,0.08);
+    --sh-ring: 0 0 0 1px rgba(15,23,42,0.05);
+
+    /* Motion */
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+    --dur-fast: 150ms;
+    --dur-mid: 220ms;
+    --dur-slow: 360ms;
+  }
+
+  /* ============================================
+     BASE
+     ============================================ */
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body {
+    font-family: var(--font-sans);
+    background:
+      radial-gradient(1200px 600px at 50% -200px, rgba(16,185,129,0.08), transparent 50%),
+      radial-gradient(1000px 500px at 100% 300px, rgba(99,102,241,0.06), transparent 50%),
+      var(--ink-25);
+    background-attachment: fixed;
+    color: var(--ink-800);
+    margin: 0;
+    padding: var(--sp-7) var(--sp-6) var(--sp-10);
+    line-height: 1.55;
+    font-size: var(--fs-base);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  .container { max-width: 1400px; margin: 0 auto; }
+
+  ::selection { background: var(--emerald-100); color: var(--emerald-900); }
+
+  /* Scrollbar — subtle */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--ink-200) transparent;
+  }
+  *::-webkit-scrollbar { height: 8px; width: 8px; }
+  *::-webkit-scrollbar-thumb { background: var(--ink-200); border-radius: var(--r-pill); }
+  *::-webkit-scrollbar-track { background: transparent; }
+
+  /* ============================================
+     TYPOGRAPHY — Headings
+     ============================================ */
+  h1 {
+    text-align: center;
+    color: var(--ink-900);
+    margin: 0 0 var(--sp-2);
+    font-size: var(--fs-hero);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+  h3 {
+    font-size: var(--fs-md);
+    font-weight: 700;
+    color: var(--ink-900);
+    letter-spacing: -0.01em;
+    margin: var(--sp-6) 0 var(--sp-3);
+  }
+
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+    font-variant-ligatures: none;
+  }
+
+  /* ============================================
+     HERO
+     ============================================ */
+  .hero {
+    position: relative;
+    background:
+      radial-gradient(600px 300px at 20% 0%, rgba(16,185,129,0.18), transparent 60%),
+      radial-gradient(500px 300px at 80% 100%, rgba(14,165,233,0.15), transparent 60%),
+      linear-gradient(135deg, #F0FDF4 0%, #F0F9FF 100%);
+    border: 1px solid rgba(16,185,129,0.25);
+    border-radius: var(--r-xl);
+    padding: var(--sp-8) var(--sp-7);
+    margin-bottom: var(--sp-8);
+    text-align: center;
+    box-shadow: var(--sh-md), var(--sh-ring);
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% -50%, rgba(255,255,255,0.5), transparent 60%);
+    pointer-events: none;
+  }
+  .hero .kicker {
+    font-size: 32px;
+    margin-bottom: var(--sp-3);
+    filter: drop-shadow(0 2px 8px rgba(16,185,129,0.3));
+  }
+  .hero h1 {
+    background: linear-gradient(135deg, var(--emerald-900) 0%, var(--sky-900) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: var(--sp-4);
+  }
+  .hero .goal {
+    font-size: var(--fs-md);
+    color: var(--ink-600);
+    max-width: 920px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+  .hero .goal strong { color: var(--ink-900); font-weight: 600; }
+
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: var(--sp-2);
+    max-width: 1200px;
+    margin: var(--sp-6) auto 0;
+    position: relative;
+  }
+  .meta-item {
+    background: rgba(255,255,255,0.75);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    padding: var(--sp-3) var(--sp-4);
+    border-radius: var(--r-md);
+    border: 1px solid rgba(255,255,255,0.8);
+    font-size: var(--fs-sm);
+    text-align: left;
+    box-shadow: var(--sh-sm);
+    transition: transform var(--dur-fast) var(--ease-out);
+  }
+  .meta-item:hover { transform: translateY(-1px); }
+  .meta-item strong {
+    display: block;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: var(--sp-1);
+    color: var(--emerald-700);
+    font-weight: 700;
+  }
+  .meta-item code {
+    background: var(--ink-25);
+    padding: 1px 6px;
+    border-radius: var(--r-sm);
+    color: var(--ink-700);
+  }
+
+  /* ============================================
+     SECTIONS
+     ============================================ */
+  .section {
+    margin-bottom: var(--sp-9);
+    padding-top: var(--sp-2);
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-4);
+    margin-bottom: var(--sp-6);
+    padding-bottom: var(--sp-4);
+    position: relative;
+  }
+  .section-header::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--ink-200) 0%, var(--ink-200) 40%, transparent 100%);
+  }
+  .section-number {
+    width: 42px; height: 42px;
+    border-radius: var(--r-md);
+    background: linear-gradient(135deg, var(--ink-900) 0%, var(--ink-700) 100%);
+    color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800;
+    font-size: var(--fs-lg);
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px -4px rgba(15,23,42,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+    letter-spacing: -0.01em;
+  }
+  .section-title {
+    font-size: var(--fs-xl);
+    font-weight: 700;
+    color: var(--ink-900);
+    letter-spacing: -0.015em;
+  }
+  .section-title code { color: var(--emerald-700); font-weight: 600; font-size: 0.85em; }
+  .section-desc {
+    font-size: var(--fs-sm);
+    color: var(--ink-400);
+    margin-left: auto;
+    text-align: right;
+    font-weight: 500;
+  }
+
+  /* ============================================
+     DECISION CARDS
+     ============================================ */
+  .decisions-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--sp-3);
+  }
+  .decision-card {
+    position: relative;
+    background: var(--paper);
+    border-radius: var(--r-lg);
+    padding: var(--sp-5) var(--sp-6);
+    border: 1px solid var(--ink-100);
+    box-shadow: var(--sh-sm);
+    display: grid;
+    grid-template-columns: 240px 1fr auto;
+    gap: var(--sp-5);
+    align-items: start;
+    transition: transform var(--dur-mid) var(--ease-out),
+                box-shadow var(--dur-mid) var(--ease-out),
+                border-color var(--dur-mid) var(--ease-out);
+    overflow: hidden;
+  }
+  .decision-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, var(--violet-500), var(--indigo-500));
+  }
+  .decision-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--sh-lg);
+    border-color: var(--ink-150);
+  }
+  @media (max-width: 900px) {
+    .decision-card { grid-template-columns: 1fr; }
+  }
+  .decision-topic {
+    font-weight: 700;
+    color: var(--ink-900);
+    font-size: var(--fs-base);
+    letter-spacing: -0.005em;
+  }
+  .decision-topic .d-tag {
+    display: inline-block;
+    font-size: 10px;
+    color: var(--violet-700);
+    background: var(--violet-50);
+    padding: 3px 8px;
+    border-radius: var(--r-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: var(--sp-2);
+    font-weight: 700;
+  }
+  .decision-choice {
+    font-size: var(--fs-sm);
+    color: var(--ink-600);
+    line-height: 1.6;
+  }
+  .decision-choice strong { color: var(--ink-900); font-weight: 600; }
+  .decision-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-1);
+    padding: 5px 12px;
+    border-radius: var(--r-pill);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: var(--emerald-50);
+    color: var(--emerald-700);
+    height: fit-content;
+    white-space: nowrap;
+    border: 1px solid var(--emerald-100);
+  }
+  .decision-badge::before {
+    content: '●';
+    font-size: 8px;
+    color: var(--emerald-500);
+  }
+  .decision-badge.divergent {
+    background: var(--rose-50);
+    color: var(--rose-900);
+    border-color: var(--rose-100);
+  }
+  .decision-badge.divergent::before { color: var(--rose-500); }
+
+  /* ============================================
+     FLOW BOXES
+     ============================================ */
+  .flow-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--sp-1);
+  }
+  .box {
+    position: relative;
+    background: var(--paper);
+    border-radius: var(--r-md);
+    padding: var(--sp-4) var(--sp-5);
+    box-shadow: var(--sh-sm);
+    border: 1px solid var(--ink-100);
+    width: 820px;
+    max-width: 100%;
+    transition: transform var(--dur-fast) var(--ease-out),
+                box-shadow var(--dur-fast) var(--ease-out);
+  }
+  .box::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    border-radius: var(--r-md) 0 0 var(--r-md);
+    background: var(--ink-300);
+  }
+  .box:hover {
+    transform: translateX(2px);
+    box-shadow: var(--sh-md);
+  }
+  .box.backend::before   { background: linear-gradient(180deg, #60A5FA, #3B82F6); }
+  .box.backend           { background: linear-gradient(135deg, var(--paper) 0%, #F0F9FF 100%); }
+  .box.worker::before    { background: linear-gradient(180deg, #34D399, #10B981); }
+  .box.worker            { background: linear-gradient(135deg, var(--paper) 0%, #F0FDF4 100%); }
+  .box.db::before        { background: linear-gradient(180deg, #FBBF24, #F59E0B); }
+  .box.db                { background: linear-gradient(135deg, var(--paper) 0%, #FFFBEB 100%); }
+  .box.redis::before     { background: linear-gradient(180deg, #F87171, #EF4444); }
+  .box.redis             { background: linear-gradient(135deg, var(--paper) 0%, #FEF2F2 100%); }
+  .box.s3::before        { background: linear-gradient(180deg, #A78BFA, #8B5CF6); }
+  .box.external::before  { background: linear-gradient(180deg, #94A3B8, #64748B); }
+  .box.decision::before  { background: linear-gradient(180deg, #FACC15, #EAB308); }
+  .box.decision          { background: linear-gradient(135deg, #FEFCE8 0%, #FEF9C3 100%); }
+  .box.cross::before     { background: linear-gradient(180deg, #C084FC, #A855F7); }
+  .box.cross             { background: var(--violet-50); }
+  .box.temporal::before  { background: linear-gradient(180deg, #34D399, #10B981); }
+  .box.temporal          { background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%); }
+  .box.bridge::before    { background: linear-gradient(180deg, #FB7185, #E11D48); }
+  .box.bridge            { background: linear-gradient(135deg, #FFF1F2 0%, #FFE4E6 100%); }
+
+  .box-title {
+    font-weight: 700;
+    font-size: var(--fs-base);
+    color: var(--ink-900);
+    margin-bottom: var(--sp-2);
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    flex-wrap: wrap;
+    letter-spacing: -0.005em;
+  }
+  .box-desc {
+    font-size: var(--fs-sm);
+    color: var(--ink-600);
+    line-height: 1.6;
+  }
+  .box-desc strong { color: var(--ink-900); font-weight: 600; }
+  .box-file {
+    font-size: 10.5px;
+    color: var(--ink-400);
+    font-family: var(--font-mono);
+    margin-top: var(--sp-2);
+    padding: 4px 8px;
+    background: var(--ink-25);
+    border-radius: var(--r-sm);
+    display: inline-block;
+    word-break: break-all;
+  }
+  .box code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    background: rgba(15,23,42,0.06);
+    padding: 1px 6px;
+    border-radius: var(--r-sm);
+    color: var(--ink-800);
+    font-weight: 500;
+  }
+
+  /* ============================================
+     BADGES
+     ============================================ */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 9.5px;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: var(--r-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    line-height: 1;
+  }
+  .badge.step     { background: var(--indigo-100); color: var(--indigo-700); font-size: 10.5px; padding: 4px 9px; }
+  .badge.temporal { background: var(--emerald-100); color: var(--emerald-900); }
+  .badge.backend  { background: var(--sky-100); color: var(--sky-900); }
+  .badge.bridge   { background: var(--rose-100); color: var(--rose-900); }
+  .badge.new      { background: var(--sky-100); color: var(--sky-900); }
+  .badge.new-code { background: var(--emerald-100); color: var(--emerald-900); }
+  .badge.deletable{
+    background: linear-gradient(90deg, var(--amber-100), var(--rose-100));
+    color: var(--amber-900);
+    border: 1px dashed var(--amber-500);
+  }
+  .badge.immutable{ background: var(--amber-100); color: var(--amber-900); }
+  .badge.critical {
+    background: linear-gradient(90deg, var(--red-500), var(--rose-500));
+    color: white;
+    box-shadow: 0 2px 4px rgba(239,68,68,0.3);
+  }
+
+  /* ============================================
+     ARROWS
+     ============================================ */
+  .arrow {
+    color: var(--ink-300);
+    font-size: 20px;
+    line-height: 1;
+    margin: var(--sp-1) 0;
+    text-align: center;
+  }
+  .arrow-label {
+    font-size: 11px;
+    color: var(--ink-400);
+    font-style: italic;
+    text-align: center;
+    margin: -2px 0;
+    padding: 4px 10px;
+    background: var(--ink-25);
+    border-radius: var(--r-sm);
+    display: inline-block;
+  }
+
+  /* ============================================
+     NOTES
+     ============================================ */
+  .note {
+    background: linear-gradient(135deg, var(--amber-50) 0%, var(--amber-100) 100%);
+    border-left: 4px solid var(--amber-500);
+    padding: var(--sp-4) var(--sp-5);
+    border-radius: var(--r-md);
+    font-size: var(--fs-sm);
+    color: var(--amber-900);
+    margin: var(--sp-4) auto;
+    max-width: 1200px;
+    line-height: 1.65;
+    box-shadow: var(--sh-xs);
+  }
+  .note.info {
+    background: linear-gradient(135deg, var(--sky-50) 0%, var(--indigo-50) 100%);
+    border-left-color: var(--sky-500);
+    color: var(--sky-900);
+  }
+  .note.temporal {
+    background: linear-gradient(135deg, var(--emerald-50) 0%, #D1FAE5 100%);
+    border-left-color: var(--emerald-500);
+    color: var(--emerald-900);
+  }
+  .note.danger {
+    background: linear-gradient(135deg, var(--red-50) 0%, var(--rose-50) 100%);
+    border-left-color: var(--red-500);
+    color: var(--red-900);
+  }
+  .note strong { color: inherit; font-weight: 700; }
+  .note code {
+    background: rgba(255,255,255,0.6);
+    padding: 1px 6px;
+    border-radius: var(--r-sm);
+    font-size: 0.9em;
+  }
+
+  /* ============================================
+     COMPARISON TABLE
+     ============================================ */
+  .comparison {
+    background: var(--paper);
+    border-radius: var(--r-lg);
+    padding: var(--sp-5) var(--sp-6);
+    margin: var(--sp-5) 0;
+    box-shadow: var(--sh-sm);
+    border: 1px solid var(--ink-100);
+    overflow-x: auto;
+  }
+  .comparison-title {
+    font-size: var(--fs-md);
+    font-weight: 700;
+    color: var(--ink-900);
+    margin-bottom: var(--sp-4);
+    letter-spacing: -0.01em;
+  }
+  .comparison table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+  .comparison th {
+    text-align: left;
+    padding: var(--sp-3) var(--sp-4);
+    background: var(--ink-25);
+    color: var(--ink-600);
+    font-weight: 700;
+    border-bottom: 2px solid var(--ink-150);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .comparison td {
+    padding: var(--sp-3) var(--sp-4);
+    border-bottom: 1px solid var(--ink-100);
+    vertical-align: top;
+    line-height: 1.6;
+  }
+  .comparison td:first-child { font-weight: 600; color: var(--ink-900); width: 22%; }
+  .comparison td.old { color: var(--red-900); background: var(--red-50); }
+  .comparison td.new-col { color: var(--emerald-900); background: var(--emerald-50); }
+  .comparison tr:last-child td { border-bottom: none; }
+  .comparison tr:hover td { background: var(--ink-25); }
+  .comparison tr:hover td.old { background: var(--red-50); }
+  .comparison tr:hover td.new-col { background: var(--emerald-50); }
+
+  /* ============================================
+     EXECUTOR GRID
+     ============================================ */
+  .executor-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--sp-3);
+    margin: var(--sp-4) 0;
+  }
+  @media (max-width: 900px) {
+    .executor-grid { grid-template-columns: 1fr; }
+  }
+  .exec-card {
+    position: relative;
+    background: var(--paper);
+    border-radius: var(--r-lg);
+    padding: var(--sp-5);
+    box-shadow: var(--sh-sm);
+    border: 1px solid var(--ink-100);
+    overflow: hidden;
+    transition: transform var(--dur-mid) var(--ease-out), box-shadow var(--dur-mid) var(--ease-out);
+  }
+  .exec-card:hover { transform: translateY(-3px); box-shadow: var(--sh-md); }
+  .exec-card::before {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    height: 4px;
+    background: var(--ink-300);
+  }
+  .exec-card.fast::before { background: linear-gradient(90deg, var(--sky-500), var(--indigo-500)); }
+  .exec-card.slow::before { background: linear-gradient(90deg, var(--emerald-500), var(--sky-500)); }
+  .exec-card.bridge-exec::before { background: linear-gradient(90deg, var(--red-500), var(--rose-500)); }
+  .exec-card-title {
+    font-weight: 700;
+    font-size: var(--fs-md);
+    color: var(--ink-900);
+    margin-bottom: var(--sp-1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--sp-2);
+    letter-spacing: -0.01em;
+  }
+  .exec-card-meta {
+    font-size: 11px;
+    color: var(--ink-400);
+    margin-bottom: var(--sp-4);
+    font-family: var(--font-mono);
+    padding: 4px 8px;
+    background: var(--ink-25);
+    border-radius: var(--r-sm);
+    display: inline-block;
+    font-weight: 500;
+  }
+  .exec-card .exec-types {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .exec-type {
+    background: var(--ink-50);
+    color: var(--ink-700);
+    font-size: 10.5px;
+    font-family: var(--font-mono);
+    padding: 3px 9px;
+    border-radius: var(--r-sm);
+    font-weight: 600;
+    border: 1px solid var(--ink-100);
+    transition: background var(--dur-fast) var(--ease-out);
+  }
+  .exec-type:hover { background: var(--paper); }
+  .exec-card.fast .exec-type  { background: var(--sky-50); color: var(--sky-900); border-color: var(--sky-100); }
+  .exec-card.slow .exec-type  { background: var(--emerald-50); color: var(--emerald-900); border-color: var(--emerald-100); }
+  .exec-card.bridge-exec .exec-type { background: var(--rose-50); color: var(--rose-900); border-color: var(--rose-100); }
+
+  /* ============================================
+     CODE BLOCKS — "editor chrome"
+     ============================================ */
+  pre {
+    position: relative;
+    background: linear-gradient(180deg, #0F172A 0%, #0B1220 100%);
+    color: #E2E8F0;
+    border-radius: var(--r-md);
+    padding: var(--sp-4) var(--sp-5) var(--sp-4) 54px;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    line-height: 1.65;
+    margin: var(--sp-4) 0;
+    box-shadow: var(--sh-lg), inset 0 1px 0 rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  pre::before {
+    content: '● ● ●';
+    position: absolute;
+    left: 16px;
+    top: 14px;
+    font-size: 10px;
+    color: rgba(255,255,255,0.15);
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+  pre::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; top: 32px;
+    height: 1px;
+    background: rgba(255,255,255,0.06);
+  }
+  pre {
+    padding-top: 44px;
+  }
+  pre .k { color: #93C5FD; }
+  pre .s { color: #86EFAC; }
+  pre .c { color: #64748B; font-style: italic; }
+  pre .n { color: #FCD34D; }
+  pre .f { color: #F0ABFC; }
+
+  /* ============================================
+     VERIFICATION CARDS
+     ============================================ */
+  .verif-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--sp-3);
+  }
+  .verif-card {
+    position: relative;
+    background: var(--paper);
+    border-radius: var(--r-lg);
+    padding: var(--sp-5) var(--sp-6);
+    box-shadow: var(--sh-sm);
+    border: 1px solid var(--ink-100);
+    overflow: hidden;
+    transition: transform var(--dur-mid) var(--ease-out), box-shadow var(--dur-mid) var(--ease-out);
+  }
+  .verif-card:hover { transform: translateY(-2px); box-shadow: var(--sh-md); }
+  .verif-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, var(--emerald-500), var(--sky-500));
+  }
+  .verif-card.required::before { background: linear-gradient(180deg, var(--red-500), var(--rose-500)); }
+  .verif-card-head {
+    font-weight: 700;
+    font-size: var(--fs-md);
+    color: var(--ink-900);
+    margin-bottom: var(--sp-3);
+    display: flex;
+    gap: var(--sp-2);
+    align-items: center;
+    letter-spacing: -0.01em;
+  }
+  .verif-card-body {
+    font-size: var(--fs-sm);
+    color: var(--ink-600);
+    line-height: 1.65;
+  }
+  .verif-card-body strong { color: var(--ink-900); font-weight: 600; }
+  .verif-card-body code {
+    background: var(--ink-25);
+    padding: 1px 6px;
+    border-radius: var(--r-sm);
+    font-size: 0.9em;
+    color: var(--ink-800);
+  }
+  .req-tag {
+    background: linear-gradient(135deg, var(--red-500), var(--rose-500));
+    color: white;
+    font-size: 9.5px;
+    padding: 3px 8px;
+    border-radius: var(--r-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 800;
+    box-shadow: 0 2px 4px rgba(239,68,68,0.25);
+  }
+
+  /* ============================================
+     AC TABLE
+     ============================================ */
+  .ac-table {
+    background: var(--paper);
+    border-radius: var(--r-lg);
+    padding: 0;
+    box-shadow: var(--sh-sm);
+    border: 1px solid var(--ink-100);
+    overflow: hidden;
+  }
+  .ac-table table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+  .ac-table th {
+    background: linear-gradient(180deg, var(--ink-25) 0%, var(--ink-50) 100%);
+    color: var(--ink-600);
+    font-weight: 700;
+    text-align: left;
+    padding: var(--sp-4) var(--sp-5);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 2px solid var(--ink-150);
+  }
+  .ac-table td {
+    padding: var(--sp-4) var(--sp-5);
+    border-bottom: 1px solid var(--ink-100);
+    vertical-align: top;
+    line-height: 1.6;
+    color: var(--ink-600);
+  }
+  .ac-table td strong { color: var(--ink-900); }
+  .ac-table td code {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    background: var(--ink-25);
+    padding: 1px 6px;
+    border-radius: var(--r-sm);
+    color: var(--ink-800);
+  }
+  .ac-table td:first-child { width: 48%; font-weight: 500; color: var(--ink-800); }
+  .ac-table tr:last-child td { border-bottom: none; }
+  .ac-table tr:hover td { background: var(--ink-25); }
+
+  /* ============================================
+     OPEN ITEMS
+     ============================================ */
+  .open-items {
+    background:
+      radial-gradient(400px 200px at 100% 0%, rgba(245,158,11,0.08), transparent 60%),
+      linear-gradient(180deg, var(--amber-50) 0%, #FFFEF7 100%);
+    border: 1px solid var(--amber-100);
+    border-radius: var(--r-lg);
+    padding: var(--sp-5) var(--sp-6);
+    box-shadow: var(--sh-sm);
+  }
+  .open-item {
+    padding: var(--sp-3) 0;
+    border-bottom: 1px dashed rgba(245,158,11,0.3);
+    font-size: var(--fs-sm);
+    color: var(--amber-900);
+    line-height: 1.6;
+  }
+  .open-item:last-child { border-bottom: none; padding-bottom: 0; }
+  .open-item:first-child { padding-top: 0; }
+  .open-item strong {
+    color: var(--amber-900);
+    display: block;
+    margin-bottom: var(--sp-1);
+    font-weight: 700;
+    font-size: var(--fs-base);
+  }
+  .open-item code {
+    background: rgba(255,255,255,0.65);
+    padding: 1px 6px;
+    border-radius: var(--r-sm);
+    font-size: 0.9em;
+  }
+
+  /* ============================================
+     DOC NAV
+     ============================================ */
+  .doc-nav {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    flex-wrap: wrap;
+    margin-bottom: var(--sp-6);
+  }
+  .doc-tabs {
+    display: flex;
+    gap: var(--sp-1);
+    background: rgba(255,255,255,0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 5px;
+    border-radius: var(--r-lg);
+    box-shadow: var(--sh-sm);
+    flex-wrap: wrap;
+    border: 1px solid rgba(255,255,255,0.9);
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .doc-tabs .doc-tab {
+    flex: 1 1 auto;
+    text-align: center;
+    padding: 10px 18px;
+    border-radius: var(--r-md);
+    text-decoration: none;
+    color: var(--ink-500);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    transition: all var(--dur-fast) var(--ease-out);
+    white-space: nowrap;
+  }
+  .doc-tabs .doc-tab:hover {
+    background: var(--ink-50);
+    color: var(--ink-900);
+  }
+  .doc-tabs .doc-tab.is-active {
+    background: linear-gradient(135deg, var(--ink-900) 0%, var(--ink-800) 100%);
+    color: #fff;
+    box-shadow: 0 4px 12px -4px rgba(15,23,42,0.4);
+  }
+
+  /* ============================================
+     TL;DR
+     ============================================ */
+  .tldr {
+    position: relative;
+    background: var(--paper);
+    border-radius: var(--r-lg);
+    padding: var(--sp-6) var(--sp-7);
+    margin-bottom: var(--sp-8);
+    box-shadow: var(--sh-md), var(--sh-ring);
+    border: 1px solid var(--ink-100);
+    overflow: hidden;
+  }
+  .tldr::before {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--emerald-500), var(--sky-500), var(--indigo-500));
+  }
+  .tldr::after {
+    content: '';
+    position: absolute;
+    right: -50px; top: -50px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(16,185,129,0.08), transparent 70%);
+    pointer-events: none;
+  }
+  .tldr-title {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--emerald-700);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: var(--sp-3);
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+  }
+  .tldr-content {
+    font-size: var(--fs-md);
+    color: var(--ink-700);
+    line-height: 1.7;
+    position: relative;
+  }
+  .tldr-content strong { color: var(--ink-900); font-weight: 600; }
+  .tldr-content code {
+    background: var(--ink-25);
+    padding: 1px 7px;
+    border-radius: var(--r-sm);
+    font-size: 0.88em;
+    color: var(--ink-800);
+    font-weight: 500;
+  }
+
+  /* ============================================
+     SECTION-SPECIFIC: file lists
+     ============================================ */
+  .section ul {
+    list-style: none;
+    padding: 0;
+    margin: var(--sp-3) 0;
+  }
+  .section ul li {
+    position: relative;
+    padding: var(--sp-2) 0 var(--sp-2) 22px;
+    font-size: var(--fs-sm);
+    color: var(--ink-600);
+    line-height: 1.6;
+    border-bottom: 1px dashed var(--ink-100);
+  }
+  .section ul li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--ink-300);
+    font-weight: 700;
+  }
+  .section ul li:last-child { border-bottom: none; }
+  .section ul li strong { color: var(--ink-900); }
+  .section ul li code {
+    background: var(--ink-25);
+    padding: 1px 6px;
+    border-radius: var(--r-sm);
+    font-size: 0.9em;
+    color: var(--ink-800);
+  }
+  .section ol {
+    padding-left: 24px;
+    font-size: var(--fs-sm);
+    color: var(--ink-600);
+    line-height: 1.75;
+  }
+  .section ol li { padding: var(--sp-1) 0; }
+  .section ol li code {
+    background: var(--ink-25);
+    padding: 1px 6px;
+    border-radius: var(--r-sm);
+    font-size: 0.9em;
+    color: var(--ink-800);
+  }
+
+  /* ============================================
+     H3 contextual
+     ============================================ */
+  .section > h3 {
+    margin-top: var(--sp-6);
+    padding-left: var(--sp-3);
+    border-left: 3px solid var(--emerald-500);
+    font-size: var(--fs-lg);
+    color: var(--ink-900);
+    font-weight: 700;
+    line-height: 1.3;
+  }
+  .section > h3 code {
+    background: var(--ink-25);
+    padding: 1px 7px;
+    border-radius: var(--r-sm);
+    font-size: 0.88em;
+    color: var(--emerald-700);
+  }
+  .section > p {
+    font-size: var(--fs-sm);
+    color: var(--ink-600);
+    line-height: 1.65;
+    margin: var(--sp-3) 0;
+  }
+  .section > p code {
+    background: var(--ink-25);
+    padding: 1px 6px;
+    border-radius: var(--r-sm);
+    font-size: 0.9em;
+    color: var(--ink-800);
+  }
+
+  /* ============================================
+     Footer
+     ============================================ */
+  .footer {
+    text-align: center;
+    margin-top: var(--sp-10);
+    padding-top: var(--sp-6);
+    border-top: 1px solid var(--ink-100);
+    font-size: var(--fs-sm);
+    color: var(--ink-400);
+    line-height: 1.75;
+  }
+  .footer code {
+    background: var(--ink-25);
+    padding: 1px 6px;
+    border-radius: var(--r-sm);
+    font-size: 0.9em;
+    color: var(--ink-700);
+  }
+
+  /* ============================================
+     Responsive — tablet
+     ============================================ */
+  @media (max-width: 1024px) {
+    body { padding: var(--sp-5) var(--sp-4) var(--sp-8); }
+    .section { margin-bottom: var(--sp-8); }
+    .box { width: 100%; }
+  }
+
+  /* ============================================
+     Responsive — mobile
+     ============================================ */
+  @media (max-width: 640px) {
+    body { padding: var(--sp-4) var(--sp-3) var(--sp-7); font-size: var(--fs-sm); }
+    .hero { padding: var(--sp-6) var(--sp-4); }
+    .hero h1 { font-size: 24px; }
+    .section-header { gap: var(--sp-2); }
+    .section-number { width: 36px; height: 36px; font-size: var(--fs-base); }
+    .section-title { font-size: var(--fs-lg); }
+    .section-desc { display: none; }
+    .decision-card { padding: var(--sp-4); gap: var(--sp-3); }
+    .box { padding: var(--sp-3) var(--sp-4); }
+    pre { font-size: 11px; padding-left: var(--sp-5); padding-top: var(--sp-6); }
+    pre::before { left: var(--sp-3); }
+    .doc-tabs .doc-tab { padding: 8px 12px; font-size: 12px; }
+  }
+
+  /* ============================================
+     Print
+     ============================================ */
+  @media print {
+    body { background: white; }
+    .doc-nav, .footer { display: none; }
+    .section { page-break-inside: avoid; }
+    .box, .decision-card, .verif-card, .exec-card { break-inside: avoid; box-shadow: none; }
+    pre { background: #f6f8fa; color: #24292f; }
+    pre .k, pre .s, pre .c, pre .n, pre .f { color: inherit; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="doc-nav">
+  <nav class="doc-tabs">
+    <a href="index.html" class="doc-tab">Arquitetura atual</a>
+    <a href="arquitetura-v2.html" class="doc-tab">Arquitetura v2</a>
+    <a href="arquitetura-v2-complemento.html" class="doc-tab">Plano em tarefas</a>
+    <a href="timeline/index.html" class="doc-tab">Timeline</a>
+    <a href="b4-graph-workflow-plan.html" class="doc-tab is-active">B4 — Plano</a>
+    <a href="status-tarefas.html" class="doc-tab">Status</a>
+  </nav>
+</div>
+
+<div class="hero">
+  <div class="kicker">🌊</div>
+  <h1>B4 — Mover o laço do DAG para um workflow do Temporal</h1>
+  <div class="goal">Move o laço de execução do DAG do back para um workflow do Temporal. <strong>Sem paralelismo nesta task</strong> — cada nó despacha um por vez. O código já suporta lote; fica configurado como um. A B5 ativa o lote trocando o <code>for</code> por <code>Promise.all</code>.</div>
+  <div class="meta-grid">
+    <div class="meta-item"><strong>Onda</strong>4</div>
+    <div class="meta-item"><strong>Depende de</strong>B2, B3, B3b</div>
+    <div class="meta-item"><strong>Bloqueia</strong>B5, B6</div>
+    <div class="meta-item"><strong>Pareada com</strong>E1 (mesma onda)</div>
+    <div class="meta-item"><strong>Flag</strong><code>FLUX_FLOW_ENGINE_MODE</code></div>
+    <div class="meta-item"><strong>Default</strong><code>back</code> (reversível)</div>
+  </div>
+</div>
+
+<!-- TL;DR -->
+<div class="tldr">
+  <div class="tldr-title">⚡ TL;DR</div>
+  <div class="tldr-content">
+    <p style="margin: 0 0 var(--sp-3) 0;"><strong>O que move:</strong> o laço <code>while</code> de <code>flux.service.ts</code> vira o workflow <code>processFlowWorkflow</code> no worker, dono do <code>SchedulerState</code>.</p>
+    <p style="margin: 0 0 var(--sp-3) 0;"><strong>Como se liga:</strong> env var <code>FLUX_FLOW_ENGINE_MODE=back|workflow</code>. Default <code>back</code>. Rollback sem redeploy.</p>
+    <p style="margin: 0 0 var(--sp-3) 0;"><strong>Invariante do estado:</strong> o workflow carrega só IDs — <code>nodeIds</code>, <code>completed</code>, <code>outputStore: Map&lt;nodeId, nodeExecutionId&gt;</code>. Payloads ficam em DB/S3. <code>continueAsNew</code> a cada 500 execuções protege o histórico do Temporal.</p>
+    <p style="margin: 0;"><strong>Bridge temporária:</strong> nós ainda inline (<code>arrayNode</code>, <code>fluxBox</code>, <code>libraryNode</code>, <code>conditionNode</code> e cia.) saem via uma activity que chama o back. A B6 remove essa bridge quando portar esses tipos para child workflows.</p>
+  </div>
+</div>
+
+<!-- ================================================== -->
+<!-- SEÇÃO 1 — DECISÕES CONSOLIDADAS -->
+<!-- ================================================== -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-number">1</div>
+    <div class="section-title">Decisões consolidadas</div>
+    <div class="section-desc">o que a spec deixava aberto, agora fechado</div>
+  </div>
+
+  <div class="decisions-grid">
+
+    <div class="decision-card">
+      <div class="decision-topic">
+        <span class="d-tag">Decisão A</span>
+        Escopo do motor em workflow
+      </div>
+      <div class="decision-choice">
+        <strong>Com a flag on, o workflow despacha um child workflow por nó pronto.</strong>
+        <br><br>
+        <strong>Dois caminhos:</strong>
+        <br>→ Nó worker-routed: <code>startChild('processSingleNode', ...)</code>. Reusa integralmente o switch + <code>UNIFORM_NODE_ACTIVITIES</code> que já existem no worker.
+        <br>→ Nó ainda inline (<code>arrayNode</code>, <code>fluxBox</code>, <code>libraryNode</code>, <code>nodesBox</code>, <code>conditionNode</code>, <code>thirdPartyIntegration</code> com provider não-migrado): <code>runInlineNodeInBackActivity</code> faz HTTP de volta ao back, que executa o arm inline e retorna.
+        <br><br>
+        <strong>Zero duplicação de lógica.</strong> Validações pré-execução, cobranças por tipo, cancelamento nativo — tudo que o <code>processSingleNode</code> já faz hoje continua funcionando sem código novo.
+      </div>
+      <div class="decision-badge">Decidido</div>
+    </div>
+
+    <div class="decision-card">
+      <div class="decision-topic">
+        <span class="d-tag">Decisão B</span>
+        Fronteira do <code>continueAsNew</code>
+      </div>
+      <div class="decision-choice">
+        <strong><code>HISTORY_BOUNDARY = 300 execuções de nó.</code></strong>
+        <br><br>
+        Com child workflow por nó (ver Decisão A), cada execução adiciona ~15 eventos ao histórico do workflow pai (startChild + child events + completed). 300 × 15 ≈ 4.500 eventos por segmento — confortável sob o teto do Temporal (~50k eventos).
+        <br><br>
+        Fica consistente com o teto da S4 (50.000 execuções/run): ~165 segmentações sucessivas cabem, mais que o maior run real já visto.
+        <br><br>
+        Número provado em dev rodando um <code>arrayNode</code> acima da fronteira.
+      </div>
+      <div class="decision-badge">Decidido</div>
+    </div>
+
+    <div class="decision-card">
+      <div class="decision-topic">
+        <span class="d-tag">Decisão C</span>
+        Writer de <code>flow_execution_status</code>
+      </div>
+      <div class="decision-choice">
+        <strong>O processor continua escrevendo. TODO no worker aponta para a E1.</strong>
+        <br><br>
+        O <code>apiV2Job.processor.ts</code> segue chamando <code>fluxService.apiV2(…)</code> e lendo o agregado. No modo workflow, esse agregado vem de <code>handle.result()</code>. O shape de retorno é o mesmo nos dois modos, então <code>markCompleted</code>/<code>markError</code> não mudam.
+        <br><br>
+        A E1 (mesma onda) decide depois se o writer migra para o worker ou para o coletor event-sourced. A B4 não duplica esse território.
+      </div>
+      <div class="decision-badge">Decidido</div>
+    </div>
+
+    <div class="decision-card">
+      <div class="decision-topic">
+        <span class="d-tag">Decisão D</span>
+        Local da flag
+      </div>
+      <div class="decision-choice">
+        <strong>Env var global <code>FLUX_FLOW_ENGINE_MODE=back|workflow</code>, default <code>back</code>.</strong>
+        <br><br>
+        Mesmo padrão de <code>FLUX_EXEC_MEMORY_MODE</code>. Rollout por ambiente: dev → staging → prod.
+        <br><br>
+        <strong>Diverge da spec</strong>, que pedia granularidade por fluxo. Em prod a validação vira janela de observação em vez de allowlist incremental. Divergência registrada no PR com o plano de validação.
+      </div>
+      <div class="decision-badge divergent">Divergência da spec</div>
+    </div>
+
+    <div class="decision-card">
+      <div class="decision-topic">
+        <span class="d-tag">Decisão E</span>
+        Detecção de paralisação
+      </div>
+      <div class="decision-choice">
+        <strong>Check in-line após cada activity.</strong>
+        <br><br>
+        Se <code>allReady() === []</code> e ainda há nós fora de completed/dead, lança <code>ApplicationFailure(FlowSchedulerStall)</code> com os IDs presos listados. Falha em milissegundos. <code>nonRetryable: true</code>.
+        <br><br>
+        Esse é literalmente o controle negativo que a spec exige. Heartbeat + timeout não cobre o cenário: um <code>markCompleted</code> quebrado deixa o workflow em silêncio sem activity rodando.
+      </div>
+      <div class="decision-badge">Decidido</div>
+    </div>
+
+    <div class="decision-card">
+      <div class="decision-topic">
+        <span class="d-tag">Decisão F</span>
+        Snapshot congelado (v2)
+      </div>
+      <div class="decision-choice">
+        <strong>B4 usa <code>runId</code> + <code>flows_nodes</code>/<code>flows_edges</code> ao vivo. Sem migração nova.</strong>
+        <br><br>
+        As 4 tabelas da v2 (<code>flow_executions</code>, <code>flow_execution_snapshots</code>, <code>flow_execution_edge_snapshots</code>, <code>flow_execution_trigger_inputs</code>) ficam para uma task separada: <em>snapshot-at-enqueue</em>.
+        <br><br>
+        A B4 reduz o blast radius ao máximo: só código novo no worker, zero schema change.
+      </div>
+      <div class="decision-badge">Decidido</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ================================================== -->
+<!-- SEÇÃO 2 — ARQUITETURA PONTA A PONTA -->
+<!-- ================================================== -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-number">2</div>
+    <div class="section-title">Arquitetura ponta a ponta</div>
+    <div class="section-desc">fluxo completo com a flag <code>workflow</code> ligada</div>
+  </div>
+
+  <div class="flow-column">
+
+    <div class="box external">
+      <div class="box-title"><span class="badge step">1</span> Cliente chama <code>POST /flux/api-v2</code></div>
+      <div class="box-desc">Chatbot, webhook, UI, API pública — qualquer surface. O cliente não sabe que algo mudou.</div>
+    </div>
+    <div class="arrow">↓</div>
+
+    <div class="box backend">
+      <div class="box-title"><span class="badge step">2</span> BullMQ enfileira o job na queue <code>apiV2Job</code></div>
+      <div class="box-desc">Mesma lógica de hoje. Tenancy, concorrência e dedup inalterados.</div>
+      <div class="box-file">src/jobs/apiV2Job/apiV2Job.processor.ts</div>
+    </div>
+    <div class="arrow">↓</div>
+
+    <div class="box backend">
+      <div class="box-title"><span class="badge step">3</span> Processor marca <code>flow_execution_status</code> como <code>in_progress</code></div>
+      <div class="box-desc">Zero mudança neste passo.</div>
+      <div class="box-file">apiV2Job.processor.ts:142</div>
+    </div>
+    <div class="arrow">↓</div>
+
+    <div class="box backend">
+      <div class="box-title"><span class="badge step">4</span> Processor chama <code>fluxService.apiV2({...})</code></div>
+      <div class="box-desc">Interface pública inalterada. A escolha do motor acontece dentro de <code>apiV2()</code>.</div>
+    </div>
+    <div class="arrow">↓</div>
+    <div class="arrow-label">dentro de <code>apiV2()</code>: ramificação única pela flag</div>
+    <div class="arrow">↓</div>
+
+    <div class="box decision">
+      <div class="box-title"><span class="badge step">5</span> Lê <code>FLUX_FLOW_ENGINE_MODE</code> e escolhe o motor</div>
+      <div class="box-desc">
+        <strong><code>workflow</code> →</strong> <code>startWorkflow('processFlowWorkflow', { runId, flowId, ... })</code>, depois <code>await handle.result()</code> uma única vez.
+        <br>
+        <strong><code>back</code> →</strong> laço <code>while (scheduledId !== null)</code> atual. Intocado.
+      </div>
+    </div>
+    <div class="arrow">↓</div>
+
+    <div class="box temporal">
+      <div class="box-title"><span class="badge step">6</span> <code>processFlowWorkflow</code> roda no worker <span class="badge temporal">temporal</span> <span class="badge new-code">novo</span></div>
+      <div class="box-desc">
+        <strong>Três passos por iteração do loop:</strong>
+        <br>1. Carrega topologia via <code>loadFlowTopologyActivity</code> (só na primeira execução; depois do <code>continueAsNew</code>, lê do estado carregado).
+        <br>2. Chama <code>allReady(state)</code> para drenar nós prontos.
+        <br>3. Despacha uma activity por nó (batch 1 na B4).
+        <br>
+        Detalhe completo na Seção 3.
+      </div>
+      <div class="box-file">worker/src/modules/temporal/workflows/process-flow.workflow.ts</div>
+    </div>
+    <div class="arrow">↓</div>
+    <div class="arrow-label">o workflow escolhe uma de três activities por tipo de nó</div>
+    <div class="arrow">↓</div>
+
+    <div class="executor-grid" style="width: 100%; max-width: 1200px; grid-template-columns: repeat(2, 1fr);">
+
+      <div class="exec-card slow">
+        <div class="exec-card-title">
+          startChild('processSingleNode')
+          <span class="badge temporal">worker</span>
+        </div>
+        <div class="exec-card-meta">reusa switch + UNIFORM_NODE_ACTIVITIES existentes</div>
+        <div class="exec-types">
+          <span class="exec-type">commandTextNode</span>
+          <span class="exec-type">scripting</span>
+          <span class="exec-type">apiCaller</span>
+          <span class="exec-type">mathFunction</span>
+          <span class="exec-type">counterNode</span>
+          <span class="exec-type">outputController</span>
+          <span class="exec-type">pullData</span>
+          <span class="exec-type">pushData</span>
+          <span class="exec-type">fileSave</span>
+          <span class="exec-type">mcpNode</span>
+          <span class="exec-type">imageGenerator</span>
+          <span class="exec-type">animationNode</span>
+          <span class="exec-type">secApiNode</span>
+          <span class="exec-type">usCensusNode</span>
+          <span class="exec-type">commandContentNode</span>
+          <span class="exec-type">voiceBoxNode</span>
+          <span class="exec-type">webSearch</span>
+          <span class="exec-type">webAmazon</span>
+          <span class="exec-type">webCrawling</span>
+          <span class="exec-type">audioReaderNode</span>
+          <span class="exec-type">imageReaderNode</span>
+          <span class="exec-type">reportBuilder</span>
+          <span class="exec-type">sqlQuerier</span>
+        </div>
+        <div style="margin-top: 10px; font-size: 10.5px; color: var(--emerald-700);">
+          <strong>23 tipos.</strong> Validações, cobranças e cancelamento nativo já implementados.
+        </div>
+      </div>
+
+      <div class="exec-card bridge-exec">
+        <div class="exec-card-title">
+          runInlineNodeInBackActivity
+          <span class="badge bridge">bridge temp.</span>
+        </div>
+        <div class="exec-card-meta">HTTP → back → arm inline → retorna</div>
+        <div class="exec-types">
+          <span class="exec-type">arrayNode</span>
+          <span class="exec-type">fluxBox</span>
+          <span class="exec-type">libraryNode</span>
+          <span class="exec-type">nodesBox</span>
+          <span class="exec-type">conditionNode</span>
+          <span class="exec-type">thirdPartyIntegration*</span>
+          <span class="exec-type">hubSpotCRM</span>
+        </div>
+        <div style="margin-top: 10px; font-size: 10.5px; color: var(--red-700);">
+          * só providers não-migrados. <strong>Removida pela B6</strong> quando os tipos de controle virarem child workflows.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="arrow">↓</div>
+
+    <div class="box bridge">
+      <div class="box-title"><span class="badge step">7</span> Bridge para tipos ainda inline <span class="badge deletable">removida pela B6</span></div>
+      <div class="box-desc">
+        A activity <code>runInlineNodeInBackActivity</code> faz <code>POST /internal/execute-inline-node</code> com <code>{runId, flowId, nodeId, nodeType, outputStoreSnapshot}</code> e auth <code>INTERNAL_API_KEY</code>.
+        <br><br>
+        O back entra no arm inline do tipo, grava <code>node_executions</code>, retorna <code>{nodeExecutionId, status, takenHandle?}</code>. O workflow então aplica <code>markCompleted</code>, <code>markDead</code> ou <code>completeCondition</code>.
+      </div>
+      <div class="box-file">back/src/internal/execute-inline-node.controller.ts — endpoint novo</div>
+    </div>
+    <div class="arrow">↓</div>
+
+    <div class="box backend">
+      <div class="box-title"><span class="badge step">8</span> Workflow termina. <code>handle.result()</code> devolve o agregado</div>
+      <div class="box-desc">
+        Shape idêntico ao retorno do laço inline atual: <code>{myUpdatedNodes, myTexts, totalTokensUsed, totalCost, nodeError, ...}</code>. Zero mudança para quem consome.
+      </div>
+    </div>
+    <div class="arrow">↓</div>
+
+    <div class="box backend">
+      <div class="box-title"><span class="badge step">9</span> Processor fecha o status</div>
+      <div class="box-desc">
+        Lê o agregado, decide pelo <code>nodeError</code>, chama <code>markCompleted</code> ou <code>markError</code> no <code>flowExecutionStatusService</code>. Igual ao fluxo atual.
+      </div>
+      <div class="box-file">apiV2Job.processor.ts:177-184</div>
+    </div>
+
+  </div>
+
+  <div class="note info">
+    <strong>O ponto-chave da arquitetura:</strong> o processor é agnóstico ao motor. Ele chama <code>apiV2()</code> e lê o resultado — sem saber se veio do laço inline ou do workflow. A mudança é cirúrgica: um <code>if</code> no início de <code>apiV2()</code>. Isso é o que torna a B4 revertível por uma env var, sem redeploy.
+  </div>
+
+  <div class="note temporal">
+    <strong>Benefício colateral: fecha o gap de dispatch do full-run.</strong>
+    <br><br>
+    Hoje o laço <code>while</code> em <code>apiV2</code> precisa de uma <code>if (node.type === 'X') processNodeViaTemporal(…)</code> por tipo. Em 2026-10-15, cinco tipos worker-routed ainda não tinham esse branch — eles só rodavam em single-node, não em agente completo.
+    <br><br>
+    O modo workflow da B4 usa dispatch genérico (<code>startChild('processSingleNode')</code> pra qualquer tipo). Nenhum branch dedicado por tipo. <strong>Qualquer tipo worker-routed roda em full-run sem código novo em <code>apiV2</code>.</strong> Esse gap desaparece como efeito colateral da flag estar on.
+  </div>
+</div>
+
+<!-- ================================================== -->
+<!-- SEÇÃO 3 — O WORKFLOW EM DETALHE -->
+<!-- ================================================== -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-number">3</div>
+    <div class="section-title">O workflow <code>processFlowWorkflow</code> em detalhe</div>
+    <div class="section-desc">assinatura, estado, loop, allReady</div>
+  </div>
+
+  <h3 style="margin-top: 8px; color: #0F172A; font-size: 15px;">Assinatura</h3>
+  <pre>
+<span class="k">export async function</span> <span class="f">processFlowWorkflow</span>(args: {
+  runId: <span class="k">string</span>;                            <span class="c">// = workflowId do Temporal</span>
+  flowId: <span class="k">string</span>;
+  userId: <span class="k">string</span>;
+  sessionId: <span class="k">string</span>;
+  flowVersionHistoryId: <span class="k">string</span> | <span class="k">null</span>;
+  runType: <span class="k">string</span>;
+  starterSourceId: <span class="k">string</span>;                  <span class="c">// id do global starter edge</span>
+  carriedState?: SerializedSchedulerState;    <span class="c">// só em continueAsNew</span>
+  executionsSoFar?: <span class="k">number</span>;                 <span class="c">// contador acumulado</span>
+}): <span class="f">Promise</span>&lt;FlowRunResult&gt;</pre>
+
+  <div class="note info">
+    <strong>Payload de entrada:</strong> ~500 bytes. Nunca contém <code>node_data</code>, <code>edges[]</code>, output resolvido. <strong>Só IDs.</strong>
+  </div>
+
+  <h3 style="margin-top: 24px; color: #0F172A; font-size: 15px;">Estado carregado entre iterações e através de <code>continueAsNew</code></h3>
+  <pre>
+<span class="k">interface</span> SerializedSchedulerState {
+  <span class="c">// Scheduler state — tudo id e contador</span>
+  nodeIds: <span class="k">string</span>[];
+  forwardDeps: [<span class="k">string</span>, <span class="k">string</span>[]][];
+  conditionEdges: [<span class="k">string</span>, SchedEdge[]][];      <span class="c">// SchedEdge = só source/target/handles</span>
+  totalPreds: [<span class="k">string</span>, <span class="k">number</span>][];
+  resolvedPreds: [<span class="k">string</span>, <span class="k">number</span>][];
+  deadPreds: [<span class="k">string</span>, <span class="k">number</span>][];
+  gatingPairs: <span class="k">string</span>[];                       <span class="c">// pares "A-&gt;B"</span>
+  totalGatingPreds: [<span class="k">string</span>, <span class="k">number</span>][];
+  resolvedGatingPreds: [<span class="k">string</span>, <span class="k">number</span>][];
+  deadGatingPreds: [<span class="k">string</span>, <span class="k">number</span>][];
+  ready: <span class="k">string</span>[];
+  completed: <span class="k">string</span>[];
+  dead: <span class="k">string</span>[];
+  scheduled: <span class="k">string</span>[];
+  <span class="c">// OutputStore — ponte para o conteúdo real</span>
+  outputStore: [<span class="k">string</span>, <span class="k">string</span>][];           <span class="c">// [nodeId, nodeExecutionId]</span>
+  <span class="c">// Metadata</span>
+  starterSourceId: <span class="k">string</span>;
+}</pre>
+
+  <div class="note temporal">
+    <strong>Tamanho estimado:</strong> O(nodes + edges) × ~30 bytes. Fluxo gigante (1000 nós / 2000 arestas) ≈ <strong>100KB</strong>. Confortável sob o limite de 2MB por fronteira activity ↔ workflow. Payloads reais (<code>node_data</code>, <code>outputData</code>) ficam em <code>node_executions</code> ou S3 via <code>__claimRef</code>; o workflow nunca enxerga.
+  </div>
+
+  <h3 style="margin-top: 24px; color: #0F172A; font-size: 15px;">O loop</h3>
+  <pre>
+<span class="k">export async function</span> <span class="f">processFlowWorkflow</span>(args) {
+  <span class="k">let</span> state: SchedulerState;
+  <span class="k">let</span> outputStore: Map&lt;<span class="k">string</span>, <span class="k">string</span>&gt;;
+  <span class="k">let</span> executionsSoFar = args.executionsSoFar ?? <span class="n">0</span>;
+
+  <span class="k">if</span> (args.carriedState) {
+    state = <span class="f">deserializeState</span>(args.carriedState);
+    outputStore = <span class="k">new</span> Map(args.carriedState.outputStore);
+  } <span class="k">else</span> {
+    <span class="c">// Fase 2.1 do arquitetura-v2 — topology only, zero node_data</span>
+    <span class="k">const</span> topology = <span class="k">await</span> <span class="f">loadFlowTopologyActivity</span>({
+      runId: args.runId, flowId: args.flowId,
+    });
+    state = <span class="f">buildSchedulerState</span>(topology.nodes, topology.edges, args.starterSourceId);
+    outputStore = <span class="k">new</span> Map();
+    <span class="k">await</span> <span class="f">emitFlowStartedActivity</span>({ runId: args.runId });
+  }
+
+  <span class="k">while</span> (state.completed.size + state.dead.size &lt; state.nodeIds.size) {
+    <span class="k">const</span> readySet = <span class="f">allReady</span>(state);                     <span class="c">// Fase 3.1</span>
+
+    <span class="k">if</span> (readySet.length === <span class="n">0</span>) {                           <span class="c">// Fase 3.2 — STALL DETECTOR</span>
+      <span class="k">const</span> stuck = <span class="f">unprocessedIds</span>(state);
+      <span class="k">throw</span> ApplicationFailure.<span class="f">create</span>({
+        type: <span class="s">'FlowSchedulerStall'</span>,
+        message: <span class="s">`scheduler stall at ${state.completed.size + state.dead.size}/${state.nodeIds.size} — stuck ids: ${stuck.slice(0, 20).join(',')}`</span>,
+        nonRetryable: <span class="k">true</span>,
+      });
+    }
+
+    <span class="k">for</span> (<span class="k">const</span> nodeId <span class="k">of</span> readySet) {                      <span class="c">// B4: batch 1 — B5 vira Promise.all</span>
+      <span class="k">const</span> nodeType = topology.nodeTypeById.get(nodeId)!;
+      <span class="k">const</span> result = <span class="f">hasWorkerModule</span>(nodeType)
+        ? <span class="k">await</span> <span class="f">startChild</span>(processSingleNode, {
+            args: [nodeId, args.userId, args.sessionId, args.flowId, ...],
+            workflowId: <span class="s">`${args.runId}:${nodeId}`</span>,
+          }).<span class="f">result</span>()
+        : <span class="k">await</span> <span class="f">runInlineNodeInBackActivity</span>({            <span class="c">// bridge temp (removida pela B6)</span>
+            runId: args.runId, flowId: args.flowId, nodeId, nodeType,
+            outputStoreSnapshot: [...outputStore],
+          });
+
+      outputStore.<span class="f">set</span>(nodeId, result.nodeExecutionId);     <span class="c">// 3.4.5 append-only</span>
+
+      <span class="k">if</span> (nodeType === <span class="s">'conditionNode'</span>) {                    <span class="c">// 3.7 propagar</span>
+        <span class="f">completeCondition</span>(state, nodeId, result.takenHandle!);
+      } <span class="k">else if</span> (result.status === <span class="s">'completed'</span> || result.status === <span class="s">'COMPLETED'</span>) {
+        <span class="f">markCompleted</span>(state, nodeId);
+      } <span class="k">else</span> {
+        <span class="f">markDead</span>(state, nodeId);
+      }
+
+      executionsSoFar += <span class="n">1</span>;
+
+      <span class="k">if</span> (executionsSoFar &gt;= HISTORY_BOUNDARY) {              <span class="c">// 300 — Decisão B</span>
+        <span class="k">await</span> <span class="f">continueAsNew</span>&lt;<span class="k">typeof</span> processFlowWorkflow&gt;({
+          ...args,
+          carriedState: <span class="f">serializeStateWithStore</span>(state, outputStore),
+          executionsSoFar: <span class="n">0</span>,
+        });
+      }
+    }
+  }
+
+  <span class="k">return</span> <span class="k">await</span> <span class="f">aggregateFlowResultActivity</span>({ runId: args.runId });
+}</pre>
+
+  <h3 style="margin-top: 24px; color: #0F172A; font-size: 15px;">Nova função em <code>scheduler.ts</code> (back + ported no worker)</h3>
+  <pre>
+<span class="c">// Drena todos os ids prontos, marca cada um scheduled.</span>
+<span class="c">// nextReady continua existindo para o laço do back (até C2 aposentar o laço).</span>
+<span class="k">export function</span> <span class="f">allReady</span>(state: SchedulerState): <span class="k">string</span>[] {
+  <span class="k">const</span> drained: <span class="k">string</span>[] = [];
+  <span class="k">while</span> (state.ready.length) {
+    <span class="k">const</span> id = state.ready.<span class="f">shift</span>()!;
+    <span class="k">if</span> (state.dead.<span class="f">has</span>(id) || state.completed.<span class="f">has</span>(id) || state.scheduled.<span class="f">has</span>(id)) <span class="k">continue</span>;
+    state.scheduled.<span class="f">add</span>(id);
+    drained.<span class="f">push</span>(id);
+  }
+  <span class="k">return</span> drained;
+}</pre>
+
+  <div class="note">
+    <strong>Nota da spec:</strong> antes de escrever <code>allReady()</code>, confere se o SDK do Temporal já oferece primitiva de ready-set dispatch. Decisão registrada no PR — não há primitiva específica; usamos a função pura acima. A D16 não muda em nenhum dos casos.
+  </div>
+</div>
+
+<!-- ================================================== -->
+<!-- SEÇÃO 4 — DISPATCH: processSingleNode + BRIDGE ACTIVITY -->
+<!-- ================================================== -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-number">4</div>
+    <div class="section-title">Dispatch: <code>startChild('processSingleNode')</code> + bridge</div>
+    <div class="section-desc">reuso máximo do que já existe no worker</div>
+  </div>
+
+  <div class="note temporal">
+    <strong>A B4 não cria <code>chooseExecutor</code> nem novas activities por tipo.</strong>
+    <br><br>
+    O worker já tem um dispatcher pronto: o workflow <code>processSingleNode</code> (<code>worker/src/modules/temporal/workflows/process-single-node.workflow.ts</code>). Ele cobre 25 tipos — 19 via <code>UNIFORM_NODE_ACTIVITIES</code> + 6 casos especiais com validações/cobranças próprias (<code>TEXT_GENERATOR</code>, <code>LARGE_MEMORY</code>, <code>WEB_SEARCH</code>, <code>SEC_API_NODE</code>, <code>US_CENSUS_NODE</code>, <code>VOICE</code>).
+    <br><br>
+    O workflow novo da B4 chama <code>startChild('processSingleNode', ...)</code> por nó. Validação de modelo, cobrança de tokens, cancelamento nativo, geração de execution logs — tudo continua funcionando sem código novo.
+  </div>
+
+  <h3 style="color: var(--ink-900); font-size: var(--fs-lg);">O que o workflow faz por nó</h3>
+
+  <div class="flow-column">
+    <div class="box temporal">
+      <div class="box-title"><span class="badge step">a</span> Workflow checa se o tipo tem worker module <span class="badge temporal">in-workflow</span></div>
+      <div class="box-desc">
+        Função pura: existe entry no <code>UNIFORM_NODE_ACTIVITIES</code> ou case especial no switch? Sim → passo b. Não → passo c (bridge).
+      </div>
+    </div>
+    <div class="arrow">↓</div>
+
+    <div class="box temporal">
+      <div class="box-title"><span class="badge step">b</span> <code>startChild('processSingleNode', ...)</code> <span class="badge new-code">tipo worker-routed</span></div>
+      <div class="box-desc">
+        Child workflow herda a lógica que já atende <code>POST /flux/execute-single-node</code>. Reuso 100%: validation, charging, cancel settlement, generation logs.
+        <br><br>
+        <strong>Retorno:</strong> <code>NodeExecutionResult</code> com <code>status: 'COMPLETED' | 'CANCELLED'</code> + metadados.
+      </div>
+      <div class="box-file">worker/src/modules/temporal/workflows/process-single-node.workflow.ts (existente)</div>
+    </div>
+    <div class="arrow">↓</div>
+
+    <div class="box bridge">
+      <div class="box-title"><span class="badge step">c</span> <code>runInlineNodeInBackActivity</code> <span class="badge bridge">tipo inline</span></div>
+      <div class="box-desc">
+        Para os 7 tipos sem worker module: <code>arrayNode</code>, <code>fluxBox</code>, <code>libraryNode</code>, <code>nodesBox</code>, <code>conditionNode</code>, <code>thirdPartyIntegration</code> (provider não-migrado), <code>hubSpotCRM</code>.
+        <br><br>
+        <strong>Removida pela B6</strong> quando esses tipos virarem child workflows próprios.
+      </div>
+      <div class="box-file">back/src/internal/execute-inline-node.controller.ts (novo endpoint)</div>
+    </div>
+  </div>
+
+  <h3 style="color: var(--ink-900); font-size: var(--fs-lg);">Shape dos args/retorno</h3>
+  <pre>
+<span class="c">// Child workflow — args idênticos ao que /flux/execute-single-node passa</span>
+<span class="k">interface</span> ProcessSingleNodeArgs {
+  nodeId: <span class="k">string</span>;
+  userId: <span class="k">string</span>;
+  sessionId: <span class="k">string</span>;
+  flowId: <span class="k">string</span>;
+  flowVersionHistoryId: <span class="k">string</span> | <span class="k">null</span>;
+  execId: <span class="k">string</span>;
+  runId: <span class="k">string</span>;
+  socketId: <span class="k">string</span> | <span class="k">null</span>;
+  runToken: <span class="k">string</span>;
+  inputResolution: WorkerInputResolution | <span class="k">null</span>;
+}
+
+<span class="k">interface</span> NodeExecutionResult {   <span class="c">// já existe no worker</span>
+  status: <span class="s">'COMPLETED'</span> | <span class="s">'CANCELLED'</span>;
+  message: <span class="k">string</span>;
+  nodeId: <span class="k">string</span>;
+  nodeType: <span class="k">string</span>;
+  nodeLabel: <span class="k">string</span> | <span class="k">null</span>;
+  flowId: <span class="k">string</span>;
+  durationMs: <span class="k">number</span>;
+  ai?: { aiSystem, model, inputTokens, outputTokens };
+}
+
+<span class="c">// Bridge activity — nova</span>
+<span class="k">interface</span> InlineBridgeArgs {
+  runId: <span class="k">string</span>;
+  flowId: <span class="k">string</span>;
+  nodeId: <span class="k">string</span>;
+  nodeType: <span class="k">string</span>;
+  outputStoreSnapshot: Array&lt;[<span class="k">string</span>, <span class="k">string</span>]&gt;;
+}
+
+<span class="k">interface</span> InlineBridgeResult {
+  nodeExecutionId: <span class="k">string</span>;
+  status: <span class="s">'completed'</span> | <span class="s">'failed'</span>;
+  takenHandle?: <span class="k">string</span>;   <span class="c">// só para conditionNode</span>
+}</pre>
+
+  <hr style="border: none; border-top: 2px dashed var(--ink-200); margin: var(--sp-7) 0;">
+
+  <h3 style="color: var(--red-700); font-size: var(--fs-lg);">⚠️ A bridge temporária: <code>runInlineNodeInBackActivity</code></h3>
+  <p>
+    Esta activity existe por uma única razão: <code>arrayNode</code>, <code>fluxBox</code>, <code>libraryNode</code>, <code>nodesBox</code>, <code>conditionNode</code> e integrações com provider não-migrado ainda não têm worker module. Até a B6 portar esses tipos como child workflows, o back é o único lugar que sabe executá-los. A bridge é a ponte entre as duas realidades.
+  </p>
+
+  <div class="flow-column">
+    <div class="box bridge">
+      <div class="box-title"><span class="badge step">1</span> Worker chama o back</div>
+      <div class="box-desc">
+        <code>POST /internal/execute-inline-node</code> com body <code>{runId, flowId, nodeId, nodeType, outputStoreSnapshot, ...contextIds}</code>. Auth via <code>INTERNAL_API_KEY</code>, o mesmo padrão de <code>/worker/charge-tokens</code> e <code>/worker/refresh-oauth-token</code>.
+      </div>
+      <div class="box-file">back/src/internal/execute-inline-node.controller.ts (novo)</div>
+    </div>
+    <div class="arrow">↓</div>
+
+    <div class="box backend">
+      <div class="box-title"><span class="badge step">2</span> Back roda o arm inline do tipo</div>
+      <div class="box-desc">
+        <strong><code>conditionNode</code>:</strong> avalia o predicado com os upstreams do snapshot. Retorna <code>takenHandle</code>.
+        <br><br>
+        <strong><code>arrayNode</code>:</strong> itera a lista pelo laço local atual. Nós worker-routed de dentro do body ainda saem via <code>processNodeViaTemporal</code>.
+        <br><br>
+        <strong><code>fluxBox</code> / <code>libraryNode</code> / <code>nodesBox</code>:</strong> inicia sub-run recursivamente e aguarda o resultado.
+        <br><br>
+        <strong><code>thirdPartyIntegration</code> (provider não-migrado):</strong> chama o adapter inline direto.
+      </div>
+    </div>
+    <div class="arrow">↓</div>
+
+    <div class="box db">
+      <div class="box-title"><span class="badge step">3</span> Back grava <code>node_executions</code></div>
+      <div class="box-desc">Resultado em <code>outputData</code>; se passar do threshold, upload S3 + <code>__claimRef</code>. Contrato idêntico aos outros nós.</div>
+    </div>
+    <div class="arrow">↓</div>
+
+    <div class="box bridge">
+      <div class="box-title"><span class="badge step">4</span> Back responde ao worker</div>
+      <div class="box-desc">
+        Payload: <code>{nodeExecutionId, status, takenHandle?}</code>. O worker devolve ao workflow, que faz <code>outputStore.set()</code> e aplica <code>markCompleted</code> ou <code>completeCondition</code>.
+      </div>
+    </div>
+  </div>
+
+  <div class="note danger">
+    <strong>A B4 não elimina a espera bloqueante para todos os fluxos.</strong>
+    <br><br>
+    <strong>Elimina em fluxos puros worker-routed.</strong> O <code>handle.result()</code> por nó some: há um único <code>handle.result()</code> por run inteiro, aguardando o workflow.
+    <br><br>
+    <strong>Não elimina em fluxos com <code>arrayNode</code> ou sub-flows.</strong> O caminho é:
+    <br>
+    1. Workflow despacha <code>arrayNode</code> para a bridge.
+    <br>
+    2. Back entra no arm inline e itera.
+    <br>
+    3. Cada iteração chama <code>processNodeViaTemporal</code> para nós worker-routed do body.
+    <br>
+    4. Cada chamada vira um <code>await handle.result()</code>.
+    <br><br>
+    <strong>A B6 fecha isso.</strong> <code>arrayNode</code> vira <code>startChild('ArrayIterationWorkflow')</code> e sub-flows viram <code>startChild('processFlowWorkflow')</code>. Aí o workflow pai não espera mais o back — o Temporal faz o relacionamento.
+  </div>
+
+  <div class="note info">
+    <strong>Lembrete de limpeza.</strong> Quando a B6 shipar os child workflows, três coisas viram dead code juntas: a activity <code>runInlineNodeInBackActivity</code>, o endpoint <code>/internal/execute-inline-node</code> e os arm inline que atendem a esse endpoint. O PR da B4 deve registrar essa dependência explicitamente, para que ninguém esqueça de remover depois.
+  </div>
+</div>
+
+<!-- ================================================== -->
+<!-- SEÇÃO 5 — continueAsNew -->
+<!-- ================================================== -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-number">5</div>
+    <div class="section-title"><code>continueAsNew</code> — mecânica + número + estado por referência</div>
+    <div class="section-desc">o teto que proteje os maiores runs reais</div>
+  </div>
+
+  <h3 style="color: var(--ink-900); font-size: var(--fs-lg);">O número: <code>HISTORY_BOUNDARY = 300</code> execuções</h3>
+
+  <div class="comparison">
+    <div class="comparison-title">Derivação do teto</div>
+    <table>
+      <thead>
+        <tr><th>Variável</th><th>Valor</th><th>Fonte</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Limite da plataforma Temporal</td><td>~50.000 eventos</td><td>Documentação oficial</td></tr>
+        <tr><td>Eventos por execução de nó</td><td>~15</td><td>startChild (processSingleNode) + eventos internos + ChildWorkflowCompleted + workflow task por iteração</td></tr>
+        <tr><td>Teto bruto (eventos ÷ eventos-por-exec)</td><td>~3.300 execuções</td><td>50.000 / 15</td></tr>
+        <tr><td>Margem de segurança</td><td>10×</td><td>Pessimismo contra retries, bridge activities (que podem ter overhead maior)</td></tr>
+        <tr><td><strong>HISTORY_BOUNDARY</strong></td><td><strong>300 execuções</strong></td><td>Resultado</td></tr>
+        <tr><td>Segmentos até o teto absoluto da S4 (50k execuções/run)</td><td>~165 segmentações</td><td>Confortável acima do maior run real já visto em prod</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 style="margin-top: 24px; color: #0F172A; font-size: 15px;">Mecânica</h3>
+  <pre>
+<span class="k">if</span> (executionsSoFar &gt;= HISTORY_BOUNDARY) {
+  <span class="k">const</span> serialized = <span class="f">serializeStateWithStore</span>(state, outputStore);
+  <span class="k">await</span> <span class="f">continueAsNew</span>&lt;<span class="k">typeof</span> processFlowWorkflow&gt;({
+    runId: args.runId,                   <span class="c">// MESMO runId do nosso fluxo</span>
+    flowId: args.flowId,
+    userId: args.userId, sessionId: args.sessionId,
+    flowVersionHistoryId: args.flowVersionHistoryId,
+    runType: args.runType, starterSourceId: args.starterSourceId,
+    carriedState: serialized,
+    executionsSoFar: <span class="n">0</span>,                     <span class="c">// reseta por segmento</span>
+  });
+}</pre>
+
+  <div class="note temporal">
+    <strong>Transparente para o back.</strong> O Temporal costura as segmentações internamente: <code>handle.result()</code> aguarda o resultado final sem perceber que houve <code>continueAsNew</code>. O <code>workflowId</code> permanece o nosso <code>runId</code>; só muda o <code>runId</code> interno do Temporal, que é dado nosso não usa.
+  </div>
+
+  <h3 style="margin-top: 24px; color: #0F172A; font-size: 15px;">Estado por referência — o invariante crítico</h3>
+
+  <div class="comparison">
+    <div class="comparison-title">O que entra e o que não entra no estado</div>
+    <table>
+      <thead>
+        <tr><th>Entra</th><th>Fica fora</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="new-col">
+            ✓ <code>nodeIds</code>, <code>completed</code>, <code>dead</code>, <code>scheduled</code>, <code>ready</code> — arrays de IDs<br>
+            ✓ Contadores (<code>totalPreds</code>, <code>resolvedPreds</code>, etc.) — <code>[id, number]</code><br>
+            ✓ <code>forwardDeps</code> — adjacência de IDs<br>
+            ✓ <code>outputStore</code> — <code>[nodeId, nodeExecutionId]</code><br>
+            ✓ <code>starterSourceId</code>
+          </td>
+          <td class="old">
+            ✗ <code>node_data</code><br>
+            ✗ <code>node_executions.outputData</code><br>
+            ✗ Input resolvido<br>
+            ✗ Rows inteiros de <code>flows_nodes</code><br>
+            ✗ <code>myUpdatedNodes</code> do laço antigo<br>
+            ✗ Qualquer payload de qualquer tipo
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note info">
+    <strong>Tamanho esperado:</strong> ~350KB para 500 nós / 1000 arestas. ~1.4MB no pior caso realista (2000/5000). Abaixo do limite de 2MB. Se passar, mitigação: fatiar via mesmo pattern do claim-check (S3 ref). Não bloqueia a B4.
+  </div>
+
+  <h3 style="color: var(--ink-900); font-size: var(--fs-lg);">Como se prova o número (requisito da spec)</h3>
+
+  <ol>
+    <li>
+      <strong>Fronteira baixa em dev.</strong> Override <code>HISTORY_BOUNDARY = 50</code>. Rodar um <code>arrayNode</code> com 150 iterações.
+      <br>
+      <em>Esperado:</em> três <code>continueAsNew</code> disparam; saída final idêntica ao back-engine.
+    </li>
+    <li>
+      <strong>Dimensionamento em prod (read-only, flag off).</strong> Query no Temporal admin para capturar <code>event_count</code> e <code>history_size_bytes</code> dos 10 maiores runs já executados em <code>processSingleNode</code>.
+      <br>
+      <em>Esperado:</em> números observados servem de baseline para calibrar a margem.
+    </li>
+    <li>
+      <strong>Replay do maior fluxo real em dev.</strong> Reproduzir em dev com flag <code>workflow</code>. Medir eventos.
+      <br>
+      <em>Esperado:</em> event count ≈ execuções × ~10, distribuído bem entre segmentos.
+    </li>
+    <li>
+      <strong>Teste de limite.</strong> <code>arrayNode</code> com 600 iterações, <code>HISTORY_BOUNDARY = 500</code>.
+      <br>
+      <em>Esperado:</em> <code>continueAsNew</code> dispara perto da iteração 500; workflow continua; resultado final idêntico ao back-engine.
+    </li>
+  </ol>
+
+  <div class="note danger">
+    <strong>Sem prova, não ship.</strong>
+    <br><br>
+    A spec diz literalmente: "um motor de grafo cujo teto é desconhecido não tem teto". O número de <code>HISTORY_BOUNDARY</code> entra no PR acompanhado do link para o run de dev que efetivamente passou pela fronteira.
+  </div>
+</div>
+
+<!-- ================================================== -->
+<!-- SEÇÃO 6 — CONTROLES NEGATIVOS -->
+<!-- ================================================== -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-number">6</div>
+    <div class="section-title">Controles negativos — paralisação, cancelamento, nó-não-processado</div>
+    <div class="section-desc">três requisitos da spec que precisam sobreviver à mudança</div>
+  </div>
+
+  <div class="verif-grid">
+
+    <div class="verif-card required">
+      <div class="verif-card-head">
+        <span class="req-tag">obrigatório</span>
+        6.1 — Detecção de paralisação (<code>markCompleted</code> quebrado)
+      </div>
+      <div class="verif-card-body">
+        <strong>O cenário:</strong> a activity de um nó termina com sucesso, mas o <code>markCompleted</code> está quebrado e não propaga para os successors. Resultado: <code>state.ready</code> vazia, nada rodando, nada despachável. O workflow fica em silêncio até estourar o <code>workflowExecutionTimeout</code>.
+        <br><br>
+        <strong>A mecânica da detecção:</strong> depois de aplicar o resultado de cada activity, checa se <code>allReady() === []</code> enquanto <code>completed + dead &lt; nodeIds.size</code>. Se bater, lança <code>ApplicationFailure(FlowSchedulerStall)</code> listando os IDs presos. Falha em milissegundos. <code>nonRetryable: true</code>.
+        <br><br>
+        <strong>O teste:</strong> injeta um scheduler onde <code>markCompleted</code> é no-op. Assert <code>WorkflowFailedError</code> com <code>cause.type === 'FlowSchedulerStall'</code>.
+        <br>
+        <strong>Red/green:</strong> com scheduler quebrado, red; restaurado, green. É assim que se prova que o teste captura o bug.
+      </div>
+    </div>
+
+    <div class="verif-card">
+      <div class="verif-card-head">6.2 — Nó-não-processado (<code>flow_truncated</code>)</div>
+      <div class="verif-card-body">
+        <strong>Hoje no back:</strong> quando o laço <code>while</code> fecha, se restaram nós fora de completed/dead, o back loga <code>flow_truncated</code>. Warning silencioso — o run já acabou.
+        <br><br>
+        <strong>No workflow:</strong> o invariante do loop <code>while (completed + dead &lt; nodeIds.size)</code> impede a saída silenciosa. Três caminhos possíveis:
+        <br>→ Bug no scheduler: stall detector dispara.
+        <br>→ Cancelamento: handler de cancel dispara.
+        <br>→ Caso normal: todos processaram e o loop sai limpo.
+        <br><br>
+        <strong>O teste:</strong> fluxo onde o upstream é marcado dead. Afirma que o filho propaga via <code>deadGatingPreds</code>, não via "não processado silencioso".
+      </div>
+    </div>
+
+    <div class="verif-card required">
+      <div class="verif-card-head">
+        <span class="req-tag">obrigatório</span>
+        6.3 — Cancelamento end-to-end
+      </div>
+      <div class="verif-card-body">
+        <strong>Dois caminhos de cancelamento, ambos precisam funcionar:</strong>
+        <br><br>
+        <strong>(a) Cancelamento externo do workflow.</strong> Alguém chama <code>handle.cancel()</code>. O Temporal propaga <code>CancelledFailure</code> no workflow. Um <code>try/catch</code> envolve o loop, dispara <code>markRunCancelledActivity({stoppedAtNodeId, notExecutedNodeIds})</code> e re-lança.
+        <br><br>
+        <strong>(b) Cancelamento em-vôo da activity.</strong> O Temporal propaga <code>cancellationSignal</code> para a activity em execução. As activities verificam via <code>Context.current().cancellationSignal</code>. Na bridge, o cancel é propagado ao back via <code>cancelRunKey</code>; o back responde com 499 ou similar; a activity levanta <code>CancelledFailure</code>.
+        <br><br>
+        <strong>Fonte de verdade inalterada:</strong> o <code>runCancellationService</code> (Redis TTL) segue sendo o único source of truth. O workflow consulta via activity, igual o back faz hoje.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ================================================== -->
+<!-- SEÇÃO 7 — EQUIVALÊNCIA DE ORDEM -->
+<!-- ================================================== -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-number">7</div>
+    <div class="section-title">Equivalência de ordem — o portão de saída da onda</div>
+    <div class="section-desc">com batch 1, qualquer divergência é defeito de port</div>
+  </div>
+
+  <div class="note danger">
+    <strong>A verificação mais importante da task.</strong>
+    <br><br>
+    Com batch 1, o workflow precisa executar os nós na <strong>mesma ordem exata</strong> do laço do back. Qualquer divergência é defeito de port. Este é o último momento em que esse defeito é barato de ver.
+  </div>
+
+  <h3 style="color: var(--ink-900); font-size: var(--fs-lg);">Corpus</h3>
+  <p>Entre 30 e 50 fluxos reais, divididos em três faixas:</p>
+  <ul>
+    <li><strong>10 fluxos lineares puros</strong> (só nós worker-routed). Elegíveis sem bridge.</li>
+    <li><strong>20 fluxos híbridos</strong> (ao menos um nó inline). Exercitam a bridge activity.</li>
+    <li><strong>10 fluxos patológicos</strong> medidos em prod: o mais largo em fan-out, o mais longo em profundidade, o maior em número de nós, o maior em número de arestas.</li>
+  </ul>
+
+  <h3 style="color: var(--ink-900); font-size: var(--fs-lg);">Mecânica do teste</h3>
+  <pre>
+<span class="k">const</span> flow = <span class="f">loadFlowFromProdDump</span>(flowId);
+<span class="k">const</span> backOrder    = <span class="f">runBackEngine</span>(flow).<span class="f">recordDispatchOrder</span>();      <span class="c">// Array&lt;nodeId&gt;</span>
+<span class="k">const</span> workflowOrder = <span class="f">runWorkflowEngine</span>(flow).<span class="f">recordDispatchOrder</span>();
+<span class="f">expect</span>(workflowOrder).<span class="f">toEqual</span>(backOrder);                           <span class="c">// igualdade estrita</span></pre>
+
+  <h3 style="color: var(--ink-900); font-size: var(--fs-lg);">Instrumentação</h3>
+  <ul>
+    <li><strong>Back:</strong> adiciona <code>dispatchHistory: string[]</code> em <code>flux.service.ts</code>, registrando o <code>nodeId</code> antes de cada dispatch. Zero efeito comportamental.</li>
+    <li><strong>Workflow:</strong> mesma estratégia dentro de <code>processFlowWorkflow</code>.</li>
+    <li><strong>Stubs:</strong> todas as activities devolvem <code>{status: 'completed'}</code> sem executar node code. Isso isola o teste à ordem de dispatch pura.</li>
+  </ul>
+
+  <div class="note">
+    <strong>Audit prévio obrigatório.</strong> Antes de rodar o teste, varrer <code>scheduler.ts</code> buscando qualquer <code>for (const … of someSet)</code> cujo efeito alcance <code>state.ready.push</code>. <code>Set</code> tem iteração não-determinística; um laço desses pode divergir a ordem sem haver bug. Se nenhum caminho usar <code>Set</code> para decisões de ordem, o teste é confiável.
+  </div>
+</div>
+
+<!-- ================================================== -->
+<!-- SEÇÃO 8 — ACCEPTANCE CRITERIA → VERIFICAÇÃO -->
+<!-- ================================================== -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-number">8</div>
+    <div class="section-title">Acceptance Criteria → como se prova</div>
+    <div class="section-desc">mapeamento 1:1 da spec para evidência</div>
+  </div>
+
+  <div class="ac-table">
+    <table>
+      <thead>
+        <tr><th>Critério da spec</th><th>Como se prova</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Workflow dono do <code>SchedulerState</code>, chama <code>allReady()</code>, aplica <code>markCompleted</code>/<code>markDead</code>/<code>completeCondition</code></td>
+          <td>Unit tests do workflow + teste de equivalência de ordem (Seção 7)</td>
+        </tr>
+        <tr>
+          <td><code>allReady(state): string[]</code> ao lado de <code>nextReady</code></td>
+          <td>Unit test de função pura em <code>scheduler.spec.ts</code></td>
+        </tr>
+        <tr>
+          <td>SDK do Temporal checado por primitiva de ready-set dispatch</td>
+          <td>Decisão registrada no PR: não há primitiva específica; usamos <code>allReady()</code></td>
+        </tr>
+        <tr>
+          <td>Papel do back reduzido (start workflow, servir callbacks, ler resultado)</td>
+          <td>Code review do diff — <code>apiV2()</code> internamente só starta e aguarda</td>
+        </tr>
+        <tr>
+          <td>Writer de <code>flow_execution_status</code> decidido</td>
+          <td>Processor continua escrevendo; TODO no worker aponta para E1 (declarado no PR)</td>
+        </tr>
+        <tr>
+          <td>Flag seleciona motor por fluxo, default back</td>
+          <td><strong>Divergência:</strong> env var global <code>FLUX_FLOW_ENGINE_MODE</code>, declarada no PR</td>
+        </tr>
+        <tr>
+          <td><code>continueAsNew</code> em fronteira declarada, provada</td>
+          <td>500 execuções, provado em dev rodando um fluxo além da fronteira (Seção 5)</td>
+        </tr>
+        <tr>
+          <td>Estado por referência — nunca por valor</td>
+          <td>Code audit: <code>SerializedSchedulerState</code> só carrega IDs/counters</td>
+        </tr>
+        <tr>
+          <td>Fluxo roda do início ao fim idêntico ao back-engine, flag off por padrão</td>
+          <td>End-to-end em dev com flag on + teste de equivalência (Seção 7)</td>
+        </tr>
+        <tr>
+          <td><strong>Controle negativo:</strong> <code>markCompleted</code> quebrado detectado</td>
+          <td>Stall detector + teste red/green (Seção 6.1)</td>
+        </tr>
+        <tr>
+          <td>Equivalência de ordem com o back</td>
+          <td>Corpus de 30-50 fluxos (Seção 7)</td>
+        </tr>
+        <tr>
+          <td>Detecção de nó-não-processado sobrevive</td>
+          <td>Invariante do loop + stall detector (Seção 6.2)</td>
+        </tr>
+        <tr>
+          <td>Cancelamento end-to-end</td>
+          <td>Unit (workflow) + integration (bridge) (Seção 6.3)</td>
+        </tr>
+        <tr>
+          <td>Crescimento do histórico medido</td>
+          <td>Dev + prod query + teste de limite (Seção 5)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ================================================== -->
+<!-- SEÇÃO 9 — ARQUIVOS -->
+<!-- ================================================== -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-number">9</div>
+    <div class="section-title">Arquivos — o que muda, o que nasce, o que fica intocado</div>
+    <div class="section-desc">lista cirúrgica</div>
+  </div>
+
+  <h3 style="color: var(--emerald-700); font-size: var(--fs-md); margin-top: var(--sp-2);">✨ Nasce</h3>
+  <ul style="font-family: var(--font-mono);">
+    <li><code>worker/src/modules/temporal/workflows/process-flow.workflow.ts</code> — o workflow da B4</li>
+    <li><code>worker/src/modules/temporal/workflows/flow-workflow-limits.ts</code> — <code>HISTORY_BOUNDARY = 300</code> + comentário derivando o número</li>
+    <li><code>worker/src/modules/temporal/workflows/has-worker-module.ts</code> — função pura: tipo tem entry em UNIFORM_NODE_ACTIVITIES ou case especial?</li>
+    <li><code>worker/src/modules/temporal/services/activities.service.ts</code> — adiciona só 5 activities: <code>loadFlowTopologyActivity</code>, <code>emitFlowStartedActivity</code>, <code>aggregateFlowResultActivity</code>, <code>markRunCancelledActivity</code>, <code>runInlineNodeInBackActivity</code></li>
+    <li><code>back/src/internal/execute-inline-node.controller.ts</code> — endpoint <code>POST /internal/execute-inline-node</code></li>
+    <li><code>back/src/internal/execute-inline-node.service.ts</code> — roteia por tipo para o arm inline correspondente</li>
+    <li>Testes: <code>process-flow.workflow.spec.ts</code>, <code>process-flow.workflow.stall.spec.ts</code>, <code>process-flow.workflow.order-equivalence.spec.ts</code>, <code>process-flow.workflow.continue-as-new.spec.ts</code></li>
+  </ul>
+
+  <h3 style="color: var(--amber-700); font-size: var(--fs-md); margin-top: var(--sp-5);">🔧 Muda cirurgicamente</h3>
+  <ul style="font-family: var(--font-mono);">
+    <li><code>back/src/app-api/flux/scheduler.ts</code> — adiciona <code>allReady(state)</code> + <code>serializeState</code>/<code>deserializeState</code>/<code>isDone</code></li>
+    <li><code>back/src/app-api/flux/flux.service.ts</code> — <code>apiV2()</code> ganha ramificação <code>if (FLUX_FLOW_ENGINE_MODE === 'workflow')</code> → start workflow + <code>await handle.result()</code>; dispatcher inline permanece intocado</li>
+    <li><code>back/src/config/env.ts</code> — Zod schema adiciona <code>FLUX_FLOW_ENGINE_MODE: z.enum(['back', 'workflow']).default('back')</code></li>
+    <li><code>worker/src/env.ts</code> — espelha a env var</li>
+    <li><code>worker/src/modules/temporal/services/worker.service.ts</code> — registra as 5 novas activities + o novo workflow</li>
+    <li><code>worker/src/modules/temporal/workflows/configs.ts</code> — adiciona <code>proxyActivities</code> das novas activities</li>
+    <li><code>worker/src/ported/back/app-api/flux/scheduler.ts</code> — sincroniza o <code>allReady</code> novo (ported)</li>
+    <li><code>worker/src/modules/nodes/shared/project-node-input.ts</code> — endereça os 4 itens herdados da B3b (ver Seção 10)</li>
+  </ul>
+
+  <h3 style="color: var(--sky-700); font-size: var(--fs-md); margin-top: var(--sp-5);">🔒 Intocado</h3>
+  <ul style="font-family: var(--font-mono);">
+    <li>Laço <code>while (scheduledId !== null)</code> em <code>flux.service.ts</code> — a flag off continua rodando ele intacto</li>
+    <li><code>apiV2Job.processor.ts</code> — zero mudança</li>
+    <li><code>flow-execution-status.service.ts</code> — zero mudança (writer continua sendo o processor)</li>
+    <li><code>runCancellationService</code>, <code>node-cancel-watch.ts</code> — zero mudança</li>
+    <li><code>processSingleNode</code> workflow — <strong>reusado pelo <code>startChild</code>, sem alteração</strong></li>
+    <li><code>UNIFORM_NODE_ACTIVITIES</code> + os 6 casos especiais — reusados integralmente via <code>processSingleNode</code></li>
+    <li>Todas as activities de nó existentes — reusadas pelo <code>processSingleNode</code>, nenhuma duplicação</li>
+  </ul>
+</div>
+
+<!-- ================================================== -->
+<!-- SEÇÃO 10 — ITENS HERDADOS DA B3B -->
+<!-- ================================================== -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-number">10</div>
+    <div class="section-title">Itens herdados da B3b — validar antes de ship</div>
+    <div class="section-desc">republicados pelo commit <code>c160809</code></div>
+  </div>
+
+  <div class="note info">
+    A B3b deixou 4 itens na projeção de input do worker (<code>worker/src/modules/nodes/shared/project-node-input.ts</code>). <strong>Antes de corrigir um, a B4 valida se ainda aplica ao graph workflow.</strong> Se não aplicar, registra o porquê no PR e fecha.
+  </div>
+
+  <div class="verif-grid">
+
+    <div class="verif-card">
+      <div class="verif-card-head">10.1 — Source sem seed row é droppada silenciosamente</div>
+      <div class="verif-card-body">
+        <strong>O problema:</strong> <code>RunData.nodes</code> só guarda sources que estão nos outputs do run ou em <code>run_seed_nodes</code>. Um nó adicionado ao fluxo <em>depois</em> do run começar não tem nenhum dos dois, então sua edge projeta nada e o target recebe entrada vazia sem erro.
+        <br><br>
+        <strong>A decisão:</strong> no modo workflow, o graph workflow pode ver um nó assim? Se sim, fazer o target falhar da mesma forma que falha uma source completed sem output. Se não, documentar o porquê.
+      </div>
+    </div>
+
+    <div class="verif-card">
+      <div class="verif-card-head">10.2 — Ciclo de nós que ainda não rodaram</div>
+      <div class="verif-card-body">
+        <strong>O problema:</strong> <code>RunData.fromSeed</code> pula um upstream que já está sendo carregado do seed. Dentro de um ciclo, um nó é projetado sem essa source. <code>conditionNode</code> loops não têm gating, então chegam ao worker hoje.
+        <br><br>
+        <strong>A validação:</strong> hoje o scheduler do back dropa back edges, então um ciclo encontra a projeção só na primeira passada (dev run <code>842aeff8</code> matched na B3b). <strong>Re-checar quando o graph workflow rodar um loop mais de uma vez</strong> — pode exigir mudança na projeção.
+      </div>
+    </div>
+
+    <div class="verif-card">
+      <div class="verif-card-head">10.3 — Starter edges droppadas por id vs. <code>isDependencyEdge</code></div>
+      <div class="verif-card-body">
+        <strong>O problema:</strong> o worker dropa edges cujo source é <code>starterSourceId</code>. A regra do produto para quais edges carregam data é <code>isDependencyEdge</code> em <code>flux/scheduler.ts</code>, que também deixa de fora <code>GLOBAL_HANDLE</code> sources e edges sem <code>targetHandle</code>.
+        <br><br>
+        <strong>A decisão:</strong> usar <code>isDependencyEdge</code> se o graph workflow ler edges do mesmo jeito. Isso unifica a regra em um só lugar e alinha worker com o scheduler da B2.
+      </div>
+    </div>
+
+    <div class="verif-card">
+      <div class="verif-card-head">10.4 — Cleanups pequenos (quando mexer no código)</div>
+      <div class="verif-card-body">
+        <strong>Dois ajustes pequenos:</strong>
+        <br>→ <code>RunInputResolution.seedSnapshotId</code> pode ler <code>snapshotIds[0]</code> diretamente.
+        <br>→ <code>backOnlyProjectionNodes(...).length === 0</code> pode virar um check de <code>some</code>.
+        <br><br>
+        Nenhum muda comportamento. Entram no PR se a B4 tocar nesses arquivos para resolver 10.1-10.3.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ================================================== -->
+<!-- SEÇÃO 11 — ITENS EM ABERTO -->
+<!-- ================================================== -->
+<div class="section">
+  <div class="section-header">
+    <div class="section-number">11</div>
+    <div class="section-title">Itens em aberto — para o planejamento ou para o PR</div>
+  </div>
+
+  <div class="open-items">
+
+    <div class="open-item">
+      <strong>Método exato da medição do histórico em prod</strong>
+      Três opções: Temporal CLI (<code>temporal workflow describe</code>), SDK (<code>WorkflowService.listWorkflowExecutions</code>) ou query direta via <code>GetWorkflowExecutionHistory</code>. A escolha fica para a fase de planejamento. O design doc registra apenas: "medir event count e history size dos maiores runs via Temporal CLI/SDK".
+    </div>
+
+    <div class="open-item">
+      <strong>Seleção exata do corpus de equivalência de ordem</strong>
+      Os três critérios de faixa já estão definidos (linear, híbrido, patológico). O script de extração e o <em>N</em> exato ficam para a fase de planejamento. Os fixtures viverão em <code>test/fixtures/order-equivalence/</code>.
+    </div>
+
+    <div class="open-item">
+      <strong>Shape exato do <code>outputStoreSnapshot</code> na bridge activity</strong>
+      Precisamos confirmar que o back consegue reconstruir o contexto mínimo para rodar <code>arrayNode</code> e <code>fluxBox</code> a partir só dos IDs do snapshot. Isso pode exigir carregar <code>myUpdatedNodes</code> do run, o que é viável porque todos os <code>node_executions</code> daquele run já estão no DB.
+    </div>
+
+    <div class="open-item">
+      <strong>Comportamento da flag <code>NODE_CANCEL_IN_FLIGHT_FLAG</code> no modo workflow</strong>
+      Hoje a flag é lida duas vezes por run no back, controlando o watch de cancel em-vôo. No modo workflow, o Temporal faz esse papel nativamente, então a flag perde propósito. Precisa decidir: no-op quando o motor é workflow, ou leitura só no modo back?
+    </div>
+
+    <div class="open-item">
+      <strong>Localização do TODO para a E1</strong>
+      O comment aponta para a E1 e descreve que o writer de <code>flow_execution_status</code> migra para o worker quando o coletor event-sourced estiver pronto. Dois candidatos para a localização: antes do <code>return</code> em <code>process-flow.workflow.ts</code>, ou dentro de <code>aggregateFlowResultActivity</code>. Decidir no PR.
+    </div>
+
+  </div>
+</div>
+
+<!-- ================================================== -->
+<!-- FOOTER -->
+<!-- ================================================== -->
+<div class="footer">
+  B4 — Plano · Última atualização: 2026-10-15 · Autor: Yago Vela<br>
+  Próximo passo: escrever o design doc em <code>docs/superpowers/specs/</code> e transicionar para a skill <code>writing-plans</code>.
+</div>
+
+</div>
+</body>
+</html>
