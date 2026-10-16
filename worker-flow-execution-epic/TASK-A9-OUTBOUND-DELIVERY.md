@@ -482,6 +482,44 @@ result sits next to its query in this folder as `a9-qN-….prod.csv` (Q6's DNS p
 | Q12 | `a9-q12-budget-stops-and-failed-attachments.sql` · `.prod.csv` | the A9.4 cases Q10 could not see: budget-stopped runs of delivering flows (A9.4 withholds every output node, including one that ran), and failed runs of flows whose email node has attachments (a withheld empty-body email could still carry a file) | 0 rows (no delivering flow was ever budget-stopped in dev) | budget-stopped delivering runs **0**; failed runs of flows with email attachments **16 runs / 2 flows / 2 owners**, email only. An upper bound: the email is withheld only when the output node did not run, and whether it ran is not stored, so the count is unverifiable per run | A9.4 |
 | M8 | ~~Datadog counts of `webhook_error` / `MailService.sendMail failed`~~ | real failure rates behind D-A9-2 | — | **dropped 2026-09-29** — no Datadog access; replaced by the first week of `Delivery failed` rows | — |
 
+### First-week review (2026-10-16)
+
+ClickUp: [868mbqmch](https://app.clickup.com/t/868mbqmch). Read-only. The window is the first 7
+days after the A9 worker deploy: 2026-10-05 13:31:35 → 2026-10-12 13:31:35 UTC. Prod SQL (W1–W5)
+covers the window. Prod worker logs (CloudWatch) cover the window and the full period up to
+2026-10-16 11:57 UTC.
+
+| Check | Window (7 days) | Full period (to 2026-10-16) | Reading |
+|---|---|---|---|
+| W1–W3 · `Delivery failed` rows | **0** | — | matches the logs: the only failed attempt recovered |
+| Failed attempts (logs) | 1: a Supabase callback, 10 s timeout, recovered on retry | 63 failed attempts across 14 deliveries, 13 terminal | the D-A9-2 policies behave as designed (below) |
+| Retry classification (logs) | — | permanent errors stop at attempt 1: SMTP 553, Microsoft not linked ×3, HTTP 410, HTTP 405. Transient errors use all 8 attempts: `example.invalid` DNS ×6, `localhost:3000` ×1 | no misclassified error |
+| Duration (logs) | — | max 10,016 ms | nothing near the 15 s / 2 min timeouts |
+| Capacity (W4) | peak 2 delivering runs / 4 deliveries per minute | — | below the Q4 baseline of 16 per minute; no dedicated delivery queue needed |
+| Egress guard · `egress_would_refuse` | **0** | 16 lines, all `localhost`, each correctly refused | 0 false refusals. Split-horizon is closed: there is no private Route 53 zone for `fluxprompt.ai` |
+| W4 · delivering runs | 14, all `api`: 12 email (p50 6.2 s, p95 11.9 s), 2 callback | — | **unverified drop:** the Q4 baseline is ~71 per 7 days (303 in 30 d, including 102 `formapi`); `formapi` is 0 now. The code does not exclude `formapi` |
+| W5 · api-v2 runs with a callback | 292 `completed`, **0** `error` | — | at or below the Q3 baseline (≤ 1 % `error`) |
+| Dedup (logs) | 0 confirm or release errors | 0 confirm or release errors; 5 `email_delivery_suppressed` (`duplicate-content`) | the D-A9-6 protocol holds |
+| Attachments (logs) | 0 | 58 `email_attachment_fetch_failed`, 2026-10-14 → 10-16, all `assets.fluxprompt.ai` 403 (missing object) | the email still goes out, without the attachment |
+
+**Observation.** DNS `ENOTFOUND` stays retryable. This review records it and does not change the
+retry policy.
+
+**Decisions (2026-10-16).**
+
+- The weekly-trend query (W6) is not run. The W4 drop stays recorded as unverified.
+- The egress decision gets no separate task. A9 ([868mbqmch](https://app.clickup.com/t/868mbqmch))
+  sets `EGRESS_POLICY_MODE=enforce` on `worker-task-definition-prod` (container
+  `worker-container-prod`) with the next prod deploy, on Monday 2026-10-19. Until then, prod runs the
+  default `report`.
+  - Before you dispatch the worker prod workflow, register an `enforce` revision of
+    `worker-task-definition-prod`. The prod workflow reads the latest revision and swaps only the
+    image.
+  - After the deploy, check that the service's revision has `EGRESS_POLICY_MODE=enforce`, then watch
+    the `egress_would_refuse` and refusal logs.
+  - To roll back, register a `report` revision from the latest one and run `update-service` with it.
+    Do not roll back to the pre-deploy revision: it carries the old image.
+
 ### Re-validating A9
 
 Everything needed to check this task again lives in this folder. Nothing depends on a local `etc/`.
@@ -508,7 +546,7 @@ URLs or recipients.
 | Q11 | 0 callbacks in batch / sub-runs | runs > 0 | nothing to change: the callback is kept by design (A9.3, 2026-09-30) |
 | Q12 | `budget_stopped` 0 | `budget_stopped` runs > 0 | product decides whether a budget-stopped run still delivers the output nodes that already ran (today A9.4 withholds all of them) |
 | Q12 | `failed_with_attachments` 16 runs / 2 flows (upper bound) | nothing to change: those emails still go out (A9.4, 2026-09-30) | a withheld empty-body email in those runs could have carried a real file; decide whether that is acceptable |
-| Q2 / Q6 | 0 refusals on the 18 prod hosts | a refusal in `report` logs (`egress_would_refuse`) | fix or allow the host before switching `EGRESS_POLICY_MODE` to `enforce` |
+| Q2 / Q6 | 0 refusals on the 18 prod hosts; first-week review: 0 in the window, 16 `localhost` lines in the full period, all correct | a refusal in `report` logs (`egress_would_refuse`) | fix or allow the host before switching `EGRESS_POLICY_MODE` to `enforce` |
 
 For every other query, its row's "Decides" column in the table above says what it settles.
 
