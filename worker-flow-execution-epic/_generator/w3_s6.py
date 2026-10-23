@@ -86,7 +86,7 @@ DEC_SHAPE = {
 }
 
 DEC_POSITION = {
- 'k':'decision','id':'S6-b','status':'open',
+ 'k':'decision','id':'S6-b','status':'set', 'outcome':('Measured 2026-10-02: the production worker shares the subnets, security group and task role of the API, so it reaches what the API reaches.', 'Medido em 02/10/2026: o worker de produção usa as mesmas subnets, security group e task role da API, então alcança o que a API alcança.'),
  'q':('Where does the worker sit, and what is it allowed to reach?',
       'Onde o worker fica, e o que ele pode alcançar?'),
  'intro':(
@@ -97,7 +97,7 @@ DEC_POSITION = {
   'É o que decide se relocar os buscadores é melhora ou regressão. O worker guarda a <strong>senha do banco e a chave de criptografia das integrações</strong>, e a review §3.2 diz que se a mudança é melhor ou pior '
   '<em>depende inteiramente</em> da subnet e do role de instância dele. As três opções abaixo não são preferências — <strong>são as três respostas possíveis</strong>, e o primeiro trabalho é descobrir qual é a verdadeira hoje.'),
  'opts':[
-  {'ltr':'A','pick':True,'name':('The worker reaches <em>less</em> than the API','O worker alcança <em>menos</em> que a API'),
+  {'ltr':'A','name':('The worker reaches <em>less</em> than the API','O worker alcança <em>menos</em> que a API'),
    'tag':('aim for this','mirar nisto'),
    'how':('A subnet whose egress is limited to what the activities actually need, and an instance role scoped to the worker&#x27;s own resources. The relocation is then a documented security improvement — and the spec says to state it as one.',
           'Uma subnet cujo egresso se limita ao que as activities de fato precisam, e um role de instância restrito aos próprios recursos do worker. A relocação vira, então, uma melhoria de segurança documentada — e a spec manda declará-la como tal.'),
@@ -112,7 +112,7 @@ DEC_POSITION = {
             'Uma entrada faltando parece falha de node em vez de recusa de rede, a menos que o erro diga qual é')],
    'cost':[('lo',('Client effort: <b>none</b>','Esforço do cliente: <b>nenhum</b>')),
            ('hi',('Ours: <b>enumerate egress, and keep it current</b>','Nosso: <b>enumerar o egresso, e mantê-lo atual</b>'))]},
-  {'ltr':'B','name':('The worker reaches the same as the API','O worker alcança o mesmo que a API'),
+  {'ltr':'B','pick':True,'name':('The worker reaches the same as the API','O worker alcança o mesmo que a API'),
    'how':('No network change. The code-level policy from S6-a is the only control, and the relocation is risk-neutral by construction.',
           'Sem mudança de rede. A política em código da S6-a é o único controle, e a relocação é neutra em risco por construção.'),
    'pros':[('Nothing to deploy — the move genuinely changes nothing about the exposure',

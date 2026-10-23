@@ -53,7 +53,7 @@ TABLE={'k':'table',
  ]}
 
 DEC_D4={
- 'k':'decision','id':'A3-a','plan':'D4','status':'rec','open':True,
+ 'k':'decision','id':'A3-a','plan':'D4','status':'set','open':True, 'outcome':('Finished, not deleted: both types route to the worker. <code>sqlQuerier</code> still runs inline on a full run; A7 and back <code>feat/sql-node</code> close that.', 'Finalizado, não apagado: os dois tipos vão para o worker. O <code>sqlQuerier</code> ainda roda inline no run completo; a A7 e o back <code>feat/sql-node</code> fecham isso.'),
  'q':('Are <code>sqlQuerier</code> and <code>audioReaderNode</code> paused on purpose, or forgotten?',
       'O <code>sqlQuerier</code> e o <code>audioReaderNode</code> estão pausados de propósito, ou esquecidos?'),
  'intro':('PLAN §7, D4 — and <strong>the two answers produce opposite work</strong>: finish the migration, or delete the modules. '

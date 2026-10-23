@@ -62,7 +62,7 @@ TABLE = {
  ]}
 
 DEC_MAX = {
- 'k': 'decision', 'id': 'S2-a', 'plan': 'D8', 'status': 'rec', 'open': True,
+ 'k': 'decision', 'id': 'S2-a', 'plan': 'D8', 'status':'set', 'open': True,
  'q': ('What sets the worker pool&#x27;s <code>max</code>, and where does the number come from?',
        'O que define o <code>max</code> do pool do worker, e de onde vem o número?'),
  'intro': (
@@ -77,7 +77,7 @@ DEC_MAX = {
   'então <code>10 + 2</code> não reduz o uso por réplica, aumenta em dois e o torna deliberado. '
   'O que a mudança de fato compra são os <em>timeouts</em> que vêm junto.'),
  'opts': [
-  {'ltr': 'A', 'pick': True, 'name': ('Derived — activity concurrency plus two', 'Derivado — concorrência de activity mais dois'),
+  {'ltr': 'A', 'pick':True,'name': ('Derived — activity concurrency plus two', 'Derivado — concorrência de activity mais dois'),
    'tag': ('assumption', 'premissa'),
    'how': ('The pool size is an expression, not a literal: it is computed from <code>maxConcurrentActivityTaskExecutions</code>, so the two cannot drift apart.',
            'O tamanho do pool é uma expressão, não um literal: é calculado a partir de <code>maxConcurrentActivityTaskExecutions</code>, para que os dois não se descolem.'),

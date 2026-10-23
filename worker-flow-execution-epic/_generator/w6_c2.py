@@ -57,7 +57,7 @@ PROSE = (
  'A medição da <code>D2</code> é da <code>A1</code> (onda 2) e a resposta é da <code>B3</code> (onda 4); esta task executa a resposta que venceu.')
 
 DEC_PREFETCH = {
- 'k':'decision','id':'C2-a','plan':'D2','status':'open','open':True,
+ 'k':'decision','id':'C2-a','plan':'D2','status':'set','open':True, 'outcome':('Answered 2026-10-09 (PLAN D2): a stopgap. C2 retires the prefetch executor.', 'Respondida em 09/10/2026 (PLAN D2): uma solução provisória. A C2 aposenta o executor de prefetch.'),
  'q':('Is the prefetch executor the destination for worker-side input resolution, or a stopgap to retire?',
       'O executor de prefetch é o destino da resolução de entrada no worker, ou um paliativo a aposentar?'),
  'intro':(

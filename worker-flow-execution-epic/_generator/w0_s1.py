@@ -107,7 +107,7 @@ DEC_CYCLE={
 }
 
 DEC_DEPTH={
- 'k':'decision','id':'S1-c','plan':'D6','status':'rec',
+ 'k':'decision','id':'S1-c','plan':'D6','status':'set', 'outcome':('Shipped 2026-09-16: the ceiling is the <code>maxCascadeSize</code> of the root flow, a per-flow value, and a cycle is always refused.', 'Entregue em 16/09/2026: o teto é o <code>maxCascadeSize</code> do flow raiz, um valor por flow, e um ciclo é sempre recusado.'),
  'q':('What is the depth ceiling, and can it be raised without a deploy?',
       'Qual é o teto de profundidade, e ele pode ser elevado sem deploy?'),
  'intro':('Unlike the cycle rule, this one <strong>refuses flows that might work</strong>. That makes it subject to <strong>PLAN §3.3.2</strong>: '
@@ -115,7 +115,7 @@ DEC_DEPTH={
           'Ao contrário da regra de ciclo, esta <strong>recusa fluxos que podem funcionar</strong>. Isso a sujeita ao <strong>PLAN §3.3.2</strong>: '
           'medir contra os fluxos guardados primeiro, e zerar as falsas recusas antes de entregar.'),
  'opts':[
-  {'ltr':'A','pick':True,'name':('3, as an env var','3, como variável de ambiente'),
+  {'ltr':'A','name':('3, as an env var','3, como variável de ambiente'),
    'tag':('assumption','premissa'),
    'how':('A default of three levels, readable from the environment so it can be raised without a deploy when a real flow needs more.',
           'Um padrão de três níveis, lido do ambiente para poder ser elevado sem deploy quando um fluxo real precisar de mais.'),
