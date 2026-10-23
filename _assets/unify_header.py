@@ -1,9 +1,9 @@
-"""Inject the shared 4-tab doc-nav header into every sub-page.
+"""Inject the shared 6-tab doc-nav header into every sub-page.
 
 Goal: whether you're on a main doc, an auxiliary doc, a passo detail,
 a timeline task, a complemento phase, or an epic doc, the top of the
-page shows the same 4 tabs (Current architecture / v2 architecture /
-Plan as tasks / Timeline) and the same language switcher.
+page shows the same 6 tabs (Current architecture / v2 architecture /
+Plan as tasks / Timeline / Progress / Task status) and the same language switcher.
 
 Existing page-specific nav (breadcrumb, back-btn, step-badge) is kept
 below the doc-nav. Duplicate lang-sw blocks are stripped so there's
@@ -34,6 +34,7 @@ def build_doc_nav(prefix: str, active: str) -> str:
         tab("arquitetura-v2-complemento.html", "Plan as tasks", "Plano em tarefas", "plan"),
         tab("timeline/index.html", "Timeline", "Timeline", "timeline"),
         tab("progresso-refatoracao.html", "Progress", "Progresso", "progress"),
+        tab("status-tarefas.html", "Task status", "Status das tarefas", "status"),
     ]
 
     return (
@@ -191,6 +192,7 @@ def main() -> None:
         (["arquitetura-v2-complemento.html"], "", "plan"),
         (["index.html"], "", "index"),
         (["progresso-refatoracao.html"], "", "progress"),
+        (["status-tarefas.html"], "", "status"),
         (["algoritmo-dag.html", "validacao-dag.html", "endpoint-api-v2.html", "flow-version-atual.html"], "", "v2"),
         (list(ROOT.glob("passos/*.html")), "../", "index"),
         (list(ROOT.glob("complemento/*.html")), "../", "plan"),
