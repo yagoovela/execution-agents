@@ -17,6 +17,9 @@ migrated its siblings, or retire it from the canvas and the MCP metadata.
 
 **Out.** Any other front-driven type.
 
+**A6b-a — migrate or retire (open, 2026-10-23).** The worker owner confirms the choice before
+the work starts. Bring the usage numbers from the scope above to that conversation.
+
 ## Done when
 
 The decision and its numbers are recorded here, and the type is `worker` or removed.

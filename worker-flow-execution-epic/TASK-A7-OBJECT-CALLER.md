@@ -189,14 +189,13 @@ open decisions close. Evidence: [`TASK-A7-OBJECT-CALLER-CURRENT-PROCESS.md`](./T
 | A7-D6 | Under B5, two `nodesBox` nodes on one object in one run: serialise, or accept arrival order | Direction 2026-10-23: the DAG orders them. The graph has no edge between two callers of one object, so the scheduler must derive implicit edges from object access (writer to writer, writer to reader) in today's tie-break order, inside `buildSchedulerState`. A consumer reads the writes completed before it was scheduled, not the latest at read time, so a retry reads the same value. |
 | A7-D7 | Unify the object owner rule (full run uses the runner's selected company, single node uses space then user) | **Settled 2026-10-23: keep each path's rule**, resolved once by the back and carried in the run seed. Unifying is a product change, not part of A7. |
 | A7-D8 | Read side while the B4 flag exists | **Settled 2026-10-23: the B4 flag switches it.** Flag off: the back's loop reads `objectCallerData`, fed by the activity's result. Flag on: the worker reads by reference. A shadow comparison runs on the back's loop before the flag is turned on. |
-| A7-D9 | Protection on the internal callback | Proposed 2026-10-23, pending: no requests-per-minute limit; bound the lock wait, cap concurrent callbacks per back instance with a retryable `503`, and alert on lock wait and refusals. |
+| A7-D9 | Protection on the internal callback | **Settled 2026-10-23.** No requests-per-minute limit. Bound the lock wait (about 2 s, through `SET LOCAL lock_timeout`), cap concurrent session callbacks per back instance (about 20 of the 30 pool connections) and answer a retryable `503` above the cap, and alert on lock wait and refusals. Tune both numbers from the first week of measurements. |
 
 ### Still needed before implementation
 
 1. Production counts: run `a7-q1` to `a7-q3` in DBeaver.
-2. Confirm A7-D9.
-3. Rewrite the ClickUp description. Its spec link points at `.specs/features/...`, which does not
+2. Rewrite the ClickUp description. Its spec link points at `.specs/features/...`, which does not
    exist on `main`.
-4. Re-estimate. The current 40 hours assume two callbacks only; the widened scope adds the
+3. Re-estimate. The current 40 hours assume two callbacks only; the widened scope adds the
    execution record, the implicit edges, the read switch with its shadow, and the registry-driven
    dispatch in both loops.
