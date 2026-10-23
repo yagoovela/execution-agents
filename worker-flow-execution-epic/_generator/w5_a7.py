@@ -73,10 +73,10 @@ TABLE = dict(
  ])
 
 PROSE = (
- 'Nine decisions. Six are settled (2026-10-23), A7-D4 is agreed, A7-D6 has a direction, and <strong>A7-D9 is still pending approval</strong>. '
- 'A7-D3 — the ordering question the original scope asked to answer — is open below with its rationale, and so is the A7-D9 proposal.',
- 'Nove decisões. Seis estão fechadas (2026-10-23), a A7-D4 está combinada, a A7-D6 tem uma direção, e <strong>a A7-D9 ainda aguarda aprovação</strong>. '
- 'A A7-D3 — a questão de ordem que o escopo original pedia para responder — aparece aberta abaixo com a justificativa, assim como a proposta da A7-D9.')
+ 'Nine decisions. Seven are settled (2026-10-23), A7-D4 is agreed and A7-D6 has a direction. '
+ 'A7-D3 — the ordering question the original scope asked to answer — is open below with its rationale.',
+ 'Nove decisões. Sete estão fechadas (2026-10-23), a A7-D4 está combinada e a A7-D6 tem uma direção. '
+ 'A A7-D3 — a questão de ordem que o escopo original pedia para responder — aparece aberta abaixo com a justificativa.')
 
 _SET = {'t':('Settled','Decidida'),'pill':'ok'}
 
@@ -103,8 +103,8 @@ DEC_TABLE = {'k':'table',
   [{'t':'A7-D8','mono':True}, ('Read side while the B4 flag exists?','Lado da leitura enquanto a flag da B4 existir?'), _SET,
    ('<strong>The B4 flag switches it.</strong> Off: the back&#x27;s loop reads <code>objectCallerData</code>, fed by the activity&#x27;s result. On: the worker reads by reference.',
     '<strong>A flag da B4 decide.</strong> Desligada: o laço do back lê o <code>objectCallerData</code>, alimentado pelo resultado da activity. Ligada: o worker lê por referência.')],
-  [{'t':'A7-D9','mono':True}, ('Protection on the internal callback?','Proteção no callback interno?'), {'t':('Pending','Pendente'),'pill':'weak'},
-   ('Proposed, awaiting approval. See below.','Proposta, aguardando aprovação. Veja abaixo.')],
+  [{'t':'A7-D9','mono':True}, ('Protection on the internal callback?','Proteção no callback interno?'), _SET,
+   ('Settled 2026-10-23: bound, cap and alert. See below.','Decidida em 23/10/2026: limitar, restringir e alertar. Veja abaixo.')],
  ]}
 
 DEC_LOCK = {
@@ -146,7 +146,7 @@ DEC_LOCK = {
 }
 
 DEC_PROTECT = {
- 'k':'decision','id':'A7-D9','status':'open',
+ 'k':'decision','id':'A7-D9','status':'set', 'outcome':('Settled 2026-10-23. No requests-per-minute limit. The lock wait is bounded at about 2 s with <code>SET LOCAL lock_timeout</code>. Each back instance serves about 20 of its 30 concurrent session callbacks and answers a retryable 503 above that. Alerts on both. Tune the numbers after the first week in production.', 'Decidida em 23/10/2026. Sem limite de requisições por minuto. A espera pelo lock fica limitada a cerca de 2 s com <code>SET LOCAL lock_timeout</code>. Cada instância do back atende cerca de 20 dos seus 30 callbacks de sessão simultâneos e responde 503 com retry acima disso. Alertas nos dois. Ajustar os números depois da primeira semana em produção.'),
  'q':('How is the internal callback protected?','Como o callback interno é protegido?'),
  'intro':('Proposed 2026-10-23 and <strong>still pending approval</strong>. Confirming it is on the list of what is needed before implementation.',
           'Proposta em 2026-10-23 e <strong>ainda aguardando aprovação</strong>. Confirmá-la está na lista do que falta antes da implementação.'),
@@ -259,10 +259,10 @@ PARTS = [
     '<p>Criar as branches de back e worker a partir de <code>origin/main</code>. A branch do worker faz merge local de <code>origin/feat/wave-4-b4</code> para validar a flag da B4 com a A7; '
     'o corpo do PR diz isso, e o PR de worker da A7 para o <code>main</code> espera o da B4 (A7-D4).</p>')),
   ('decide',('Still needed before implementation','Ainda falta antes da implementação'),
-   ('<p>1. Production counts: run <code>a7-q1</code> to <code>a7-q3</code> in DBeaver. 2. Confirm A7-D9. 3. Rewrite the ClickUp description — its spec link points at '
-    '<code>.specs/features/...</code>, which does not exist on <code>main</code>. 4. Re-estimate.</p>',
-    '<p>1. Contagens de produção: rodar <code>a7-q1</code> a <code>a7-q3</code> no DBeaver. 2. Confirmar a A7-D9. 3. Reescrever a descrição no ClickUp — o link da spec aponta para '
-    '<code>.specs/features/...</code>, que não existe no <code>main</code>. 4. Refazer a estimativa.</p>')),
+   ('<p>1. Production counts: run <code>a7-q1</code> to <code>a7-q3</code> in DBeaver. 2. Rewrite the ClickUp description — its spec link points at '
+    '<code>.specs/features/...</code>, which does not exist on <code>main</code>. 3. Re-estimate.</p>',
+    '<p>1. Contagens de produção: rodar <code>a7-q1</code> a <code>a7-q3</code> no DBeaver. 2. Reescrever a descrição no ClickUp — o link da spec aponta para '
+    '<code>.specs/features/...</code>, que não existe no <code>main</code>. 3. Refazer a estimativa.</p>')),
  ]},
 ]
 

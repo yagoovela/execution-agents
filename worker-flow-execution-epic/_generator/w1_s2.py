@@ -124,7 +124,7 @@ DEC_MAX = {
 }
 
 DEC_PROXY = {
- 'k': 'decision', 'id': 'S2-b', 'plan': 'D8', 'status': 'open',
+ 'k': 'decision', 'id': 'S2-b', 'plan': 'D8', 'status':'set', 'outcome':('B for now (2026-10-23): no connection pooler exists in back, worker or the infra code. Each process keeps a fixed pool (back 30, worker 12), so the replica count stays bounded by <code>max_connections</code>. PgBouncer in transaction mode stays the recommendation, not deployed.', 'B por enquanto (23/10/2026): não existe pooler de conexões no back, no worker nem no código de infra. Cada processo mantém um pool fixo (back 30, worker 12), então o número de réplicas continua limitado pelo <code>max_connections</code>. PgBouncer em modo transação continua sendo a recomendação, sem deploy.'),
  'q': ('Does the replica count stay bounded by <code>max_connections</code>, or does a pooler decouple them?',
        'A contagem de réplicas continua limitada pelo <code>max_connections</code>, ou um pooler desacopla os dois?'),
  'intro': (
@@ -135,7 +135,7 @@ DEC_PROXY = {
   'e a consequência dela é que a contagem de réplicas suportadas vira um número fixo que todo pedido de capacidade precisa renegociar. '
   'A spec recomenda <strong>PgBouncer em modo transação</strong> e nomeia a restrição que vem junto — que é estrutural para outras duas tasks.'),
  'opts': [
-  {'ltr': 'A', 'pick': True, 'name': ('PgBouncer in transaction mode', 'PgBouncer em modo transação'),
+  {'ltr': 'A', 'name': ('PgBouncer in transaction mode', 'PgBouncer em modo transação'),
    'tag': ('recommended', 'recomendada'),
    'how': ('A pooler multiplexes many client connections onto few server connections, so the replica count stops being the thing that consumes <code>max_connections</code>.',
            'Um pooler multiplexa muitas conexões de cliente em poucas conexões de servidor, então a contagem de réplicas deixa de ser o que consome o <code>max_connections</code>.'),
@@ -150,7 +150,7 @@ DEC_PROXY = {
              'Um componente novo no caminho de toda query, com seus próprios modos de falha e seu próprio dimensionamento')],
    'cost': [('lo', ('Client effort: <b>none</b>', 'Esforço do cliente: <b>nenhum</b>')),
             ('hi', ('Ours: <b>one more component to run and page on</b>', 'Nosso: <b>mais um componente para rodar e ser acordado por</b>'))]},
-  {'ltr': 'B', 'name': ('No proxy — spend the wall on a fixed replica budget', 'Sem proxy — gastar o teto num orçamento fixo de réplicas'),
+  {'ltr': 'B', 'pick':True,'name': ('No proxy — spend the wall on a fixed replica budget', 'Sem proxy — gastar o teto num orçamento fixo de réplicas'),
    'how': ('Skip the pooler and let the arithmetic produce a hard number: this database supports N worker replicas, and N is the ceiling until the database changes.',
            'Dispensar o pooler e deixar a conta produzir um número duro: este banco suporta N réplicas de worker, e N é o teto até o banco mudar.'),
    'pros': [('Nothing new to run — the arithmetic <em>is</em> the whole deliverable',

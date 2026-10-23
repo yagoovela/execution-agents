@@ -3,7 +3,7 @@
 # Source: TASK-S6-SSRF-POLICY.md, ARCHITECTURE-REVIEW §3.2, review action #6, PLAN §3.3.2, DELIVERY-PLAN wave 3.
 
 DEC_SHAPE = {
- 'k':'decision','id':'S6-a','status':'open','open':True,
+ 'k':'decision','id':'S6-a','status':'set','open':True, 'outcome':('Shipped as none of the options exactly (verified 2026-10-23). <code>safe-fetch</code> (<code>apiCaller</code>, Drive download) checks resolved addresses against 10 denied ranges, passes a host if any address is allowed, does not pin it, refuses every redirect and has no allowlist. The A9 <code>egress</code> guard checks every address, pins it, checks each redirect again and runs in enforce mode in production. Open finding: the first guard can still reach a private address on a host that resolves to both.', 'Entregue sem corresponder a nenhuma opção exatamente (verificado em 23/10/2026). O <code>safe-fetch</code> (<code>apiCaller</code>, download do Drive) checa os endereços resolvidos contra 10 faixas negadas, deixa passar o host se algum endereço for permitido, não fixa o endereço, recusa todo redirect e não tem allowlist. A guarda <code>egress</code> da A9 checa todo endereço, fixa o endereço, checa cada redirect de novo e roda em modo enforce em produção. Achado em aberto: a primeira guarda ainda alcança um endereço privado num host que resolve para os dois.'),
  'q':('What shape does the egress policy take — and what does each shape actually refuse?',
       'Que formato tem a política de egresso — e o que cada formato de fato recusa?'),
  'intro':(
@@ -16,7 +16,7 @@ DEC_SHAPE = {
   'sem caminho de exceção não seja desligada por inteiro. Ela <em>não</em> fixa o formato. É esta a decisão, e é ela que define o que deixa de funcionar — '
   'então <strong>o PLAN §3.3.2 vale com força total</strong>: esta regra recusa tráfego de rede, o tipo de recusa mais disruptivo do produto.'),
  'opts':[
-  {'ltr':'A','pick':True,'name':('Deny-list on the resolved address','Deny-list sobre o endereço resolvido'),
+  {'ltr':'A','name':('Deny-list on the resolved address','Deny-list sobre o endereço resolvido'),
    'tag':('the policy','a política'),
    'how':('Resolve the hostname, check <strong>every</strong> resolved address against the blocked ranges, refuse if any matches, and repeat on each redirect hop. An organisation can allow a specific internal host.',
           'Resolver o hostname, checar <strong>todos</strong> os endereços resolvidos contra as faixas bloqueadas, recusar se algum casar, e repetir a cada salto de redirect. Uma organização pode liberar um host interno específico.'),
@@ -59,7 +59,7 @@ DEC_SHAPE = {
             'Não responde sozinho à questão de rebinding, que continua em quem resolve o nome')],
    'cost':[('lo',('Client effort: <b>none</b>','Esforço do cliente: <b>nenhum</b>')),
            ('hi',('Ours: <b>infra, per environment, on the run path</b>','Nosso: <b>infra, por ambiente, no caminho do run</b>'))]},
-  {'ltr':'D','pick':True,'name':('Resolve, pin, connect — rebinding-safe by construction','Resolver, fixar, conectar — à prova de rebinding por construção'),
+  {'ltr':'D','name':('Resolve, pin, connect — rebinding-safe by construction','Resolver, fixar, conectar — à prova de rebinding por construção'),
    'tag':('the mechanism','o mecanismo'),
    'how':('The resolver returns the addresses, the policy checks them, and the connection is made to <strong>the address that was checked</strong> rather than re-resolving the name. Every redirect hop repeats it.',
           'O resolvedor devolve os endereços, a política os checa, e a conexão é feita <strong>ao endereço que foi checado</strong>, sem reresolver o nome. Cada salto de redirect repete isso.'),

@@ -439,6 +439,9 @@ def render(T):
             if blk.get('outcome'):
                 w('<div class="dec-rec">%s%s</div>'
                   % (B(('What was decided','O que foi decidido'), cls='rt'), D(blk['outcome'])))
+            if blk.get('note'):
+                w('<div class="dec-rec">%s%s</div>'
+                  % (B(blk['note'][0], cls='rt'), D(blk['note'][1])))
             if blk.get('rec'):
                 w('<div class="dec-rec">%s%s</div>'
                   % (B(('Our recommendation','Nossa recomendação'), cls='rt'), D(blk['rec'])))

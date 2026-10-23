@@ -35,7 +35,7 @@ PROSE = (
  'Os números da parte 1 decidem.')
 
 DEC_FATE = {
- 'k':'decision','id':'A6b-a','status':'open','open':True,
+ 'k':'decision','id':'A6b-a','status':'open','open':True, 'note':(('Where it stands (2026-10-23)', 'Onde está (23/10/2026)'), ('Open: the worker owner confirms migrate or retire before the work starts, with the usage numbers from the scope.', 'Em aberto: o responsável pelo worker confirma migrar ou aposentar antes de o trabalho começar, com os números de uso do escopo.')),
  'q':('Migrate <code>webTrends</code> to the worker, or retire it?',
       'Migrar o <code>webTrends</code> para o worker, ou aposentá-lo?'),
  'intro':(

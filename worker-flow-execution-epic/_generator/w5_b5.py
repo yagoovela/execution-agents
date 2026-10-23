@@ -74,7 +74,7 @@ PROSE = (
  'Cada uma abre com as opções, quanto cada uma custa ao cliente e a nós, e a que escolheríamos.')
 
 DEC_ROLLOUT = {
- 'k':'decision','id':'B5-a','status':'rec','open':True,
+ 'k':'decision','id':'B5-a','status':'set','open':True, 'outcome':('Settled 2026-10-23: the eligibility gate plus a staged rollout (internal flows, then a small group of customers, then everyone). The gate stays strict at every step; the global flag is the way back.', 'Decidida em 23/10/2026: o gate de elegibilidade mais um rollout em etapas (fluxos internos, depois um grupo pequeno de clientes, depois todos). O gate continua estrito em toda etapa; a flag global é o caminho de volta.'),
  'q':('What turns parallelism on for a flow — the gate alone, or the gate plus a cohort?',
       'O que liga o paralelismo para um fluxo — só o gate, ou o gate mais uma coorte?'),
  'intro':(
@@ -148,7 +148,7 @@ DEC_ROLLOUT = {
 }
 
 DEC_CANCEL = {
- 'k':'decision','id':'B5-b','status':'rec',
+ 'k':'decision','id':'B5-b','status':'set', 'outcome':("Settled 2026-10-23: keep today's behaviour (D20, D23). A node that has not started, or that can be interrupted, stops. An AI generation already running finishes, and the run stops right after it. The run reads as partial, with the per-node states the cancel footprint already shows. This mixes A and B: no option matches it alone.", 'Decidida em 23/10/2026: manter o comportamento de hoje (D20, D23). Um node que não começou, ou que pode ser interrompido, para. Uma geração de IA já em andamento termina, e o run para logo depois. O run aparece como parcial, com os estados por node que a pegada do cancelamento já mostra. Isso mistura A e B: nenhuma opção sozinha descreve.'),
  'q':('What does a <em>cancelled</em> run mean once several nodes are running at once?',
       'O que significa um run <em>cancelado</em> quando vários nodes rodam ao mesmo tempo?'),
  'intro':(
@@ -161,7 +161,7 @@ DEC_CANCEL = {
   'rastro de cancelamento que pressupõe uma resposta única. É uma decisão de produto com um piso de engenharia: seja qual for '
   'a escolha, a <code>E2</code> a alinha ao cancelamento nativo do Temporal em vez de um poller.'),
  'opts':[
-  {'ltr':'A','pick':True,'name':('Stop scheduling and cancel what is in flight','Parar de agendar e cancelar o que está em voo'),
+  {'ltr':'A','name':('Stop scheduling and cancel what is in flight','Parar de agendar e cancelar o que está em voo'),
    'tag':('recommended','recomendada'),
    'how':('The run ends <code>CANCELLED</code> immediately. Per-node states stay literally true: completed, aborted, never started.',
           'O run termina <code>CANCELLED</code> imediatamente. Os estados por node continuam literalmente verdadeiros: concluído, abortado, nunca iniciado.'),
@@ -213,7 +213,7 @@ DEC_CANCEL = {
 }
 
 DEC_ORDER = {
- 'k':'decision','id':'B5-c','status':'rec',
+ 'k':'decision','id':'B5-c','status':'rec', 'note':(('Where it stands (2026-10-23)', 'Onde está (23/10/2026)'), ("Direction set, needs discussion. Order comes from the flow's dependencies; nodes ready at the same time run in parallel and only the concurrency queue delays them, so graph order between independent nodes is not a contract. Still to discuss: what a flow that relies on that order does (an explicit edge, or a per-flow opt-out), and how many production flows have two or more independent side-effect nodes in one ready set.", 'Direção definida, falta discutir. A ordem vem das dependências do fluxo; nodes prontos ao mesmo tempo rodam em paralelo e só a fila de concorrência os atrasa, então a ordem do grafo entre nodes independentes não é contrato. Falta discutir: o que faz um fluxo que depende dessa ordem (uma aresta explícita, ou um opt-out por fluxo), e quantos fluxos de produção têm dois ou mais nodes independentes com efeito colateral no mesmo conjunto pronto.')),
  'q':('Two independent push nodes fire in graph order today. Is that a contract?',
       'Dois push nodes independentes disparam na ordem do grafo hoje. Isso é um contrato?'),
  'intro':(
@@ -280,7 +280,7 @@ DEC_ORDER = {
 }
 
 DEC_ERROR = {
- 'k':'decision','id':'B5-d','status':'rec',
+ 'k':'decision','id':'B5-d','status':'rec', 'note':(('Where it stands (2026-10-23)', 'Onde está (23/10/2026)'), ('Agreed by engineering, pending product: B together with C. Store every simultaneous failure, and name the run by the failure the scheduler ordered first, so the summary is stable between runs. Product confirms what the run page shows.', 'Combinada pela engenharia, falta produto: B junto com C. Guardar toda falha simultânea e nomear o run pela falha que o scheduler ordenou primeiro, para o resumo ser estável entre runs. Produto confirma o que a página do run mostra.')),
  'q':('When several siblings fail at once, which failure names the run?',
       'Quando vários irmãos falham ao mesmo tempo, qual falha dá nome ao run?'),
  'intro':(

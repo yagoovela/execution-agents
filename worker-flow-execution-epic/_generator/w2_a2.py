@@ -63,7 +63,7 @@ PROSE_QUEUE={'k':'prose','t':(
  'Tudo acima dele tem a metade do worker e não tem a viagem. <strong>Os dois provedores são uma segunda fila com o mesmo formato</strong> — a mecânica de promoção é idêntica, e separá-los significaria reconciliar as mesmas branches duas vezes.')}
 
 DEC_STAGING={
- 'k':'decision','id':'A2-a','status':'open','open':True,
+ 'k':'decision','id':'A2-a','status':'set','open':True, 'outcome':('Closed without a choice (2026-10-23). A2 became verification only, the <code>clickup</code> adapter shipped through A10, and back <code>staging</code> now has the same ten worker-routed providers as <code>main</code>.', 'Fechada sem escolha (23/10/2026). A A2 virou só verificação, o adaptador <code>clickup</code> foi entregue pela A10, e o <code>staging</code> do back agora tem os mesmos dez provedores roteados ao worker que o <code>main</code>.'),
  'q':('Staging is behind production for this file. Do we fix staging, route around it, or promote through it as it is?',
       'O staging está atrás da produção para este arquivo. Consertamos o staging, contornamos, ou promovemos por ele como está?'),
  'intro':('The spec makes this a precondition, not an afterthought. As of 2026-08-21 <code>back@origin/staging</code> still carried the pre-release <strong>six</strong> providers while production carried <strong>eight</strong> — '
@@ -73,7 +73,7 @@ DEC_STAGING={
           'o staging está <em>atrás</em> do próprio destino para este arquivo. Uma promoção que passa por ele não é ensaio: ou <strong>quebra a produção de novo</strong> levando a lista antiga adiante, ou <strong>passa em silêncio</strong> e não prova nada. '
           'Este conjunto são seis tipos de node e dois provedores de uma vez, ou seja, o pior release possível para ensaiar mal.'),
  'opts':[
-  {'ltr':'A','pick':True,'name':('Bring staging up to production first','Trazer o staging ao nível da produção primeiro'),
+  {'ltr':'A','name':('Bring staging up to production first','Trazer o staging ao nível da produção primeiro'),
    'tag':('recommended','recomendada'),
    'how':('Reconcile <code>staging</code> with <code>production</code> for this file <em>before</em> the promotion branch touches it, so the soak happens against a real pre-production state.',
           'Reconciliar o <code>staging</code> com a <code>production</code> para este arquivo <em>antes</em> de a branch de promoção encostar nele, para o soak acontecer contra um estado real de pré-produção.'),
