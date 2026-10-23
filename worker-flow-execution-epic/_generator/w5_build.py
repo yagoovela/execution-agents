@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, _GEN)
 import tasklib, order
 from TITLES_ALL import TITLES
-import w5_b5, w5_a7, w5_b6, w5_b7, w6_c1, w6_c2
+import w5_b5, w5_a7, w5_b6, w5_b7, w6_c1, w6_c2, w5_a11, w5_a13, w5_a14, w5_a6b
 
 
 def build(code, mod, vnum, glance_note=None, decisions=None, sec1=None, sec3=None):
@@ -46,8 +46,20 @@ SPECS = [
  ('B5', w5_b5, '4', w5_b5.DECISIONS if hasattr(w5_b5, 'DECISIONS') else None,
   ('Why the gate is the correctness condition', 'Por que o gate é a condição de corretude'),
   ('What the task does, in five parts', 'O que a task faz, em cinco partes')),
- ('A7', w5_a7, '4', [w5_a7.DEC_ORDERING],
-  ('The five mutating nodes, and where each one goes', 'Os cinco nodes mutantes, e para onde cada um vai'),
+ ('A11', w5_a11, '3', None,
+  ('The five classes, and which types fall in each', 'As cinco classes, e quais tipos caem em cada uma'),
+  ('What the task does, in three parts', 'O que a task faz, em três partes')),
+ ('A13', w5_a13, '3', None,
+  ('Who reads the Data Output, and what a workflow run gives them', 'Quem lê o Data Output, e o que um run de workflow entrega'),
+  ('What the task does, in three parts', 'O que a task faz, em três partes')),
+ ('A7', w5_a7, '4', w5_a7.DECISIONS,
+  ('The changes the review asks for', 'As mudanças que a revisão pede'),
+  ('What the task does, in six parts', 'O que a task faz, em seis partes')),
+ ('A14', w5_a14, '4', [w5_a14.DEC_DERIVE],
+  ('What the back&#x27;s loop holds today, and where each piece goes', 'O que o laço do back guarda hoje, e para onde vai cada peça'),
+  ('What the task does, in three parts', 'O que a task faz, em três partes')),
+ ('A6B', w5_a6b, '4', [w5_a6b.DEC_FATE],
+  ('Why <code>webTrends</code> is still undecided', 'Por que o <code>webTrends</code> ainda está sem decisão'),
   ('What the task does, in three parts', 'O que a task faz, em três partes')),
  ('B6', w5_b6, '4', w5_b6.DECISIONS,
   ('Why these four are not activities', 'Por que estes quatro não são activities'),

@@ -1,0 +1,901 @@
+<title>A6B — Decide webTrends</title>
+<link rel="stylesheet" href="../_assets/header.css">
+<style>
+
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #F1F5F9;
+    color: #0F172A;
+    margin: 0;
+    padding: 32px 24px 80px;
+    line-height: 1.4;
+  }
+  .container { max-width: 1500px; margin: 0 auto; }
+
+  /* Top nav */
+  .page-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 12px 16px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    flex-wrap: wrap;
+  }
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #64748B;
+  }
+  .breadcrumb a {
+    color: #3B82F6;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .breadcrumb a:hover { text-decoration: underline; }
+  .breadcrumb .sep { color: #CBD5E1; }
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #0F172A;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+
+  /* Page header */
+  .page-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 8px;
+  }
+  .page-header .icon { font-size: 32px; }
+  .page-header h1 {
+    margin: 0;
+    font-size: 26px;
+    color: #0F172A;
+    letter-spacing: -0.4px;
+  }
+  .page-sub {
+    color: #64748B;
+    font-size: 13px;
+    margin-bottom: 24px;
+    padding-left: 46px;
+  }
+  .page-sub code {
+    background: #E2E8F0;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 12px;
+    color: #334155;
+  }
+
+  /* Overview chain */
+  .overview-mini {
+    background: white;
+    padding: 16px 18px;
+    border-radius: 10px;
+    margin-bottom: 28px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .overview-mini-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 12px;
+  }
+  .overview-chain {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .overview-chip {
+    background: #F8FAFC;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border-left: 3px solid #3B82F6;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #0F172A;
+    text-decoration: none;
+    display: inline-block;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+  }
+  .overview-chip .lbl {
+    display: block;
+    font-size: 9.5px;
+    color: #64748B;
+    font-weight: 500;
+    margin-bottom: 2px;
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .overview-sep { color: #94A3B8; font-size: 18px; font-weight: bold; }
+
+  /* Boxes */
+  .box {
+    background: white;
+    border-radius: 8px;
+    padding: 9px 13px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    border-left: 4px solid #94A3B8;
+    width: 100%;
+    max-width: 100%;
+  }
+  .box.backend    { border-left-color: #3B82F6; }
+  .box.worker     { border-left-color: #10B981; }
+  .box.db         { border-left-color: #F59E0B; }
+  .box.redis      { border-left-color: #EF4444; }
+  .box.s3         { border-left-color: #8B5CF6; }
+  .box.external   { border-left-color: #64748B; }
+  .box.decision { border-left-color: #EAB308; background: #FEFCE8; }
+  .box.cross { border-left-color: #A855F7; background: #FAF5FF; }
+
+  .box-title {
+    font-weight: 600;
+    font-size: 12.5px;
+    color: #0F172A;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .box-desc { font-size: 11.5px; color: #475569; }
+  .box-file {
+    font-size: 10px;
+    color: #94A3B8;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    margin-top: 3px;
+    word-break: break-all;
+  }
+  .box code {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    background: #F1F5F9;
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: #334155;
+    word-break: break-word;
+  }
+  .box-desc code { word-break: break-word; }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .badge.migrated { background: #D1FAE5; color: #065F46; }
+  .badge.legacy   { background: #FEE2E2; color: #991B1B; }
+  .badge.mixed    { background: #FEF3C7; color: #92400E; }
+  .badge.step     { background: #E0E7FF; color: #3730A3; font-size: 10px; }
+  .badge.cross    { background: #F3E8FF; color: #6B21A8; }
+
+  /* Arrows */
+  .arrow {
+    color: #64748B;
+    font-size: 22px;
+    line-height: 1;
+    margin: 1px 0;
+    text-align: center;
+  }
+  .converge { text-align: center; color: #64748B; font-size: 22px; margin: 6px 0; }
+
+  /* Function card */
+  .fn-card {
+    margin-top: 28px;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .fn-card-header {
+    background: linear-gradient(to right, #0F172A, #1E293B);
+    color: white;
+    padding: 14px 20px 14px 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .fn-card-header .fn-title {
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .fn-card-header .fn-title code {
+    background: rgba(255,255,255,0.15);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 13px;
+  }
+  .fn-card-header .fn-loc {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #CBD5E1;
+  }
+  .fn-card-header:hover { background: linear-gradient(to right, #1E293B, #334155); }
+  .fn-card-header::before {
+    content: "▾";
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94A3B8;
+    font-size: 14px;
+    transition: transform 0.2s ease;
+    line-height: 1;
+  }
+  .fn-card.collapsed .fn-card-header::before {
+    transform: translateY(-50%) rotate(-90deg);
+  }
+  .fn-card.collapsed .fn-card-body { display: none; }
+  .fn-card-body { padding: 20px; }
+
+  .fn-signature {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    background: #F1F5F9;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: #334155;
+    margin-bottom: 16px;
+    overflow-x: auto;
+  }
+  .fn-purpose {
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 12px;
+    padding: 10px 14px;
+    background: #EFF6FF;
+    border-left: 3px solid #3B82F6;
+    border-radius: 6px;
+  }
+  .fn-friendly {
+    font-size: 13px;
+    color: #334155;
+    margin-bottom: 20px;
+    padding: 12px 14px 12px 44px;
+    background: #F0FDF4;
+    border-left: 3px solid #10B981;
+    border-radius: 6px;
+    position: relative;
+    line-height: 1.55;
+  }
+  .fn-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 14px;
+    top: 10px;
+    font-size: 18px;
+  }
+  .fn-friendly strong {
+    color: #065F46;
+  }
+
+  /* Step-level friendly summary (page-wide, appears after page-sub) */
+  .step-friendly {
+    font-size: 13.5px;
+    color: #334155;
+    margin-bottom: 28px;
+    padding: 16px 18px 16px 52px;
+    background: #F0FDF4;
+    border-left: 4px solid #10B981;
+    border-radius: 10px;
+    position: relative;
+    line-height: 1.6;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.08);
+  }
+  .step-friendly::before {
+    content: "💬";
+    position: absolute;
+    left: 18px;
+    top: 14px;
+    font-size: 22px;
+  }
+  .step-friendly-title {
+    font-weight: 700;
+    color: #065F46;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 8px;
+  }
+  .step-friendly ul {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .step-friendly li {
+    margin-bottom: 6px;
+  }
+  .step-friendly li:last-child {
+    margin-bottom: 0;
+  }
+  .step-friendly strong {
+    color: #065F46;
+  }
+  .step-friendly code {
+    background: #DCFCE7;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+    color: #065F46;
+  }
+  .step-friendly em {
+    color: #047857;
+    font-style: italic;
+  }
+
+  .fn-body-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(240px, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 900px) {
+    .fn-body-cols { grid-template-columns: 1fr; }
+  }
+  .fn-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .fn-asides {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* Aside panels */
+  .aside {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 11.5px;
+    color: #78350F;
+  }
+  .aside.info { background: #EFF6FF; border-left-color: #3B82F6; color: #1E3A8A; }
+  .aside.warn { background: #FEE2E2; border-left-color: #EF4444; color: #991B1B; }
+  .aside.helper { background: #F3E8FF; border-left-color: #A855F7; color: #6B21A8; }
+  .aside-title {
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .aside code {
+    background: rgba(255,255,255,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    word-break: break-word;
+  }
+
+  /* Cascade */
+  .cascade {
+    background: #FEFCE8;
+    border: 1px dashed #EAB308;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 6px 0;
+  }
+  .cascade-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #713F12;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .cascade-step {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 8px;
+    background: white;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    font-size: 11.5px;
+  }
+  .cascade-step .cond {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #334155;
+  }
+  .cascade-step .result {
+    font-weight: 700;
+    font-size: 10.5px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+  .cascade-step .result.pass  { background: #D1FAE5; color: #065F46; }
+  .cascade-step .result.deny  { background: #FEE2E2; color: #991B1B; }
+  .cascade-step .result.next  { background: #E0E7FF; color: #3730A3; }
+  .cascade-step .result.call  { background: #FEF3C7; color: #78350F; }
+  .cascade-num {
+    background: #EAB308;
+    color: white;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* Nested sub-flow */
+  .nested-flow {
+    margin: 6px 0;
+    padding: 12px;
+    background: #F0FDF4;
+    border: 1px dashed #10B981;
+    border-radius: 8px;
+  }
+  .nested-flow-title {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #065F46;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  /* Code block */
+  .code-block {
+    background: #0F172A;
+    color: #E2E8F0;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11px;
+    line-height: 1.6;
+    overflow-x: auto;
+    margin: 6px 0;
+  }
+  .code-block .k { color: #93C5FD; }
+  .code-block .s { color: #86EFAC; }
+  .code-block .c { color: #64748B; font-style: italic; }
+  .code-block .t { color: #FDE68A; }
+
+  /* Notes */
+  .note {
+    background: #FEF3C7;
+    border-left: 4px solid #F59E0B;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    color: #78350F;
+    margin: 20px 0;
+  }
+  .note.info {
+    background: #EFF6FF;
+    border-left-color: #3B82F6;
+    color: #1E3A8A;
+  }
+  .note code {
+    background: rgba(255,255,255,0.6);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 11.5px;
+  }
+
+  .page-footer-nav {
+    margin-top: 48px;
+    padding: 16px;
+    background: white;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .field-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    margin: 8px 0;
+  }
+  .field-table th {
+    text-align: left;
+    padding: 6px 8px;
+    background: #F1F5F9;
+    color: #334155;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    font-size: 10px;
+    border-bottom: 1px solid #CBD5E1;
+  }
+  .field-table td {
+    padding: 5px 8px;
+    border-bottom: 1px solid #F1F5F9;
+    vertical-align: top;
+  }
+  .field-table td:first-child {
+    font-family: 'SF Mono', Menlo, Consolas, monospace;
+    color: #0F172A;
+    font-weight: 600;
+    white-space: nowrap;
+    font-size: 10.5px;
+  }
+
+    .code-block{white-space:pre-wrap;word-break:normal;overflow-wrap:anywhere}
+    .ba{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 4px}
+    @media(max-width:820px){.ba{grid-template-columns:1fr}}
+    .ba>div{border-radius:8px;padding:12px 14px;font-size:12px;line-height:1.62}
+    .ba .now{background:#FEF2F2;border-left:3px solid #EF4444;color:#450A0A}
+    .ba .nxt{background:#ECFDF5;border-left:3px solid #10B981;color:#052E16}
+    .ba h5{margin:0 0 7px;font-size:10px;letter-spacing:.8px;text-transform:uppercase;font-weight:800;opacity:.75}
+    .ba code{background:rgba(0,0,0,.06);padding:1px 4px;border-radius:3px}
+    .topic-nav{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0 26px}
+    .topic-nav a{font-size:11px;padding:5px 11px;border-radius:20px;background:#fff;border:1px solid #CBD5E1;
+                 color:#334155;text-decoration:none}
+    .topic-nav a:hover{border-color:#3B82F6;color:#1E40AF}
+
+
+    /* padroniza o topo pelo complemento */
+    .top-nav{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+             max-width:1500px;margin:0 auto 20px;padding:0 4px}
+    .back-btn{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:#fff;color:#334155;
+              text-decoration:none;border-radius:8px;border:1px solid #CBD5E1;font-size:12.5px;font-weight:600;
+              box-shadow:0 1px 3px rgba(0,0,0,.06);transition:transform .15s,background .15s}
+    .back-btn:hover{background:#EFF6FF;transform:translateY(-1px)}
+    .page-nav{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-start;background:transparent;
+              box-shadow:none;padding:18px 0 0;margin-top:26px;border-top:1px solid #E2E8F0}
+    .lang-sw{display:inline-flex;border:1px solid #CBD5E1;border-radius:8px;overflow:hidden;background:#fff;
+             box-shadow:0 1px 3px rgba(0,0,0,.06)}
+    .lang-sw button{font-family:'SF Mono',Menlo,monospace;font-size:11px;font-weight:700;letter-spacing:.5px;
+             padding:8px 12px;background:transparent;color:#64748B;border:0;cursor:pointer}
+    .lang-sw button+button{border-left:1px solid #E2E8F0}
+    .lang-sw button[aria-pressed="true"]{background:#0F172A;color:#fff}
+    .lang-sw button:focus-visible{outline:2px solid #3B82F6;outline-offset:2px}
+
+
+/* ---------- task page ---------- */
+body{background:#F1F5F9;color:#0F172A;margin:0;padding:28px 24px 72px;line-height:1.45;
+     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+.container{max-width:1500px;margin:0 auto}
+
+.hero{background:linear-gradient(135deg,#0F172A 0%,#1E293B 60%,#312E81 100%);color:#fff;
+      border-radius:16px;padding:26px 30px 24px;margin-bottom:18px;position:relative;overflow:hidden}
+.hero::after{content:'';position:absolute;right:-60px;top:-60px;width:260px;height:260px;
+      background:radial-gradient(circle,rgba(99,102,241,.35),transparent 70%);pointer-events:none}
+.hero .kicker{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.hero .code{font-family:'SF Mono',Menlo,monospace;font-size:13px;font-weight:700;letter-spacing:1px;
+      background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);color:#fff;
+      padding:5px 12px;border-radius:7px}
+.hero .st{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+      padding:5px 11px;border-radius:7px;border:1px solid;display:inline-flex;align-items:center;gap:6px}
+.hero .st::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor}
+.hero .st.st-planned{background:rgba(148,163,184,.18);border-color:rgba(203,213,225,.45);color:#CBD5E1}
+.hero .st.st-blocked{background:rgba(220,38,38,.2);border-color:rgba(248,113,113,.5);color:#FCA5A5}
+.hero .st.st-doing{background:rgba(59,130,246,.22);border-color:rgba(147,197,253,.5);color:#BFDBFE}
+.hero .st.st-review{background:rgba(245,158,11,.22);border-color:rgba(252,211,77,.5);color:#FDE68A}
+.hero .st.st-shipped{background:rgba(16,185,129,.24);border-color:rgba(110,231,183,.5);color:#A7F3D0}
+.hero .st.st-dropped{background:rgba(100,116,139,.18);border-color:rgba(148,163,184,.4);color:#94A3B8;
+      text-decoration:line-through}
+.hero .stnote{margin-top:12px;font-size:12.5px;line-height:1.6;color:#CBD5E1;
+      background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);
+      border-left:3px solid #6366F1;border-radius:8px;padding:9px 13px;max-width:88ch}
+.hero .stnote b{color:#fff}
+.hero .wv{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+      padding:5px 11px;border-radius:7px;background:rgba(239,68,68,.22);border:1px solid rgba(248,113,113,.5);color:#FCA5A5}
+.hero h1{margin:0 0 12px;font-size:29px;line-height:1.22;letter-spacing:-.6px;font-weight:700;max-width:30ch}
+.hero .goal{font-size:15px;line-height:1.6;color:#CBD5E1;max-width:78ch;border-left:3px solid #6366F1;padding-left:14px}
+.hero .goal b{color:#fff;font-weight:600}
+.hero-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px;position:relative;z-index:2}
+.hero-links a{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
+      text-decoration:none;color:#E2E8F0;background:rgba(255,255,255,.09);
+      border:1px solid rgba(255,255,255,.16);padding:7px 13px;border-radius:8px}
+.hero-links a:hover{background:rgba(255,255,255,.17);color:#fff}
+
+.glance{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-bottom:20px}
+.gl{background:#fff;border:1px solid #E2E8F0;border-radius:12px;padding:14px 16px;
+    border-top:3px solid #94A3B8;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.gl.crit{border-top-color:#DC2626}.gl.dep{border-top-color:#3B82F6}
+.gl.wave{border-top-color:#8B5CF6}.gl.ship{border-top-color:#059669}
+.gl .k{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#94A3B8;margin-bottom:7px}
+.gl .v{font-size:16px;font-weight:700;color:#0F172A;line-height:1.25;margin-bottom:5px}
+.gl .n{font-size:11.5px;color:#64748B;line-height:1.5}
+
+.lede{background:#fff;border:1px solid #E2E8F0;border-left:4px solid #DC2626;border-radius:12px;
+      padding:18px 22px;margin-bottom:22px;font-size:14.5px;line-height:1.7;color:#334155;
+      box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.lede strong{color:#0F172A}
+.lede p{margin:0 0 10px}.lede p:last-child{margin:0}
+
+.sec-label{display:flex;align-items:center;gap:11px;margin:30px 0 14px}
+.sec-label .n{width:25px;height:25px;border-radius:7px;background:#0F172A;color:#fff;flex:none;
+      display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+.sec-label h2{margin:0;font-size:17px;font-weight:700;color:#0F172A;letter-spacing:-.25px}
+.sec-label .rule{flex:1;height:1px;background:#E2E8F0}
+
+.entry-table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;
+      border:1px solid #E2E8F0;border-radius:12px;overflow:hidden;font-size:12.5px;
+      box-shadow:0 1px 3px rgba(15,23,42,.05);margin-bottom:8px}
+.entry-table th{background:#0F172A;color:#fff;text-align:left;padding:11px 14px;font-size:10.5px;
+      font-weight:700;text-transform:uppercase;letter-spacing:.6px}
+.entry-table td{padding:12px 14px;border-bottom:1px solid #F1F5F9;vertical-align:top;color:#334155;line-height:1.55}
+.entry-table tr:last-child td{border-bottom:0}
+.entry-table tr:hover td{background:#F8FAFC}
+.entry-table td.rt{font-family:'SF Mono',Menlo,monospace;font-size:11.5px;font-weight:600;color:#0F172A;white-space:nowrap}
+.entry-table td.rt.lbl{font-family:inherit;font-size:12.5px;white-space:normal}
+.pill{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:700;
+      letter-spacing:.2px;white-space:nowrap}
+.pill.no{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA}
+.pill.weak{background:#FEF3C7;color:#92400E;border:1px solid #FDE68A}
+.pill.ok{background:#D1FAE5;color:#065F46;border:1px solid #A7F3D0}
+
+.part{background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;margin-bottom:16px;
+      box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.part-head{background:linear-gradient(to right,#0F172A,#1E293B);color:#fff;padding:14px 20px;
+      display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.part-head .num{width:26px;height:26px;border-radius:7px;background:rgba(255,255,255,.15);
+      border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;
+      font-size:12px;font-weight:700;flex:none}
+.part-head .t{font-size:15px;font-weight:600;letter-spacing:-.15px}
+.part-head .loc{margin-left:auto;font-family:'SF Mono',Menlo,monospace;font-size:10.5px;
+      color:#94A3B8;background:rgba(0,0,0,.28);padding:4px 9px;border-radius:6px}
+.part-body{padding:20px 22px}
+.purpose{font-size:14px;line-height:1.65;color:#0F172A;font-weight:500;
+      border-left:3px solid #6366F1;padding-left:13px;margin-bottom:16px}
+.part-body p{margin:0 0 12px;font-size:13.5px;line-height:1.72;color:#334155}
+.part-body p:last-child{margin-bottom:0}
+.part-body strong{color:#0F172A;font-weight:650}
+.part-body code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1.5px 5px;border-radius:4px;
+      font-family:'SF Mono',Menlo,monospace;font-size:11.5px;color:#0F172A}
+.part-body ul{margin:10px 0 14px;padding-left:0;list-style:none}
+.part-body ul li{position:relative;padding-left:20px;margin-bottom:9px;font-size:13.5px;
+      line-height:1.7;color:#334155}
+.part-body ul li::before{content:'';position:absolute;left:5px;top:9px;width:6px;height:6px;
+      border-radius:50%;background:#94A3B8}
+.code-block{white-space:pre-wrap;word-break:break-word}
+
+.ba{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0 4px}
+@media(max-width:900px){.ba{grid-template-columns:1fr}}
+.ba>div{border-radius:10px;padding:14px 16px;font-size:13px;line-height:1.65}
+.ba .now{background:#FEF2F2;border:1px solid #FECACA;color:#7F1D1D}
+.ba .nxt{background:#ECFDF5;border:1px solid #A7F3D0;color:#065F46}
+.ba h5{margin:0 0 8px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;
+      display:flex;align-items:center;gap:6px}
+.ba .now h5{color:#B91C1C}.ba .nxt h5{color:#047857}
+.ba code{background:rgba(255,255,255,.75);border:1px solid rgba(0,0,0,.07);padding:1px 5px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:11px}
+.ba p{margin:0 0 9px;font-size:13px;line-height:1.65}
+.ba p:last-child{margin:0}
+
+.callout{border-radius:10px;padding:14px 17px;margin:15px 0 4px;font-size:13px;line-height:1.7}
+.callout .ct{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px}
+.callout.decide{background:#EFF6FF;border:1px solid #BFDBFE;color:#1E3A8A}
+.callout.decide .ct{color:#1D4ED8}
+.callout.mig{background:#FFFBEB;border:1px solid #FDE68A;color:#78350F}
+.callout.mig .ct{color:#B45309}
+.callout p{margin:0 0 9px}.callout p:last-child{margin:0}
+.callout code{background:rgba(255,255,255,.7);border:1px solid rgba(0,0,0,.07);padding:1px 5px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:11px}
+
+.vcard{background:#fff;border:1px solid #FECACA;border-radius:14px;overflow:hidden;margin-bottom:16px;
+      box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.vcard-head{background:linear-gradient(to right,#7F1D1D,#B91C1C);color:#fff;padding:13px 20px;
+      font-size:15px;font-weight:600;display:flex;align-items:center;gap:10px}
+.vcard-body{padding:18px 22px}
+.vitem{display:grid;grid-template-columns:auto 1fr;gap:13px;padding:13px 0;border-bottom:1px solid #F1F5F9}
+.vitem:first-child{padding-top:0}
+.vitem:last-child{border-bottom:0;padding-bottom:0}
+.vitem .vn{width:24px;height:24px;border-radius:7px;background:#FEE2E2;color:#B91C1C;flex:none;
+      display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:1px}
+.vitem.req .vn{background:#B91C1C;color:#fff}
+.vitem .vt{font-size:13px;font-weight:700;color:#0F172A;margin-bottom:4px;display:flex;
+      align-items:center;gap:8px;flex-wrap:wrap}
+.vitem .vt .req-tag{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+      background:#B91C1C;color:#fff;padding:2px 7px;border-radius:20px}
+.vitem .vd{font-size:13px;line-height:1.68;color:#475569}
+.vitem .vd code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1px 5px;border-radius:4px;
+      font-family:'SF Mono',Menlo,monospace;font-size:11px}
+.vitem .vd strong{color:#0F172A}
+
+.done{background:linear-gradient(135deg,#064E3B,#047857);color:#fff;border-radius:14px;
+      padding:20px 24px;margin-bottom:16px}
+.done .dt{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+      color:#6EE7B7;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.done .dd{font-size:14.5px;line-height:1.72;color:#ECFDF5}
+.done .dd strong{color:#fff;font-weight:650}
+.done .dd code{background:rgba(255,255,255,.17);border:1px solid rgba(255,255,255,.28);padding:1.5px 6px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:12px;color:#fff}
+.hero .goal code{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);padding:1px 5px;
+      border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:12.5px;color:#fff}
+.lede code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1.5px 5px;border-radius:4px;
+      font-family:'SF Mono',Menlo,monospace;font-size:12px;color:#0F172A}
+.lede em{font-style:italic;color:#0F172A}
+
+.filesbox{background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;
+      box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.filesbox-head{background:linear-gradient(to right,#334155,#475569);color:#fff;padding:12px 20px;
+      font-size:14px;font-weight:600;display:flex;align-items:center;gap:9px}
+.filesbox-body{padding:16px 20px;display:flex;flex-wrap:wrap;gap:8px}
+.fchip{font-family:'SF Mono',Menlo,monospace;font-size:11.5px;background:#F8FAFC;color:#334155;
+      border:1px solid #E2E8F0;border-left:3px solid #64748B;padding:7px 11px;border-radius:7px;line-height:1.4}
+.fchip.new{border-left-color:#059669;background:#F0FDF4;color:#065F46}
+
+.page-footer-nav{display:flex;justify-content:space-between;gap:12px;margin-top:26px;flex-wrap:wrap}
+.page-footer-nav a{display:inline-flex;align-items:center;gap:7px;background:#fff;border:1px solid #E2E8F0;
+      color:#334155;padding:11px 17px;border-radius:9px;text-decoration:none;font-size:12.5px;font-weight:600;
+      box-shadow:0 1px 2px rgba(15,23,42,.05)}
+.page-footer-nav a:hover{border-color:#94A3B8;color:#0F172A}
+
+
+/* ---------- decisions ---------- */
+.dec{background:#fff;border:1px solid #E2E8F0;border-radius:14px;overflow:hidden;margin-bottom:14px;
+     box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.dec>summary{list-style:none;cursor:pointer;padding:15px 20px;display:flex;align-items:flex-start;
+     gap:13px;background:linear-gradient(to right,#1E1B4B,#312E81);color:#fff}
+.dec>summary::-webkit-details-marker{display:none}
+.dec>summary:hover{background:linear-gradient(to right,#312E81,#3730A3)}
+.dec>summary:focus-visible{outline:2px solid #A5B4FC;outline-offset:-2px}
+.dec .chev{flex:none;width:22px;height:22px;border-radius:6px;background:rgba(255,255,255,.15);
+     border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;
+     font-size:11px;transition:transform .18s ease;margin-top:1px}
+.dec[open] .chev{transform:rotate(90deg)}
+.dec .dq{flex:1;min-width:0}
+.dec .dq .lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+     color:#A5B4FC;margin-bottom:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dec .dq .q{font-size:15px;font-weight:600;line-height:1.45;letter-spacing:-.15px}
+.dec .dq .q code{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.26);
+     padding:1px 6px;border-radius:5px;font-family:'SF Mono',Menlo,monospace;font-size:13px;
+     font-weight:600;color:#E0E7FF}
+.dstat{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+     padding:2.5px 8px;border-radius:20px;white-space:nowrap}
+.dstat.open{background:#F59E0B;color:#451A03}
+.dstat.rec{background:#38BDF8;color:#082F49}
+.dstat.set{background:#34D399;color:#022C22}
+.dec .dq .lbl .planid{font-family:'SF Mono',Menlo,monospace;font-size:9.5px;font-weight:700;
+     letter-spacing:.3px;color:#C7D2FE;background:rgba(255,255,255,.1);
+     border:1px solid rgba(255,255,255,.2);padding:2px 7px;border-radius:20px}
+.dec-body{padding:18px 20px 20px;background:#FAFAFF}
+.dec-intro{font-size:13px;line-height:1.7;color:#334155;margin-bottom:16px}
+.dec-intro strong{color:#0F172A}
+.dec-intro code{background:#EEF2FF;border:1px solid #C7D2FE;padding:1.5px 5px;border-radius:4px;
+     font-family:'SF Mono',Menlo,monospace;font-size:11.5px;color:#3730A3}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px}
+.opt{background:#fff;border:1px solid #E2E8F0;border-radius:11px;padding:0;overflow:hidden;
+     display:flex;flex-direction:column;position:relative}
+.opt.pick{border-color:#6366F1;box-shadow:0 0 0 2px rgba(99,102,241,.16)}
+.opt.no{opacity:.82}
+.opt-h{padding:12px 15px;display:flex;align-items:flex-start;gap:10px;background:#F8FAFC;
+     border-bottom:1px solid #E2E8F0}
+.opt.pick .opt-h{background:#EEF2FF;border-bottom-color:#C7D2FE}
+.opt.no .opt-h{background:#FEF2F2;border-bottom-color:#FECACA}
+.opt-h .ltr{width:23px;height:23px;border-radius:6px;background:#334155;color:#fff;flex:none;
+     display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;margin-top:1px}
+.opt.pick .opt-h .ltr{background:#4F46E5}
+.opt.no .opt-h .ltr{background:#B91C1C}
+.opt-h .on{font-size:13.5px;font-weight:700;color:#0F172A;line-height:1.35}
+.opt-h .tag{margin-left:auto;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+     padding:3px 8px;border-radius:20px;white-space:nowrap;margin-top:2px}
+.opt.pick .opt-h .tag{background:#4F46E5;color:#fff}
+.opt.no .opt-h .tag{background:#FEE2E2;color:#991B1B;border:1px solid #FECACA}
+.opt-b{padding:13px 15px 14px;flex:1;display:flex;flex-direction:column;gap:11px}
+.opt-how{font-size:12.5px;line-height:1.6;color:#475569}
+.opt-how code{background:#F1F5F9;border:1px solid #E2E8F0;padding:1px 4px;border-radius:3px;
+     font-family:'SF Mono',Menlo,monospace;font-size:11px;color:#0F172A;word-break:break-all}
+.opt-l{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:6px}
+.opt-l li{position:relative;padding-left:20px;font-size:12.5px;line-height:1.55;color:#334155}
+.opt-l li::before{position:absolute;left:0;top:0;font-size:12px;font-weight:700}
+.opt-l li.p::before{content:'✓';color:#059669}
+.opt-l li.c::before{content:'✕';color:#DC2626}
+.opt-cost{margin-top:auto;display:flex;gap:7px;flex-wrap:wrap;padding-top:4px}
+.cst{font-size:10px;font-weight:600;padding:4px 8px;border-radius:6px;background:#F1F5F9;
+     color:#475569;border:1px solid #E2E8F0;line-height:1.3}
+.cst b{font-weight:700;color:#0F172A}
+.cst.hi{background:#FEF3C7;border-color:#FDE68A;color:#78350F}
+.cst.hi b{color:#78350F}
+.cst.lo{background:#ECFDF5;border-color:#A7F3D0;color:#065F46}
+.cst.lo b{color:#065F46}
+.dec-rec{margin-top:15px;background:#EEF2FF;border:1px solid #C7D2FE;border-left:4px solid #4F46E5;
+     border-radius:10px;padding:14px 17px;font-size:13px;line-height:1.7;color:#312E81}
+.dec-rec .rt{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+     color:#4F46E5;margin-bottom:7px}
+.dec-rec strong{color:#1E1B4B}
+.dec-rec code{background:rgba(255,255,255,.75);border:1px solid #C7D2FE;padding:1.5px 5px;
+     border-radius:4px;font-family:'SF Mono',Menlo,monospace;font-size:11.5px}
+.dec-rec p{margin:0 0 9px}.dec-rec p:last-child{margin:0}
+.dec-who{margin-top:11px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;
+     font-size:11.5px;color:#64748B}
+.dec-who .wk{font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:.5px;font-size:9.5px}
+.dec-who .wv2{background:#fff;border:1px solid #E2E8F0;padding:4px 10px;border-radius:20px;font-weight:600;color:#334155}
+
+</style>
+<div class="container">
+<div class="doc-nav">
+  <nav class="doc-tabs" aria-label="Documentation sections">
+    <a href="../index.html" class="doc-tab"><span data-en="Current architecture" data-pt="Arquitetura atual">Current architecture</span></a>
+    <a href="../arquitetura-v2.html" class="doc-tab"><span data-en="v2 architecture" data-pt="Arquitetura v2">v2 architecture</span></a>
+    <a href="../arquitetura-v2-complemento.html" class="doc-tab"><span data-en="Plan as tasks" data-pt="Plano em tarefas">Plan as tasks</span></a>
+    <a href="../timeline/index.html" class="doc-tab is-active"><span data-en="Timeline" data-pt="Timeline">Timeline</span></a>
+    <a href="../progresso-refatoracao.html" class="doc-tab"><span data-en="Progress" data-pt="Progresso">Progress</span></a>
+    <a href="../status-tarefas.html" class="doc-tab"><span data-en="Task status" data-pt="Status das tarefas">Task status</span></a>
+  </nav>
+  <div class="lang-sw" role="group" aria-label="Language">
+    <button type="button" data-lang="en" aria-pressed="true">EN-US</button>
+    <button type="button" data-lang="pt" aria-pressed="false">PT-BR</button>
+  </div>
+</div>
+
+<div class="top-nav"><a href="index.html" class="back-btn"><span>←</span> <span data-en="Timeline" data-pt="Timeline">Timeline</span></a></div>
+<div class="hero"><div class="kicker"><span class="code">A6B</span><span class="wv" data-en="wave 5" data-pt="onda 5">wave 5</span><span class="st st-planned" data-en="Planned" data-pt="Planejada">Planned</span></div><h1 data-en="Decide &lt;code&gt;webTrends&lt;/code&gt;" data-pt="Decidir o &lt;code&gt;webTrends&lt;/code&gt;">Decide <code>webTrends</code></h1><div class="goal" data-en="&lt;code&gt;webTrends&lt;/code&gt; either executes in the worker or is retired, and &lt;b&gt;the decision is written down&lt;/b&gt;." data-pt="O &lt;code&gt;webTrends&lt;/code&gt; passa a executar no worker ou é aposentado, e &lt;b&gt;a decisão fica registrada&lt;/b&gt;."><code>webTrends</code> either executes in the worker or is retired, and <b>the decision is written down</b>.</div><div class="stnote" data-en="Added 2026-10-23 from the node coverage audit. Before B5 measures eligibility." data-pt="Adicionada em 23/10/2026 a partir da auditoria de cobertura. Antes da B5 medir elegibilidade.">Added 2026-10-23 from the node coverage audit. Before B5 measures eligibility.</div><div class="hero-links"><a href="../complemento/fase-3.html"><span data-en="Where this lands in the flow →" data-pt="Onde isto entra no fluxo →">Where this lands in the flow →</span></a><a href="index.html#w5"><span data-en="Other tasks in wave 5 →" data-pt="Outras tasks da onda 5 →">Other tasks in wave 5 →</span></a><a href="task-B5.html"><span data-en="Next: B5 — Turn on parallel dispatch →" data-pt="Próxima: B5 — Ligar o dispatch paralelo →">Next: B5 — Turn on parallel dispatch →</span></a></div></div>
+<div class="glance"><div class="gl dep"><div class="k" data-en="Depends on" data-pt="Depende de">Depends on</div><div class="v" data-en="A1 · A11" data-pt="A1 · A11">A1 · A11</div><div class="n" data-en="A1 is the registry the decision lands in; A11 gives every registry entry an execution class, so the type can be marked &lt;code&gt;worker&lt;/code&gt;." data-pt="A A1 é o registro onde a decisão entra; a A11 dá a cada entrada do registro uma classe de execução, para que o tipo possa ser marcado como &lt;code&gt;worker&lt;/code&gt;.">A1 is the registry the decision lands in; A11 gives every registry entry an execution class, so the type can be marked <code>worker</code>.</div></div><div class="gl wave"><div class="k" data-en="Wave" data-pt="Onda">Wave</div><div class="v" data-en="Wave 5" data-pt="Onda 5">Wave 5</div><div class="n" data-en="It runs any time after A11, &lt;strong&gt;before B5 measures eligibility&lt;/strong&gt;." data-pt="Roda a qualquer momento depois da A11, &lt;strong&gt;antes de a B5 medir a elegibilidade&lt;/strong&gt;.">It runs any time after A11, <strong>before B5 measures eligibility</strong>.</div></div><div class="gl ship"><div class="k" data-en="Shape" data-pt="Formato">Shape</div><div class="v" data-en="Measure, then one call" data-pt="Medir, depois uma decisão">Measure, then one call</div><div class="n" data-en="Added on 2026-10-23 from the node coverage audit. &lt;strong&gt;One node type, nothing else.&lt;/strong&gt;" data-pt="Adicionada em 2026-10-23 a partir da auditoria de cobertura de nodes. &lt;strong&gt;Um tipo de node, mais nada.&lt;/strong&gt;">Added on 2026-10-23 from the node coverage audit. <strong>One node type, nothing else.</strong></div></div></div>
+<div class="lede" data-en="&lt;p&gt;&lt;code&gt;A6&lt;/code&gt; listed &lt;code&gt;webTrends&lt;/code&gt; among the front-driven types, in stage 1, and shipped without it. &lt;strong&gt;No decision was recorded.&lt;/strong&gt; The front still calls &lt;code&gt;SerpService&lt;/code&gt; directly from &lt;code&gt;WebTrends.tsx&lt;/code&gt;, so the node never runs in a flow: it produces output only when a user clicks Run in the builder.&lt;/p&gt;&lt;p&gt;This task closes that gap one way or the other. It measures real usage first, and then either migrates the type as &lt;code&gt;A6&lt;/code&gt; migrated its siblings, or retires it from the canvas and the MCP metadata.&lt;/p&gt;" data-pt="&lt;p&gt;A &lt;code&gt;A6&lt;/code&gt; listou o &lt;code&gt;webTrends&lt;/code&gt; entre os tipos só-front, no estágio 1, e foi entregue sem ele. &lt;strong&gt;Nenhuma decisão foi registrada.&lt;/strong&gt; O front ainda chama o &lt;code&gt;SerpService&lt;/code&gt; direto do &lt;code&gt;WebTrends.tsx&lt;/code&gt;, então o node nunca roda num fluxo: só gera saída quando um usuário clica em Run no editor.&lt;/p&gt;&lt;p&gt;Esta task fecha essa lacuna de um jeito ou de outro. Primeiro mede o uso real, e então migra o tipo como a &lt;code&gt;A6&lt;/code&gt; migrou os irmãos dele, ou o aposenta do canvas e dos metadados do MCP.&lt;/p&gt;"><p><code>A6</code> listed <code>webTrends</code> among the front-driven types, in stage 1, and shipped without it. <strong>No decision was recorded.</strong> The front still calls <code>SerpService</code> directly from <code>WebTrends.tsx</code>, so the node never runs in a flow: it produces output only when a user clicks Run in the builder.</p><p>This task closes that gap one way or the other. It measures real usage first, and then either migrates the type as <code>A6</code> migrated its siblings, or retires it from the canvas and the MCP metadata.</p></div>
+<div class="sec-label"><span class="n">1</span><h2 data-en="Why &lt;code&gt;webTrends&lt;/code&gt; is still undecided" data-pt="Por que o &lt;code&gt;webTrends&lt;/code&gt; ainda está sem decisão">Why <code>webTrends</code> is still undecided</h2><span class="rule"></span></div>
+<div class="sec-label"><span class="n">2</span><h2 data-en="The decisions this task needs" data-pt="As decisões que esta task precisa">The decisions this task needs</h2><span class="rule"></span></div>
+<div class="lede" style="border-left-color:#6366F1"><div data-en="One call, and the spec does not make it in advance: &lt;em&gt;measure, then either migrate or retire&lt;/em&gt;. The numbers from part 1 decide it." data-pt="Uma decisão, e a spec não a toma de antemão: &lt;em&gt;medir, e então migrar ou aposentar&lt;/em&gt;. Os números da parte 1 decidem.">One call, and the spec does not make it in advance: <em>measure, then either migrate or retire</em>. The numbers from part 1 decide it.</div></div>
+<details class="dec" open><summary><span class="chev">▸</span><span class="dq"><span class="lbl"><span data-en="Decision A6b-a" data-pt="Decisão A6b-a">Decision A6b-a</span><span class="dstat open"><span data-en="Open — needs a call" data-pt="Em aberto — precisa de decisão">Open — needs a call</span></span></span><span class="q" data-en="Migrate &lt;code&gt;webTrends&lt;/code&gt; to the worker, or retire it?" data-pt="Migrar o &lt;code&gt;webTrends&lt;/code&gt; para o worker, ou aposentá-lo?">Migrate <code>webTrends</code> to the worker, or retire it?</span></span></summary><div class="dec-body"><div class="dec-intro" data-en="Today the type sits in neither state: it is on the canvas and in the MCP metadata, but no engine executes it. The spec accepts either answer, as long as &lt;strong&gt;the decision and its numbers are recorded&lt;/strong&gt; and the type ends up &lt;code&gt;worker&lt;/code&gt; or removed." data-pt="Hoje o tipo não está em nenhum dos dois estados: aparece no canvas e nos metadados do MCP, mas nenhum motor o executa. A spec aceita qualquer uma das respostas, desde que &lt;strong&gt;a decisão e seus números fiquem registrados&lt;/strong&gt; e o tipo termine como &lt;code&gt;worker&lt;/code&gt; ou removido.">Today the type sits in neither state: it is on the canvas and in the MCP metadata, but no engine executes it. The spec accepts either answer, as long as <strong>the decision and its numbers are recorded</strong> and the type ends up <code>worker</code> or removed.</div><div class="opts"><div class="opt"><div class="opt-h"><span class="ltr">A</span><span class="on"><span data-en="Migrate it, as A6 migrated its siblings" data-pt="Migrar, como a A6 migrou os irmãos dele">Migrate it, as A6 migrated its siblings</span></span></div><div class="opt-b"><div class="opt-how" data-en="Follow the same three-part scope as &lt;code&gt;A6&lt;/code&gt;: an activity, engine dispatch for the first time, and the Run button routed through &lt;code&gt;POST /process/single-node&lt;/code&gt; with the direct &lt;code&gt;SerpService&lt;/code&gt; call deleted." data-pt="Seguir o mesmo escopo em três partes da &lt;code&gt;A6&lt;/code&gt;: uma activity, dispatch pelo motor pela primeira vez, e o botão Run roteado por &lt;code&gt;POST /process/single-node&lt;/code&gt;, com a chamada direta ao &lt;code&gt;SerpService&lt;/code&gt; apagada.">Follow the same three-part scope as <code>A6</code>: an activity, engine dispatch for the first time, and the Run button routed through <code>POST /process/single-node</code> with the direct <code>SerpService</code> call deleted.</div><ul class="opt-l"><li class="p" data-en="&lt;code&gt;A6&lt;/code&gt; counted it as almost free: the SerpApi client is already in the worker, inside &lt;code&gt;web-search&lt;/code&gt;" data-pt="A &lt;code&gt;A6&lt;/code&gt; o contou como quase de graça: o cliente SerpApi já está no worker, dentro de &lt;code&gt;web-search&lt;/code&gt;"><code>A6</code> counted it as almost free: the SerpApi client is already in the worker, inside <code>web-search</code></li><li class="p" data-en="Flows that hold it stop using whatever the last manual run left behind" data-pt="Os fluxos que o contêm deixam de usar o que o último run manual deixou para trás">Flows that hold it stop using whatever the last manual run left behind</li><li class="c" data-en="It is a behaviour change for any stored flow that holds the node: it starts producing fresh output" data-pt="É uma mudança de comportamento para todo fluxo armazenado que contém o node: ele passa a gerar saída nova">It is a behaviour change for any stored flow that holds the node: it starts producing fresh output</li></ul></div></div><div class="opt"><div class="opt-h"><span class="ltr">B</span><span class="on"><span data-en="Retire it" data-pt="Aposentar">Retire it</span></span></div><div class="opt-b"><div class="opt-how" data-en="Remove the type from the canvas and from &lt;code&gt;node-type-metadata.ts&lt;/code&gt;, so no new flow can hold it." data-pt="Remover o tipo do canvas e do &lt;code&gt;node-type-metadata.ts&lt;/code&gt;, para que nenhum fluxo novo possa contê-lo.">Remove the type from the canvas and from <code>node-type-metadata.ts</code>, so no new flow can hold it.</div><ul class="opt-l"><li class="p" data-en="No new activity, no new dispatch, nothing more to maintain" data-pt="Nenhuma activity nova, nenhum dispatch novo, nada a mais para manter">No new activity, no new dispatch, nothing more to maintain</li><li class="c" data-en="Stored flows that hold it lose the node, so the measurement has to show how many there are first" data-pt="Fluxos armazenados que o contêm perdem o node, então a medição precisa mostrar primeiro quantos são">Stored flows that hold it lose the node, so the measurement has to show how many there are first</li></ul></div></div></div></div></details>
+<div class="sec-label"><span class="n">3</span><h2 data-en="What the task does, in three parts" data-pt="O que a task faz, em três partes">What the task does, in three parts</h2><span class="rule"></span></div>
+<div class="part"><div class="part-head"><span class="num">1</span><span class="t"><span data-en="Measure real usage" data-pt="Medir o uso real">Measure real usage</span></span><span class="loc" data-en="stored flows" data-pt="fluxos armazenados">stored flows</span></div><div class="part-body"><div class="purpose" data-en="Count how many stored flows use &lt;code&gt;webTrends&lt;/code&gt;, and find when one last ran." data-pt="Contar quantos fluxos armazenados usam o &lt;code&gt;webTrends&lt;/code&gt;, e descobrir quando um rodou pela última vez.">Count how many stored flows use <code>webTrends</code>, and find when one last ran.</div><div data-en="&lt;p&gt;Both numbers go into the task file before the decision is taken. They are part of the definition of done, not background reading.&lt;/p&gt;" data-pt="&lt;p&gt;Os dois números entram no arquivo da task antes de a decisão ser tomada. Fazem parte da definição de pronto, não são leitura de apoio.&lt;/p&gt;"><p>Both numbers go into the task file before the decision is taken. They are part of the definition of done, not background reading.</p></div></div></div>
+<div class="part"><div class="part-head"><span class="num">2</span><span class="t"><span data-en="Carry out the decision" data-pt="Executar a decisão">Carry out the decision</span></span><span class="loc">front/src/components/nodes/WebTrends.tsx</span></div><div class="part-body"><div class="purpose" data-en="Either give the type worker execution, or remove it from the canvas and the MCP metadata." data-pt="Dar execução no worker ao tipo, ou removê-lo do canvas e dos metadados do MCP.">Either give the type worker execution, or remove it from the canvas and the MCP metadata.</div><div data-en="&lt;p&gt;If the call is to migrate, the work follows &lt;code&gt;A6&lt;/code&gt; stage by stage. If it is to retire, &lt;code&gt;WebTrends.tsx&lt;/code&gt; leaves the canvas and the entry leaves &lt;code&gt;back/src/app-mcp/node-types/node-type-metadata.ts&lt;/code&gt;.&lt;/p&gt;" data-pt="&lt;p&gt;Se a decisão for migrar, o trabalho segue a &lt;code&gt;A6&lt;/code&gt; estágio por estágio. Se for aposentar, o &lt;code&gt;WebTrends.tsx&lt;/code&gt; sai do canvas e a entrada sai do &lt;code&gt;back/src/app-mcp/node-types/node-type-metadata.ts&lt;/code&gt;.&lt;/p&gt;"><p>If the call is to migrate, the work follows <code>A6</code> stage by stage. If it is to retire, <code>WebTrends.tsx</code> leaves the canvas and the entry leaves <code>back/src/app-mcp/node-types/node-type-metadata.ts</code>.</p></div><div class="ba"><div class="now"><h5>⚠ <span data-en="How it is today" data-pt="Como está hoje">How it is today</span></h5><p data-en="The front calls &lt;code&gt;SerpService&lt;/code&gt; directly; the node runs only from the builder&amp;#x27;s Run button." data-pt="O front chama o &lt;code&gt;SerpService&lt;/code&gt; direto; o node só roda pelo botão Run do editor.">The front calls <code>SerpService</code> directly; the node runs only from the builder&#x27;s Run button.</p></div><div class="nxt"><h5>✓ <span data-en="How it will be" data-pt="Como fica">How it will be</span></h5><p data-en="The type is &lt;code&gt;worker&lt;/code&gt;, or it is gone from the canvas and the MCP metadata." data-pt="O tipo é &lt;code&gt;worker&lt;/code&gt;, ou sumiu do canvas e dos metadados do MCP.">The type is <code>worker</code>, or it is gone from the canvas and the MCP metadata.</p></div></div><div class="callout mig"><span class="ct" data-en="Out of scope" data-pt="Fora de escopo">Out of scope</span><div data-en="&lt;p&gt;Any other front-driven type.&lt;/p&gt;" data-pt="&lt;p&gt;Qualquer outro tipo só-front.&lt;/p&gt;"><p>Any other front-driven type.</p></div></div></div></div>
+<div class="part"><div class="part-head"><span class="num">3</span><span class="t"><span data-en="Record it" data-pt="Registrar">Record it</span></span><span class="loc" data-en="the A1 registry" data-pt="o registro da A1">the A1 registry</span></div><div class="part-body"><div class="purpose" data-en="Write the decision and its numbers in the task file, and make the registry say the same thing." data-pt="Escrever a decisão e seus números no arquivo da task, e fazer o registro dizer a mesma coisa.">Write the decision and its numbers in the task file, and make the registry say the same thing.</div><div data-en="&lt;p&gt;The gap exists because &lt;code&gt;A6&lt;/code&gt; shipped without a recorded decision. This part is what keeps it from happening twice.&lt;/p&gt;" data-pt="&lt;p&gt;A lacuna existe porque a &lt;code&gt;A6&lt;/code&gt; foi entregue sem uma decisão registrada. Esta parte é o que impede que isso se repita.&lt;/p&gt;"><p>The gap exists because <code>A6</code> shipped without a recorded decision. This part is what keeps it from happening twice.</p></div></div></div>
+<div class="sec-label"><span class="n">4</span><h2 data-en="How it is proved" data-pt="Como se prova">How it is proved</h2><span class="rule"></span></div>
+<div class="vcard"><div class="vcard-head">🔬 <span data-en="Verification" data-pt="Verificação">Verification</span></div><div class="vcard-body"><div class="vitem req"><div class="vn">1</div><div><div class="vt"><span data-en="The numbers are recorded" data-pt="Os números estão registrados">The numbers are recorded</span><span class="req-tag"><span data-en="required" data-pt="obrigatório">required</span></span></div><div class="vd" data-en="The task file holds how many stored flows use &lt;code&gt;webTrends&lt;/code&gt; and when one last ran, next to the decision." data-pt="O arquivo da task traz quantos fluxos armazenados usam o &lt;code&gt;webTrends&lt;/code&gt; e quando um rodou pela última vez, junto da decisão.">The task file holds how many stored flows use <code>webTrends</code> and when one last ran, next to the decision.</div></div></div>
+<div class="vitem req"><div class="vn">2</div><div><div class="vt"><span data-en="The type has one clear state" data-pt="O tipo tem um estado claro">The type has one clear state</span><span class="req-tag"><span data-en="required" data-pt="obrigatório">required</span></span></div><div class="vd" data-en="The A1 registry marks &lt;code&gt;webTrends&lt;/code&gt; as &lt;code&gt;worker&lt;/code&gt;, or the type is gone from the canvas and from &lt;code&gt;node-type-metadata.ts&lt;/code&gt;." data-pt="O registro da A1 marca o &lt;code&gt;webTrends&lt;/code&gt; como &lt;code&gt;worker&lt;/code&gt;, ou o tipo sumiu do canvas e do &lt;code&gt;node-type-metadata.ts&lt;/code&gt;.">The A1 registry marks <code>webTrends</code> as <code>worker</code>, or the type is gone from the canvas and from <code>node-type-metadata.ts</code>.</div></div></div>
+<div class="vitem"><div class="vn">3</div><div><div class="vt"><span data-en="If migrated, no direct call remains" data-pt="Se migrado, não sobra chamada direta">If migrated, no direct call remains</span></div><div class="vd" data-en="&lt;code&gt;WebTrends.tsx&lt;/code&gt; no longer calls &lt;code&gt;SerpService&lt;/code&gt; itself; its Run button goes through &lt;code&gt;POST /process/single-node&lt;/code&gt;." data-pt="O &lt;code&gt;WebTrends.tsx&lt;/code&gt; não chama mais o &lt;code&gt;SerpService&lt;/code&gt; por conta própria; o botão Run dele passa por &lt;code&gt;POST /process/single-node&lt;/code&gt;."><code>WebTrends.tsx</code> no longer calls <code>SerpService</code> itself; its Run button goes through <code>POST /process/single-node</code>.</div></div></div>
+</div></div>
+<div class="done"><span class="dt" data-en="✓  Done when" data-pt="✓  Pronto quando">✓  Done when</span><div class="dd" data-en="The decision and its numbers are recorded in the task file, and the type is &lt;code&gt;worker&lt;/code&gt; or removed." data-pt="A decisão e seus números estão registrados no arquivo da task, e o tipo é &lt;code&gt;worker&lt;/code&gt; ou foi removido.">The decision and its numbers are recorded in the task file, and the type is <code>worker</code> or removed.</div></div>
+<div class="filesbox"><div class="filesbox-head">📂 <span data-en="Files this task touches" data-pt="Arquivos que esta task toca">Files this task touches</span></div><div class="filesbox-body"><span class="fchip">front/src/components/nodes/WebTrends.tsx</span><span class="fchip">the A1 registry</span><span class="fchip">back/src/app-mcp/node-types/node-type-metadata.ts</span></div></div>
+<div class="page-footer-nav"><a href="task-A14.html"><span data-en="← A14 — Small Memory and chat on the workflow engine" data-pt="← A14 — Small Memory e chat no motor de workflow">← A14 — Small Memory and chat on the workflow engine</span></a><a href="task-B5.html"><span data-en="Next: B5 — Turn on parallel dispatch →" data-pt="Próxima: B5 — Ligar o dispatch paralelo →">Next: B5 — Turn on parallel dispatch →</span></a></div>
+</div>
+<script>
+(function(){
+  var n=document.querySelectorAll('[data-en]'),b=document.querySelectorAll('.lang-sw button');
+  function apply(l){
+    n.forEach(function(el){var v=el.getAttribute('data-'+l); if(v===null)return; el.innerHTML=v;});
+    b.forEach(function(x){x.setAttribute('aria-pressed',String(x.getAttribute('data-lang')===l))});
+    document.documentElement.lang = l==='pt' ? 'pt-BR' : 'en';
+    try{localStorage.setItem('flux-lang',l)}catch(e){}
+  }
+  b.forEach(function(x){x.addEventListener('click',function(){apply(x.getAttribute('data-lang'))})});
+  var saved=null; try{saved=localStorage.getItem('flux-lang')}catch(e){}
+  apply(saved==='pt'?'pt':'en');
+})();
+</script>
