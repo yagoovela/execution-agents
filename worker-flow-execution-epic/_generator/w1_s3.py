@@ -50,7 +50,7 @@ TABLE = {
  ]}
 
 DEC_CEILING = {
- 'k': 'decision', 'id': 'S3-a', 'plan': 'D7', 'status': 'rec', 'open': True,
+ 'k': 'decision', 'id': 'S3-a', 'plan': 'D7', 'status':'set', 'open': True, 'outcome':('Settled by D7 as amended by D20: the in-flight node finishes, the run stops with a typed reason, and the charge that crosses the ceiling is paid in full.', 'Decidida pela D7 com a emenda da D20: o node em andamento termina, o run para com um motivo tipado, e a cobrança que passa do teto é paga inteira.'),
  'q': ('When a run hits its cost ceiling, does it abort, degrade, pause, or only warn?',
        'Quando um run atinge seu teto de custo, ele aborta, degrada, pausa, ou só avisa?'),
  'intro': (
@@ -61,7 +61,7 @@ DEC_CEILING = {
   'porque as alternativas são todas coisas que um time de produto pode querer com razão — e três delas ou <strong>produzem saída que o usuário não pediu</strong> '
   'ou deixam o run num estado que ninguém é dono.'),
  'opts': [
-  {'ltr': 'A', 'pick': True, 'name': ('Abort with a typed error', 'Abortar com um erro tipado'),
+  {'ltr': 'A', 'pick':True,'name': ('Abort with a typed error', 'Abortar com um erro tipado'),
    'tag': ('assumption', 'premissa'),
    'how': ('The charge call refuses, the run ends, and the error carries <strong>the ceiling and the spend</strong> so the UI can say what happened.',
            'A chamada de cobrança recusa, o run termina, e o erro carrega <strong>o teto e o gasto</strong> para a UI poder dizer o que aconteceu.'),
@@ -132,7 +132,7 @@ DEC_CEILING = {
 }
 
 DEC_TENANCY = {
- 'k': 'decision', 'id': 'S3-b', 'plan': 'D9', 'status': 'rec',
+ 'k': 'decision', 'id': 'S3-b', 'plan': 'D9', 'status':'set',
  'q': ('At the per-tenant concurrency cap, is the extra run queued or rejected?',
        'No teto de concorrência por tenant, o run excedente é enfileirado ou recusado?'),
  'intro': (
@@ -145,7 +145,7 @@ DEC_TENANCY = {
   'Aqui o chamador <strong>já tem direito ao trabalho</strong> — a organização tem runs para executar e a frota está ocupada. '
   'Recusar transformaria um limite de capacidade num erro que o cliente vê.'),
  'opts': [
-  {'ltr': 'A', 'pick': True, 'name': ('Queue the excess', 'Enfileirar o excedente'),
+  {'ltr': 'A', 'pick':True,'name': ('Queue the excess', 'Enfileirar o excedente'),
    'tag': ('assumption', 'premissa'),
    'how': ('Runs over the cap wait at admission and start when a slot frees. The limit becomes latency, not failure.',
            'Runs acima do teto esperam na admissão e começam quando uma vaga abre. O limite vira latência, não falha.'),
@@ -192,7 +192,7 @@ DEC_TENANCY = {
 }
 
 DEC_DEFAULT = {
- 'k': 'decision', 'id': 'S3-c', 'status': 'rec',
+ 'k': 'decision', 'id': 'S3-c', 'status':'set', 'outcome':('Shipped as a hybrid: a global default, <code>DEFAULT_MAX_CHAIN_SPEND</code> = 100,000 credits, that each account can override with <code>maxChainSpend</code>, which nothing writes yet.', 'Entregue como híbrido: um padrão global, <code>DEFAULT_MAX_CHAIN_SPEND</code> = 100.000 créditos, que cada conta pode sobrescrever com <code>maxChainSpend</code>, que ainda nada grava.'),
  'q': ('Is the default ceiling a global constant, a column on the product, or a per-org value?',
        'O teto padrão é uma constante global, uma coluna no produto, ou um valor por organização?'),
  'intro': (
@@ -201,7 +201,7 @@ DEC_DEFAULT = {
   'A premissa da spec é que <strong>o padrão vem do plano, não de uma constante global</strong> — um número só está errado nas duas pontas da faixa de clientes. '
   'É também a decisão que determina se o replay histórico abaixo tem <em>um</em> limiar a testar ou um por plano.'),
  'opts': [
-  {'ltr': 'A', 'pick': True, 'name': ('A column on the product, overridable per org', 'Uma coluna no produto, sobrescrevível por organização'),
+  {'ltr': 'A', 'name': ('A column on the product, overridable per org', 'Uma coluna no produto, sobrescrevível por organização'),
    'tag': ('assumption', 'premissa'),
    'how': ('The ceiling lives on the product with a conservative default, and an org-level override handles the exceptions a plan cannot express.',
            'O teto vive no produto com um padrão conservador, e uma sobrescrita por organização trata as exceções que um plano não consegue expressar.'),

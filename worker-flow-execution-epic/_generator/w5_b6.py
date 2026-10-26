@@ -62,7 +62,7 @@ PROSE = (
  'apenas para que quem lê a B6 não as reabra: foram decididas na <code>S1</code>, e três regras deste épico leem as respostas delas.')
 
 DEC_ARRAY = {
- 'k':'decision','id':'B6-a','status':'open','open':True,
+ 'k':'decision','id':'B6-a','status':'set','open':True, 'outcome':("Settled 2026-10-23: a loop inside the flow workflow, reusing B4's <code>continueAsNew</code> boundary. B4's history measurement confirms it: if one iteration's events times the largest real <code>arrayNode</code> list does not fit under that boundary with margin, reopen this decision with the number.", 'Decidida em 23/10/2026: um laço dentro do workflow do fluxo, reaproveitando a fronteira de <code>continueAsNew</code> da B4. A medição de histórico da B4 confirma: se os eventos de uma iteração vezes a maior lista real de <code>arrayNode</code> não couberem nessa fronteira com folga, reabrir esta decisão com o número.'),
  'q':('Is an array iteration a loop inside the workflow, or a child workflow per item?',
       'Uma iteração de array é um laço dentro do workflow, ou um child workflow por item?'),
  'intro':(

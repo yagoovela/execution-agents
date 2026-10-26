@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 DEC_TRANSPORT = {
- 'k':'decision','id':'S7-a','status':'open','open':True,
+ 'k':'decision','id':'S7-a','status':'set','open':True, 'outcome':('Shipped: no webhook secret. The webhook route was retired with <code>410 Gone</code>; callers use <code>POST /flux/api-v2</code> with an API key, <code>callback_url</code> and polling.', 'Entregue: sem segredo de webhook. A rota de webhook foi aposentada com <code>410 Gone</code>; quem chamava usa <code>POST /flux/api-v2</code> com chave de API, <code>callback_url</code> e polling.'),
  'q':('How does the webhook secret travel, so the customer does not have to build an auth system?',
       'Por onde viaja o segredo do webhook, sem obrigar o cliente a construir um sistema de autenticação?'),
  'intro':(
@@ -14,7 +14,7 @@ DEC_TRANSPORT = {
   'Hoje a credencial é o <code>flowId</code> — um UUID que circula por interfaces publicadas, rotas de chatbot, links compartilhados e pela superfície MCP. '
   'Ele é secreto por acidente, e não pode ser rotacionado porque é a chave primária. Qualquer que seja a escolha abaixo, o id do fluxo sai da URL e um token rotacionável resolve o fluxo.'),
  'opts':[
-  {'ltr':'A','pick':True,'name':('Token in the URL path','Token no path da URL'),
+  {'ltr':'A','name':('Token in the URL path','Token no path da URL'),
    'tag':('default','padrão'),
    'how':('<code>POST /flux/hooks/&lt;token&gt;</code> — the customer copies one URL and pastes it. The token resolves the flow; the flow id never appears.',
           '<code>POST /flux/hooks/&lt;token&gt;</code> — o cliente copia uma URL e cola. O token resolve o fluxo; o id do fluxo não aparece.'),
@@ -57,7 +57,7 @@ DEC_TRANSPORT = {
 }
 
 DEC_PUBLIC = {
- 'k':'decision','id':'S7-b','status':'rec',
+ 'k':'decision','id':'S7-b','status':'set',
  'q':('What is <code>public: true</code> allowed to permit on a trigger?',
       'O que <code>public: true</code> pode permitir num gatilho?'),
  'intro':(
@@ -106,7 +106,7 @@ DEC_PUBLIC = {
 }
 
 DEC_EMAIL = {
- 'k':'decision','id':'S7-c','status':'rec',
+ 'k':'decision','id':'S7-c','status':'set',
  'q':('How is the email sender verified, without asking anyone to configure anything?',
       'Como o remetente do e-mail é verificado, sem pedir configuração a ninguém?'),
  'intro':(
@@ -161,7 +161,7 @@ DEC_EMAIL = {
 }
 
 DEC_ADMISSION = {
- 'k':'decision','id':'S7-d','status':'rec',
+ 'k':'decision','id':'S7-d','status':'set', 'outcome':('Enforced since 2026-09-23: <code>429</code> with <code>Retry-After</code>.', 'Em vigor desde 23/09/2026: <code>429</code> com <code>Retry-After</code>.'),
  'q':('At the limit, does the caller get a <code>429</code> or does the run get queued?',
       'No limite, o chamador recebe <code>429</code> ou o run é enfileirado?'),
  'intro':(
