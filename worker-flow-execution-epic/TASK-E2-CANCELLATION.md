@@ -3,7 +3,8 @@
 **Goal:** cancelling a run works when the loop is in the worker — by using what Temporal already
 provides, not by reimplementing the current design somewhere else.
 
-**Depends on:** B4. **Source:** analysis §11.4.
+**Depends on:** nothing since 2026-10-26 (was B4; the Temporal-native cancel is already in production).
+**Blocks:** C1, which deletes the back path where the poller lives. **Source:** analysis §11.4.
 
 ## Why aligning beats porting
 
