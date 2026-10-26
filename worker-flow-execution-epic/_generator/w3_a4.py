@@ -2,7 +2,7 @@
 # A4 — Migrate reportBuilder.  Source: TASK-A4-REPORT-BUILDER.md, analysis §3.1, DELIVERY-PLAN wave 3.
 
 DEC_UPLOAD = {
- 'k':'decision','id':'A4-a','status':'rec','open':True,
+ 'k':'decision','id':'A4-a','status':'set','open':True, 'outcome':('Verified 2026-10-23 on worker <code>main</code> <code>748d8dc9</code>: <code>reportBuilder</code> uploads through the back callback <code>/worker/generate-file</code> and has no S3 client of its own. Other worker modules (voice generator, A9 delivery) now hold S3 clients.', 'Verificada em 23/10/2026 no worker <code>main</code> <code>748d8dc9</code>: o <code>reportBuilder</code> faz upload pelo callback do back <code>/worker/generate-file</code> e não tem cliente S3 próprio. Outros módulos do worker (voice generator, entrega da A9) agora têm clientes S3.'),
  'q':('Does the report upload go through <code>/worker/generate-file</code>, or does the worker get its own S3 client?',
       'O upload do relatório passa pelo <code>/worker/generate-file</code>, ou o worker ganha um cliente S3 próprio?'),
  'intro':(

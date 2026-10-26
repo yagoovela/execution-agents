@@ -282,7 +282,7 @@ E2 = dict(
 )
 
 E2_DEC = {
- 'k':'decision','id':'E2-a','status':'rec','open':True,
+ 'k':'decision','id':'E2-a','status':'set','open':True,
  'q':('Do we port the cancellation mechanism into the worker, or converge on Temporal&#x27;s?',
       'Portamos o mecanismo de cancelamento para o worker, ou convergimos para o do Temporal?'),
  'intro':('The spec answers this in its own title, and it is recorded here because <em>port it</em> is the default any team reaches for when a mechanism has to keep working somewhere else. '

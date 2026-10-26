@@ -92,7 +92,7 @@ S4=dict(
 )
 
 S4_DEC={
- 'k':'decision','id':'S4-a','plan':'D15','status':'open','open':True,
+ 'k':'decision','id':'S4-a','plan':'D15','status':'set','open':True, 'outcome':('Measured, then set on 2026-09-03 and shipped 2026-09-10: X = 150 per node, 12,000 array items, Y = 50,000 per run and a chain total of 200,000, behind the <code>execution_budget</code> flag.', 'Medido e definido em 03/09/2026, entregue em 10/09/2026: X = 150 por node, 12.000 itens de array, Y = 50.000 por run e total da cadeia de 200.000, atrás da flag <code>execution_budget</code>.'),
  'q':('What are X, Y and the chain total?','Quanto valem X, Y e o total da cadeia?'),
  'intro':('<strong>The one genuinely open number in this epic.</strong> The spec is deliberate about this: the three ceilings must come from <strong>measurement against stored runs</strong>, not from taste. '
           'The options below are about <em>how</em> to choose them, not about which numbers to type.',
@@ -196,7 +196,7 @@ S5=dict(
 )
 
 S5_DEC={
- 'k':'decision','id':'S5-a','status':'open','open':True,
+ 'k':'decision','id':'S5-a','status':'set','open':True,
  'q':('Do we authorise these two endpoints, or delete them by giving the worker its own S3 credentials?',
       'Autorizamos estes dois endpoints, ou os apagamos dando ao worker credenciais S3 próprias?'),
  'intro':('The spec says this task may be <strong>superseded</strong>, so check before starting. Review §2.4 argues the worker should hold its own storage credentials, '

@@ -58,7 +58,7 @@ TABLE = {
  ]}
 
 DEC_CRON = {
- 'k': 'decision', 'id': 'S8-a', 'plan': 'D12', 'status': 'rec', 'open': True,
+ 'k': 'decision', 'id': 'S8-a', 'plan': 'D12', 'status':'set', 'open': True,
  'q': ('What makes a cron fire once, when thirteen of them fire on every replica?',
        'O que faz um cron disparar uma vez, quando treze deles disparam em toda réplica?'),
  'intro': (
@@ -69,7 +69,7 @@ DEC_CRON = {
   'O requisito é <strong>um mecanismo para os treze, não treze guardas</strong> — e a propriedade a otimizar é que '
   '<strong>nada precise saber quantas réplicas existem</strong>, porque esse é o número que um deploy pode mudar sem avisar ninguém.'),
  'opts': [
-  {'ltr': 'A', 'pick': True, 'name': ('An advisory lock per job name', 'Um advisory lock por nome de job'),
+  {'ltr': 'A', 'pick':True,'name': ('An advisory lock per job name', 'Um advisory lock por nome de job'),
    'tag': ('recommended', 'recomendada'),
    'how': ('Each job takes a lock named after itself at the top of its run and releases it at the end. A replica that cannot take the lock simply skips.',
            'Cada job toma um lock com o próprio nome no início do run e o libera no fim. A réplica que não consegue o lock simplesmente pula.'),

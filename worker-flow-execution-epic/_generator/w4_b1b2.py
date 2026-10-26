@@ -137,13 +137,13 @@ B1 = dict(
 )
 
 B1_DEC = {
- 'k':'decision','id':'B1-a','status':'rec','open':True,
+ 'k':'decision','id':'B1-a','status':'set','open':True, 'outcome':('Decided 2026-10-05: one <code>execId</code> per node execution, minted fresh for each node on both paths. Both options above were rejected.', 'Decidido em 05/10/2026: um <code>execId</code> por execução de node, gerado novo para cada node nos dois caminhos. As duas opções acima foram rejeitadas.'),
  'q':('Which meaning survives the merge, and what actually travels between nodes?',
       'Qual significado sobrevive à fusão, e o que de fato viaja entre os nodes?'),
  'intro':('The two paths disagree today and the epic is about to merge them. The spec names <strong>two candidates</strong> for the identity and asks for one to be picked and the reason written down here, because the choice constrains <strong>B3</strong> (which makes this the transport) and <strong>B6</strong> (which makes loop position meaningful).',
           'Os dois caminhos discordam hoje e o épico está prestes a fundi-los. A spec nomeia <strong>dois candidatos</strong> para a identidade e pede que um seja escolhido e a razão registrada aqui, porque a escolha restringe a <strong>B3</strong> (que faz disto o transporte) e a <strong>B6</strong> (que dá significado à posição no laço).'),
  'opts':[
-  {'ltr':'A','pick':True,'name':('<code>node_executions.id</code> is the reference','O <code>node_executions.id</code> é a referência'),
+  {'ltr':'A','name':('<code>node_executions.id</code> is the reference','O <code>node_executions.id</code> é a referência'),
    'tag':('recommended','recomendada'),
    'how':('The existing primary key becomes the value that travels between nodes. <code>(execId, nodeId)</code> stays a lookup key and is <strong>never</strong> a transport.',
           'A chave primária existente passa a ser o valor que viaja entre nodes. O par <code>(execId, nodeId)</code> continua sendo chave de busca e <strong>nunca</strong> é transporte.'),
@@ -291,7 +291,7 @@ B2 = dict(
 )
 
 B2_DEC = {
- 'k':'decision','id':'B2-a','plan':'D1','status':'open','open':True,
+ 'k':'decision','id':'B2-a','plan':'D1','status':'set','open':True, 'outcome':('Answered 2026-10-02 (PLAN D1): copy-port with a drift test.', 'Respondida em 02/10/2026 (PLAN D1): cópia com teste de divergência.'),
  'q':('Shared package between <code>back</code> and <code>worker</code>, or copy-port with a drift test?',
       'Pacote compartilhado entre <code>back</code> e <code>worker</code>, ou copy-port com teste de divergência?'),
  'intro':('<strong>D1 in <code>DELIVERY-PLAN.md</code>, and the only one of the fifteen recorded as &#x27;genuinely open&#x27;.</strong> '
@@ -301,7 +301,7 @@ B2_DEC = {
           'Os repos são submódulos separados, sem grafo de build comum e sem workspace raiz, e a migração do <code>thirdPartyIntegration</code> já escolheu copy-port uma vez — para código adaptador que arrastava dependências pesadas. '
           'Estes dois módulos não arrastam nada, que é justamente o caso em que compartilhar sai mais barato. Contra isso pesa um fato que vale dizer claramente: <strong>nenhum workflow roda jest no <code>back</code></strong> (PLAN §3.5), então um teste de divergência só é garantia se alguém nomear onde ele roda.'),
  'opts':[
-  {'ltr':'A','pick':True,'name':('A shared npm package','Um pacote npm compartilhado'),
+  {'ltr':'A','name':('A shared npm package','Um pacote npm compartilhado'),
    'tag':('recommended','recomendada'),
    'how':('One privately published package holding both modules, consumed by <code>back</code> and <code>worker</code> as a normal dependency. Version bumps are explicit; the submodule-bump ordering is unchanged — submodule pushed before the superproject, always.',
           'Um pacote publicado de forma privada com os dois módulos, consumido por <code>back</code> e <code>worker</code> como dependência normal. Bumps de versão são explícitos; a ordem de bump de submódulo não muda — submódulo empurrado antes do superprojeto, sempre.'),
@@ -313,7 +313,7 @@ B2_DEC = {
            ('Needs a registry and credentials in both deploy paths — infra work that has no other reason to exist yet','Exige um registry e credenciais nos dois caminhos de deploy — trabalho de infra que ainda não tem outra razão para existir')],
    'cost':[('lo',('Client effort: <b>none</b>','Esforço do cliente: <b>nenhum</b>')),
            ('hi',('Ours: <b>a release step on every scheduler change</b>','Nosso: <b>um passo de release a cada mudança no scheduler</b>'))]},
-  {'ltr':'B','name':('Copy-port with a drift test','Copy-port com teste de divergência'),
+  {'ltr':'B','pick':True,'name':('Copy-port with a drift test','Copy-port com teste de divergência'),
    'tag':('prior art','precedente'),
    'how':('Each module is copied into the worker with a <code>PORTED_FROM.md</code> carrying the source SHA, plus a test that fails when the two copies diverge. This is what the <code>thirdPartyIntegration</code> migration did.',
           'Cada módulo é copiado para o worker com um <code>PORTED_FROM.md</code> carregando o SHA de origem, mais um teste que falha quando as duas cópias divergem. Foi o que a migração do <code>thirdPartyIntegration</code> fez.'),

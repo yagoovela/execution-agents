@@ -79,7 +79,7 @@ C3=dict(
 )
 
 C3_DEC={
- 'k':'decision','id':'C3-a','status':'open','open':True,
+ 'k':'decision','id':'C3-a','status':'set','open':True, 'outcome':('Verified 2026-10-23: PR #1966 shipped only the forward fix (<code>&gt;= 10</code>, one item dropped per append). No backfill exists and no count was recorded, so a stored array longer than ten stops growing but keeps its length.', 'Verificada em 23/10/2026: o PR #1966 entregou só a correção para frente (<code>&gt;= 10</code>, um item descartado a cada append). Não há backfill e nenhuma contagem foi registrada, então um array armazenado com mais de dez itens para de crescer mas mantém o tamanho.'),
  'q':('Does the <code>previewResponses</code> fix need a data backfill, or only a forward fix?',
       'A correção do <code>previewResponses</code> precisa de backfill, ou só de correção daqui para frente?'),
  'intro':('Changing <code>=== 10</code> to <code>&gt;= 10</code> stops <em>new</em> arrays from escaping the cap. It does nothing for arrays that <strong>already escaped</strong> and are sitting oversized in <code>flows_nodes.data</code> today. '
@@ -87,7 +87,7 @@ C3_DEC={
           'Mudar <code>=== 10</code> para <code>&gt;= 10</code> impede que arrays <em>novos</em> escapem do teto. Não faz nada pelos arrays que <strong>já escaparam</strong> e estão hoje grandes demais dentro de <code>flows_nodes.data</code>. '
           'Se algum existe é uma pergunta sobre o dado guardado, não sobre o código — e a spec é explícita que isso precisa ser <strong>medido antes de ser decidido</strong>.'),
  'opts':[
-  {'ltr':'A','pick':True,'name':('Measure first, then decide','Medir primeiro, decidir depois'),
+  {'ltr':'A','name':('Measure first, then decide','Medir primeiro, decidir depois'),
    'tag':('recommended','recomendada'),
    'how':('Ship the <code>&gt;=</code> fix, and separately count how many stored <code>previewResponses</code> arrays are longer than ten. Let that number choose between B and C.',
           'Entregar a correção do <code>&gt;=</code>, e à parte contar quantos arrays <code>previewResponses</code> guardados têm mais de dez itens. Deixar esse número escolher entre B e C.'),
@@ -97,7 +97,7 @@ C3_DEC={
    'cons':[('Two steps instead of one','Dois passos em vez de um')],
    'cost':[('lo',('Client effort: <b>none</b>','Esforço do cliente: <b>nenhum</b>')),
            ('lo',('Ours: <b>one query</b>','Nosso: <b>uma consulta</b>'))]},
-  {'ltr':'B','name':('Forward fix only','Só a correção para frente'),
+  {'ltr':'B','pick':True,'name':('Forward fix only','Só a correção para frente'),
    'how':('Change the comparison and stop there. Oversized arrays stay oversized, but stop growing, because the next append hits <code>&gt;=</code>.',
           'Mudar a comparação e parar por aí. Arrays grandes demais continuam grandes, mas param de crescer, porque o próximo append bate no <code>&gt;=</code>.'),
    'pros':[('No data migration at all — the least risky thing you can do to a JSONB column','Nenhuma migração de dados — a coisa menos arriscada que se pode fazer com uma coluna JSONB'),

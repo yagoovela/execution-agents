@@ -51,7 +51,7 @@ TABLE = {
  ]}
 
 DEC_FANOUT = {
- 'k': 'decision', 'id': 'E3-a', 'status': 'open', 'open': True,
+ 'k': 'decision', 'id': 'E3-a', 'status':'set', 'open': True, 'outcome':('Verified 2026-10-23 on back <code>main</code> <code>a38fef57</code>: the Socket.io Redis adapter is installed in <code>main.ts</code> at every boot, and the notifications gateway emits to rooms. Shipped in PR #1985.', 'Verificada em 23/10/2026 no back <code>main</code> <code>a38fef57</code>: o adaptador Redis do Socket.io é instalado no <code>main.ts</code> em todo boot, e o gateway de notificações emite para rooms. Entregue no PR #1985.'),
  'q': ('What makes any replica able to deliver to a client connected to another?',
        'O que torna qualquer réplica capaz de entregar a um cliente conectado em outra?'),
  'intro': (
@@ -62,7 +62,7 @@ DEC_FANOUT = {
   'Ela não resolve o <em>último salto</em> — pede “um adapter Redis para Socket.io, <strong>ou equivalente</strong>”. '
   'Essa é a decisão em aberto, e é ela que define se unificar no Redis <strong>resolve</strong> o problema ou apenas o <strong>desloca</strong>.'),
  'opts': [
-  {'ltr': 'A', 'pick': True, 'name': ('The Socket.io Redis adapter', 'O adapter Redis do Socket.io'),
+  {'ltr': 'A', 'pick':True,'name': ('The Socket.io Redis adapter', 'O adapter Redis do Socket.io'),
    'tag': ('recommended', 'recomendada'),
    'how': ('Every backend replica subscribes through the adapter, so an emit to a room reaches the client whichever replica holds its connection. Rooms replace the hand-rolled map.',
            'Toda réplica de backend assina pelo adapter, então um emit para uma sala alcança o cliente esteja a conexão em que réplica estiver. As salas substituem o mapa feito à mão.'),
