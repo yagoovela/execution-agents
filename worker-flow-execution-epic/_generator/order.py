@@ -5,7 +5,7 @@ ORDER = ['S7','S1','S4','S5','C3', 'S2','S3','S8','E3', 'A1','D2','A2','A3',
 WAVE = {}
 for w,codes in [(0,['S7','S1','S4','S5','C3']),(1,['S2','S3','S8','E3']),
                 (2,['A1','D2','A2','A3']),(3,['A4','A5','A6','S6','A8','A9','D1']),
-                (4,['B1','B2','B3','B3B','B4','E1','E2']),(5,['S6B','A11','A13','A7','A14','A6B','B5','B6','B7']),(6,['C1','C2'])]:
+                (4,['B1','B2','B3','B3B','B4','E1']),(5,['E2','S6B','A11','A13','A7','A14','A6B','B5','B6','B7']),(6,['C1','C2'])]:
     for c in codes: WAVE[c]=w
 PHASE={'S1':'fase-3h','S2':'fase-3','S3':'fase-3','S4':'fase-3h','S5':'transversais',
  'S6':'transversais','S7':'fase-1','S8':'fase-1','A1':'transversais','A2':'transversais',

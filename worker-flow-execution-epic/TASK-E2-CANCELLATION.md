@@ -3,7 +3,8 @@
 **Goal:** cancelling a run works when the loop is in the worker — by using what Temporal already
 provides, not by reimplementing the current design somewhere else.
 
-**Depends on:** B4. **Source:** analysis §11.4.
+**Depends on:** nothing since 2026-10-26 (was B4; the Temporal-native cancel is already in production).
+**Blocks:** C1, which deletes the back path where the poller lives. **Source:** analysis §11.4.
 
 ## Why aligning beats porting
 
@@ -51,6 +52,22 @@ session state, so cancelling it prevents no spend and leaves the object half-wri
 
 **Out.** Changing what cancellation means to the user, or cancelling already-committed side
 effects. A cancelled push that already reached Stripe stays sent.
+
+## State in production (2026-10-26)
+
+Checked on the production code (back `5e92e879`, worker `abf3b09d`). **Moved to Wave 5.**
+
+| Criterion | In production | Evidence |
+|---|---|---|
+| The back calls `handle.cancel()` | Yes | `execution_logs.service.ts` (`requestRunCancellation`), `temporal.service.ts` (`cancelWorkflow`) |
+| The worker honours cancellation | Yes | `process-flow.workflow.ts` (`isCancellation`, `nonCancellable` finalize), `process-single-node.workflow.ts` (`CancellationScope`, `cancelNode`), activity heartbeats |
+| Poller and `nodeCancelContext` retired | **No** | `node-cancel-watch.ts` (`setInterval` every 2000 ms, `AsyncLocalStorage`), still wired in `flux.service.ts` behind `node_cancel_in_flight` |
+| Cancel footprint and `finishCancelledNode` | Yes | `flux.service.ts`, `cancelled-run-footprint.ts`; worker `settleCancelledNode` |
+| D22: a cancelled generation records its tokens | **Partly** | `resolve-cancel-settlement.ts` charges partial tokens for `textGenerator` when the activity returns a cancelled output; a cancel that arrives as a thrown error passes `output: null` and charges nothing; no entry is marked as cancelled |
+
+Users can cancel `canvas` and `api` runs today: `POST /runs/:runId/cancel` writes the cancel row,
+cancels the B4 workflow when one exists, and signals every in-flight node workflow. What remains is
+the two **No/Partly** rows and the latency measurement.
 
 ## Verification
 
