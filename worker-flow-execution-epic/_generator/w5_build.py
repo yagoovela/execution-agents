@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, _GEN)
 import tasklib, order
 from TITLES_ALL import TITLES
-import w5_b5, w5_a7, w5_b6, w5_b7, w6_c1, w6_c2, w5_a11, w5_a13, w5_a14, w5_a6b
+import w5_b5, w5_a7, w5_b6, w5_b7, w6_c1, w6_c2, w5_a11, w5_a13, w5_a14, w5_a6b, w5_s6b
 
 
 def build(code, mod, vnum, glance_note=None, decisions=None, sec1=None, sec3=None):
@@ -57,6 +57,9 @@ SPECS = [
   ('What the task does, in six parts', 'O que a task faz, em seis partes')),
  ('A14', w5_a14, '4', [w5_a14.DEC_DERIVE],
   ('What the back&#x27;s loop holds today, and where each piece goes', 'O que o laço do back guarda hoje, e para onde vai cada peça'),
+  ('What the task does, in three parts', 'O que a task faz, em três partes')),
+ ('S6B', w5_s6b, '4', None,
+  ('The four gaps, and what each becomes', 'As quatro brechas, e no que cada uma vira'),
   ('What the task does, in three parts', 'O que a task faz, em três partes')),
  ('A6B', w5_a6b, '4', [w5_a6b.DEC_FATE],
   ('Why <code>webTrends</code> is still undecided', 'Por que o <code>webTrends</code> ainda está sem decisão'),
