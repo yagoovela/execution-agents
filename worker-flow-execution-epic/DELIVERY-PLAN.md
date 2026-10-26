@@ -138,7 +138,7 @@ D3 was answered on 2026-09-02 (`PLAN.md` §7), so this wave is no longer gated o
 | `B3` | The consumer resolves its own placeholders by reference; the prefetch executor is a stopgap (D2) |
 | `B3b` | The worker builds each node's `*Data` from its upstreams' rows — the edge projection leaves the back (split out of B3, 2026-10-09) |
 | `B4` + `E1` | The graph workflow — **shipped sequential** — with observability moving in the same wave |
-| `E2` | Cancellation aligned with Temporal's native mechanism |
+| `E2` | Cancellation aligned with Temporal's native mechanism — **moved to Wave 5 on 2026-10-26** |
 
 **The whole point of this wave is that nothing gets faster.** A flow runs in the same order, node
 for node, with the same latency. What changes is *where* the loop lives. Shipping the relocation
