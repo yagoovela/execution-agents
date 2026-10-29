@@ -60,6 +60,10 @@ that is a separate decision.
 Flows with Small Memory are eligible for the workflow engine and produce the same answer and the
 same persisted memory as the back's loop; `fluxObject` is out of the back-only list.
 
+**Added 2026-10-28.** A11 classes `fluxObject` as `execution: 'state'`. This task makes B4's gate
+accept `state` and turns A11's `it.failing` "the gate accepts a flow that holds a `state` node" into
+a plain test. The class stays `state`.
+
 ## Files
 
 `back/src/app-api/flux/flux.service.ts` (`persistSmallMemoryEntries`, the chat load before the

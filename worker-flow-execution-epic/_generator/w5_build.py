@@ -47,8 +47,8 @@ SPECS = [
   ('Why the gate is the correctness condition', 'Por que o gate é a condição de corretude'),
   ('What the task does, in five parts', 'O que a task faz, em cinco partes')),
  ('A11', w5_a11, '3', None,
-  ('The five classes, and which types fall in each', 'As cinco classes, e quais tipos caem em cada uma'),
-  ('What the task does, in three parts', 'O que a task faz, em três partes')),
+  ('The six classes, and which types fall in each', 'As seis classes, e quais tipos caem em cada uma'),
+  ('What the task does, in nine parts', 'O que a task faz, em nove partes')),
  ('A13', w5_a13, '3', None,
   ('Who reads the Data Output, and what a workflow run gives them', 'Quem lê o Data Output, e o que um run de workflow entrega'),
   ('What the task does, in three parts', 'O que a task faz, em três partes')),
@@ -74,8 +74,8 @@ SPECS = [
   ('What gets deleted, and who owns each deletion', 'O que é apagado, e de quem é cada deleção'),
   ('What the task does, in four parts', 'O que a task faz, em quatro partes')),
  ('C2', w6_c2, '4', w6_c2.DECISIONS,
-  ('The three pieces, and what each removal buys', 'As três peças, e o que cada remoção traz'),
-  ('What the task does, in four parts', 'O que a task faz, em quatro partes')),
+  ('The four pieces, and what each removal buys', 'As quatro peças, e o que cada remoção traz'),
+  ('What the task does, in six parts', 'O que a task faz, em seis partes')),
 ]
 
 W5_B5_DECISIONS = w5_b5.DECISIONS

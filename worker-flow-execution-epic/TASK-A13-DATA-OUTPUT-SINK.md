@@ -38,6 +38,10 @@ code.
 Workflow runs return the same reply and deliver the same outputs as the back's loop; the registry
 entry is flipped; no back-only code builds the Data Output value.
 
+**Added 2026-10-28.** A11 classes `outputObjectNode` as `execution: 'sink'`. This task makes B4's
+gate accept `sink` and turns A11's `it.failing` "the gate accepts a flow that holds a `sink`" into a
+plain test. The class stays `sink`.
+
 ## Files
 
 `back/src/app-api/flux/flux.service.ts` (the Data Output assembly, `deliverRunOutputs` caller) ·
