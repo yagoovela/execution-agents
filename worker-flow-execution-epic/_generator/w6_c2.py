@@ -7,8 +7,8 @@ GOAL = ('Remove the entry points and the flags that only existed to bridge the m
 
 GLANCE = [
  ('crit', ('Severity','Severidade'), ('Medium','Média'),
-  ('Nothing here is a live outage — except <code>thirdPartyIntegration</code> taking two different paths depending on how it was started (§9.4).',
-   'Nada aqui é uma queda ao vivo — exceto o <code>thirdPartyIntegration</code> tomando dois caminhos diferentes conforme foi iniciado (§9.4).')),
+  ('Nothing here is a live outage — except the two-door pattern, now known to be <strong>four types, not one</strong> (corrected 2026-09-21; §9.4), mostly self-clearing via A1&#x27;s <code>dispatchConflict</code> invariant.',
+   'Nada aqui é uma queda ao vivo — exceto o padrão de duas portas, agora sabido como <strong>quatro tipos, não um</strong> (corrigido em 21/09/2026; §9.4), que se resolve sozinho na maior parte via o invariante <code>dispatchConflict</code> da A1.')),
  ('dep', ('Depends on','Depende de'), ('C1 · B4','C1 · B4'),
   ('The endpoint can only be retired once <strong>every executable type runs in the worker</strong>.',
    'A entrada só pode ser aposentada quando <strong>todo tipo executável rodar no worker</strong>.')),
@@ -24,11 +24,13 @@ LEDE = (
  '<p>Three separable pieces, all of them things that only existed to bridge the migration: the <strong>legacy single-node endpoint</strong> and its allowlist, '
  'the <strong>prefetch executor</strong> and its 17-type whitelist, and <strong>every migration flag this epic created</strong>.</p>'
  '<p>The middle one is the reason this task carries a decision rather than a checklist. Either answer about the prefetch executor is fine. '
- '<strong>Leaving it undecided is not: a dormant second execution path is a maintenance tax nobody is paying attention to.</strong></p>',
+ '<strong>Leaving it undecided is not: a dormant second execution path is a maintenance tax nobody is paying attention to.</strong></p>'
+ '<p><strong>A fourth piece, added 2026-10-28:</strong> the saved nodes of the four deprecated types that A11 took out of the product, and what still keeps them usable.</p>',
  '<p>Três peças separáveis, todas coisas que só existiam para atravessar a migração: a <strong>entrada legada de node único</strong> e sua allowlist, '
  'o <strong>executor de prefetch</strong> e seu whitelist de 17 tipos, e <strong>toda flag de migração que este épico criou</strong>.</p>'
  '<p>A do meio é a razão de esta task carregar uma decisão em vez de um checklist. Qualquer resposta sobre o executor de prefetch serve. '
- '<strong>Deixá-la sem resposta não serve: uma segunda via de execução dormente é um imposto de manutenção que ninguém está pagando atenção.</strong></p>')
+ '<strong>Deixá-la sem resposta não serve: uma segunda via de execução dormente é um imposto de manutenção que ninguém está pagando atenção.</strong></p>'
+ '<p><strong>Uma quarta peça, adicionada em 2026-10-28:</strong> os nodes salvos dos quatro tipos descontinuados que a A11 tirou do produto, e o que ainda os mantém utilizáveis.</p>')
 
 TABLE = dict(
  head=[('Piece','Peça'),('Where','Onde'),('What removing it buys','O que remover traz'),('Blocked until','Bloqueada até')],
@@ -48,6 +50,11 @@ TABLE = dict(
    ('Each removed flag is <strong>a branch of production behaviour nobody tests</strong>, gone',
     'Cada flag removida é <strong>um ramo de comportamento em produção que ninguém testa</strong>, eliminado'),
    {'t':('Each flag&#x27;s own node has soaked','O node de cada flag ter soakado'),'pill':'ok'}],
+  [{'t':('The deprecated node types','Os tipos de node descontinuados')},
+   {'t':'node-dispatch-registry.ts','mono':True},
+   ('The deprecated list, the validator rule, the MCP marker and the front placeholder go, once <strong>no saved node of the four remains</strong>',
+    'A lista de descontinuados, a regra do validador, a marca do MCP e o placeholder do front saem, quando <strong>nenhum node salvo dos quatro sobrar</strong>'),
+   {'t':('A production count of zero, live and in version history','Uma contagem zero em produção, no canvas vivo e no histórico de versões'),'pill':'weak'}],
  ])
 
 PROSE = (
@@ -143,17 +150,10 @@ DEC_PREFETCH = {
 
 DEC_TPI = {
  'k':'decision','id':'C2-b','status':'set', 'outcome':("Settled 2026-10-23: fix it. On back <code>origin/main</code> <code>a38fef57</code> the legacy endpoint still accepts three types that run in the worker: <code>commandContentNode</code>, <code>thirdPartyIntegration</code> and <code>voiceBoxNode</code> (<code>webSearch</code> is already fixed). Set them to refuse-as-migrated in the dispatch registry, give <code>webCrawling</code> the migrated-type message, and regenerate the contract. Count each type's calls on that endpoint first.", 'Decidida em 23/10/2026: corrigir. No back <code>origin/main</code> <code>a38fef57</code> o endpoint legado ainda aceita três tipos que rodam no worker: <code>commandContentNode</code>, <code>thirdPartyIntegration</code> e <code>voiceBoxNode</code> (o <code>webSearch</code> já foi corrigido). Marcá-los como recusa-por-migrado no registry de dispatch, dar ao <code>webCrawling</code> a mensagem de tipo migrado, e regenerar o contrato. Contar antes as chamadas de cada tipo nesse endpoint.'),
- 'q':('<code>thirdPartyIntegration</code> takes two different paths. Fix it now, or carry it knowingly?',
-      'O <code>thirdPartyIntegration</code> toma dois caminhos diferentes. Corrigir agora, ou carregar conscientemente?'),
- 'intro':(
-  'It is worker-routed <strong>inside a flow</strong>, via the integration gate — but it is still listed in <code>LEGACY_SINGLE_RUN_NODE_TYPES</code>, so '
-  '<code>/process/single-node-legacy</code> runs it <strong>inline</strong>. <strong>The same node takes a different path depending on how it was started</strong> '
-  '(analysis §9.4). The spec offers exactly two answers: fix it in <code>A1</code>&#x27;s wake, or record it here as knowingly carried until retirement. '
-  'The one thing not on the menu is discovering it again later.',
-  'Ele é roteado ao worker <strong>dentro de um fluxo</strong>, pelo gate de integração — mas ainda está listado em <code>LEGACY_SINGLE_RUN_NODE_TYPES</code>, então '
-  'o <code>/process/single-node-legacy</code> o roda <strong>inline</strong>. <strong>O mesmo node toma um caminho diferente conforme foi iniciado</strong> '
-  '(análise §9.4). A spec oferece exatamente duas respostas: corrigir na esteira da <code>A1</code>, ou registrar aqui como carregado conscientemente até a aposentadoria. '
-  'A única coisa fora do cardápio é descobrir isso de novo mais tarde.'),
+ 'q':('Corrected 2026-09-21 — the two-door node takes two different paths. Fix it in A1&#x27;s wake, or carry it knowingly? Now four types, not one',
+      'Corrigido em 21/09/2026 — o node de duas portas toma dois caminhos diferentes. Corrigir na esteira da A1, ou carregar conscientemente? Agora quatro tipos, não um'),
+ 'intro':('<strong>Corrected 2026-09-21 — the original draft named only <code>thirdPartyIntegration</code>; A1&#x27;s re-validation against <code>back@origin/production</code> <code>3804a524</code> found the same shape in four types.</strong> Each is worker-routed <strong>inside a flow</strong> while still listed in <code>LEGACY_SINGLE_RUN_NODE_TYPES</code>, so <code>/process/single-node-legacy</code> runs it <strong>inline</strong> — the same node takes a different path depending on how it was started (analysis §9.4). Three of the four — <code>voiceBoxNode</code>, <code>webSearch</code>, <code>commandContentNode</code> — are now named as <code>it.failing()</code> cases in A1&#x27;s <code>dispatchConflict</code> invariant, and <code>C1</code> clears each one as it does that node&#x27;s inline-twin deletion. By the time this task starts, the allowlist should already be down to <code>reportBuilder</code> and whatever <code>A3</code>&#x27;s decision keeps routed there — <strong>if any of the three are still in <code>LEGACY_SINGLE_RUN_NODE_TYPES</code> when this task starts, that is the fix to carry: same defect, same remedy, three known instances instead of one.</strong> The spec still offers exactly two answers for whichever instance remains: fix it in <code>A1</code>&#x27;s wake, or record it here as knowingly carried until retirement. The one thing not on the menu is discovering it again later.',
+  '<strong>Corrigido em 21/09/2026 — a versão original citava só o <code>thirdPartyIntegration</code>; a revalidação da A1 contra <code>back@origin/production</code> <code>3804a524</code> encontrou a mesma forma em quatro tipos.</strong> Cada um é roteado ao worker <strong>dentro de um fluxo</strong> enquanto ainda listado em <code>LEGACY_SINGLE_RUN_NODE_TYPES</code>, então o <code>/process/single-node-legacy</code> o roda <strong>inline</strong> — o mesmo node toma um caminho diferente conforme foi iniciado (análise §9.4). Três dos quatro — <code>voiceBoxNode</code>, <code>webSearch</code>, <code>commandContentNode</code> — agora estão nomeados como casos <code>it.failing()</code> no invariante <code>dispatchConflict</code> da A1, e a <code>C1</code> limpa cada um deles conforme faz a deleção do gêmeo inline daquele node. Quando esta task começar, o allowlist já deveria estar reduzido a <code>reportBuilder</code> e o que a decisão da <code>A3</code> mantiver roteado ali — <strong>se algum dos três ainda estiver em <code>LEGACY_SINGLE_RUN_NODE_TYPES</code> quando esta task começar, essa é a correção a carregar: mesmo defeito, mesmo remédio, três instâncias conhecidas em vez de uma.</strong> A spec ainda oferece exatamente duas respostas para o que sobrar: corrigir na esteira da <code>A1</code>, ou registrar aqui como carregado conscientemente até a aposentadoria. A única coisa fora do cardápio é descobrir isso de novo mais tarde.'),
  'opts':[
   {'ltr':'A','pick':True,'name':('Fix it in <code>A1</code>&#x27;s wake','Corrigir na esteira da <code>A1</code>'),
    'tag':('recommended','recomendada'),
@@ -185,15 +185,8 @@ DEC_TPI = {
    'cost':[('hi',('Client risk: <b>two behaviours for one node</b>','Risco do cliente: <b>dois comportamentos para um node</b>')),
            ('lo',('Ours: <b>a paragraph, not a change</b>','Nosso: <b>um parágrafo, não uma mudança</b>'))]},
  ],
- 'rec':(
-  '<p><strong>A, because it is a missing allowlist entry rather than a design decision.</strong> The allowlist already refuses every other migrated type and points '
-  'the caller at <code>/process/single-node</code>; <code>thirdPartyIntegration</code> is simply absent from that treatment.</p>'
-  '<p>If <code>A</code> cannot be scheduled with <code>A1</code>, then <code>B</code> — but <strong>write it into this file</strong>, with the date and the reason. '
-  'The failure mode being avoided is a third person finding it in six months and treating it as a new bug.</p>',
-  '<p><strong>A, porque é uma entrada de allowlist faltando e não uma decisão de projeto.</strong> A allowlist já recusa todo outro tipo migrado e aponta '
-  'quem chama para o <code>/process/single-node</code>; o <code>thirdPartyIntegration</code> apenas está ausente desse tratamento.</p>'
-  '<p>Se a <code>A</code> não puder ser agendada junto com a <code>A1</code>, então a <code>B</code> — mas <strong>escreva isso neste arquivo</strong>, com a data e a razão. '
-  'O modo de falha que se quer evitar é uma terceira pessoa achar isso em seis meses e tratar como bug novo.</p>'),
+ 'rec':('<p><strong>A, because it is a missing allowlist entry rather than a design decision — for whichever of the four types this task still finds carried.</strong> The allowlist already refuses every other migrated type and points the caller at <code>/process/single-node</code>; <code>thirdPartyIntegration</code> (and, if not already cleared by <code>C1</code>, <code>voiceBoxNode</code>, <code>webSearch</code>, <code>commandContentNode</code>) is simply absent from that treatment.</p><p>If <code>A</code> cannot be scheduled with <code>A1</code>, then <code>B</code> — but <strong>write it into this file</strong>, with the date and the reason. The failure mode being avoided is a third person finding it in six months and treating it as a new bug.</p>',
+  '<p><strong>A, porque é uma entrada de allowlist faltando e não uma decisão de projeto.</strong> A allowlist já recusa todo outro tipo migrado e aponta quem chama para o <code>/process/single-node</code>; o <code>thirdPartyIntegration</code> apenas está ausente desse tratamento.</p><p>Se a <code>A</code> não puder ser agendada junto com a <code>A1</code>, então a <code>B</code> — mas <strong>escreva isso neste arquivo</strong>, com a data e a razão. O modo de falha que se quer evitar é uma terceira pessoa achar isso em seis meses e tratar como bug novo.</p>'),
  'who':[('Engineering','Engenharia'),('A1&#x27;s owner, if it goes there','O dono da A1, se for para lá')],
 }
 
@@ -297,6 +290,56 @@ PARTS = [
         'Toda migração deixa uma chave para trás, e cada chave é um comportamento de produção que tem dono só enquanto alguém se lembra dela.'),
        ('<strong>No migration flag from this epic remains.</strong> One implementation of each node, one dispatch registry, one engine.',
         '<strong>Nenhuma flag de migração deste épico permanece.</strong> Uma implementação de cada node, um registro de dispatch, um motor.'))},
+{'n':'5','title':('Corrected 2026-09-21 — webCrawling&#x27;s different shape, and two dead branches inherited from A1',
+  'Corrigido em 21/09/2026 — a forma diferente do webCrawling, e dois ramos mortos herdados da A1'),
+ 'loc':'single-node-legacy.service.ts · legacy-node-dispatch.ts',
+ 'purpose':('Two more findings from A1&#x27;s re-validation that land here, not as new work but as tracked context and, in one case, cleanup this task already does.',
+  'Mais dois achados da revalidação da A1 que pousam aqui, não como trabalho novo mas como contexto rastreado e, num caso, limpeza que esta task já faz.'),
+ 'body':('<p><strong><code>webCrawling</code>&#x27;s defect is a different shape, and already has its own fix.</strong> It is in <strong>neither</strong> <code>MIGRATED_TEMPORAL_NODE_TYPES</code> nor <code>LEGACY_SINGLE_RUN_NODE_TYPES</code>, so <code>single-node-legacy.service.ts</code> (<code>validateNode</code>) refuses it with the generic message — grep for <code>is not supported for single-node legacy execution</code> — instead of the correct migrated-type message — grep for <code>is migrated to Temporal</code>. <code>A1</code> carries this as a bounded sub-item (add <code>webCrawling</code> to the migrated-type check) with its own Done-when line; by default it lands in <code>A1</code>&#x27;s PR, not here. If <code>A1</code>&#x27;s PR ships without it for any reason, it is this task&#x27;s to pick up before the endpoint retires — but check <code>A1</code>&#x27;s PR first, since the default plan is that it never reaches <code>C2</code> as open work.</p><p><strong>The two dead branches, moved here from A1.</strong> <code>legacy-node-dispatch.ts</code>&#x27;s <code>dispatchLegacyHandler</code> has <code>case &#x27;pullData&#x27;</code> and <code>case &#x27;pushData&#x27;</code>, but both types are in <code>MIGRATED_TEMPORAL_NODE_TYPES</code>, so <code>validateNode</code> rejects them before <code>dispatchLegacyHandler</code> is ever reached — the branches are unreachable today and stay that way until this task deletes the whole switch. <code>A1</code> only records their existence as evidence that the legacy endpoint&#x27;s effective destination set is already smaller than its allowlist suggests; deleting them is this task&#x27;s, alongside the rest of <code>legacy-node-dispatch.ts</code>, because it is legacy-surface removal, not registry work.</p>',
+  '<p><strong>O defeito do <code>webCrawling</code> tem uma forma diferente, e já tem sua própria correção.</strong> Ele não está <strong>nem</strong> em <code>MIGRATED_TEMPORAL_NODE_TYPES</code> nem em <code>LEGACY_SINGLE_RUN_NODE_TYPES</code>, então o <code>single-node-legacy.service.ts</code> (<code>validateNode</code>) o recusa com a mensagem genérica — grep por <code>is not supported for single-node legacy execution</code> — em vez da mensagem correta de tipo migrado — grep por <code>is migrated to Temporal</code>. A <code>A1</code> carrega isso como um subitem delimitado (adicionar o <code>webCrawling</code> à checagem de tipo migrado) com sua própria linha de Done; por padrão isso entra no PR da <code>A1</code>, não aqui. Se o PR da <code>A1</code> for enviado sem isso por algum motivo, cabe a esta task pegar antes de a entrada ser aposentada — mas confira o PR da <code>A1</code> primeiro, já que o plano padrão é que isso nunca chegue à <code>C2</code> como trabalho em aberto.</p><p><strong>Os dois ramos mortos, movidos aqui da A1.</strong> O <code>dispatchLegacyHandler</code> do <code>legacy-node-dispatch.ts</code> tem <code>case &#x27;pullData&#x27;</code> e <code>case &#x27;pushData&#x27;</code>, mas os dois tipos estão em <code>MIGRATED_TEMPORAL_NODE_TYPES</code>, então o <code>validateNode</code> os rejeita antes de o <code>dispatchLegacyHandler</code> ser alcançado — os ramos são inalcançáveis hoje e continuam assim até esta task apagar o switch inteiro. A <code>A1</code> só registra a existência deles como evidência de que o conjunto de destinos efetivo da entrada legada já é menor do que sua allowlist sugere; apagá-los é desta task, junto com o resto do <code>legacy-node-dispatch.ts</code>, porque é remoção de superfície legada, não trabalho de registro.</p>'),
+ 'ba':(('<code>webCrawling</code> gets a misleading refusal message, and two switch branches for already-migrated types sit unreachable with no owner named for their removal.',
+   'O <code>webCrawling</code> recebe uma mensagem de recusa enganosa, e dois ramos de switch para tipos já migrados ficam inalcançáveis sem dono nomeado para a remoção.'),
+  ('<code>webCrawling</code>&#x27;s message fix is tracked to <code>A1</code>&#x27;s PR (with this task as the fallback owner), and the two dead <code>pullData</code>/<code>pushData</code> branches are deleted here with the rest of <code>legacy-node-dispatch.ts</code>.',
+   'A correção da mensagem do <code>webCrawling</code> está rastreada até o PR da <code>A1</code> (com esta task como dona de reserva), e os dois ramos mortos <code>pullData</code>/<code>pushData</code> são apagados aqui junto com o resto do <code>legacy-node-dispatch.ts</code>.')),
+ 'callouts':[('mig',('Check before assuming this is open work','Confira antes de presumir que isto é trabalho em aberto'),
+  ('<p>The default plan is that <code>webCrawling</code>&#x27;s message fix never reaches <code>C2</code> as open work — it ships in <code>A1</code>&#x27;s PR. Verify that PR before treating this as something to build.</p>',
+   '<p>O plano padrão é que a correção da mensagem do <code>webCrawling</code> nunca chegue à <code>C2</code> como trabalho em aberto — ela vai no PR da <code>A1</code>. Verifique esse PR antes de tratar isto como algo a construir.</p>'))]},
+
+{'n':'6','title':('The deprecated node types','Os tipos de node descontinuados'),
+ 'loc':('node-dispatch-registry.ts · a new internal endpoint','node-dispatch-registry.ts · um novo endpoint interno'),
+ 'purpose':('Delete the saved nodes of <code>webNews</code>, <code>webMedia</code>, <code>webLocations</code> and <code>varInputForm</code>, then remove what A11 left to keep them usable.',
+            'Apagar os nodes salvos de <code>webNews</code>, <code>webMedia</code>, <code>webLocations</code> e <code>varInputForm</code>, e então remover o que a A11 deixou para mantê-los utilizáveis.'),
+ 'body':('<p>A11 removes the four from the MCP metadata, the per-type tables, the seeder and the back&#x27;s <code>NodeType</code> enum, and keeps them in one deprecated list '
+         'in the dispatch registry. Because saved nodes still exist (dev: 47), A11 makes sure a saved one never blocks a flow: the front shows a placeholder the user can '
+         'delete, the back accepts an existing node on every update, copy, version and import path while refusing a new one, and the MCP marks it as deprecated. '
+         'Three things stay until the saved nodes are gone: the deprecated list with its four <code>visual</code> entries, the validator rule with the MCP marker, '
+         'and the front placeholder.</p>',
+         '<p>A A11 tira os quatro dos metadados do MCP, das tabelas por tipo, do seeder e do enum <code>NodeType</code> do back, e os mantém numa lista de descontinuados '
+         'no registro de dispatch. Como ainda existem nodes salvos (dev: 47), a A11 garante que um node salvo nunca trave um fluxo: o front mostra um placeholder que o usuário '
+         'pode apagar, o back aceita um node existente em todo caminho de atualização, cópia, versão e importação e recusa um novo, e o MCP o marca como descontinuado. '
+         'Três coisas ficam até os nodes salvos sumirem: a lista de descontinuados com as quatro entradas <code>visual</code>, a regra do validador com a marca do MCP, '
+         'e o placeholder do front.</p>'),
+ 'list':[
+  ('<strong>Count.</strong> Count the saved nodes of each type and the edges that touch them, on the live canvas and in version history, on production. '
+   '<code>a11-q2</code> counts the live canvas only; add a query that covers both. Rows that only record past runs are not counted.',
+   '<strong>Contar.</strong> Conte os nodes salvos de cada tipo e as arestas ligadas a eles, no canvas vivo e no histórico de versões, em produção. '
+   'A <code>a11-q2</code> conta só o canvas vivo; adicione uma consulta que cubra os dois. Linhas que só registram runs passados não contam.'),
+  ('<strong>Delete.</strong> Delete the nodes and every edge that touches them, live and in version history, through an internal endpoint '
+   '(<code>JwtAuthGuard</code> + <code>MasterUserGuard</code>) with a dry run that reports the counts per type. The real run must match them.',
+   '<strong>Apagar.</strong> Apague os nodes e toda aresta ligada a eles, no canvas vivo e no histórico de versões, por um endpoint interno '
+   '(<code>JwtAuthGuard</code> + <code>MasterUserGuard</code>) com uma simulação que informa as contagens por tipo. A execução real precisa bater com elas.'),
+  ('<strong>Remove.</strong> Once a re-run of the count returns zero in both places: the deprecated list and its four registry entries, the validator rule and '
+   'the MCP marker, and the front placeholder. A11&#x27;s drift spec then has nothing to cover for them.',
+   '<strong>Remover.</strong> Quando uma nova contagem der zero nos dois lugares: a lista de descontinuados e as quatro entradas no registro, a regra do validador e '
+   'a marca do MCP, e o placeholder do front. A spec de drift da A11 então não tem mais nada a cobrir para eles.'),
+ ],
+ 'callouts':[('decide',('Also added 2026-10-28','Também adicionado em 2026-10-28'),
+   ('<p>The registry&#x27;s <code>flowDispatch</code> field is removed. With the back&#x27;s loop gone, <code>inline</code> means nothing, and <code>flowDispatch</code> '
+    'repeats A11&#x27;s <code>execution</code> field. Its readers (<code>canUseWorkflowForFlow</code>, <code>isTemporalNode</code>, <code>strandedWorkerModules()</code>, '
+    '<code>hasDispatchConflict()</code>) read <code>execution</code> instead, and <code>node-dispatch-contract.json</code> drops the column.</p>',
+    '<p>O campo <code>flowDispatch</code> do registro é removido. Sem o laço do back, <code>inline</code> perde o sentido, e o <code>flowDispatch</code> '
+    'repete o campo <code>execution</code> da A11. Quem o lê (<code>canUseWorkflowForFlow</code>, <code>isTemporalNode</code>, <code>strandedWorkerModules()</code>, '
+    '<code>hasDispatchConflict()</code>) passa a ler o <code>execution</code>, e o <code>node-dispatch-contract.json</code> perde a coluna.</p>'))]},
 ]
 
 VERIF = [
@@ -322,15 +365,29 @@ VERIF = [
    'A leftover flag is the mechanism behind <code>R1</code>, still armed.',
    'Enumere as flags do <code>PLAN §3.2</code> e confirme que cada uma sumiu quando o node dela soakou. '
    'Uma flag esquecida é o mecanismo por trás do <code>R1</code>, ainda armado.')),
+ (False, ('Deprecated types (part 6)','Tipos descontinuados (parte 6)'),
+  ('The endpoint&#x27;s dry-run counts match the count query. After the deletion, the count is zero live and in version history, and restoring a version that held '
+   'one of the four succeeds. Negative control on dev: after the deprecated list goes, add a node of one of the four through the API and watch it be refused.',
+   'As contagens da simulação do endpoint batem com a consulta de contagem. Depois da deleção, a contagem é zero no canvas vivo e no histórico de versões, e restaurar uma versão que '
+   'tinha um dos quatro funciona. Controle negativo em dev: depois de a lista de descontinuados sair, adicione um node de um dos quatro pela API e veja a recusa.')),
 ]
 
 DONE = ('The legacy endpoint and its allowlist are gone; <strong><code>D2</code>&#x27;s answer is executed, with the numbers behind it recorded</strong>; '
-        'and <strong>no migration flag from this epic remains</strong>.',
+        'and <strong>no migration flag from this epic remains</strong>. The registry&#x27;s <code>flowDispatch</code> field is gone and its readers read <code>execution</code>. '
+        'No saved node of <code>webNews</code>, <code>webMedia</code>, <code>webLocations</code> or <code>varInputForm</code> remains, live or in version history, and the four are '
+        'gone from the dispatch registry, the validator, the MCP and the front.',
         'A entrada legada e sua allowlist sumiram; <strong>a resposta da <code>D2</code> está executada, com os números por trás registrados</strong>; '
-        'e <strong>nenhuma flag de migração deste épico permanece</strong>.')
+        'e <strong>nenhuma flag de migração deste épico permanece</strong>. O campo <code>flowDispatch</code> do registro sumiu, e quem o lia lê o <code>execution</code>. '
+        'Nenhum node salvo de <code>webNews</code>, <code>webMedia</code>, <code>webLocations</code> ou <code>varInputForm</code> sobra, no canvas vivo ou no histórico de versões, e os quatro '
+        'sumiram do registro de dispatch, do validador, do MCP e do front.')
 
 FILES = [('back/src/temporal/temporal.controller.ts (/process/single-node-legacy)', False),
          ('back/src/temporal/single-node-legacy/**', False),
+         ('back/src/temporal/single-node-legacy/legacy-node-dispatch.ts (pullData/pushData dead branches, and the rest of the switch)', False),
          ('back/src/app-api/flux/prefetch/** (memory-mode.ts owns FLUX_EXEC_MEMORY_MODE)', False),
          ('back/src/app-api/flux/flux.service.ts (PREFETCH_SUPPORTED_NODE_TYPES · canUsePrefetchForFlow · the isPrefetchMode() switch)', False),
-         ('front/src/service/processService.ts', False)]
+         ('front/src/service/processService.ts', False),
+         ('back/src/shared/node-dispatch/node-dispatch-registry.ts (deprecated list, flowDispatch)', False),
+         ('a new internal endpoint for the deletion', True),
+         ('back/src/app-mcp (the deprecated marker)', False),
+         ('the front placeholder for the four removed types', False)]

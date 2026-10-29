@@ -130,6 +130,11 @@ PARTS = [
   ('decide',('In scope','Dentro do escopo'),
    ('<p><code>fluxObject</code> gets its registry class (<code>none</code>, through A11) and leaves <code>BACK_ONLY_PROJECTION_NODE_TYPES</code>.</p>',
     '<p>O <code>fluxObject</code> ganha sua classe no registro (<code>none</code>, via A11) e sai de <code>BACK_ONLY_PROJECTION_NODE_TYPES</code>.</p>')),
+  ('decide',('Added 2026-10-28','Adicionado em 2026-10-28'),
+   ('<p>A11 classes <code>fluxObject</code> as <code>execution: &#x27;state&#x27;</code>, not <code>none</code>. This task makes B4&#x27;s gate accept <code>state</code> and turns '
+    'A11&#x27;s <code>it.failing</code> &quot;the gate accepts a flow that holds a <code>state</code> node&quot; into a plain test. The class stays <code>state</code>.</p>',
+    '<p>A A11 dá ao <code>fluxObject</code> a classe <code>execution: &#x27;state&#x27;</code>, não <code>none</code>. Esta task faz o gate da B4 aceitar <code>state</code> e transforma '
+    'o <code>it.failing</code> da A11 sobre o gate aceitar um fluxo com um node <code>state</code> num teste comum. A classe continua <code>state</code>.</p>')),
   ('mig',('Out of scope','Fora de escopo'),
    ('<p>Moving any node to the worker. Changing chat semantics, session keys or what the chatbot shows. '
     'Two overlapping chat turns on one session can still overwrite each other, as today; fixing that is a separate decision.</p>',

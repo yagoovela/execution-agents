@@ -77,7 +77,12 @@ PARTS = [
  'purpose':('Flip <code>outputObjectNode</code>&#x27;s registry entry once both paths use the same builder.',
             'Virar a entrada de <code>outputObjectNode</code> no registro quando os dois caminhos usarem o mesmo construtor.'),
  'body':('<p>The order matters: the entry flips only after the back&#x27;s loop and the workflow share the builder, so <strong>no back-only code builds the Data Output value</strong>.</p>',
-         '<p>A ordem importa: a entrada só vira depois que o laço do back e o workflow compartilham o construtor, de modo que <strong>nenhum código exclusivo do back monta o valor do Data Output</strong>.</p>')},
+         '<p>A ordem importa: a entrada só vira depois que o laço do back e o workflow compartilham o construtor, de modo que <strong>nenhum código exclusivo do back monta o valor do Data Output</strong>.</p>'),
+ 'callouts':[('decide',('Added 2026-10-28','Adicionado em 2026-10-28'),
+   ('<p>A11 classes <code>outputObjectNode</code> as <code>execution: &#x27;sink&#x27;</code>. This task makes B4&#x27;s gate accept <code>sink</code> and turns '
+    'A11&#x27;s <code>it.failing</code> &quot;the gate accepts a flow that holds a <code>sink</code>&quot; into a plain test. The class stays <code>sink</code>.</p>',
+    '<p>A A11 dá ao <code>outputObjectNode</code> a classe <code>execution: &#x27;sink&#x27;</code>. Esta task faz o gate da B4 aceitar <code>sink</code> e transforma '
+    'o <code>it.failing</code> da A11 sobre o gate aceitar um fluxo com um <code>sink</code> num teste comum. A classe continua <code>sink</code>.</p>'))]},
 ]
 
 VERIF = [
