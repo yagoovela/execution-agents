@@ -6,6 +6,16 @@ renders this file, and each task page shows the latest entry that changed it.
 
 The log starts with PR #40. Earlier history is in `git log`.
 
+## 2026-10-30 · [#46](https://github.com/yagoovela/execution-agents/pull/46) · Publish the held-back specs with private values removed, and set E5 to planned
+- Title (PT): Publicar as specs retidas sem os valores privados, e marcar a E5 como planejada
+- Tasks: S4, S2, A8, E5, A11, A5B, B3B1
+- Pages: `progresso-refatoracao.html`, `status-tarefas.html`, `timeline/index.html`, `timeline/task-A11.html`, `timeline/task-A8.html`, `timeline/task-E5.html`, `timeline/task-S2.html`
+- No page change: S4: the update adds the implementation, release and measurement record; the page already shows the settled ceilings
+- No page change: A5B: the spec is newly mirrored; the A5 page already covers A5B
+- No page change: B3B1: only a customer name changed in the spec, and the B3B page never showed it
+- Commits:
+  - edce176 docs(specs): publish the held-back specs with private values removed, and set E5 to planned
+
 ## 2026-10-29 · [#45](https://github.com/yagoovela/execution-agents/pull/45) · Sync the epic with the Workflow spec, and check task owners
 - Title (PT): Sincroniza o épico com a spec do Workflow e confere os responsáveis das tasks
 - Tasks: S7, S5, C3, S2, S3, S8, E3, A1, A1B, A1C, D2, A2, A3, A4, A5, A6, S6, A8, A9, A10, D1, B1, B2, B3, B3B, B4, E1, E2, E5, A7, B5, B6, C1, B3B1
