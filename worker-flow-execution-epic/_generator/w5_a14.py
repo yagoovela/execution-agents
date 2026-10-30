@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-TITLE = ('Small Memory and chat on the workflow engine, without moving a node',
+TITLE = ('Small Memory and chat under the workflow engine, without moving a node',
          'Small Memory e chat no motor de workflow, sem mover um node')
 
 GOAL = ('Flows with Small Memory (<code>fluxObject</code>) and chat history run on the B4 workflow engine with <b>the same results as on the back&#x27;s loop</b>. No node moves to the worker.',

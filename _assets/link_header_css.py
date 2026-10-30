@@ -21,6 +21,7 @@ ROOT_HTMLS = [
     "validacao-dag.html",
     "endpoint-api-v2.html",
     "flow-version-atual.html",
+    "mudancas.html",
 ]
 
 SUB_GLOBS = [
