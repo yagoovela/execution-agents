@@ -193,6 +193,7 @@ def main() -> None:
         (["index.html"], "", "index"),
         (["progresso-refatoracao.html"], "", "progress"),
         (["status-tarefas.html"], "", "status"),
+        (["mudancas.html"], "", "changes"),
         (["algoritmo-dag.html", "validacao-dag.html", "endpoint-api-v2.html", "flow-version-atual.html"], "", "v2"),
         (list(ROOT.glob("passos/*.html")), "../", "index"),
         (list(ROOT.glob("complemento/*.html")), "../", "plan"),
