@@ -382,12 +382,12 @@ if _impact is not None:
         m = re.search(r'<div class="stnote" data-en="(.*?)" data-pt="(.*?)">', _txt(p), re.S)
         if not bits_en:
             if m:
-                probs.append('%-5s <- task-%s.html shows a status note; STATUS.md has none' % (code, code))
+                probs.append('%-5s <- task-%s.html shows a status note; STATUS.md has none: run _generator/sync_status.py %s' % (code, code, code))
             continue
         if not m:
-            probs.append('%-5s <- task-%s.html shows no status note; STATUS.md has one' % (code, code))
+            probs.append('%-5s <- task-%s.html shows no status note; STATUS.md has one: run _generator/sync_status.py %s' % (code, code, code))
         elif (_html.unescape(m.group(1)), _html.unescape(m.group(2))) != (' · '.join(bits_en), ' · '.join(bits_pt)):
-            probs.append('%-5s <- task-%s.html status note differs from STATUS.md — rebuild or patch it' % (code, code))
+            probs.append('%-5s <- task-%s.html status note differs from STATUS.md: run _generator/sync_status.py %s' % (code, code, code))
     _group('task status notes', probs, 'every page shows its STATUS.md note and ref')
 
     # changelog: mudancas.html renders CHANGELOG.md; each task page carries its latest entry
@@ -408,6 +408,9 @@ if _impact is not None:
             return subprocess.run(['git'] + list(a), cwd=ROOT, capture_output=True, text=True).stdout
 
         changed = set(_git('diff', '--name-only', ref).split()) | set(_git('ls-files', '--others', '--exclude-standard').split())
+        sys.path.insert(0, os.path.join(ROOT, '_assets'))
+        from changelog import stamp_only as _stamp_only
+        changed = {f for f in changed if not _stamp_only(f, ref, None)}
         epic_rel = os.path.relpath(EPIC, ROOT)
         need = collections.defaultdict(set)
         for f in changed:

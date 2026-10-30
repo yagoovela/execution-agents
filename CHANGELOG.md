@@ -6,6 +6,14 @@ renders this file, and each task page shows the latest entry that changed it.
 
 The log starts with PR #40. Earlier history is in `git log`.
 
+## 2026-10-29 · [#43](https://github.com/yagoovela/execution-agents/pull/43) · Map task impact, check every restated fact, and keep a changelog
+- Title (PT): Mapeia o impacto de cada task, confere todo fato repetido e mantém um changelog
+- Tasks: S3, S8, A1B, D2, A2, A3, A4, A5, A6, A8, A9, A10, B3, E5, A7, A14, A6B, E4
+- Pages: `status-tarefas.html`, `timeline/index.html`, `timeline/task-A14.html`, `timeline/task-A2.html`, `timeline/task-A3.html`, `timeline/task-A4.html`, `timeline/task-A5.html`, `timeline/task-A6.html`, `timeline/task-A6B.html`, `timeline/task-A7.html`, `timeline/task-A8.html`, `timeline/task-A9.html`, `timeline/task-B3.html`, `timeline/task-D2.html`, `timeline/task-E5.html`, `timeline/task-S3.html`
+- No page change: A10, A1B, E4, S8: the spec mirror caught up with the Workflow spec; the pages already show it
+- Commits:
+  - 1227859 docs(tooling): map task impact, check every restated fact, keep a changelog
+
 ## 2026-10-29 · [#42](https://github.com/yagoovela/execution-agents/pull/42) · Show E2 shipped and A11, B7 and S6b in progress
 - Title (PT): Mostra a E2 entregue e a A11, a B7 e a S6b em andamento
 - Tasks: E2, S6B, A11, B7, E4

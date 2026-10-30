@@ -49,7 +49,7 @@ sys.path.insert(0, GEN)
 
 FACTS = ('title', 'state', 'note', 'links', 'wave', 'order', 'deps', 'estimate', 'content', 'mention')
 BUILDS = ('build_w0.py', 'w1_build.py', 'w2_build.py', 'w3_build.py', 'w4_build.py', 'w5_build.py')
-TOOLS = ('impact.py', 'reconcile_facts.py', 'lang_scan.py', 'sync_status.py')
+TOOLS = ('impact.py', 'reconcile_facts.py', 'lang_scan.py', 'sync_status.py', 'rebuild.py')
 SUBSPEC = re.compile(r'-(PLAN|DESIGN|QA-HANDOFF|CURRENT-PROCESS)\.md$')
 
 

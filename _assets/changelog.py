@@ -137,6 +137,19 @@ def changed_tasks(base: str, head: str | None, files: list[str]) -> list[str]:
     return sorted(codes, key=lambda c: (order.index(c) if c in order else 999, c))
 
 
+def stamp_only(f: str, base: str, head: str | None) -> bool:
+    """True when a task page differs from base only in its "Updated" stamp."""
+    if not f.startswith('timeline/task-'):
+        return False
+    from stamp_updates import STAMP_RE
+    try:
+        old = git('show', '%s:%s' % (base, f))
+        new = git('show', '%s:%s' % (head, f)) if head else (ROOT / f).read_text(encoding='utf-8')
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return False
+    return STAMP_RE.sub('', old) == STAMP_RE.sub('', new)
+
+
 def cmd_add(a: argparse.Namespace) -> int:
     if a.range:
         base, head = a.range.split('..')
@@ -150,7 +163,8 @@ def cmd_add(a: argparse.Namespace) -> int:
         commits = git('log', '--no-merges', '--reverse', '--format=%h %s', '%s..HEAD' % base).splitlines()
         date = a.date or datetime.date.today().isoformat()
     skip = {'CHANGELOG.md', PAGE.name}
-    pages = sorted(f for f in files if f.endswith('.html') and f not in skip)
+    files = [f for f in files if f not in skip and not stamp_only(f, base, head)]
+    pages = sorted(f for f in files if f.endswith('.html'))
     entry = {'date': date, 'pr': a.pr, 'title': a.title, 'title_pt': a.title_pt,
              'tasks': changed_tasks(base, head, files), 'pages': pages,
              'commits': commits, 'no_page_change': a.no_page_change or []}
