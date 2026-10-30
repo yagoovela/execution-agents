@@ -65,6 +65,28 @@ ceiling is measured against batch rows, not only against hand-built flows.
 
 **Out.** Changing the CSV format, the input mapping to `varInputNode`s, or the output shape.
 
+## Decisions (2026-10-23)
+
+**B7-a — settled: both, split by cause (option C).** A batch can stop for two different reasons,
+and each one gets its own answer.
+
+| Cause | Examples | What the workflow does | What the customer sees |
+|---|---|---|---|
+| **Our side stalled** | A deploy, a restart, a scale-down, a lost worker, a provider timeout or a 5xx | Resumes on its own from the row it was on. Completed rows are not run again. | Nothing, or a batch that took longer. The status stays `processing` and `lastProcessedLine` keeps moving. |
+| **The data is wrong** | A bad CSV cell, a missing required input, a revoked credential, a 4xx from a provider | Retries the row a bounded number of times. Then it stops the batch and keeps every completed row. | A failed batch that names the row and the reason. The status is terminal and true. |
+
+For engineering:
+
+1. Map the split onto Temporal's retry policy. An infrastructure error is retryable; a data error
+   is a non-retryable application failure.
+2. State the retry bound in the PR.
+3. Make sure `/batch-process/:id/status` never shows a non-terminal status that will not move
+   again. That is the defect this task fixes.
+
+For product: a stall caused by the platform is not the customer's problem, so the customer never
+has to restart a batch because of it. A failure caused by the data is the customer's to fix, so
+it is shown at the row that caused it, not after hours of silent retries that cost money.
+
 ## Verification
 
 - **Negative control (required).** Start a batch, restart the backend mid-run, and confirm the
