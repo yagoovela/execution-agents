@@ -484,11 +484,7 @@ this list wins until that section is rewritten.
 8. **The apiV2 loop keeps its literal integration branch.** A registry-driven condition worked at
    run time, but `flux.service.worker-dispatch.spec.ts` finds each worker type's branch by its
    `node.type === '<type>'` literal (layer 7 of the node-type checklist). C2 deletes this loop.
-9. **Runtime credential authorization moves to S9.** The worker resolves an `integrationId` without
-   checking that the executing user may use it, and only logs the mismatch. P7 closed the MCP write
-   side and deferred the runtime side. S9 (`868mpn1h3`, Wave 5, waiting on A11) owns it, including
-   the back's configuration routes.
-10. **Deploy order.** Deploy the worker before the back, and the front with the back. A back without
+9. **Deploy order.** Deploy the worker before the back, and the front with the back. A back without
     the A11 worker would send `source` and `visual` types that the old worker does not skip. The
     front's chain-run lists must match the back's legacy endpoint.
 11. **Editor chain runs reach the next node.** "Run from start" and "Run from here" (node menu,

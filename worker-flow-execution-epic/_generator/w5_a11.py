@@ -200,11 +200,9 @@ PARTS = [
  ],
  'callouts':[('mig',('Owned elsewhere','Fica com outra task'),
    ('<p><strong>A7</strong> owns the <code>arrayNode</code> loop body, which has no branch for either type and writes a false success; once A11 sets them to '
-    '<code>worker</code>, A7&#x27;s registry-driven dispatch reaches them. <strong>S9</strong> (<code>868mpn1h3</code>) owns runtime credential '
-    'authorization: the worker resolves an <code>integrationId</code> without checking that the executing user may use it.</p>',
+    '<code>worker</code>, A7&#x27;s registry-driven dispatch reaches them.</p>',
     '<p>A <strong>A7</strong> cuida do corpo do laço do <code>arrayNode</code>, que não tem ramo para nenhum dos dois tipos e grava um falso sucesso; quando a A11 os '
-    'marca como <code>worker</code>, o dispatch guiado pelo registro da A7 passa a alcançá-los. A <strong>S9</strong> (<code>868mpn1h3</code>) cuida da '
-    'autorização da credencial em execução: o worker resolve um <code>integrationId</code> sem conferir se o usuário que executa pode usá-lo.</p>'))]},
+    'marca como <code>worker</code>, o dispatch guiado pelo registro da A7 passa a alcançá-los.</p>'))]},
 
 {'n':'4','title':('Derive every dispatch list from the field','Derivar toda lista de dispatch do campo'),
  'loc':'engine-selector.ts · is-non-executable.ts · node-input-projection.ts · sync-ported-engine.ts',

@@ -24,6 +24,8 @@ change then drifts away from the thing that produced it.
 | `rebuild.py` | Rebuilds the named task pages and publishes only those: `python3 _generator/rebuild.py A11`. |
 | `sync_status.py` | Writes a task page's state chip and status note from `STATUS.md`, without a rebuild. |
 | `owners.py`, `sync_owners.py` | Task owners, synced from ClickUp, and the script that writes them onto the board. |
+| `publish_sync.py` | Mirrors the Workflow spec files here through the private literal list, which removes people, customers, email addresses, AWS profiles and unfixed security gaps. `--check` compares, `--hashes` refreshes `redactions.json`. |
+| `public_redact.py`, `redactions.json` | Hashes of the removed values and passages, plus generic patterns, and the scan that `reconcile_facts.py` runs on every published file. |
 
 ## Rebuilding
 

@@ -15,7 +15,10 @@ Workflow spec does not already say.
 
 Before you publish a new spec file or a new task, check that it is safe to make public.
 Leave it out, and ask the user, when it describes a security gap that is not fixed yet,
-or carries customer data, credentials or internal hostnames.
+or carries customer data, credentials or internal hostnames. The private literal list in
+Workflow (`_generator/public_redactions.json` in the epic folder) records every file,
+passage and value left out, with the reason. Never write one of those values here, not
+even in a redaction list: `_generator/redactions.json` holds hashes only.
 
 ## Where each fact lives
 
@@ -45,12 +48,20 @@ Run every command from the repository root. Set `WORKFLOW` to your Workflow chec
    git switch -c docs/<clickup-id>-<topic> origin/main
    ```
 
-3. Copy the changed spec files into the mirror:
+3. Mirror the spec files with the private values removed. Do not copy them with `cp`: the
+   Workflow text names people, customers, email addresses and AWS profiles, and describes
+   security gaps that are not fixed yet. `publish_sync.py` applies the private literal list
+   that lives in Workflow, and writes nothing if a rule no longer matches its file:
 
    ```bash
-   cp "$WORKFLOW/.claude/tasks/worker-flow-execution-epic/STATUS.md" worker-flow-execution-epic/
-   cp "$WORKFLOW"/.claude/tasks/worker-flow-execution-epic/TASK-$CODE-*.md worker-flow-execution-epic/
+   EPIC="$WORKFLOW/.claude/tasks/worker-flow-execution-epic"
+   python3 worker-flow-execution-epic/_generator/publish_sync.py --from "$EPIC" --literals "$EPIC/_generator/public_redactions.json"
    ```
+
+   If the change adds a person, a customer, an email address, an AWS profile or account,
+   or an unfixed security gap, add a rule and a value to `public_redactions.json` in
+   Workflow first. After step 6, run the same command with `--hashes` to refresh
+   `_generator/redactions.json`, which stores only hashes of those values.
 
 4. List every file that restates the changed facts:
 
@@ -85,10 +96,13 @@ Run every command from the repository root. Set `WORKFLOW` to your Workflow chec
    `patch by hand` group: board cards and counts in
    `status-tarefas.html`, cards in `timeline/index.html`, bars in
    `progresso-refatoracao.html`, and any sentence that is no longer true.
-8. Run the checks. Both must pass, and `lang_scan.py` must not report more hits than
-   `main` (46 on 2026-10-29):
+8. Run the checks. All must pass, and `lang_scan.py` must not report more hits than
+   `main` (46 on 2026-10-29). The `public redactions` group of `reconcile_facts.py` fails
+   when a removed value, a removed passage, an email address outside the allowed domains,
+   an AWS ARN, account id, access key or named profile appears in any published file:
 
    ```bash
+   python3 worker-flow-execution-epic/_generator/publish_sync.py --from "$EPIC" --literals "$EPIC/_generator/public_redactions.json" --check
    python3 worker-flow-execution-epic/_generator/reconcile_facts.py
    python3 worker-flow-execution-epic/_generator/lang_scan.py timeline/task-*.html complemento/*.html
    ```

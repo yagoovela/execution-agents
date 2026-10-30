@@ -478,6 +478,36 @@ if _impact is not None:
             probs.append('CHANGELOG.md <- %d task(s) changed since %s and no changelog entry was added: run _assets/changelog.py add' % (len(need), ref))
         _group('changed since %s' % ref, probs, '%d changed task(s); every mapped file changed with them' % len(need))
 
+
+# --- public redactions --------------------------------------------------------
+# This repository is public; the Workflow spec is not.  publish_sync.py removes people,
+# customers, email addresses, AWS profile names and unfixed security gaps from the
+# mirror, and redactions.json keeps a hash of each removed value.  This group fails when
+# a hashed value, a removed passage or a generic pattern (an email address outside the
+# allowed domains, an ARN, an account id, an access key, a named AWS profile) appears in
+# any published file.  It prints where, never what.
+try:
+    import public_redact as _pr
+    _hashes = _pr.load()
+except Exception as _e:
+    _hashes = None
+    failures += 1
+    print('BLIND %-32s could not load _generator/redactions.json: %s' % ('public redactions', _e))
+if _hashes is not None:
+    _hits = _pr.scan(_hashes)
+    _n = sum(len(v) for v in _hashes.values())
+    if not _n:
+        failures += 1
+        print('BLIND %-32s redactions.json holds no hash, so it can never fail' % 'public redactions')
+    elif _hits:
+        failures += 1
+        print('DRIFT %-32s %d hit%s; remove the value, or rerun publish_sync.py with the private literal list:'
+              % ('public redactions', len(_hits), '' if len(_hits) == 1 else 's'))
+        for _f, _line, _kind in _hits:
+            print('        %s:%d <- %s' % (_f, _line, _kind))
+    else:
+        print('OK    %-32s %d hashes and %d patterns, no published file matches' % ('public redactions', _n, len(_pr.PATTERNS)))
+
 print()
 if failures:
     print('%d fact group(s) disagree. Fix the documents, or the pattern if it is over-matching.' % failures)
