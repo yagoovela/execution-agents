@@ -299,7 +299,10 @@ PARTS = [
  'ba':(('A sub-flow is a function call inside the same process, so the collector, the cancel key and the counters are simply in scope.',
         'Um sub-fluxo é uma chamada de função no mesmo processo, então o coletor, a chave de cancelamento e os contadores estão simplesmente em escopo.'),
        ('A sub-flow is a child workflow, and each of those three is an explicit part of the child&#x27;s input — verified one by one, because they fail one by one.',
-        'Um sub-fluxo é um child workflow, e cada uma dessas três coisas é parte explícita da entrada do filho — verificadas uma a uma, porque falham uma a uma.'))},
+        'Um sub-fluxo é um child workflow, e cada uma dessas três coisas é parte explícita da entrada do filho — verificadas uma a uma, porque falham uma a uma.')),
+ 'callouts':[('decide',('D23 — moved from E2 on 2026-10-26 (E2-d)','D23 — veio da E2 em 26/10/2026 (E2-d)'),
+   ('<p>A <code>fluxBox</code>, <code>libraryNode</code> or <code>arrayNode</code> is not allowed to finish the way a generation is: its execution is an open-ended amount of further work. <strong>Cancelling one cancels its children.</strong> For <code>arrayNode</code>, the element already generating finishes; the remaining elements never start. <code>nodesBox</code> is not in this list: it dispatches to <code>objectCaller</code>, which executes no nodes and only reads and writes an object&#x27;s session state, so cancelling it prevents no spend and leaves the object half-written.</p>',
+    '<p>Um <code>fluxBox</code>, <code>libraryNode</code> ou <code>arrayNode</code> não pode terminar como uma geração termina: a execução dele é uma quantidade aberta de trabalho futuro. <strong>Cancelar um cancela os filhos dele.</strong> No <code>arrayNode</code>, o elemento que já está gerando termina; os elementos restantes nunca começam. O <code>nodesBox</code> não entra nesta lista: ele despacha para o <code>objectCaller</code>, que não executa nodes e só lê e escreve o estado de sessão de um objeto, então cancelá-lo não impede gasto nenhum e deixa o objeto pela metade.</p>'))]},
 
 {'n':'3','title':('The run chain has to cross the boundary','A cadeia do run precisa atravessar a fronteira'),
  'loc':'TASK-S1 · TASK-S3',

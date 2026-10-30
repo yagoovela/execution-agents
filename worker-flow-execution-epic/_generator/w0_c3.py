@@ -41,6 +41,9 @@ C3=dict(
    [{'t':'6','mono':True},('The friendly error timestamp records “now”, not when the error occurred','O timestamp do erro amigável grava “agora”, não quando o erro ocorreu'),
     {'t':('Verified','Verificado'),'pill':'ok'},
     ('Every downstream reader of that timestamp is wrong by however long the error took to surface','Todo leitor a jusante desse timestamp erra pelo tempo que o erro levou para aparecer')],
+   [{'t':'7','mono':True},('<code>refreshOAuthTokenUnderLock</code> holds a pooled connection across an external HTTP call','<code>refreshOAuthTokenUnderLock</code> segura uma conexão do pool durante uma chamada HTTP externa'),
+    {'t':('Verified','Verificado'),'pill':'ok'},
+    ('Connection, open transaction and <code>pg_advisory_xact_lock</code> are all held for the provider round trip — bounded (Notion 15s, Slack 15s, HubSpot 30s), but <strong>three orders of magnitude longer than any other query</strong>, and the worker sets neither <code>statement_timeout</code> nor <code>idle_in_transaction_session_timeout</code>','Conexão, transação aberta e <code>pg_advisory_xact_lock</code> ficam todos presos durante a ida e volta ao provedor — limitado (Notion 15s, Slack 15s, HubSpot 30s), mas <strong>três ordens de grandeza mais longo que qualquer outra query</strong>, e o worker não define <code>statement_timeout</code> nem <code>idle_in_transaction_session_timeout</code>')],
   ]),
  PARTS=[
   {'n':'1','title':('The proof burden on the deletions','O ônus de prova nas remoções'),
@@ -56,8 +59,8 @@ C3=dict(
          ('Each is either deleted with the proof recorded, or kept with the reason recorded. Either outcome is fine; an unproven deletion is not.',
           'Cada um é removido com a prova registrada, ou mantido com a razão registrada. Qualquer um dos dois desfechos serve; uma remoção sem prova não.')),
    'callouts':[('mig',('Out of scope','Fora de escopo'),
-     ('<p>Anything that changes execution semantics. This task is for defects whose fix is <strong>behaviour-preserving in the normal case</strong>; a fix that changes what a run produces belongs to the task that owns that behaviour.</p>',
-      '<p>Qualquer coisa que mude semântica de execução. Esta task é para defeitos cuja correção é <strong>preservadora de comportamento no caso normal</strong>; uma correção que muda o que um run produz pertence à task dona daquele comportamento.</p>'))]},
+     ('<p><strong>Restructuring item 7&#x27;s lock</strong> so the HTTP call happens outside the transaction. That is the right long-term shape, but it changes when a concurrent refresh may proceed — execution semantics, owned by the third-party-integration task. What belongs here is the behaviour-preserving half: set <code>statement_timeout</code> and <code>idle_in_transaction_session_timeout</code> on the worker pool so a stuck connection is reclaimed rather than pinned.</p><p>Anything else that changes execution semantics. This task is for defects whose fix is <strong>behaviour-preserving in the normal case</strong>; a fix that changes what a run produces belongs to the task that owns that behaviour.</p>',
+      '<p><strong>Reestruturar o lock do item 7</strong> para que a chamada HTTP aconteça fora da transação. Essa é a forma certa no longo prazo, mas muda quando um refresh concorrente pode seguir — semântica de execução, que pertence à task dona da integração de terceiros. O que cabe aqui é a metade preservadora de comportamento: definir <code>statement_timeout</code> e <code>idle_in_transaction_session_timeout</code> no pool do worker para que uma conexão travada seja recuperada em vez de ficar presa.</p><p>Qualquer outra coisa que mude semântica de execução. Esta task é para defeitos cuja correção é <strong>preservadora de comportamento no caso normal</strong>; uma correção que muda o que um run produz pertence à task dona daquele comportamento.</p>'))]},
  ],
  VERIF=[
   (True,('Negative control, per fix','Controle negativo, por correção'),
@@ -66,6 +69,9 @@ C3=dict(
   (True,('Measure before the backfill','Medir antes do backfill'),
    ('Query the real data for <code>previewResponses</code> arrays longer than ten <strong>before</strong> deciding whether a backfill is needed, and report the count. <strong>If none exist, say so</strong> — an unnecessary data migration is its own risk.',
     'Consulte o dado real por arrays <code>previewResponses</code> com mais de dez itens <strong>antes</strong> de decidir se um backfill é necessário, e reporte a contagem. <strong>Se não houver nenhum, diga isso</strong> — uma migração de dados desnecessária é um risco por si só.')),
+  (True,('Measure before setting item 7&#x27;s timeouts','Medir antes de definir os timeouts do item 7'),
+   ('An <code>idle_in_transaction_session_timeout</code> shorter than a real OAuth round trip would abort refreshes that work today — the false-refusal failure. <strong>Measure the real distribution of <code>doRefresh</code> durations per adapter</strong> against stored integrations before picking a value, and set it above the slowest observed round trip, not at a round number.',
+    'Um <code>idle_in_transaction_session_timeout</code> menor que uma ida e volta real de OAuth abortaria refreshes que hoje funcionam — a falha de recusa falsa. <strong>Meça a distribuição real das durações de <code>doRefresh</code> por adaptador</strong> contra as integrações armazenadas antes de escolher um valor, e defina acima da ida e volta mais lenta observada, não num número redondo.')),
   (False,('Prove the dead code across every repo','Provar o código morto em todos os repos'),
    ('Owner-anchored greps across <code>back</code>, <code>front</code>, <code>worker</code>, <code>mcp-server</code> <strong>and <code>origin/production</code></strong>, not just the local checkout. Record the proof in the PR.',
     'Greps ancorados no dono em <code>back</code>, <code>front</code>, <code>worker</code>, <code>mcp-server</code> <strong>e <code>origin/production</code></strong>, não só no checkout local. Registre a prova no PR.')),
@@ -75,7 +81,9 @@ C3=dict(
  FILES=[('back/src/app-api/flux/flux.service.ts (responses.length === 10 ×6 · the two consecutive endNode calls on genericRunLogNode · the friendly-error timestamp)',False),
         ('back/src/app-api/node-reference-substitution/node-reference-substitution.service.ts (processFlowWithSubstitution)',False),
         ('back/src/app-api/flux/api-caller-polling.ts',False),
-        ('back/.env.example and every environment carrying the Google client secret',False)],
+        ('back/.env.example and every environment carrying the Google client secret',False),
+        ('worker/src/modules/nodes/third-party-integration/oauth-token.repo.ts (refreshOAuthTokenUnderLock holds the connection across doRefresh)',False),
+        ('worker/src/modules/database/database.service.ts (no statement_timeout / idle_in_transaction_session_timeout)',False)],
 )
 
 C3_DEC={

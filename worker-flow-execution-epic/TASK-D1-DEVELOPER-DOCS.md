@@ -54,7 +54,7 @@ Mintlify pages under `docs/worker/`, **en + pt-br**, per the docs repo conventio
    user's typo retry for thirty minutes.
 5. **Persistence contract** — own-row writes only, the JSONB merge, the claim check above 256 KB,
    and why this is what makes parallelism safe.
-6. **Running and debugging locally** — the `docker-compose.devdb.yaml` stack, finding a run in
+6. **Running and debugging locally** — the `docker/devdb/docker-compose.devdb.yaml` stack, finding a run in
    Temporal, reading `node_executions`, the worker's log surface.
 
 ## Verification

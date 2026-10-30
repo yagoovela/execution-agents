@@ -20,10 +20,12 @@ GLANCE=[
 ]
 
 LEDE=(
+ '<p><strong>Re-validated 2026-09-21 against <code>back@origin/production</code> <code>3804a524</code>.</strong> <code>isTemporalNode</code> now lists 14 types, not the 7 read at the earlier commit (§ TASK-A1) — the count moved because A2&#x27;s six types shipped into it. The fact this task depends on did not change: re-checking it against <code>3804a524</code> confirms <code>sqlQuerier</code> and <code>audioReaderNode</code> are still in <strong>neither</strong> <code>isTemporalNode</code> nor a migrated integration provider. This task needs no change beyond this evidence refresh.</p>'
  '<p>Both node types are in the worker&#x27;s <code>NodeType</code> enum on <code>origin/main</code> and have complete modules. Neither is in <code>isTemporalNode</code>, and neither resolves to a migrated integration provider — '
  'so <strong>nothing in the back ever starts a workflow for them</strong> (analysis §9.4).</p>'
  '<p><code>audioReaderNode</code> still has its inline handler in <code>flux.service.ts</code>, and that is what actually runs. This is the concrete case the A1 invariant spec flags: '
  '<strong><code>workerModule: true</code> with <code>dispatch: &#x27;inline&#x27;</code></strong>. The code exists, ships to every replica, and cannot be reached.</p>',
+ '<p><strong>Revalidado em 21/09/2026 contra <code>back@origin/production</code> <code>3804a524</code>.</strong> O <code>isTemporalNode</code> agora lista 14 tipos, não os 7 lidos no commit anterior (§ TASK-A1) — a contagem mudou porque os seis tipos da A2 entraram nele. O fato do qual esta task depende não mudou: reconferir contra <code>3804a524</code> confirma que <code>sqlQuerier</code> e <code>audioReaderNode</code> continuam em <strong>nenhum</strong> dos dois — nem <code>isTemporalNode</code>, nem um provedor de integração migrado. Esta task não precisa de nenhuma mudança além desta atualização de evidência.</p>'
  '<p>Os dois tipos de node estão no enum <code>NodeType</code> do worker em <code>origin/main</code> e têm módulos completos. Nenhum está no <code>isTemporalNode</code>, e nenhum resolve para um provedor de integração migrado — '
  'então <strong>nada no back jamais inicia um workflow para eles</strong> (análise §9.4).</p>'
  '<p>O <code>audioReaderNode</code> ainda tem o handler inline dele em <code>flux.service.ts</code>, e é isso que de fato roda. Este é o caso concreto que o teste de invariante da A1 acusa: '

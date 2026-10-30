@@ -1,122 +1,184 @@
 # A10 — Route the ClickUp provider through the worker
 
-**Goal:** give `clickup` a worker adapter, so a `thirdPartyIntegration` node configured with
-`provider: 'clickup'` executes through the worker like every other migrated provider, instead of
-through the inline `back` path it has used since it shipped.
+**Goal:** a `thirdPartyIntegration` node configured with `provider: 'clickup'` executes through the
+worker in production, like every other migrated provider, instead of through the inline `back` path
+it has used since it shipped.
 
-**Depends on:** A1. **Relates to:** A2 — A2 promotes providers whose worker half is *finished but
-not yet in production*; this is not that shape. ClickUp's worker half was never built, so this is
-new work, not a promotion, and it gets its own task rather than reopening A2's already-corrected
-scope. **ClickUp card:** [868m7kbf0](https://app.clickup.com/t/868m7kbf0), child of Wave 3's card
+**Depends on:** A1. **Relates to:** A2. **ClickUp card:**
+[868m7kbf0](https://app.clickup.com/t/868m7kbf0), child of Wave 3's card
 [868m0vk0p](https://app.clickup.com/t/868m0vk0p).
 
-## Why
+## Correction, 2026-09-28 — the worker half was built; it never reached production
 
-**Added 2026-09-21**, the same day A2 was re-validated and found that `clickup`'s product feature
-had shipped (ClickUp task [868j988uj](https://app.clickup.com/t/868j988uj), back PR #1922, front PR
-#2134, 2026-08-27) entirely on the inline OAuth-connection path — while this epic was already
-running. Re-measured against `back@origin/production` `3804a524`, `worker@origin/main` `3e4c93a`,
-`front@origin/production` `fdeddbbc`:
+The first version of this spec (2026-09-21) said ClickUp's worker half "was never built", and scoped
+A10 as new work. **That is true of production only.** Re-validated at task start against
+`back@origin/production` `94cb2e26`, `worker@origin/main` `ceff351`, `front@origin/production`
+`493b05e9`, and against the dev lines `back@origin/master` `9abaca4c`, `worker@origin/develop` `4b39d74`:
 
-- The front registers **11** providers
-  (`front/src/components/ThirdPartyIntegration/registry.ts`, the `registerProvider(...)` calls):
-  `wordpress`, `slack`, `zapier` (three configs — pull, push, poll — one provider),
-  `notion`, `stripe`, `mcp`, `hubspot`, `microsoft`, `pinecone`, `supabase`, `clickup`.
-- **Nine** have worker adapters under
-  `worker/src/modules/nodes/third-party-integration/adapters/`: `stripe`, `wordpress`, `slack`,
-  `notion`, `zapier`, `hubspot`, `supabase`, `pinecone`, `mcp`.
-- **`microsoft` is correctly excluded and is not a gap.** Its config
-  (`front/src/components/ThirdPartyIntegration/providers/microsoft/MicrosoftConfig.ts`) declares
-  `supportsPull: false` and `supportsPush: false` — a connection-only provider (Microsoft 365 OAuth)
-  that executes no pull or push action. It has no back execution adapter either, and needs none.
-  Stating this explicitly matters because "11 front providers vs. 9 worker adapters" invites the
-  conclusion that there are two gaps, when there is one.
-- **`clickup` is the only executable provider still inline.** Its config
-  (`front/src/components/ThirdPartyIntegration/providers/clickup/ClickUpConfig.ts`) declares
-  `supportsPull: true` and `supportsPush: true`. Its back execution adapter,
-  `back/src/app-api/integrations/adapters/clickup.adapter.ts`, is registered in
-  `IntegrationsService`'s constructor (`this.adapters.set('clickup', clickUpAdapter)`,
-  `back/src/app-api/integrations/integrations.service.ts`) and `IntegrationProvider.CLICKUP` exists
-  in `back/src/entities/user_integration.entity.ts`. **Nothing exists in the worker** — no adapter
-  file, no module registration — and `clickup` is absent from `MIGRATED_INTEGRATION_PROVIDERS`
-  (`back/src/shared/integration/integration-executable-node.ts`).
+- **The port exists.** Guilherme Ferreira ported the adapter on 2026-07-31 — worker commit
+  `b027e55` ("port the ClickUp adapter to the Temporal worker"): `clickup.adapter.ts`,
+  `clickup-http.ts`, a 550-line `clickup.adapter.spec.ts`, the `third-party-integration.module.ts`
+  factory line, and a `PORTED_FROM.md` "P7 — ClickUp" entry. It is on `develop`, never on `main`.
+  `PROD-DEV-DIVERGENCE.md` already recorded the dev-side half of this on 2026-09-21.
+- **The port matches production.** Its cited back source, `ec87a9b2`, is byte-identical to
+  `back@origin/production`'s `clickup.adapter.ts` (empty diff). Both send `Bearer ${accessToken}`.
+  The worker's `user-integration.repo.ts` on `main` already decrypts `enc:v1:` tokens before the
+  adapter sees them, so the P7 adapter needs nothing else from `main`.
+- **It applies cleanly.** `b027e55` merges onto `worker@origin/main` with no conflict (`git
+  merge-tree`, checked without touching the branch).
+- **The dev version is a superset that production cannot use yet.** `develop` also carries
+  `e9b85ca` ("authenticate ClickUp per connection", task `868kkgkqa`/`868kkgm1g`): `metadata.authKind`
+  with `personal_token` and `user_oauth_app`. Back production's adapter has no `authKind`; that half
+  exists only on `back@origin/master`. Porting `e9b85ca` would ship the worker half of another task
+  ahead of its back half, so it is **out of scope** (`PROD-DEV-DIVERGENCE.md` rule).
+- **The back entry on dev is entangled.** On `back@origin/master`, `'clickup'` entered
+  `integrationProviders` in commit `4884ffb0` ("add the QuickBooks Online provider"), together with
+  `'quickbooks'`. It cannot be cherry-picked; the production change is written by hand.
 
-**This is the case the new standing rule (`PLAN.md` §3.6) exists to prevent.** ClickUp's product
-feature and its worker routing were built by different pipelines on different timelines, and nothing
-connected them — the epic acquired migration work it should never have needed, discovered only
-because A1's re-validation happened to look at `isWorkerRoutedIntegration`. Without the rule, the
-next integration (QuickBooks — `PLAN.md` §9 — is the named next case) repeats it.
+So A10 **promotes finished dev work to production**. It is closer to A2's shape than first stated,
+but it stays its own task because it needs a routing change, a flag flip and a parity measurement.
+A2 needed none of those.
+
+The original finding still holds for production: the front registers 11 providers
+(`front/src/components/ThirdPartyIntegration/registry.ts`); nine have worker adapters on `main`;
+`microsoft` is connection-only (`supportsPull: false`, `supportsPush: false`) and is not a gap;
+`clickup` (`supportsPull: true`, `supportsPush: true`) is the only executable provider still inline
+in production. This is still the case `PLAN.md` §3.6 exists to prevent: the port was done, but
+nothing tied it to the product feature's release to production.
+
+## Decisions (approved 2026-09-28)
+
+1. **Port base: P7, `b027e55` only.** Not `e9b85ca`, not the `develop` tip. P7 is what matches
+   `back@origin/production`.
+2. **The flag is the deploy order.** Production has no routing flag: the provider gate is the static
+   `integrationProviders` set in `back/src/shared/node-dispatch/node-dispatch-registry.ts`, read by
+   `isWorkerRoutedIntegration`. Pinecone (`4dce40f6`) and Supabase shipped by adding to that set.
+   A10 satisfies `PLAN.md` §3.2 the same way, with two PRs in two separate deploys:
+   - **Deploy 1 — worker PR to `main`.** The adapter is registered in the factory but unreachable:
+     the back never dispatches a `clickup` node to the worker. Behaviour in production is unchanged.
+   - **Deploy 2 — back PR to `production`** adding `'clickup'` to `integrationProviders`. This is
+     the flip. Rollback is reverting this PR; the worker adapter can stay.
+
+   No new env var is introduced.
 
 ## Scope
 
-**In.** A `clickup` adapter under `worker/src/modules/nodes/third-party-integration/adapters/`,
-following the shape of the nine adapters that already exist there (adapter + `.spec.ts` + any
-`clickup-http.ts` transport helper the port needs, per the pattern `hubspot`/`notion`/`slack` set).
-Coverage for every pull object type and every push action the front's `ClickUpConfig.ts` exposes —
-not a subset chosen for convenience.
+**In — worker (`feat/868m7kbf0` from `origin/main`).** Cherry-pick `b027e55`: `clickup.adapter.ts`,
+`clickup-http.ts`, `clickup.adapter.spec.ts`, the factory line in `third-party-integration.module.ts`,
+and the P7 `PORTED_FROM.md` entry. Amend the P7 entry's `getToken` note: tokens reach the adapter
+already decrypted by `user-integration.repo.ts`; they are not plaintext at rest. The port covers every
+action the front's `ClickUpConfig.ts` exposes: 5 pull object types (`tasks`, `task`, `spaces`,
+`lists`, `comments`) and 3 push actions (`create_task`, `update_task`, `create_comment`).
 
-**In.** `clickup` added to `MIGRATED_INTEGRATION_PROVIDERS`, behind the flag from `PLAN.md` §3.2,
-and an A1-registry entry with `hasInlineTwin: true` until C1's deletion step runs.
+**In — back (`feat/868m7kbf0` from `origin/production`).** `'clickup'` added to
+`NODE_DISPATCH_REGISTRY.thirdPartyIntegration.integrationProviders`; regenerate
+`node-dispatch-contract.json` (`pnpm generate:node-dispatch-contract`); update
+`node-dispatch-registry.spec.ts`. Its test "still refuses an unknown provider" uses `clickup` as the
+unknown provider, so it must switch to a provider that really is refused (`microsoft`). The registry
+has no `hasInlineTwin` field. The first version of this spec named one; the real fields are
+`inlineTwin`/`inlineTwinMethod` in the generated contract. The inline twin is the
+`IntegrationsService` path, which stays.
 
-**In.** A `PORTED_FROM.md` entry for the new adapter, in the same file and the same shape as the
-existing entries (source SHAs, what was ported vs. dropped, the error-classification mapping) — see
-`worker/src/modules/nodes/third-party-integration/PORTED_FROM.md` for the convention every prior
-provider followed.
+**In — MCP can see ClickUp's picker values (added 2026-09-28, requested at task start).** Without
+them an MCP client cannot author a working ClickUp node: `team`/`space`/`folder`/`list`/`status`/
+`assignees` are account ids, and nothing on the MCP surface exposed them.
+- back: `GET /mcp/v1/internal/integrations/:id/options/:field` (read scope) →
+  `McpIntegrationsService.listOptions`. It checks reachability, takes the provider from the
+  connection, strips caller-supplied `integrationId`/`connectedByUserId` from the context (the
+  product's `resolveIntegration` does not refuse an unreachable id), and delegates to the same
+  `IntegrationsService.getOptions` the canvas pickers use. Generic, so every provider's pickers work.
+- back: `node-type-metadata.ts` documents clickup (provider, 5 pull types, 3 actions, fields).
+- mcp-server (`feat/868m7kbf0` from `origin/main`): new tool `list_integration_options` (31 tools).
+- docs (`docs/868m7kbf0` from `origin/main`): tool page, changelog, pt-br.
+- MCP writes of a ClickUp node are released by the same back flip: `add_node`/`update_node` default
+  their allowlist to `MIGRATED_INTEGRATION_PROVIDERS`.
 
-**Out.** Redesigning what the ClickUp integration does — same pull object types, same push actions,
-same payload shapes as the inline adapter. This ports and routes; it does not change behaviour.
+**In — two pre-existing red tests on `back@origin/production`, fixed on request (small, test-only).**
+`node-dispatch-invariants.spec.ts` had been red since `7067d2d0` left `audioReaderNode`'s unreachable
+legacy arm in place; it is declared in `KNOWN_UNREACHABLE_ARMS` like `pullData`/`pushData` (C2
+deletes all three). `execution_logs.retention.spec.ts` never compiled under ts-jest (0 of 9 tests
+ran); its query mock is now typed.
 
-**Out.** Deleting the inline `clickup.adapter.ts` twin. That happens in a **separate deploy after
-the flag flip**, per C1's pattern (`TASK-C1-RETIRE-INLINE-PATHS.md`) — not in the same PR as this
-task, and not before the worker path has run in production behind the flag.
+**In — ClickUp `taskId` / `commentText` edges applied (approved 2026-09-28).** The front marks both
+with `hasConnectionPoint`, but neither was in `NODE_REFERENCEABLE_FIELDS.thirdPartyIntegration` (back) /
+`THIRD_PARTY_INTEGRATION_DATA_PAYLOAD_KEYS` (worker), so an edge into them was dropped on **both** paths
+(pre-existing in production). Both keys are now in both lists; the MCP schema documents `taskIdData` /
+`commentTextData`. Tests: worker `payload-builder.spec.ts` and back `third-party-companions.spec.ts`
+(negative control: removing the keys turned 2 worker and 1 back test red), plus both drift oracles.
+ClickUp's other connection-point fields (`name`, `description`) were already in the lists.
+
+**Out.** Front: no change. `ClickUpConfig.ts` already exposes all 8 actions.
+
+**Out.** `e9b85ca` / `authKind` (customer-owned credentials) — belongs to `868kkgkqa`, whose back
+half is not in production.
+
+**Out.** `quickbooks` — not in production in any repo (`PLAN.md` §9).
+
+**Out.** Redesigning the integration — same pull types, push actions and payload shapes.
+
+**Out.** Deleting the inline `clickup.adapter.ts` / `IntegrationsService` path — C1's, in a later
+deploy after the flip (`TASK-C1-RETIRE-INLINE-PATHS.md`).
 
 ## Steps
 
-1. Build the `clickup` adapter (and any HTTP helper it needs) under
-   `worker/src/modules/nodes/third-party-integration/adapters/`, porting
-   `back/src/app-api/integrations/adapters/clickup.adapter.ts`'s runtime pull/push subset — not its
-   editor-time OAuth operations, same split every prior adapter made.
-2. Register it in the worker's provider registry (`third-party-integration.module.ts`'s factory,
-   per the pattern P2 onward set).
-3. Add `clickup` to `MIGRATED_INTEGRATION_PROVIDERS`, behind the flag.
-4. Confirm the A1 registry picks it up with `hasInlineTwin: true`.
-5. Add the `PORTED_FROM.md` entry.
-6. Ship: `develop` → soak → `staging` → soak → PR to `main`, flag off. Flip the flag in a separate
-   deploy once the negative control and the parity check below both pass.
+1. Worker: cherry-pick `b027e55` onto `feat/868m7kbf0`, amend the `PORTED_FROM.md` note, run the
+   ClickUp and `third-party-integration` specs scoped (4 GB heap, 1 worker).
+2. Back: add `'clickup'` to `integrationProviders`, regenerate the contract, fix the registry spec.
+3. Run the negative control on each new/changed test (see Verification).
+4. Worker → `develop` → soak → `staging` → soak → PR to `main` (deploy 1).
+5. Back → `master` → soak → `staging` → soak → PR to `production` (deploy 2), only after deploy 1 is
+   live and the parity check passed.
+
+**Merging into the dev lines — do not let the merge pick the version.** `develop` already carries
+`clickup.adapter.ts`, `clickup-http.ts` and the spec in their `e9b85ca` (`authKind`) form. `master`
+already lists `'clickup'` and `'quickbooks'`. When this task's branches merge into `develop`/`master`,
+keep the dev-line versions of every ClickUp file and of the `integrationProviders` set. Taking this
+task's P7 files would silently remove `authKind` support from dev. Run
+`scripts/prod-dev-divergence.sh` before each merge.
 
 ## Verification
 
-- **Negative control (required).** With the flag on, break the worker adapter (revert one pull
-  handler to throw) and confirm the run fails **loudly** — the flow reports the failure, it does not
-  silently fall back to the inline path. A fallback that masks a broken adapter is worse than the
-  inline path it replaces, because it hides the exact defect this task exists to catch.
-- **Field-by-field output parity, worker vs. inline, on at least three real stored ClickUp
-  configurations**, covering both a pull and a push action each. Diff the outputs field by field —
-  not a shape check, an equality check.
-- **Measure before refusing (required).** After the flag flips, confirm the set of
-  `thirdPartyIntegration` nodes now taking the worker path is exactly the old
-  `MIGRATED_INTEGRATION_PROVIDERS` set plus ClickUp's — classify every node whose routing changed,
-  and drive to zero any node whose provider is *not* ClickUp but whose path moved anyway. That is the
-  failure mode of a registry-entry mistake, not a ClickUp defect, and it would otherwise ship silent.
-- **No-double-execution log assertion.** With the flag on, assert with a log or a counter that
-  exactly one execution occurred per dispatch for a ClickUp node — this is R1 (`PLAN.md` §6), the
-  same guard every other provider promotion required.
+- **Negative control (required).** On a stack with deploy 2 applied, break the worker adapter (make
+  one pull handler throw) and confirm the run **fails loudly**: the flow reports the failure and does
+  not fall back to the inline path. Record the observed failure in the PR.
+- **Field-by-field output parity, worker vs. inline.** Equality diff, not a shape check, for every
+  one of the 8 actions. **Data available on dev (measured 2026-09-28):** 2 `clickup` rows in
+  `user_integrations` (`authKind`: none, `platform_oauth`) and 2 stored ClickUp nodes: one pull
+  `tasks` (flow `a39eaf92-…`) and one push `create_task` (flow `b8d3bf63-…`). The other 6 actions have
+  no stored configuration, so their parity fixtures are built on dev against a test ClickUp space.
+  Production was not queried (dev-only rule).
+- **Measure before refusing (required).** After deploy 2, confirm the set of `thirdPartyIntegration`
+  nodes that take the worker path is exactly the previous nine providers plus `clickup`. Classify every
+  node whose routing changed, and drive to zero any non-ClickUp node whose path moved.
+- **No double execution.** With deploy 2 applied, assert with a log or counter that exactly one
+  execution occurs per dispatch for a ClickUp node and that `IntegrationsService` does not also
+  execute it (R1, `PLAN.md` §6).
 
 ## Done when
 
-`clickup` has a worker adapter, a `PORTED_FROM.md` entry, and a `MIGRATED_INTEGRATION_PROVIDERS`
-entry, shipped behind a flag and flipped in a separate deploy; every pull object type and push
-action the front exposes has worker-side coverage with measured field-by-field parity against the
-inline path; the negative control and the no-double-execution assertion both passed; the inline
-`clickup.adapter.ts` still exists (its deletion is C1's, after this task's flag flip, not this
-task's own Done-when).
+The worker has the P7 ClickUp adapter on `main` (deploy 1). The back has `'clickup'` in
+`integrationProviders` on `production` (deploy 2, a separate deploy). All 8 front actions have
+field-by-field parity measured against the inline path. The negative control and the
+no-double-execution assertion both passed. The inline ClickUp path still exists; deleting it is C1's.
 
 ## Files
 
-`worker/src/modules/nodes/third-party-integration/adapters/` (new `clickup.adapter.ts`,
-`clickup.adapter.spec.ts`, and any `clickup-http.ts`) ·
-`worker/src/modules/nodes/third-party-integration/third-party-integration.module.ts` (provider
-registry factory) · `worker/src/modules/nodes/third-party-integration/PORTED_FROM.md` (new entry) ·
-`back/src/app-api/integrations/adapters/clickup.adapter.ts` (port source, read-only for this task) ·
-`back/src/shared/integration/integration-executable-node.ts`
-(`MIGRATED_INTEGRATION_PROVIDERS`) · the A1 registry
+**Worker:** `src/modules/nodes/third-party-integration/adapters/clickup.adapter.ts`,
+`clickup-http.ts`, `clickup.adapter.spec.ts` (all from `b027e55`) ·
+`src/modules/nodes/third-party-integration/third-party-integration.module.ts` (factory line) ·
+`src/modules/nodes/third-party-integration/PORTED_FROM.md` (P7 entry).
+
+**Back:** `src/shared/node-dispatch/node-dispatch-registry.ts` (`integrationProviders`) ·
+`src/shared/node-dispatch/node-dispatch-contract.json` (regenerated) ·
+`src/shared/node-dispatch/node-dispatch-registry.spec.ts` · read-only:
+`src/app-api/integrations/adapters/clickup.adapter.ts`.
+
+**MCP (back):** `src/app-mcp/mcp-integrations.service.ts` (+spec) · `mcp-internal.controller.ts` ·
+`integration-options.source.ts` · `app-mcp.module.ts` · `node-types/node-type-metadata.ts` (+
+`node-types.service.spec.ts`).
+
+**mcp-server:** `src/tools/handlers/list-integration-options.handler.ts` (+spec) ·
+`src/tools/tool-registry.service.ts` (+spec) · `src/tools/tools.module.ts` ·
+`src/upstream/back-http-client.service.ts` · `test/pipeline.e2e-spec.ts`.
+
+**Front:** none.

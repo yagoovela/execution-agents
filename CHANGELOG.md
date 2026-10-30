@@ -6,6 +6,15 @@ renders this file, and each task page shows the latest entry that changed it.
 
 The log starts with PR #40. Earlier history is in `git log`.
 
+## 2026-10-29 · [#45](https://github.com/yagoovela/execution-agents/pull/45) · Sync the epic with the Workflow spec, and check task owners
+- Title (PT): Sincroniza o épico com a spec do Workflow e confere os responsáveis das tasks
+- Tasks: S7, S5, C3, S2, S3, S8, E3, A1, A1B, A1C, D2, A2, A3, A4, A5, A6, S6, A8, A9, A10, D1, B1, B2, B3, B3B, B4, E1, E2, E5, A7, B5, B6, C1, B3B1
+- Pages: `status-tarefas.html`, `timeline/task-A5.html`, `timeline/task-A6.html`, `timeline/task-A9.html`, `timeline/task-B1.html`, `timeline/task-B2.html`, `timeline/task-B5.html`, `timeline/task-B6.html`, `timeline/task-C1.html`, `timeline/task-D1.html`, `timeline/task-D2.html`, `timeline/task-E2.html`, `timeline/task-E5.html`, `timeline/task-S2.html`, `timeline/task-S5.html`, `timeline/task-S8.html`, `worker-flow-execution-epic/delivery-waves.html`, `worker-flow-execution-epic/epic-handbook.html`, `worker-flow-execution-epic/market-gaps.html`, `worker-flow-execution-epic/scale-readiness-review.html`
+- No page change: A1, A10, A1B, A1C, A2, A3, A4, A7, A8, B3, B3B, B3B1, B4, C3, E1, E3, E4, S3, S4, S6: the merged module rebuilds to the published page, so the page does not change
+- No page change: S7: the published page keeps its hand-edited wording, which rebuild.py protects
+- Commits:
+  - 9a5319c docs(specs): sync the epic with the Workflow spec, and check task owners
+
 ## 2026-10-29 · [#43](https://github.com/yagoovela/execution-agents/pull/43) · Map task impact, check every restated fact, and keep a changelog
 - Title (PT): Mapeia o impacto de cada task, confere todo fato repetido e mantém um changelog
 - Tasks: S3, S8, A1B, D2, A2, A3, A4, A5, A6, A8, A9, A10, B3, E5, A7, A14, A6B, E4

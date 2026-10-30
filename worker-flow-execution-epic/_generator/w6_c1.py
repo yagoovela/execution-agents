@@ -9,8 +9,8 @@ GLANCE = [
   ('While both implementations exist, a flag misconfiguration means <strong>double execution</strong>: a duplicated Stripe charge, a duplicated Slack message.',
    'Enquanto as duas implementações existirem, uma flag mal configurada significa <strong>dupla execução</strong>: uma cobrança Stripe duplicada, uma mensagem Slack duplicada.')),
  ('dep', ('Depends on','Depende de'), ('Each node&#x27;s A-track task','A task de trilha A de cada node'),
-  ('<strong>This is not a sweep at the end.</strong> Each twin is deleted as part of proving that node, while the behaviour is fresh. One card, in Wave 6, for the once-only half; the per-node deletions are a Done-when line of each A-track card (PLAN §3.1).',
-   '<strong>Isto não é uma varredura no fim.</strong> Cada gêmeo é apagado como parte de provar aquele node, enquanto o comportamento está fresco. Um card, na onda 6, para a metade que só acontece uma vez; as deleções por node são uma linha de Done de cada card da trilha A (PLAN §3.1).')),
+  ('<strong>This is not a sweep at the end.</strong> Each twin is deleted as part of proving that node, while the behaviour is fresh. One card, in Wave 6, for the once-only half; the per-node deletions are a Done-when line of each A-track card (PLAN §3.1). The per-node cancel poller (moved from E2 on 2026-10-26) waits for the B4 flag in production and for B6.',
+   '<strong>Isto não é uma varredura no fim.</strong> Cada gêmeo é apagado como parte de provar aquele node, enquanto o comportamento está fresco. Um card, na onda 6, para a metade que só acontece uma vez; as deleções por node são uma linha de Done de cada card da trilha A (PLAN §3.1). O poller de cancelamento por node (vindo da E2 em 26/10/2026) espera a flag da B4 em produção e a B6.')),
  ('wave', ('Wave','Onda'), ('Wave 6','Onda 6'),
   ('The per-node half rides Wave 3, node by node. Only the <strong>cross-node writes</strong> wait for the last inline caller to leave.',
    'A metade por node anda na onda 3, node a node. Só as <strong>escritas cross-node</strong> esperam o último chamador inline sair.')),
@@ -49,6 +49,10 @@ TABLE = dict(
   [('<code>addConnectToNodes</code> on the run path','O <code>addConnectToNodes</code> no caminho de run'),
    {'t':('C1','C1')},
    {'t':('When the last executable inline node is migrated — <strong>Wave 6</strong>','Quando o último node executável inline for migrado — <strong>onda 6</strong>'),'pill':'weak'}],
+  [('The type&#x27;s entry in <code>LEGACY_SINGLE_RUN_NODE_TYPES</code> and its <code>case</code> in <code>legacy-node-dispatch.ts</code> — <code>voiceBoxNode</code>, <code>webSearch</code>, <code>commandContentNode</code> (corrected 2026-09-21)',
+    'A entrada do tipo em <code>LEGACY_SINGLE_RUN_NODE_TYPES</code> e o <code>case</code> dele em <code>legacy-node-dispatch.ts</code> — <code>voiceBoxNode</code>, <code>webSearch</code>, <code>commandContentNode</code> (corrigido em 21/09/2026)'),
+   {'t':('The node&#x27;s A-track task','A task de trilha A do node')},
+   {'t':('With the handler, when that type&#x27;s <code>dispatchConflict</code> <code>it.failing</code> case turns red','Junto do handler, quando o caso <code>it.failing</code> de <code>dispatchConflict</code> daquele tipo fica vermelho'),'pill':'ok'}],
  ])
 
 PARTS = [
@@ -125,13 +129,55 @@ PARTS = [
         'Ninguém sabe dizer quantos chamadores inline vivos um helper tem, então ninguém consegue apagá-lo com segurança — e ele fica para sempre.'),
        ('Each call site has a known set of live callers, the set empties as nodes migrate, and an empty set is the signal to delete.',
         'Cada ponto de chamada tem um conjunto conhecido de chamadores vivos, o conjunto esvazia conforme os nodes migram, e um conjunto vazio é o sinal para apagar.'))},
- {'n':'4','title':('Carried over from B3b (validate first)','Herdado da B3b (validar antes)'),
+
+{'n':'4','title':('Corrected 2026-09-21 — the dispatchConflict extension, the second door','Corrigido em 21/09/2026 — a extensão dispatchConflict, a segunda porta'),
+ 'loc':'back/src/temporal/single-node-legacy/legacy-allowlist.ts · legacy-node-dispatch.ts',
+ 'purpose':('A1&#x27;s re-validation found the inline-twin pattern is not <code>thirdPartyIntegration</code> alone.',
+            'A revalidação da A1 encontrou que o padrão de gêmeo inline não é só o <code>thirdPartyIntegration</code>.'),
+ 'body':('<p><code>voiceBoxNode</code>, <code>webSearch</code> and <code>commandContentNode</code> are all <code>isTemporalNode</code> (worker-routed inside a flow) while simultaneously accepted by <code>/process/single-node-legacy</code> (<code>LEGACY_SINGLE_RUN_NODE_TYPES</code>), which routes them through <code>dispatchLegacyHandler</code> to <code>fluxService.voiceNode()</code> / <code>.webSearchNode()</code> / <code>.commandContentNode()</code> — the same <code>flux.service.ts</code> inline-handler shape this task already deletes, reached through a second door.</p>'
+         '<p>A1 adds a <code>dispatchConflict</code> invariant for this exact defect: three named <code>it.failing()</code> cases, one per type, pinned to jest&#x27;s <code>it.failing</code> (available since jest 29.0; <code>back</code> is on 29.3.1) so the suite stays <strong>green on arrival</strong> instead of permanently red — each case passes today because the type really is in both lists, and turns red the moment that stops being true.</p>',
+         '<p>O <code>voiceBoxNode</code>, o <code>webSearch</code> e o <code>commandContentNode</code> são todos <code>isTemporalNode</code> (roteados ao worker dentro de um flow) enquanto simultaneamente aceitos pelo <code>/process/single-node-legacy</code> (<code>LEGACY_SINGLE_RUN_NODE_TYPES</code>), que os roteia via <code>dispatchLegacyHandler</code> para <code>fluxService.voiceNode()</code> / <code>.webSearchNode()</code> / <code>.commandContentNode()</code> — a mesma forma de handler inline do <code>flux.service.ts</code> que esta task já apaga, alcançada por uma segunda porta.</p>'
+         '<p>A A1 adiciona um invariante <code>dispatchConflict</code> para esse defeito exato: três casos <code>it.failing()</code> nomeados, um por tipo, fixados no <code>it.failing</code> do jest (disponível desde o jest 29.0; o <code>back</code> está na 29.3.1) para que a suíte fique <strong>verde na chegada</strong> em vez de vermelha permanentemente — cada caso passa hoje porque o tipo realmente está nas duas listas, e fica vermelho no momento em que isso deixa de ser verdade.</p>'),
+ 'list':[('This task&#x27;s per-node procedure, applied to each of the three, is what turns each <code>it.failing</code> case red — delete the <code>flux.service.ts</code> handler and its dispatch branch as usual, and <strong>additionally</strong> remove the type from <code>LEGACY_SINGLE_RUN_NODE_TYPES</code> and its <code>case</code> in <code>legacy-node-dispatch.ts</code>.',
+          'O procedimento por node desta task, aplicado a cada um dos três, é o que faz cada caso <code>it.failing</code> ficar vermelho — apague o handler do <code>flux.service.ts</code> e seu ramo de dispatch como de costume, e <strong>adicionalmente</strong> remova o tipo de <code>LEGACY_SINGLE_RUN_NODE_TYPES</code> e o <code>case</code> dele em <code>legacy-node-dispatch.ts</code>.'),
+         ('When a case turns red, that is this task&#x27;s cue to <strong>delete that <code>it.failing</code> case</strong> — a red <code>it.failing</code> sitting in the suite after its fix has landed is a stale test, not a passing invariant.',
+          'Quando um caso fica vermelho, esse é o sinal desta task para <strong>apagar aquele caso <code>it.failing</code></strong> — um <code>it.failing</code> vermelho parado na suíte depois que sua correção chegou é um teste obsoleto, não um invariante passando.'),
+         ('<code>thirdPartyIntegration</code> remains the fourth case with the same shape and is unaffected by this correction.',
+          'O <code>thirdPartyIntegration</code> continua sendo o quarto caso, com a mesma forma, e não é afetado por esta correção.')],
+ 'ba':(('Three types — <code>voiceBoxNode</code>, <code>webSearch</code>, <code>commandContentNode</code> — had a second, undetected inline-twin door via <code>/process/single-node-legacy</code>, alongside the known <code>thirdPartyIntegration</code> case.',
+        'Três tipos — <code>voiceBoxNode</code>, <code>webSearch</code>, <code>commandContentNode</code> — tinham uma segunda porta de gêmeo inline não detectada via <code>/process/single-node-legacy</code>, ao lado do caso já conhecido do <code>thirdPartyIntegration</code>.'),
+       ('All four cases are named as <code>it.failing</code> invariants that turn red exactly when this task&#x27;s per-node procedure fixes them, and each fix additionally clears the type from <code>LEGACY_SINGLE_RUN_NODE_TYPES</code> and <code>legacy-node-dispatch.ts</code>.',
+        'Os quatro casos estão nomeados como invariantes <code>it.failing</code> que ficam vermelhos exatamente quando o procedimento por node desta task os corrige, e cada correção adicionalmente limpa o tipo de <code>LEGACY_SINGLE_RUN_NODE_TYPES</code> e de <code>legacy-node-dispatch.ts</code>.'))},
+
+{'n':'5','title':('Found via A5, 2026-09-21 — the kept-but-uncalled precedent','Encontrado via A5, 21/09/2026 — o precedente de mantido-mas-não-chamado'),
+ 'loc':'back/src/app-api/flux/flux.service.ts',
+ 'purpose':('Not an oversight this task needs to fix — a standing choice this task should track, so each A-track task stops rediscovering the same question.',
+            'Não é um descuido que esta task precisa corrigir — é uma escolha permanente que esta task deve rastrear, para que cada task da trilha A pare de redescobrir a mesma pergunta.'),
+ 'body':('<p><code>flux.service.ts</code> already holds several inline methods whose <em>dispatch</em> is gone — the type routes to the worker and nothing calls the back method anymore — but whose <em>body</em> was deliberately left in place rather than deleted: <code>scriptingNode</code>, <code>mathFunctionNode</code>, <code>outputControllerNode</code>, and, confirmed by A5&#x27;s re-validation, <code>imageGeneratorNode</code>.</p>'
+         '<p>Where a type&#x27;s dispatch branch is gone and its method is provably uncalled, <strong>deleting the method body is optional</strong> per this precedent — the required, non-optional half of &#x27;delete the twin&#x27; is always the dispatch branch.</p>',
+         '<p>O <code>flux.service.ts</code> já tem vários métodos inline cujo <em>dispatch</em> sumiu — o tipo roteia para o worker e nada mais chama o método do back — mas cujo <em>corpo</em> foi deliberadamente deixado em vez de apagado: <code>scriptingNode</code>, <code>mathFunctionNode</code>, <code>outputControllerNode</code>, e, confirmado pela revalidação da A5, o <code>imageGeneratorNode</code>.</p>'
+         '<p>Onde o ramo de dispatch de um tipo sumiu e o método dele está provadamente sem chamador, <strong>apagar o corpo do método é opcional</strong> por este precedente — a metade obrigatória, não opcional, de &#x27;apagar o gêmeo&#x27; é sempre o ramo de dispatch.</p>'),
+ 'list':[('Confirm before closing this task that <code>imageGeneratorNode</code> (and the other three) are on this list <strong>deliberately, not by accident</strong>, and that no fifth case has quietly joined it unnoticed.',
+          'Confirme, antes de fechar esta task, que o <code>imageGeneratorNode</code> (e os outros três) estão nessa lista <strong>deliberadamente, não por acidente</strong>, e que nenhum quinto caso entrou nela silenciosamente sem ser notado.')],
+ 'ba':(('Whether a dispatch-gone-but-body-kept method is deliberate or an oversight is undocumented, so each A-track task must rediscover the question on its own.',
+        'Se um método com dispatch sumido mas corpo mantido é deliberado ou um descuido não está documentado, então cada task da trilha A precisa redescobrir a pergunta sozinha.'),
+       ('The precedent is named as a standing choice — <code>scriptingNode</code>, <code>mathFunctionNode</code>, <code>outputControllerNode</code>, <code>imageGeneratorNode</code> — tracked centrally by this task, with confirmation that no fifth case has joined it unnoticed.',
+        'O precedente está nomeado como uma escolha permanente — <code>scriptingNode</code>, <code>mathFunctionNode</code>, <code>outputControllerNode</code>, <code>imageGeneratorNode</code> — rastreado centralmente por esta task, com confirmação de que nenhum quinto caso entrou nela sem ser notado.'))},
+ {'n':'6','title':('Carried over from B3b (validate first)','Herdado da B3b (validar antes)'),
    'loc':'back/src/app-api/flux/flux.service.ts',
    'purpose':('B3b added <code>runId</code> by hand to four raw <code>INSERT INTO "node_executions"</code> statements. A fifth insert would miss it silently.',
               'A B3b acrescentou o <code>runId</code> à mão em quatro <code>INSERT INTO "node_executions"</code> crus. Um quinto insert ficaria sem ele, sem aviso.'),
    'list':[
            ('After the inline paths are gone, count the inserts that remain; if more than one does, route them through one helper.',
             'Depois que os caminhos inline saírem, conte os inserts que sobrarem; se sobrar mais de um, passe todos por um helper.')]},
+ {'n':'7','title':('The per-node cancel poller — moved from E2','O poller de cancelamento por node — vindo da E2'),
+   'loc':'back/src/app-api/flux/node-cancel-watch.ts · node-cancel-interceptor.ts · node-cancel-fetch.ts · nested-run-context.ts',
+   'purpose':('Delete the poller with the loop it serves, not before (E2-b, 2026-10-26).',
+              'Apagar o poller junto com o laço que ele atende, não antes (E2-b, 26/10/2026).'),
+   'body':('<p>Delete <code>node-cancel-watch.ts</code> (<code>startNodeCancelWatch</code>, <code>nodeCancelContext</code>, <code>NODE_CANCEL_IN_FLIGHT_FLAG</code>), the readers of its signal (<code>node-cancel-interceptor.ts</code>, <code>node-cancel-fetch.ts</code>, the <code>isNodeCancelAbort</code> check in <code>openAI.service.ts</code>), the <code>.run(undefined, …)</code> isolation in <code>nested-run-context.ts</code>, and the <code>node_cancel_in_flight</code> flag.</p>'
+           '<p>The poller lives only in the back inline loop and is the only thing that aborts an outbound request in the middle of an inline node, so it goes when that loop stops executing nodes: <strong>after the B4 flag is on in production and after B6 moves <code>fluxBox</code>, <code>libraryNode</code> and <code>arrayNode</code></strong>. Before deleting it, read the flag&#x27;s value in production; if it is on, measure the cancel latency the inline loop gives today, so the replacement is held to it.</p>',
+           '<p>Apague o <code>node-cancel-watch.ts</code> (<code>startNodeCancelWatch</code>, <code>nodeCancelContext</code>, <code>NODE_CANCEL_IN_FLIGHT_FLAG</code>), os leitores do sinal dele (<code>node-cancel-interceptor.ts</code>, <code>node-cancel-fetch.ts</code>, a checagem <code>isNodeCancelAbort</code> no <code>openAI.service.ts</code>), o isolamento <code>.run(undefined, …)</code> no <code>nested-run-context.ts</code>, e a flag <code>node_cancel_in_flight</code>.</p>'
+           '<p>O poller vive só no laço inline do back e é a única coisa que aborta uma requisição de saída no meio de um node inline, então ele sai quando esse laço parar de executar nodes: <strong>depois que a flag da B4 estiver ligada em produção e depois que a B6 mover <code>fluxBox</code>, <code>libraryNode</code> e <code>arrayNode</code></strong>. Antes de apagá-lo, leia o valor da flag em produção; se estiver ligada, meça a latência de cancelamento que o laço inline dá hoje, para que o substituto seja cobrado por ela.</p>')},
 ]
 
 VERIF = [
@@ -152,13 +198,19 @@ VERIF = [
    'The write being removed is the one that fed those inputs, so this is where a silent loss would appear.',
    'Após cada remoção de ponto de chamada do <code>modifyData</code>, rode os fluxos que passam por ele e <strong>compare as entradas dos nodes a jusante contra um run anterior à mudança</strong>. '
    'A escrita removida é justamente a que alimentava essas entradas, então é aqui que uma perda silenciosa apareceria.')),
+ (False, ('Poller removal — timers gone, cancel still stops the run','Remoção do poller — timers somem, o cancelamento ainda para o run'),
+  ('Run a <strong>sixty-node agent</strong> before and after, and count active timers and the database query rate. After the change, cancel a run mid-node and assert the next node never starts; then make the workflow ignore the cancel and watch the next node start.',
+   'Rode um <strong>agente de sessenta nodes</strong> antes e depois, e conte timers ativos e a taxa de consultas ao banco. Depois da mudança, cancele um run no meio de um node e afirme que o próximo node nunca começa; depois faça o workflow ignorar o cancelamento e veja o próximo node começar.')),
 ]
 
 DONE = ('<strong>No executable node type has two implementations</strong>; <code>addConnectToNodes</code> has <strong>no callers on the run path</strong>; '
-        'and <code>flux.service.ts</code> is materially smaller, with the reduction stated in the PR.',
+        'the per-node cancel poller, <code>nodeCancelContext</code> and <code>node_cancel_in_flight</code> are gone; and <code>flux.service.ts</code> is materially smaller, with the reduction stated in the PR.',
         '<strong>Nenhum tipo de node executável tem duas implementações</strong>; o <code>addConnectToNodes</code> não tem <strong>nenhum chamador no caminho de run</strong>; '
-        'e o <code>flux.service.ts</code> está materialmente menor, com a redução declarada no PR.')
+        'o poller de cancelamento por node, o <code>nodeCancelContext</code> e a <code>node_cancel_in_flight</code> sumiram; e o <code>flux.service.ts</code> está materialmente menor, com a redução declarada no PR.')
 
 FILES = [('back/src/app-api/flux/flux.service.ts (all inline handlers)', False),
          ('back/src/app-api/folw/contants.ts (addConnectToNodes · modifyData)', False),
+         ('back/src/temporal/single-node-legacy/legacy-allowlist.ts (LEGACY_SINGLE_RUN_NODE_TYPES)', False),
+         ('back/src/temporal/single-node-legacy/legacy-node-dispatch.ts (matching case arms)', False),
+         ('back/src/app-api/flux/node-cancel-watch.ts · node-cancel-interceptor.ts · node-cancel-fetch.ts · nested-run-context.ts (the poller, moved from E2)', False),
          ('the A1 registry', False)]

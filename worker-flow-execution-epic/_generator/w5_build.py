@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, _GEN)
 import tasklib, order
 from TITLES_ALL import TITLES
-import w5_b5, w5_a7, w5_b6, w5_b7, w6_c1, w6_c2, w5_a11, w5_a13, w5_a14, w5_a6b, w5_s6b
+import w5_b5, w5_a7, w5_b6, w5_b7, w5_e4, w6_c1, w6_c2, w5_a11, w5_a13, w5_a14, w5_a6b, w5_s6b
 
 
 def build(code, mod, vnum, glance_note=None, decisions=None, sec1=None, sec3=None):
@@ -70,9 +70,12 @@ SPECS = [
  ('B7', w5_b7, '4', [w5_b7.DEC_RESUME],
   ('Three consequences a workflow fixes for free', 'Três consequências que um workflow corrige de graça'),
   ('What the task does, in five parts', 'O que a task faz, em cinco partes')),
+ ('E4', w5_e4, '4', [w5_e4.DEC_BACKFILL],
+  ('What Bull repeatables give today, and what Temporal Schedules add', 'O que os repeatables do Bull dão hoje, e o que o Temporal Schedules acrescenta'),
+  ('What the task does, in four parts', 'O que a task faz, em quatro partes')),
  ('C1', w6_c1, '3', None,
   ('What gets deleted, and who owns each deletion', 'O que é apagado, e de quem é cada deleção'),
-  ('What the task does, in four parts', 'O que a task faz, em quatro partes')),
+  ('What the task does, in seven parts', 'O que a task faz, em sete partes')),
  ('C2', w6_c2, '4', w6_c2.DECISIONS,
   ('The four pieces, and what each removal buys', 'As quatro peças, e o que cada remoção traz'),
   ('What the task does, in six parts', 'O que a task faz, em seis partes')),

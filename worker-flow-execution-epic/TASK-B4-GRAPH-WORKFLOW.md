@@ -20,7 +20,7 @@ behaviour. B4 builds the batch-capable machinery and configures it to a batch si
   `worker/src/modules/temporal/workflows/process-agent.workflow.ts`, carrying in-degree per node,
   a `readyToRun` filter and `Promise.all` over the batch, under the line *"It will not be used for
   the time being; the logic has already been removed."* Read it before writing a new one.
-- The blocking wait to be removed: `await handle.result()` at `back/src/jobs/apiV2Job/apiV2Job.processor.ts` (writes `flow_execution_status` today — B4 and E1 decide who writes it after) · `back/src/app-api/flux/flux.service.ts`.
+- The blocking wait to be removed: `await handle.result()` at `back/src/jobs/apiV2Job/apiV2Job.processor.ts` (writes `flow_execution_status` today; E1 writes it after — see E1's contract with B4) · `back/src/app-api/flux/flux.service.ts`.
   Today every migrated node is a synchronous round trip (analysis §9.2.2) — this is the task that
   pays that back.
 
@@ -41,12 +41,16 @@ the same note); decide during development — D16 is unchanged whichever way it 
 **In.** The back's role shrinks to: start the flow workflow, serve the callbacks it already owns
 (billing, model access, S3, file generation), and read the result. It stops being the loop.
 
-**In.** A writer for `flow_execution_status` (PR #1902, 2026-08-21 — read by `GET /flux/executions/:id`).
-Today the api-v2 processor writes it from inside the loop; once the loop is a workflow, decide
-whether the workflow reports status through a callback or E1's collector becomes the writer, and
-state it in the PR. A table nobody writes is a status endpoint that lies.
+**In.** The run events that E1 consumes. Settled in
+[E1's contract with B4](./TASK-E1-RUN-OBSERVABILITY.md#contract-with-b4): the workflow emits
+ordered events through an activity, and E1's back side writes `space_run_logs`,
+`flow_execution_status` (PR #1902, read by `GET /flux/executions/:id`) and the run totals. B4 does
+not write any of them. Validate the branch with that task's checklist before the PR.
 
-**In.** A flag selecting engine-in-back vs engine-in-workflow, per flow, defaulting to back.
+**In.** A flag selecting engine-in-back vs engine-in-workflow, defaulting to back. **Corrected
+2026-10-23:** the flag is global by design (`isEnabled`, not per flow); which flows it routes is
+decided by the eligibility gate. In production it stays off until A11 and A13 ship and the worker
+that registers `processFlow` is deployed (DELIVERY-PLAN Wave 4 and Wave 5).
 
 **In — workflow history is a storage medium, and it is bounded.** A Temporal workflow accumulates
 history events, and both the event count and the total size are capped. The worker uses
@@ -60,6 +64,52 @@ Two requirements follow, and neither is optional:
 - **State by reference, never by value.** The id-based transport from B1 already makes this
   possible: the workflow carries ids, and the payloads stay in Postgres and S3. Passing a resolved
   input through workflow state would put node output into the history.
+
+**B4-a — the boundary, with the infrastructure limits (open, proposal 2026-10-23).**
+
+Our Temporal is self-hosted: `temporalio/auto-setup:1.22.0` on ECS (1 task, 1 vCPU, 2 GB) over its
+own RDS Postgres 14 on `db.t3.micro`. Dev and staging share one server and the `default` namespace.
+No dynamic config is set, so every 1.22 default applies:
+
+| Limit | Value | What happens |
+|---|---|---|
+| `limit.historyCount.suggestContinueAsNew` | 4,096 events | `continueAsNewSuggested` turns true |
+| `limit.historyCount.warn` / `.error` | 10,240 / 51,200 events | A warning; at the error limit the run is terminated |
+| `limit.historySize.suggestContinueAsNew` | 4 MB | `continueAsNewSuggested` turns true |
+| `limit.historySize.warn` / `.error` | 10 MB / 50 MB | A warning; at the error limit the run is terminated |
+| `limit.blobSize.warn` / `.error` | 512 KB / 2 MB per payload | At 2 MB, the activity result or input is refused and the run cannot go on |
+| Pending activities, child workflows, signals | 2,000 each | Not a constraint at batch size one |
+
+What the branch does today (worker `feat/wave-4-b4` `fd9f5387`):
+
+1. `process-flow.workflow.ts` sets `NODE_EXEC_LIMIT_PER_RUN_SEGMENT = 500` and also continues when
+   `workflowInfo().continueAsNewSuggested` is true.
+2. Each node costs about 21–27 history events in the parent: two activities, one child workflow,
+   one more activity and the workflow tasks between them. This is an estimate; no `processFlow`
+   history has been recorded yet.
+3. At 27 events a node, the server's suggestion fires at about 150 nodes, so the coded 500 is never
+   reached. At 500 the history would hold about 13,500 events, past the warn line.
+4. The boundary test (`process-flow.continue-as-new.spec.ts`) is a stub with `expect(true)`.
+5. `carryNodeExecCount: 0` on continue resets the count, so `nodeExecCount` reports only the last
+   segment.
+
+Production size: the largest run in the S4 re-measure (1,218 runs, 2026-09-23) had 116 node
+executions; p99 was 89. At 27 events a node that is about 3,130 events, inside one segment.
+
+**Proposal.** Set the boundary at **150 node executions**: 1.3 times the largest production run, the
+same margin S4 uses. Keep `continueAsNewSuggested` as the size backstop. Fix the count carry, and
+replace the stub with a run past 150.
+
+**The larger risk is payload size, not event count.** `loadRunSeedActivity` returns the full
+`node.data` of every node, and `openNodeExecutionActivity` takes a node's full `nodeData` as input.
+Both are written to history. A seed over 2 MB, or one node whose data is over 2 MB, stops the run at
+`limit.blobSize.error`, whatever the boundary. Production output bodies reach 9.2 MB (A9 Q8). Pass
+the seed and the node data by reference (`seedSnapshotId`), as the requirement above already says.
+Before the flag goes on in production, measure the largest seed (the sum of `flows_nodes.data` per
+flow) and the largest single `node.data`.
+
+Not verified: the real events per node, the server's gRPC message size limit, and the namespace
+retention.
 
 **Out.** Batch size above one. **Out.** Control flow and sub-flows — B6. **Out.** Deleting the
 back's loop — C1/C2, after this has soaked.
@@ -114,4 +164,4 @@ and close it here.
 
 `worker/src/modules/temporal/workflows/process-agent.workflow.ts` · new flow workflow ·
 `worker/src/modules/temporal/{activities,worker.service.ts,workflows/configs.ts}` ·
-`back/src/jobs/apiV2Job/apiV2Job.processor.ts` (writes `flow_execution_status` today — B4 and E1 decide who writes it after) · `back/src/app-api/flux/flux.service.ts` (`await handle.result()` in `processNodeViaTemporal`; the `while (scheduledId !== null)` loop; the unprocessed-node warning) · the scheduler module from B2
+`back/src/jobs/apiV2Job/apiV2Job.processor.ts` (writes `flow_execution_status` today; E1 writes it after — see E1's contract with B4) · `back/src/app-api/flux/flux.service.ts` (`await handle.result()` in `processNodeViaTemporal`; the `while (scheduledId !== null)` loop; the unprocessed-node warning) · the scheduler module from B2

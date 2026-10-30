@@ -34,6 +34,8 @@ a large win for agents with several files.
 **Out.** Renaming `extractText` — the field holds URLs when `isExtraction` is false, which is
 confusing, but renaming a persisted field is its own migration.
 
+**Update 2026-10-15.** In practice OCR moved to `imageReaderNode`, which runs in the worker; D24 is superseded. Its full-run branch ships with `868mhdzky`. The original scope line follows.
+
 **Out.** An OCR *node*. `imageReaderNode` is deprecated (D24) and an OCR node is wanted in its place,
 but it is not built in this epic and not here: this task moves the OCR that `varInputNode` already
 does off the request path; it does not add a node type.

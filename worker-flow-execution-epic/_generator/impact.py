@@ -21,6 +21,7 @@ Facts:
     deps      the "Depends on" line (spec; the page's glance card)
     estimate  the wave estimate shown next to the wave the task belongs to
     content   the spec body (spec mirror, content module, task page)
+    owner     who owns the task (owners.py, synced from ClickUp; the board's owner line)
     mention   any other page or document that names the task in its text
 
 Kinds:
@@ -47,9 +48,9 @@ EPIC = os.path.dirname(GEN)
 ROOT = os.path.dirname(EPIC)
 sys.path.insert(0, GEN)
 
-FACTS = ('title', 'state', 'note', 'links', 'wave', 'order', 'deps', 'estimate', 'content', 'mention')
+FACTS = ('title', 'state', 'note', 'links', 'wave', 'order', 'deps', 'estimate', 'content', 'owner', 'mention')
 BUILDS = ('build_w0.py', 'w1_build.py', 'w2_build.py', 'w3_build.py', 'w4_build.py', 'w5_build.py')
-TOOLS = ('impact.py', 'reconcile_facts.py', 'lang_scan.py', 'sync_status.py', 'rebuild.py')
+TOOLS = ('impact.py', 'reconcile_facts.py', 'lang_scan.py', 'sync_status.py', 'rebuild.py', 'sync_owners.py', 'owners.py')
 SUBSPEC = re.compile(r'-(PLAN|DESIGN|QA-HANDOFF|CURRENT-PROCESS)\.md$')
 
 
@@ -227,6 +228,10 @@ def impact(code, _cache={}):
         add(os.path.join(EPIC, 'STATUS.md'), 'source', {'state', 'note', 'links'}, 'STATUS.md row %s' % row['code'])
     if code in titles.TITLES:
         add(os.path.join(GEN, 'TITLES_ALL.py'), 'source', {'title'}, 'nav title')
+    import owners as _owners
+    owner_keys = [k for k in _owners.OWNERS if k.split(' ')[0] == code]
+    if owner_keys:
+        add(os.path.join(GEN, 'owners.py'), 'source', {'owner'}, 'owner (ClickUp)')
     if code in order.ORDER or wave is not None:
         add(os.path.join(GEN, 'order.py'), 'source', {'wave', 'order'}, 'ORDER/WAVE')
     tr = trace.get(code)
@@ -275,6 +280,8 @@ def impact(code, _cache={}):
         if re.search(r'<div class="task-id">%s(?:<|\s)' % re.escape(row['code'] if row else code), t) or \
                 re.search(r'<div class="task-id">%s(?:<|\s)' % re.escape(code), t):
             facts |= {'title', 'state', 'wave'}
+            if 'class="task-owner"' in t and owner_keys:
+                facts.add('owner')
             hows.append('board card' + (' and overall counts' if 'summary-counts' in t else ''))
         if wave is not None:
             sec = wave_section(t, wave)

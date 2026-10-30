@@ -32,12 +32,9 @@ GROUPS = [
         (r'(\d+)[- ]type whitelist', '*.md'),
         (r'whitelist[^.]{0,40}?(\d+)\s*types', '*.md'),
     ]),
-    ('node type census', [
-        (r'all (\d+) registered types', '*.md'),
-        (r'across all (\d+) components', '../worker-node-migration-analysis/README.md'),
-        (r'census — (\d+) node types', '../worker-node-migration-analysis/README.md'),
-        (r'census of (\d+)', '../worker-node-migration-analysis/README.md'),
-    ]),
+    # 'node type census' was retired on 2026-10-30: no mirrored spec states the census any more
+    # (its other sources live in a folder this repository does not mirror), so the group could
+    # only ever report BLIND. The registry groups below check every node-type fact per task.
     ('live cron count', [
         (r'`@Cron` is registered (\w+) times', '*.md'),
         (r'(\w+) crons with no leader election', 'PLAN.md'),
@@ -134,7 +131,8 @@ _PART_WAVE = {('S7', '1'): 0, ('S7', '3'): 0, ('S7', '2'): 1,
 
 def earliest_wave(blocks):
     waves = []
-    for code, part in re.findall(r'\b([A-ES]\d)\b(?:\s+part\s+(\d))?', blocks):
+    for code, part in re.findall(r'\b([A-ES]\d+[a-z]?)\b(?:\s+part\s+(\d))?', blocks):
+        code = code.upper()
         if part and (code, part) in _PART_WAVE:
             waves.append(_PART_WAVE[(code, part)])
         elif _WAVE and code in _WAVE:
@@ -389,6 +387,24 @@ if _impact is not None:
         elif (_html.unescape(m.group(1)), _html.unescape(m.group(2))) != (' · '.join(bits_en), ' · '.join(bits_pt)):
             probs.append('%-5s <- task-%s.html status note differs from STATUS.md: run _generator/sync_status.py %s' % (code, code, code))
     _group('task status notes', probs, 'every page shows its STATUS.md note and ref')
+
+    # owners: every board card's owner line equals owners.py, and every owners.py task exists
+    import owners as _owners
+    import sync_owners as _sync_owners
+    probs = []
+    _board_cards = _sync_owners.cards(_txt(os.path.join(ROOT, 'status-tarefas.html')))
+    for k, shown in _board_cards:
+        if k not in _owners.OWNERS:
+            probs.append('%-14s <- the board card has no owners.py entry' % k)
+        elif shown != _owners.label(k):
+            probs.append('%-14s <- the board says %r; owners.py (ClickUp %s) says %r: run _generator/sync_owners.py'
+                         % (k, shown, _owners.OWNERS[k][0], _owners.label(k)))
+    for k in _owners.OWNERS:
+        if k.split(' ')[0] not in _rows and k.split(' ')[0] not in _NO_PAGE:
+            probs.append('%-14s <- owners.py names a task with no STATUS.md row' % k)
+    if not _board_cards:
+        probs.append('status-tarefas.html <- no owner line matched; the pattern sees nothing')
+    _group('task owners', probs, '%d board cards show the owners in owners.py' % len(_board_cards))
 
     # changelog: mudancas.html renders CHANGELOG.md; each task page carries its latest entry
     import subprocess

@@ -1,0 +1,112 @@
+# -*- coding: utf-8 -*-
+# A1b — Reconcile `basedOnType`.
+# Source: TASK-A1B-BASEDONTYPE-RECONCILIATION.md, split out of TASK-A1 on 2026-09-21.
+
+TASK = {
+ 'code':'A1B','vnum':'1',
+ 'title':('Reconcile <code>basedOnType</code>','Reconciliar o <code>basedOnType</code>'),
+ 'goal':('Decide, on a measurement, whether <code>basedOnType</code>&#x27;s two live copies become <b>one source</b> or stay <b>two named projections</b>, and delete the third, dead copy. <strong>Unlike A1, this task is not behaviour-neutral by construction.</strong>',
+         'Decidir, com base numa medição, se as duas cópias vivas do <code>basedOnType</code> viram <b>uma fonte única</b> ou continuam <b>duas projeções nomeadas</b>, e apagar a terceira cópia, morta. <strong>Ao contrário da A1, esta task não é neutra em comportamento por construção.</strong>'),
+ 'glance':[
+  ('crit',('Severity','Severidade'),('Moderate — silent data loss if rushed','Moderada — perda silenciosa de dado se apressada'),
+   ('The two live copies already disagree on three points. Dropping a referenced field to force one map is data loss with no error.',
+    'As duas cópias vivas já divergem em três pontos. Apagar um campo referenciado para forçar um mapa único é perda de dado sem erro.')),
+  ('dep',('Depends on','Depende de'),('A1','A1'),
+   ('The registry must exist first — this task&#x27;s eventual entry is a projection of it, and A1&#x27;s own steps that used to mention <code>basedOnType</code> now point here.',
+    'O registro precisa existir primeiro — a eventual entrada desta task é uma projeção dele, e os passos da própria A1 que citavam <code>basedOnType</code> agora apontam para cá.')),
+  ('wave',('Wave','Onda'),('Wave 2','Onda 2'),
+   ('Split out of A1 the same day A1 was re-validated. It clears a defect A1&#x27;s re-validation surfaced — not a precondition any other task&#x27;s Done-when line names.',
+    'Desmembrada da A1 no mesmo dia em que a A1 foi revalidada. Limpa um defeito que a revalidação da A1 revelou — não é precondição que o “pronto quando” de nenhuma outra task cite.')),
+  ('ship',('Shape','Formato'),('Not behaviour-neutral by construction','Não neutra em comportamento por construção'),
+   ('The two copies already disagree, so someone has to decide which side is the truth for each divergence — and that decision needs evidence before it is made.',
+    'As duas cópias já divergem, então alguém precisa decidir qual lado é a verdade em cada divergência — e essa decisão precisa de evidência antes de ser tomada.')),
+ ],
+ 'lede':(
+  '<p><strong>Added 2026-09-21</strong>, the same day TASK-A1 was corrected. TASK-A1&#x27;s first correction pass called this &quot;three divergent copies&quot; needing &quot;an explicit per-field decision table&quot; and named it the single largest scope increase in the epic&#x27;s re-validation. '
+  '<strong>That framing was wrong</strong>, found by a same-day field-by-field re-measurement. It is recorded here rather than silently fixed, the way TASK-A1&#x27;s own history note carries the same pattern (&quot;Corrected 2026-09-21&quot;) — the way TASK-A1&#x27;s D4/D5-style decisions are recorded once made, not silently in code.</p>'
+  '<p><code>basedOnType</code> answers, for a node type, which of its data fields a placeholder (<code>{{nodeId.field}}</code>) may reference. It is hand-maintained, in <strong>three</strong> places, not one map read from three call sites as the original A1 draft assumed. '
+  'One of the three — <code>flux/constants.ts</code>&#x27;s unexported, unreferenced <code>nodeSchema</code> — is <strong>dead code, not a divergent copy</strong>. The two that are live serve genuinely different purposes: <code>node-reference-substitution.service.ts</code>&#x27;s copy (26 types) builds the placeholder-reference schema; <code>folw/contants.ts</code>&#x27;s copy (29 types) builds the node-to-node data-passing payload consumed by <code>addConnectToNodes</code> (C1&#x27;s territory).</p>',
+  '<p><strong>Adicionada em 21/09/2026</strong>, no mesmo dia em que a TASK-A1 foi corrigida. A primeira correção da TASK-A1 chamou isto de &quot;três cópias divergentes&quot;, exigindo &quot;uma tabela de decisão explícita por campo&quot;, e a apontou como o maior aumento de escopo isolado da revalidação do épico. '
+  '<strong>Esse enquadramento estava errado</strong>, achado por uma remedição campo a campo no mesmo dia. Fica registrado aqui em vez de silenciosamente corrigido, do mesmo jeito que a própria nota de histórico da TASK-A1 carrega o mesmo padrão (&quot;Corrigida em 21/09/2026&quot;) — do mesmo jeito que as decisões estilo D4/D5 da TASK-A1 são registradas quando tomadas, não em silêncio no código.</p>'
+  '<p>O <code>basedOnType</code> responde, para um tipo de node, quais campos de dado um placeholder (<code>{{nodeId.field}}</code>) pode referenciar. É mantido à mão, em <strong>três</strong> lugares, não um mapa lido a partir de três pontos de chamada como o rascunho original da A1 assumia. '
+  'Uma das três — o <code>nodeSchema</code> não exportado e sem referência do <code>flux/constants.ts</code> — é <strong>código morto, não uma cópia divergente</strong>. As duas que estão vivas servem propósitos genuinamente diferentes: a cópia do <code>node-reference-substitution.service.ts</code> (26 tipos) constrói o schema de referência de placeholder; a cópia do <code>folw/contants.ts</code> (29 tipos) constrói o payload de passagem de dado node-a-node consumido pelo <code>addConnectToNodes</code> (território da C1).</p>'),
+ 'blocks':[
+  {'k':'label','n':'1','t':('The measured divergence: five lines, not sixty-six','A divergência medida: cinco linhas, não sessenta e seis')},
+  {'k':'prose','t':(
+    '<strong>24 of the shared types are byte-identical.</strong> The 63-field <code>thirdPartyIntegration</code> entry was flagged as alarming in TASK-A1&#x27;s first correction pass; measured directly, it is not a conflict at all — <code>node-reference-substitution</code> simply has no entry for <code>thirdPartyIntegration</code>, so there is nothing to reconcile there beyond deciding whether the placeholder-reference schema should gain one.',
+    '<strong>24 dos tipos compartilhados são idênticos byte a byte.</strong> A entrada de 63 campos do <code>thirdPartyIntegration</code> foi apontada como alarmante na primeira correção da TASK-A1; medida diretamente, não é conflito nenhum — o <code>node-reference-substitution</code> simplesmente não tem entrada para <code>thirdPartyIntegration</code>, então não há o que reconciliar ali além de decidir se o schema de referência de placeholder deveria ganhar uma.')},
+  {'k':'table',
+   'head':[('Type','Tipo'),('node-reference-substitution','node-reference-substitution'),('folw/contants','folw/contants'),('Divergence','Divergência')],
+   'rows':[
+    [{'t':'mcpNode','mono':True},
+     ('8 fields, incl. <code>inputMode</code>','8 campos, incl. <code>inputMode</code>'),
+     ('8 fields, incl. <code>toolArguments</code>','8 campos, incl. <code>toolArguments</code>'),
+     ('The only genuine content conflict — same slot, different value','O único conflito de conteúdo genuíno — mesmo slot, valor diferente')],
+    [{'t':'outputController','mono':True},
+     ('<code>text</code> only','só <code>text</code>'),
+     ('<code>text</code> + <code>customFileName</code>','<code>text</code> + <code>customFileName</code>'),
+     ('An addition, not a conflict','Uma adição, não um conflito')],
+    [{'t':'fluxBox · reportBuilder · thirdPartyIntegration','mono':True},
+     {'t':('Absent','Ausente'),'pill':'no'},
+     ('Present (<code>[&#x27;sessionId&#x27;]</code>, <code>[&#x27;text&#x27;]</code>, 63 fields)','Presente (<code>[&#x27;sessionId&#x27;]</code>, <code>[&#x27;text&#x27;]</code>, 63 campos)'),
+     ('Nothing on the other side to disagree with','Nada do outro lado para discordar')],
+   ]},
+  {'k':'label','n':'2','t':('What the task does, in three parts','O que a task faz, em três partes')},
+  {'k':'part','n':'1',
+   'title':('Prove the dead copy is dead, fresh, then delete it','Provar que a cópia morta está morta, de forma recente, e apagar'),
+   'loc':'flux/constants.ts',
+   'purpose':('<code>flux/constants.ts</code>&#x27;s local, unexported <code>nodeSchema</code> — and its embedded 14-type <code>basedOnType</code> — has never executed in production.',
+              'O <code>nodeSchema</code> local e não exportado do <code>flux/constants.ts</code> — e o <code>basedOnType</code> de 14 tipos embutido nele — nunca executou em produção.'),
+   'body':('<p>An owner-anchored grep across <code>back</code>, <code>front</code>, <code>worker</code>, <code>mcp-server</code> <strong>and <code>origin/production</code></strong> — the same proof burden C3 already applies to its own dead-code candidates (<code>processFlowWithSubstitution</code>, <code>api-caller-polling.ts</code>) — not just this checkout, since this task may start later than the numbers above were measured against (<code>back@origin/production</code> <code>3804a524</code>).</p>',
+           '<p>Um grep ancorado no dono, em <code>back</code>, <code>front</code>, <code>worker</code>, <code>mcp-server</code> <strong>e <code>origin/production</code></strong> — o mesmo ônus de prova que a C3 já aplica aos próprios candidatos a código morto (<code>processFlowWithSubstitution</code>, <code>api-caller-polling.ts</code>) — não só neste checkout, já que esta task pode começar depois de os números acima terem sido medidos (<code>back@origin/production</code> <code>3804a524</code>).</p>'),
+   'ba':(('A third hand-maintained copy of the same fact sits in the codebase, unreferenced, and nobody has proven it unreferenced <em>fresh</em>.',
+          'Uma terceira cópia mantida à mão do mesmo fato está no código, sem referência, e ninguém provou isso de forma recente.'),
+         ('One fewer copy, deleted with its unreachability proof in the PR — not asserted after.',
+          'Uma cópia a menos, apagada com a prova de inalcançabilidade no PR — não afirmada depois.'))},
+  {'k':'part','n':'2',
+   'title':('Measure each divergence against real stored flows, dev only','Medir cada divergência contra fluxos reais guardados, só em dev'),
+   'loc':'dev database — never staging, never production',
+   'purpose':('A field nobody references can be safely dropped; a field that is referenced must not be, regardless of which copy is judged canonical.',
+              'Um campo que ninguém referencia pode ser apagado com segurança; um campo referenciado não pode, seja qual for a cópia julgada canônica.'),
+   'body':('<p>For each of the three divergences (<code>mcpNode.inputMode</code>, <code>mcpNode.toolArguments</code>, <code>outputController.customFileName</code>), query whether any stored flow actually references it through a placeholder or through the data-passing payload. '
+           'This is <strong>CLAUDE.md&#x27;s &quot;measure before refusing&quot; rule</strong>, applied to unification instead of refusal: a false unification that silently drops a referenced field is treated the same as a false refusal.</p>',
+           '<p>Para cada uma das três divergências (<code>mcpNode.inputMode</code>, <code>mcpNode.toolArguments</code>, <code>outputController.customFileName</code>), consultar se algum fluxo guardado de fato a referencia, por placeholder ou pelo payload de passagem de dado. '
+           'É a <strong>regra &quot;medir antes de recusar&quot; do CLAUDE.md</strong>, aplicada à unificação em vez de à recusa: uma unificação falsa que apaga em silêncio um campo referenciado é tratada como uma falsa recusa.</p>'),
+   'ba':(('Three divergences sit undecided, each a coin flip between &quot;keep both&quot; and &quot;pick one&quot; with no evidence either way.',
+          'Três divergências ficam indecididas, cada uma um cara-ou-coroa entre &quot;manter as duas&quot; e &quot;escolher uma&quot; sem evidência de nenhum lado.'),
+         ('Each divergence is resolved by a recorded, measurement-backed decision — not a silent pick — written into this task file the way it is made.',
+          'Cada divergência é resolvida por uma decisão registrada e apoiada em medição — não uma escolha silenciosa — escrita neste arquivo da task do jeito que é tomada.'))},
+  {'k':'part','n':'3',
+   'title':('Build the single source (or the two named projections) and repoint both call sites','Construir a fonte única (ou as duas projeções nomeadas) e reapontar os dois call sites'),
+   'loc':'node-reference-substitution.service.ts · folw/contants.ts',
+   'purpose':('Whichever way Part 2 lands, the answer goes into code the A1 registry can project from — not into a review comment.',
+              'Seja qual for o resultado da Parte 2, a resposta vai para código do qual o registro da A1 possa projetar — não para um comentário de revisão.'),
+   'body':('<p>If nothing depends on the two purposes staying separate: <strong>one map</strong>. If the placeholder-reference schema and the data-passing payload need to keep disagreeing on <code>mcpNode</code>&#x27;s or <code>outputController</code>&#x27;s fields: <strong>one source with two named projections</strong> — a shared base plus a per-consumer overlay. Either way, update the A1 registry only if its shape needs a field for this; TASK-A1&#x27;s shipped registry does not model <code>basedOnType</code> itself, so this may stay a standalone module the registry does not need to know about.</p>',
+           '<p>Se nada depende de as duas finalidades continuarem separadas: <strong>um mapa</strong>. Se o schema de referência de placeholder e o payload de passagem de dado precisarem continuar divergindo nos campos do <code>mcpNode</code> ou do <code>outputController</code>: <strong>uma fonte com duas projeções nomeadas</strong> — uma base compartilhada mais uma camada por consumidor. De todo modo, atualizar o registro da A1 só se a forma dele precisar de um campo para isso; o registro já entregue pela TASK-A1 não modela o <code>basedOnType</code> em si, então isto pode continuar um módulo à parte que o registro não precisa conhecer.</p>'),
+   'ba':(('Two call sites each hand-maintain their own list, and the 24 types they agree on are agreement by coincidence, not by construction.',
+          'Dois call sites mantêm cada um a própria lista à mão, e os 24 tipos em que concordam concordam por coincidência, não por construção.'),
+         ('Both call sites read from the single source (or the two named projections) this task builds, so agreement is structural.',
+          'Os dois call sites leem da fonte única (ou das duas projeções nomeadas) que esta task constrói, então a concordância passa a ser estrutural.'))},
+ ],
+ 'verif':[
+  (True,('Negative control','Controle negativo'),
+   ('Before unifying a divergent field, break the current behaviour — e.g. temporarily remove <code>outputController</code>&#x27;s <code>customFileName</code> from <code>folw</code>&#x27;s copy — and confirm a flow using that field&#x27;s data-passing path actually fails or drops data. Then restore it and make the real, decided change.',
+    'Antes de unificar um campo divergente, quebre o comportamento atual — ex.: remova temporariamente o <code>customFileName</code> do <code>outputController</code> na cópia do <code>folw</code> — e confirme que um fluxo usando aquele caminho de passagem de dado de fato falha ou perde dado. Depois restaure e faça a mudança real, decidida.')),
+  (True,('Measurement against real stored flows, dev only','Medição contra fluxos reais guardados, só em dev'),
+   ('For each divergence, query whether any stored flow actually references <code>mcpNode.inputMode</code>, <code>mcpNode.toolArguments</code>, or <code>outputController.customFileName</code> through a placeholder or through the data-passing payload — dev only, never staging, never production.',
+    'Para cada divergência, consultar se algum fluxo guardado de fato referencia <code>mcpNode.inputMode</code>, <code>mcpNode.toolArguments</code> ou <code>outputController.customFileName</code>, por placeholder ou pelo payload de passagem de dado — só em dev, nunca staging, nunca produção.')),
+  (True,('Proof of unreachability for the dead copy','Prova de inalcançabilidade da cópia morta'),
+   ('An owner-anchored grep across <code>back</code>, <code>front</code>, <code>worker</code>, <code>mcp-server</code> and <code>origin/production</code>, stated in the PR before the deletion, not asserted after.',
+    'Um grep ancorado no dono, em <code>back</code>, <code>front</code>, <code>worker</code>, <code>mcp-server</code> e <code>origin/production</code>, declarado no PR antes da remoção, não afirmado depois.')),
+ ],
+ 'done':('<code>flux/constants.ts</code>&#x27;s dead <code>basedOnType</code> copy is deleted, with its unreachability proof in the PR. The two live copies&#x27; three divergences are each resolved by a recorded, measurement-backed decision — not a silent pick. Both call sites (<code>node-reference-substitution.service.ts</code>, <code>folw/contants.ts</code>) read from the single source (or the two named projections) this task builds. <strong>No field referenced by a real stored flow was dropped.</strong>',
+         'A cópia morta do <code>basedOnType</code> em <code>flux/constants.ts</code> está apagada, com a prova de inalcançabilidade no PR. As três divergências das duas cópias vivas estão cada uma resolvida por uma decisão registrada e apoiada em medição — não uma escolha silenciosa. Os dois call sites (<code>node-reference-substitution.service.ts</code>, <code>folw/contants.ts</code>) leem da fonte única (ou das duas projeções nomeadas) que esta task constrói. <strong>Nenhum campo referenciado por um fluxo real guardado foi apagado.</strong>'),
+ 'files':[
+  ('back/src/app-api/node-reference-substitution/node-reference-substitution.service.ts (basedOnType, generateSchemaFromNodes)',False),
+  ('back/src/app-api/folw/contants.ts (basedOnType, nodeSchema, THIRD_PARTY_INTEGRATION_DATA_PAYLOAD_KEYS)',False),
+  ('back/src/app-api/flux/constants.ts (dead, unexported nodeSchema — deleted once proven unreachable)',False),
+  ('back/src/app-api/flux/prefetch/prefetch-flow-executor.ts · back/src/temporal/single-node-legacy/legacy-context-builder.ts (read only)',False),
+  ('back/src/app-api/node-reference-substitution/node-reference-substitution.controller.ts · back/src/app-api/folw/helpers/helpers.ts · back/src/app-api/folw/flow.controller.ts (read only unless the chosen source changes their call shape)',False),
+  ('the A1 registry (only if the chosen shape needs a registry field)',True),
+ ],
+}

@@ -18,10 +18,10 @@ DEC_INTRO = {
         'Each one below opens to the options considered, what each costs the customer and costs us, and the option we would pick.',
         'Três decisões precisam ser tomadas antes de este teto poder ser escrito, e duas delas são visíveis para o cliente. '
         'Cada uma abaixo abre com as opções consideradas, quanto cada uma custa ao cliente e a nós, e a opção que escolheríamos.'),
- 'S8': ('Two calls have to be made, and neither is decidable from this repository alone — one needs the database&#x27;s opinion, the other needs infrastructure&#x27;s. '
-        'Each one below opens to the options considered, what each costs the customer and costs us, and the option we would pick.',
-        'Duas decisões precisam ser tomadas, e nenhuma é decidível só a partir deste repositório — uma precisa da opinião do banco, a outra da infraestrutura. '
-        'Cada uma abaixo abre com as opções consideradas, quanto cada uma custa ao cliente e a nós, e a opção que escolheríamos.'),
+ 'S8': ('Only one call is open here — the Redis question that used to sit beside it is now its own task, <code>E5</code>. '
+        'It opens to the options considered, what each costs the customer and costs us, and the option we would pick.',
+        'Só uma decisão está aberta aqui — a questão do Redis que ficava ao lado dela agora é uma task própria, a <code>E5</code>. '
+        'Ela abre com as opções consideradas, quanto cada uma custa ao cliente e a nós, e a opção que escolheríamos.'),
  'E3': ('Only one call is open here — the rest of the task is settled by the spec. It is also the one that decides whether the transport change delivers what it was bought for. '
         'It opens to the options considered, what each costs the customer and costs us, and the option we would pick.',
         'Só uma decisão está aberta aqui — o resto da task já está resolvido pela spec. É também a que define se a troca de transporte entrega aquilo pelo que foi comprada. '
@@ -46,7 +46,7 @@ MODULES = {'S2': w1_s2, 'S3': w1_s3, 'S8': w1_s8, 'E3': w1_e3}
 DECISIONS = {
  'S2': [w1_s2.DEC_MAX, w1_s2.DEC_PROXY],
  'S3': [w1_s3.DEC_CEILING, w1_s3.DEC_TENANCY, w1_s3.DEC_DEFAULT],
- 'S8': [w1_s8.DEC_CRON, w1_s8.DEC_REDIS],
+ 'S8': [w1_s8.DEC_CRON],
  'E3': [w1_e3.DEC_FANOUT],
 }
 

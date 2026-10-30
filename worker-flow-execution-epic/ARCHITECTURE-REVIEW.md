@@ -384,10 +384,11 @@ entry point — `/flux/api-v2` (API key), `/flux/api-v2-webhook` (public), `/flu
 The Bull processor's accidental serialisation (§1.4) throttles *execution*, not *admission*. The
 queue still grows without bound, and the rows, logs and dedup keys are written on the way in.
 
-### 9.3 Thirteen crons, no leader election — HIGH
+### 9.3 Fourteen crons, no leader election — HIGH
 
-`@Cron` is registered thirteen times across `back/src` (a fourteenth site is commented out in
-`updateTechnologiesFromSheets.service.ts`; corrected 2026-09-02 — the first draft counted it), and greps for `leader`, `isLeader`,
+`@Cron` is registered fourteen times across `back/src` (a fifteenth site is commented out in
+`updateTechnologiesFromSheets.service.ts`; corrected 2026-09-02 — the first draft counted it, and
+again 2026-09-18 — `syncAiModelsFromGateway` landed after the review was written), and greps for `leader`, `isLeader`,
 `CRON_ENABLED` or an advisory-lock guard return nothing. **With more than one backend replica,
 every cron fires on every replica.**
 
@@ -446,7 +447,7 @@ Two things to verify, because neither can be read from this repository:
 |---|---|---|---|
 | 11 | Authenticate the webhook entry point and fix the `public` predicate | `S7` | nothing — ship immediately |
 | 12 | Rate limiting on every run-creating entry point | `S7` | B5 |
-| 13 | Leader election or an advisory-lock guard for the thirteen crons | `S8` | running more than one backend replica |
+| 13 | Leader election or an advisory-lock guard for the fourteen crons | `S8` | running more than one backend replica |
 | 14 | Move user schedules to a durable scheduler, one fire per schedule | `S8` | running more than one backend replica |
 | 15 | Confirm the Redis eviction policy protects dedup keys; size the bus for post-B5 traffic | `S8` | B5 |
 
@@ -499,7 +500,7 @@ hypothetical chain: the integration nodes are exactly the ones this epic is migr
 
 ### 10.4 The poll runs on every replica, with nothing deduplicating messages — HIGH
 
-The POP3 cron is one of the thirteen with no leader election (§9.3), so it fires every ten seconds
+The POP3 cron is one of the fourteen with no leader election (§9.3), so it fires every ten seconds
 **per backend replica**. There is no message-id dedup and no lock anywhere in the service — greps
 for `messageId`, `dedup`, `lock` or `NX` return nothing. Messages are fetched, processed, and only
 then deleted (`deleteEmailsSequentially`, `:314`), so the window between fetch and delete spans the
@@ -600,7 +601,7 @@ by construction, exactly what `S8` part 2 is trying to build by hand: one fire p
 regardless of replica count, durability across restarts and deploys, plus pause, backfill and
 last-run visibility that the in-process registry cannot offer.
 
-The advisory lock stays the right answer for the **thirteen framework crons**, which are internal
+The advisory lock stays the right answer for the **fourteen framework crons**, which are internal
 maintenance and have no reason to become workflows. **S8 is amended**: locks for the crons,
 Temporal Schedules for user-facing schedules.
 

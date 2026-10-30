@@ -7,9 +7,15 @@ that no dispatch gate routes to.
 
 ## Why
 
+**Corrected 2026-09-21 — re-validated against `back@origin/production` `3804a524`.** `isTemporalNode`
+now lists 14 types, not the 7 read at `back@3be1ea8e` (§ TASK-A1). The count moved because A2's six
+types shipped into it; the fact this task depends on — `sqlQuerier` and `audioReaderNode` are in
+**neither** `isTemporalNode` nor a migrated integration provider — did not change, and re-checking it
+against `3804a524` confirms it still holds. This task needs no change beyond this evidence refresh.
+
 Both node types are in the worker's `NodeType` enum on `origin/main` and have complete modules.
-Neither is in `isTemporalNode`'s seven, and neither resolves to a migrated integration provider — so
-nothing in the back ever starts a workflow for them (analysis §9.4). `audioReaderNode` still has
+Neither is in `isTemporalNode`'s fourteen, and neither resolves to a migrated integration provider —
+so nothing in the back ever starts a workflow for them (analysis §9.4). `audioReaderNode` still has
 its inline handler in `flux.service.ts`, and that is what actually runs. This is the
 concrete case the A1 invariant spec flags: `workerModule: true` with `dispatch: 'inline'`.
 

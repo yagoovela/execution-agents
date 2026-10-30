@@ -8,25 +8,30 @@ produces wrong work now (PLAN §6, R7).
 
 ## Why this is urgent rather than tidy
 
-`skills/node-worker-migration/SKILL.md` is the guidance an agent loads when asked to migrate a
-node. It currently states the worker enum covers ten types "as of 2026-07" — it has thirteen today,
-in `worker@origin/main` — says nothing about
+`.claude/skills/node-worker-migration/SKILL.md` is the guidance an agent loads when asked to migrate a
+node. It currently states the worker enum covers ten types "as of 2026-07" — it had thirteen when
+the plan was first written (2026-09-02), and **re-validated 2026-09-21 against
+`worker@origin/main` `3e4c93a`, it has 20 entries today.** Three snapshots, three different
+numbers, in six weeks — the argument for a generated contract instead of a fourth snapshot. The
+skill also says nothing about
 `isTemporalNode`, nothing about the integration gate, nothing about the prefetch executor, and
 nothing about the blocking wait. It also tells the agent the worker "does NOT receive engine
 in-memory state" — true — while presenting the activity template as the only shape, which will be
 wrong the moment B4 lands.
 
 The skill even carries a worked example whose verdict this epic overturns. An agent that follows
-it will confidently produce a migration that ignores three of the four dispatch lists.
+it will confidently produce a migration that ignores most of the nine dispatch lists (§ TASK-A1,
+corrected 2026-09-21 — the count read four when this task was first written).
 
 ## Scope
 
 1. **The generated contract.** A1 produces the registry; this task makes it the published source:
    node type → dispatch, worker module, integration providers, prefetch eligibility, mutating,
-   inline twin. Generated, not hand-maintained — node **fields** in
+   inline twin, dispatch conflict (worker-routed and legacy-runnable at once — A1's invariant, red
+   on arrival with three cases as of 2026-09-21). Generated, not hand-maintained — node **fields** in
    `back/src/app-mcp/node-types/node-type-metadata.ts` are hand-maintained JSON with nothing
    type-checking them, and that is precisely the drift this epic should not reproduce.
-2. **Refresh `skills/node-worker-migration/SKILL.md`.** Replace the enum snapshot with a pointer
+2. **Refresh `.claude/skills/node-worker-migration/SKILL.md`.** Replace the enum snapshot with a pointer
    to the generated contract; add the four gates, the definition of done from PLAN §3.4, the
    blocking wait, and the prefetch path. Where the skill states a fact that can go stale, make it
    cite the generated file instead.
@@ -53,5 +58,5 @@ points at both; an agent following the skill produces a complete registration.
 
 ## Files
 
-`skills/node-worker-migration/SKILL.md` · `CLAUDE.md` · the A1 registry + generator + drift spec ·
+`.claude/skills/node-worker-migration/SKILL.md` · `CLAUDE.md` · the A1 registry + generator + drift spec ·
 `back/src/app-mcp/node-types/node-type-metadata.ts` (contrast case, not modified here)

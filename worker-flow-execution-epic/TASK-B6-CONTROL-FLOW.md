@@ -30,6 +30,14 @@ activity results or workflow state, never from ambient time or randomness.
 today: cancellation propagation (native to Temporal child workflows), nested run logs so child
 node logs still appear under the parent, and billing attributed to the parent's `billingFlowId`.
 
+**In — cancellation propagates down the chain, per `D23` (moved from E2 on 2026-10-26, E2-d).**
+A `fluxBox`, `libraryNode` or `arrayNode` is not allowed to finish the way a generation is: its
+execution is an open-ended amount of further work. Cancelling one cancels its children. For
+`arrayNode`, the element already generating finishes; the remaining elements never start.
+**`nodesBox` is not in this list:** it dispatches to `objectCaller`, which executes no nodes and
+only reads and writes an object's session state, so cancelling it prevents no spend and leaves the
+object half-written.
+
 **In — the run chain.** The child carries a `parentRunId` back to its caller, and the visited-flow
 set and depth counter travel with it (`TASK-S1`). Three things depend on that chain existing at this
 boundary and not only inside one process: the cycle refusal, the depth ceiling, and the spend
@@ -48,6 +56,12 @@ loop means, so the **Out** below still holds. See
 
 **Out.** Changing what a condition means or how a loop terminates. The `evaluateLoopCondition`
 behaviour, including the maximum-iteration guard, ports as-is.
+
+## Decisions (2026-10-23)
+
+| Id | Question | State | Answer |
+|---|---|---|---|
+| B6-a | Is an array iteration a loop inside the workflow, or a child workflow per item? | **Settled, pending one measurement** | A loop inside the flow workflow (option A). It reuses `computeLoopBody` and the `continueAsNew` boundary that B4 defines (B4-a), so there is one mechanism. B4's history measurement confirms it: if one iteration's events times the largest real `arrayNode` list does not fit under the B4 boundary with margin, reopen this decision with that number. |
 
 ## The item-per-iteration defect
 
@@ -117,6 +131,10 @@ ORDER BY ne."createdAt";
   [The item-per-iteration defect](#the-item-per-iteration-defect) without a Text Box: each
   iteration's input holds one item. Revert the fix and watch it receive the whole list.
 
+- **`arrayNode` cancel (D23, moved from E2 on 2026-10-26).** Cancel during the second element of a
+  five-element array: the second element finishes, and elements three to five never start. Negative
+  control: let the loop ignore the cancel and watch element three start.
+
 ## Done when
 
 All four types run in the worker; a replay test passes; nested runs keep their logs, cancellation
@@ -132,6 +150,10 @@ with an `arrayNode`, `fluxObject`, `nodesBox`, `libraryNode`, `fluxBox`, `tableP
 registry. When this task moves those types, remove each one from the list, or derive the list from a
 registry field, and update `node-dispatch-contract.json`. Check whether `fluxObject`,
 `tableProcessor` and `dynamicSettingsNode`, which are not in this task's four types, still need it.
+
+**Answered 2026-10-23.** A11 derives the list from the registry and removes `tableProcessor` and
+`dynamicSettingsNode`; A7 removes `nodesBox`; A14 removes `fluxObject`. This task removes only its
+own four types.
 
 ## Files
 

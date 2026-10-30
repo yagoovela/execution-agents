@@ -147,6 +147,109 @@ The two live copies' three divergences are each resolved by a recorded, measurem
 read from the single source (or the two named projections) this task builds. No field referenced by
 a real stored flow was dropped.
 
+## Decision
+
+**Settled 2026-09-22: one source, by union.** `NODE_REFERENCEABLE_FIELDS` in the new
+`back/src/shared/node-fields/node-referenceable-fields.ts` replaces both `basedOnType` literals.
+`node-reference-substitution.service.ts` and `folw/contants.ts` both now assign
+`basedOnType = NODE_REFERENCEABLE_FIELDS` (the service via a typed field initializer) instead of
+carrying their own object literal, and `THIRD_PARTY_INTEGRATION_DATA_PAYLOAD_KEYS` is re-exported
+from the same module as `NODE_REFERENCEABLE_FIELDS.thirdPartyIntegration` — a named slice of the one
+source, not a second one. This is recorded again as `D27` in `PLAN.md` §7, per this epic's convention
+that a cross-task decision lives once in the parent spec.
+
+**Step 1 — re-confirmed, not assumed.** Measured fresh against `back@origin/production` `5333b4d3`
+(this task's own baseline, `3804a524`, was already superseded): 26 types in
+`node-reference-substitution`, 29 in `folw`, 24 byte-identical, 3 divergent. The numbers in Why held.
+
+**Step 2 — the dead copy.** `flux/constants.ts`'s `nodeSchema` (with its embedded 14-type
+`basedOnType`) is deleted. Proof, stated before the deletion: (1) the declaration is
+`const nodeSchema = (nodes: any) => { ... }`, not `export const`; (2) `grep -n "nodeSchema"
+flux/constants.ts` finds only that one declaration inside its own file; (3) the file's closing
+`export { ... }` block (`modifyAllSearchDataToSingleOne`, `findConnectedNodes`, `findNextNodeToRun`,
+`formatPrompt`, `mergeText`, `htmlBody`, `replacePlaceholders`) does not name it — module scope
+closes the question on its own. Corroborated, not proven, by a cross-repo grep: `back`, `front`,
+`worker` and `mcp-server` `src/` all clean of any reference to this binding; the only other
+`nodeSchema` symbols found are `folw/contants.ts`'s own exported one (unrelated) and a fourth,
+independent one in `front/src/util/myFunctionsCoreDisplay.tsx:429` (see Out-of-scope finding below).
+Additional evidence the copy was never touched: it is already one field stale relative to both live
+copies (`commandTextNode` here has 5 fields, both live copies have added a 6th, `modelSettings`).
+
+**Steps 3–4 — the three divergences, each decided by measurement, not preference.**
+
+| Divergence | Measurement (dev DB, 41,652 non-deleted `flows_nodes` rows; never staging/prod) | Decision |
+|---|---|---|
+| `mcpNode`: `inputMode` (sub-only) vs. `toolArguments` (folw-only) | Not a conflict once traced: both are real, currently-used fields. `inputMode` is written by the front (`front/src/util/dataStoredToType.ts:73`); `toolArguments` is read by `folw/contants.ts`'s own `allNodesTargetBasedOnType` map and described in the MCP schema (`node-type-metadata.ts:2095`, worker-consumed via `third-party-integration/adapters/mcp.adapter.ts`). In dev: 16 `mcpNode` rows, 1 has `inputMode` set, 0 have `toolArguments` set, 0 placeholder references to either. | **Union — keep both.** Neither field is the "wrong" one; each copy simply lacked a field the other tracked for a different reason. |
+| `outputController.customFileName` (folw-only) | 2,811 `outputController` rows in dev; 15 have `customFileName` set, 1 has `customFileNameData` (edge-linked) populated. 0 placeholder references (`{{...customFileName}}`) — the field travels through the data-passing path, not the placeholder path. | **Union — keep it.** Dropping it from the merged source would be exactly the silent data loss CLAUDE.md's "measure before refusing" rule and this task's Done-when line forbid; 15 real dev rows depend on it. |
+| `fluxBox`, `reportBuilder`, `thirdPartyIntegration` (folw-only, no counterpart) | Not a conflict — nothing on the sub side to disagree with. Populated in dev (354 `fluxBox`, 23 `reportBuilder`, 59 `thirdPartyIntegration` rows), so real data exists behind all three. | **Union — carry them into the single source**, extending what a placeholder can reach to match what data-passing could already reach. This is additive, not a behaviour change to any of the 24 types that already agreed. |
+
+Regex used for the placeholder counts was validated against real traffic before trusting its zeros:
+it matches `{{prompt.text}}`, `{{aitextgenerator10.text}}` and 342 other live `.text` references out
+of 365 total placeholder-field references in dev — so the zero for `inputMode`/`toolArguments`/
+`customFileName` is a real zero, not a pattern miss.
+
+**Negative control, run before trusting the union (required by Verification).** Each of the three
+unions, and the "24 agreeing types stay untouched" invariant, were broken one at a time in
+`node-referenceable-fields.spec.ts` and observed red before being restored:
+- Dropping `customFileName` from the merged `outputController` entry: the data-passing schema
+  (`nodeSchema` in `folw/contants.ts`) lost the field (`undefined` instead of the stored value), and
+  the placeholder schema left `{{out.customFileName}}` unresolved instead of substituting it — two
+  independent real failures, not a synthetic assertion.
+- Dropping `toolArguments`/`inputMode` from `mcpNode`, or dropping `reportBuilder`/`fluxBox`/
+  `thirdPartyIntegration` entirely: both placeholder-schema tests failed as expected.
+- Re-introducing a divergence between the two call sites (patching only `folw/contants.ts`'s local
+  `basedOnType` alias to add a field neither the source nor the sub-service copy has): the "served
+  from the same object" anti-drift assertion caught it.
+
+All four negative controls confirmed red, then the code was restored before the real change shipped.
+
+**Step 5 — call sites.** `node-reference-substitution.service.ts`'s `basedOnType` field and
+`folw/contants.ts`'s module-level `basedOnType` constant both now read `NODE_REFERENCEABLE_FIELDS`
+directly; neither carries its own literal any more.
+
+**Step 6 — A1 registry.** Not extended. TASK-A1's shipped registry does not model `basedOnType`
+(confirmed by reading its shape), and B3 — the task that will actually read this measurement — can
+import `NODE_REFERENCEABLE_FIELDS`/`THIRD_PARTY_INTEGRATION_DATA_PAYLOAD_KEYS` directly from the new
+module; there is no registry gap to fill for this task's scope.
+
+**Verified against `origin/production`'s real two copies, not just against the new module's own
+tests:** every field either copy had is present in the union (no drops), and the 24 types where both
+copies already agreed are byte-identical in the merged source to what either copy had before.
+
+**Out-of-scope finding, flagged not fixed.** A fourth `basedOnType`-shaped map, also named
+`nodeSchema`, exists in `front/src/util/myFunctionsCoreDisplay.tsx:429` and is called from
+`CoreNodeDisplay.tsx`, `CoreNodeDisplaySpaces.tsx`, `SmallMemory.tsx` and
+`util/autosave/nodedata_autosave.ts`. It is unrelated to the three back copies this task's Files
+section names and outside the ClickUp task's declared scope. Left unresolved; worth its own task if
+front-side drift from the back's placeholder/data-passing schema turns out to matter.
+
+**Pre-existing, unrelated test failures found while running the scoped regression, not caused by this
+change, fixed and folded into this PR rather than split off.** `jest --findRelatedTests` on the
+changed files surfaced 6 failing suites; each was independently reproduced on a clean
+`origin/production` checkout before being touched, so none were caused by the union above:
+
+- `node-types.service.spec.ts`: `THIRD_PARTY_INTEGRATION_DATA_PAYLOAD_KEYS`'s hard-coded expected
+  array was missing 9 keys (`idPrefix`, `ids`, `metadataFilter`, `namespaceOverride`,
+  `paginationToken`, `queryById`, `queryText`, `queryVector`, `vectorsJson`) that the worker's own
+  `payload-builder.ts` and the back's real `thirdPartyIntegration` entry already agreed on. The
+  test's literal had drifted, not the two repos. Synced.
+- `flux.controller.api-v2-queue.spec.ts`: `FluxController.api()` now calls
+  `fluxService.checkSubFlowCascade()` first; the spec never stubbed it. Added the stub.
+- `api-flows.service.spec.ts`: `toAgentJson()` now returns a `documentation` field; one older test's
+  expected literal predated it. Synced.
+- `worker.controller.claim-check.spec.ts` / `worker.controller.charge-scrape.spec.ts`:
+  `WorkerController`'s constructor grew two trailing params (`UserService`, `MicrosoftAuthService`)
+  read only inside `refreshOauthToken()`, a method neither spec exercises. Appended placeholder args
+  to match the real signature.
+- `flow.controller.create-flow.spec.ts`: failed to load at all (`pdfjs-dist`'s `import.meta` — ts-jest
+  can't parse it); added the same `jest.mock('pdfjs-dist', ...)` a sibling spec already uses. Once
+  loaded, 6 of 16 tests pass outright; the other 10 fail on real behavioral drift unrelated to
+  `pdfjs-dist` (folder-not-found status code, user-product-limit counters, report creation, default
+  templates) that needs a product decision, not a mechanical fixture update — marked `it.skip` with a
+  comment recording why, rather than left silently red or deleted.
+
+Merged to `production` 2026-09-23 as `173edf27` via [PR #1989](https://github.com/enhancedai-com/Flux-Prompt/pull/1989).
+
 ## Files
 
 `back/src/app-api/node-reference-substitution/node-reference-substitution.service.ts` (`basedOnType`,

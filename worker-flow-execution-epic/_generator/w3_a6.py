@@ -83,7 +83,7 @@ DEC_D3 = {
 }
 
 TASK = {
- 'code':'A6','vnum':'4',
+ 'code':'A6','vnum':'5',
  'title':('Give the front-driven types server-side execution','Dar execução no servidor aos tipos só-front'),
  'goal':('The front-driven node types that today run <b>only from the browser</b> — eight after D24, <b>six after D3</b> — get an activity and, for the first time, <b>engine dispatch</b> — so a headless run produces output instead of reusing what a person last left behind.',
          'Os tipos de node só-front que hoje rodam <b>só a partir do navegador</b> — oito depois da D24, <b>seis depois da D3</b> — ganham uma activity e, pela primeira vez, <b>dispatch do engine</b> — para que um run sem interface produza saída em vez de reaproveitar o que alguém deixou por último.'),
@@ -91,9 +91,9 @@ TASK = {
   ('crit',('Severity','Severidade'),('A product change','Uma mudança de produto'),
    ('Risk <strong>R8</strong>: flows that silently produced stale output start producing fresh output. Sign-off first — <strong>PLAN §7, D3</strong>.',
     'Risco <strong>R8</strong>: fluxos que produziam saída velha em silêncio passam a produzir saída fresca. Aprovação antes — <strong>PLAN §7, D3</strong>.')),
-  ('dep',('Depends on','Depende de'),('A1 · blocked on D3','A1 · travada pela D3'),
-   ('And it does not ship a relocated fetcher until <code>S6</code>&#x27;s egress decision exists and applies to it.',
-    'E não entrega um buscador relocado enquanto a decisão de egresso da <code>S6</code> não existir e não se aplicar a ele.')),
+  ('dep',('Depends on','Depende de'),('A1 · D3 answered 2026-09-02','A1 · D3 respondida em 2026-09-02'),
+   ('The wave&#x27;s product sign-off exists (PLAN §7). It still does not ship a relocated fetcher until <code>S6</code>&#x27;s egress decision exists and applies to it.',
+    'A aprovação de produto da onda existe (PLAN §7). Ainda assim não entrega um buscador relocado enquanto a decisão de egresso da <code>S6</code> não existir e não se aplicar a ele.')),
   ('wave',('Wave','Onda'),('Wave 3','Onda 3'),
    ('The wave&#x27;s observable outcome is this task: headless runs stop reusing stale output. <code>S6</code> ships <em>with</em> it, not after.',
     'O resultado observável da onda é esta task: runs sem interface param de reaproveitar saída velha. A <code>S6</code> entra <em>junto</em>, não depois.')),
@@ -172,9 +172,9 @@ TASK = {
          ('The engine dispatches the node like any other, in dependency order, and the value the flow consumes was produced by <strong>this</strong> run.',
           'O engine despacha o node como qualquer outro, na ordem de dependência, e o valor que o fluxo consome foi produzido por <strong>este</strong> run.')),
    'callouts':[
-    ('mig',('Two paths is how the four lists diverged','Dois caminhos foi como as quatro listas divergiram'),
-     ('<p>Keeping the direct provider call “as a preview path” alongside the new dispatch is <strong>exactly</strong> the pattern that produced four uncoordinated dispatch lists in the first place. The Run button routes through the same execution as everything else, and the direct call is <strong>deleted, not merely unused</strong>.</p>',
-      '<p>Manter a chamada direta ao provedor “como caminho de preview” ao lado do dispatch novo é <strong>exatamente</strong> o padrão que produziu quatro listas de dispatch descoordenadas. O botão Run passa pela mesma execução que todo o resto, e a chamada direta é <strong>apagada, não apenas deixada sem uso</strong>.</p>'))]},
+    ('mig',('Two paths is how A1&#x27;s dispatch lists diverged','Dois caminhos foi como as listas de dispatch da A1 divergiram'),
+     ('<p>Keeping the direct provider call “as a preview path” alongside the new dispatch is <strong>exactly</strong> the pattern that produced A1&#x27;s uncoordinated dispatch lists in the first place — <strong>nine of them, re-validated 2026-09-21</strong> (§ TASK-A1), not the four assumed when this line was first written. The Run button routes through the same execution as everything else, and the direct call is <strong>deleted, not merely unused</strong>.</p>',
+      '<p>Manter a chamada direta ao provedor “como caminho de preview” ao lado do dispatch novo é <strong>exatamente</strong> o padrão que produziu as listas de dispatch descoordenadas da A1 — <strong>nove delas, revalidadas em 21/09/2026</strong> (§ TASK-A1), não as quatro supostas quando esta linha foi escrita pela primeira vez. O botão Run passa pela mesma execução que todo o resto, e a chamada direta é <strong>apagada, não apenas deixada sem uso</strong>.</p>'))]},
   {'k':'part','n':'2',
    'title':('Stage 1 — the three that are almost free','Estágio 1 — os três quase de graça'),
    'loc':'flux/scheduler.ts · flux.service.ts',

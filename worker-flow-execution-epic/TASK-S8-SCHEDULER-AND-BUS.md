@@ -193,7 +193,7 @@ Postgres transaction open across it every tick. What protects inbound email is t
 ## Verification
 
 Every negative control below needs two backend replicas locally, and the local stack cannot do
-that today: `docker-compose.devdb.yaml` pins `back` to `3001:3001` and sets `DISABLE_CRONS: 'true'`.
+that today: `docker/devdb/docker-compose.devdb.yaml` pins `back` to `3001:3001` and sets `DISABLE_CRONS: 'true'`.
 **Building that harness is part of this task**, as a compose override — `--scale back=2`, crons on,
 plus a GreenMail container for Part 4, because the poll also returns early when
 `ENVIRONMENT === 'localhost'` and there is no POP3 server in the stack.
@@ -228,4 +228,4 @@ the two-replica harness exists in the repo so the next person can re-run every c
 `getAllSchedules()`) · `back/src/app-api/schedule/schedule.consumer.ts` (rewritten: it processes the repeatable) ·
 `back/src/jobs/apiV2Job/` (the repeatable registration) · `back/src/app-api/feature-flags/`
 (the §3.2 flag — the module is already in production; do not add an env var for it) ·
-`docker-compose.devdb.yaml` + the two-replica override
+`docker/devdb/docker-compose.devdb.yaml` + the two-replica override

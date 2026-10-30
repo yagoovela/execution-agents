@@ -56,3 +56,10 @@ parallel dispatch.
 `back/src/app-api/gateway/gateway.ts` (`response()`, `responseToUser()`) · `back/src/temporal/temporal.controller.ts` (the `@EventPattern` relays for `room_status_updated`, `room_stream_chunk`) · `back/src/app-api/router/router.controller.ts` (`completion_stream_chunk`) ·
 `back/src/app-api/flux/flux.service.ts` (`chatbotSocketByRun`) ·
 `worker/src/modules/notification/notification.service.ts`
+
+## Decision recorded (2026-10-23)
+
+**E3-a — resolved as A, verified in code.** Back `main` `a38fef57` installs the Socket.io Redis
+adapter (`@socket.io/redis-adapter`, `src/adapters/redis-io.adapter.ts`) in `main.ts` at every boot,
+with no condition, and the notifications gateway emits to rooms. Shipped in PR #1985. Not checked:
+that production Redis is reachable from every replica.

@@ -10,9 +10,9 @@ sys.path.insert(0, _GEN)
 import tasklib, order
 from TITLES_ALL import TITLES
 
-import w3_a4, w3_a5, w3_a6, w3_s6, w3_a8, w3_a9, w3_d1
+import w3_a4, w3_a5, w3_a6, w3_s6, w3_a8, w3_a9, w3_a10, w3_d1
 
-MODULES = [w3_a4, w3_a5, w3_a6, w3_s6, w3_a8, w3_a9, w3_d1]
+MODULES = [w3_a4, w3_a5, w3_a6, w3_s6, w3_a8, w3_a9, w3_a10, w3_d1]
 
 if __name__ == '__main__':
     for m in MODULES:
