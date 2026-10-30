@@ -2,7 +2,8 @@
 
 **Goal:** delete what the migration replaced, so the back stops being a second implementation.
 
-**Depends on:** per node, on that node's A-track task. **This is not a sweep at the end** — each
+**Depends on:** per node, on that node's A-track task. The per-node cancel poller (moved from E2
+on 2026-10-26) waits for the B4 flag in production and for B6. **This is not a sweep at the end** — each
 node's twin is deleted as part of proving that node, while the behaviour is fresh. This file is
 the shared procedure those tasks follow, plus the two pieces that only make sense once.
 
@@ -67,6 +68,17 @@ Once a node runs in the worker, its output reaches downstream nodes through `per
 writing its **own** row. The cross-node write is then not merely redundant — it is a second writer
 on a row someone else owns.
 
+**Once — the per-node cancel poller (moved from E2 on 2026-10-26, E2-b).** Delete
+`node-cancel-watch.ts` (`startNodeCancelWatch`, `nodeCancelContext`, `NODE_CANCEL_IN_FLIGHT_FLAG`),
+the readers of its signal (`node-cancel-interceptor.ts`, `node-cancel-fetch.ts`, the
+`isNodeCancelAbort` check in `openAI.service.ts`), the `.run(undefined, …)` isolation in
+`nested-run-context.ts`, and the `node_cancel_in_flight` flag. The poller lives only in the back
+inline loop and is the only thing that aborts an outbound request in the middle of an inline node,
+so it goes when that loop stops executing nodes: after the B4 flag is on in production and after B6
+moves `fluxBox`, `libraryNode` and `arrayNode`. Before deleting it, read the flag's value in
+production: if it is on, measure the cancel latency the inline loop gives today, so the
+replacement is held to it.
+
 **Out.** Removing `addConnectToNodes` while any executable node type still runs inline. It is
 correct for those. This task removes it path by path, as each path's last inline node leaves.
 
@@ -77,6 +89,7 @@ correct for those. This task removes it path by path, as each path's last inline
    When a call site's last caller is gone, delete the call site.
 3. When the last executable inline node is migrated, `addConnectToNodes` should have no callers on
    the run path. If it still does, something was missed — that is the check, not a formality.
+4. When the inline loop no longer executes nodes, delete the per-node cancel poller and its flag.
 
 ## Verification
 
@@ -88,11 +101,15 @@ correct for those. This task removes it path by path, as each path's last inline
   one execution occurred per dispatch. Assert it, do not eyeball it — this is R1.
 - After each `modifyData` call-site removal, run the flows that reach it and diff downstream node
   inputs against a pre-change run.
+- **Poller removal.** Run a sixty-node agent before and after, and count active timers and the
+  database query rate. After the change, cancel a run mid-node and assert the next node never
+  starts; then make the workflow ignore the cancel and watch the next node start.
 
 ## Done when
 
 No executable node type has two implementations; `addConnectToNodes` has no callers on the run
-path; `flux.service.ts` is materially smaller and the reduction is stated in the PR.
+path; the per-node cancel poller, `nodeCancelContext` and `node_cancel_in_flight` are gone;
+`flux.service.ts` is materially smaller and the reduction is stated in the PR.
 
 ## Carried over from B3b (validate first)
 
@@ -104,6 +121,8 @@ paths are gone, check how many inserts remain; if more than one, route them thro
 
 `back/src/app-api/flux/flux.service.ts` (all inline handlers) ·
 `back/src/app-api/folw/contants.ts` (`addConnectToNodes`, `modifyData`) ·
+`back/src/app-api/flux/node-cancel-watch.ts`, `node-cancel-interceptor.ts`, `node-cancel-fetch.ts`,
+`nested-run-context.ts` (the poller, moved from E2) ·
 `back/src/temporal/single-node-legacy/legacy-allowlist.ts` (`LEGACY_SINGLE_RUN_NODE_TYPES` — remove
 `voiceBoxNode`, `webSearch`, `commandContentNode` as each is cleared) ·
 `back/src/temporal/single-node-legacy/legacy-node-dispatch.ts` (the matching `case` arms) ·

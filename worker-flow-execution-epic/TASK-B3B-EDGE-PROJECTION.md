@@ -90,6 +90,10 @@ being saved, or it comes from outside the node tables:
 These are control flow and sub-flows, B6's territory. `outputObjectNode` and `globalStarter` are not
 source branches of the projection; the earlier list was wrong.
 
+**Reassigned 2026-10-23.** `nodesBox` leaves this list in A7, `fluxObject` in A14, and
+`tableProcessor` and `dynamicSettingsNode` in A11, which also derives the list from the registry.
+`arrayNode`, `libraryNode` and `fluxBox` stay with B6.
+
 ## Run identity
 
 `node_executions` has no run column today: the run id lives only in `metadata->>'runId'` (since

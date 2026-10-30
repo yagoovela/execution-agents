@@ -20,21 +20,21 @@ GLANCE=[
 ]
 
 LEDE=(
- '<p><code>skills/node-worker-migration/SKILL.md</code> is the guidance an agent loads when it is asked to migrate a node. It states the worker enum covers ten types “as of 2026-07” — it has thirteen today, in <code>worker@origin/main</code> — says nothing about '
+ '<p><code>.claude/skills/node-worker-migration/SKILL.md</code> is the guidance an agent loads when it is asked to migrate a node. It states the worker enum covers ten types “as of 2026-07” — it had thirteen when this task was first written (2026-09-02), and <strong>re-validated 2026-09-21 against <code>worker@origin/main</code> <code>3e4c93a</code>, it has 20 entries today</strong>. Three snapshots, three different numbers, in six weeks — the argument for a generated contract instead of a fourth snapshot. The skill says nothing about '
  '<code>isTemporalNode</code>, nothing about the integration gate, nothing about the prefetch executor, and nothing about the blocking wait.</p>'
  '<p>It also tells the agent the worker “does NOT receive engine in-memory state” — true — while presenting the activity template as <em>the only shape</em>, which will be wrong the moment B4 lands. The skill even carries '
- 'a worked example whose verdict this epic overturns. <strong>An agent that follows it will confidently produce a migration that ignores three of the four dispatch lists.</strong></p>',
- '<p>O <code>skills/node-worker-migration/SKILL.md</code> é a orientação que um agente carrega quando é encarregado de migrar um node. Ele afirma que o enum do worker cobre dez tipos “em 2026-07” — hoje são treze, em <code>worker@origin/main</code> —, não diz nada sobre '
+ 'a worked example whose verdict this epic overturns. <strong>An agent that follows it will confidently produce a migration that ignores most of the nine dispatch lists</strong> (§ TASK-A1, corrected 2026-09-21 — the count read four when this task was first written).</p>',
+ '<p>O <code>.claude/skills/node-worker-migration/SKILL.md</code> é a orientação que um agente carrega quando é encarregado de migrar um node. Ele afirma que o enum do worker cobre dez tipos “em 2026-07” — eram treze quando esta task foi escrita pela primeira vez (02/09/2026), e <strong>revalidado em 21/09/2026 contra <code>worker@origin/main</code> <code>3e4c93a</code>, são 20 entradas hoje</strong>. Três retratos, três números diferentes, em seis semanas — o argumento para um contrato gerado em vez de um quarto retrato. A skill não diz nada sobre '
  '<code>isTemporalNode</code>, nada sobre o gate de integração, nada sobre o executor de prefetch, e nada sobre a espera bloqueante.</p>'
  '<p>Ele também diz ao agente que o worker “NÃO recebe estado em memória da engine” — o que é verdade — enquanto apresenta o template de activity como <em>a única forma</em>, o que ficará errado no momento em que a B4 entrar. A skill ainda carrega '
- 'um exemplo resolvido cujo veredito este épico reverte. <strong>Um agente que a seguir vai produzir, com confiança, uma migração que ignora três das quatro listas de dispatch.</strong></p>')
+ 'um exemplo resolvido cujo veredito este épico reverte. <strong>Um agente que a seguir vai produzir, com confiança, uma migração que ignora a maior parte das nove listas de dispatch</strong> (§ TASK-A1, corrigida em 21/09/2026 — a contagem lia quatro quando esta task foi escrita pela primeira vez).</p>')
 
 TABLE={'k':'table',
  'head':[('What the skill teaches today','O que a skill ensina hoje'),('Status','Situação'),
          ('What the agent does with it','O que o agente faz com isso')],
  'rows':[
-  [('The worker <code>NodeType</code> enum covers <strong>ten types</strong>, “as of 2026-07”',
-    'O enum <code>NodeType</code> do worker cobre <strong>dez tipos</strong>, “em 2026-07”'),
+  [('The worker <code>NodeType</code> enum covers <strong>ten types</strong>, “as of 2026-07” — <strong>20 today</strong>',
+    'O enum <code>NodeType</code> do worker cobre <strong>dez tipos</strong>, “em 2026-07” — <strong>20 hoje</strong>'),
    {'t':('Stale snapshot','Retrato defasado'),'pill':'no'},
    ('Registers the node in the enum and stops — the count was the whole map it had',
     'Registra o node no enum e para — a contagem era o mapa inteiro que ele tinha')],
@@ -67,8 +67,8 @@ PARTS=[
 {'n':'1','title':('The generated contract, and the two neighbours that show why',
                   'O contrato gerado, e os dois vizinhos que mostram por quê'),
  'loc':'back/src/app-mcp/node-types/',
- 'purpose':('A1 produces the registry; this task turns it into the artefact an agent reads: node type → dispatch, worker module, integration providers, prefetch eligibility, mutating, inline twin.',
-            'A A1 produz o registro; esta task o transforma no artefato que um agente lê: tipo de node → dispatch, módulo do worker, provedores de integração, elegibilidade de prefetch, mutante, gêmeo inline.'),
+ 'purpose':('A1 produces the registry; this task turns it into the artefact an agent reads: node type → dispatch, worker module, integration providers, prefetch eligibility, mutating, inline twin, dispatch conflict.',
+            'A A1 produz o registro; esta task o transforma no artefato que um agente lê: tipo de node → dispatch, módulo do worker, provedores de integração, elegibilidade de prefetch, mutante, gêmeo inline, conflito de dispatch.'),
  'body':('<p><strong>Generated, not hand-maintained</strong> — and the reason is one directory away. The same repo already runs both experiments side by side:</p>',
          '<p><strong>Gerado, não mantido à mão</strong> — e a razão está a um diretório de distância. O mesmo repositório já roda os dois experimentos lado a lado:</p>'),
  'list':[('Node <strong>fields</strong> live in <code>back/src/app-mcp/node-types/node-type-metadata.ts</code> as <strong>hand-maintained JSON with nothing type-checking them</strong> against the real data model. That is precisely the drift this epic should not reproduce.',
@@ -84,7 +84,7 @@ PARTS=[
 
 {'n':'2','title':('Refresh the skill so it cites instead of restates',
                   'Atualizar a skill para que ela cite em vez de repetir'),
- 'loc':'skills/node-worker-migration/SKILL.md',
+ 'loc':'.claude/skills/node-worker-migration/SKILL.md',
  'purpose':('Replace the enumeration with a pointer, and add the four things the skill has never mentioned.',
             'Trocar a enumeração por um ponteiro, e acrescentar as quatro coisas que a skill nunca mencionou.'),
  'body':('<p>The enum snapshot goes and a pointer to the generated contract takes its place. Then the skill gains what it never had:</p>',
@@ -155,7 +155,7 @@ VERIF=[
 DONE=('The contract is <strong>generated and test-enforced</strong>; the skill contains no stale enumeration; <code>CLAUDE.md</code> points at both; and an agent following the skill produces a <strong>complete registration</strong> — all seven layers plus the registry entry.',
       'O contrato é <strong>gerado e garantido por teste</strong>; a skill não contém enumeração defasada; o <code>CLAUDE.md</code> aponta para os dois; e um agente que segue a skill produz um <strong>registro completo</strong> — as sete camadas mais a entrada no registro.')
 
-FILES=[('skills/node-worker-migration/SKILL.md',False),
+FILES=[('.claude/skills/node-worker-migration/SKILL.md',False),
        ('CLAUDE.md',False),
        ('the A1 registry + generator + drift spec',True),
        ('back/src/app-mcp/node-types/node-type-metadata.ts (contrast case, not modified)',False)]

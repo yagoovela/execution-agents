@@ -34,8 +34,26 @@ lives in has been duplicated. **Source:** analysis §11.5.
    proof burden as item 3 — all repos plus `origin/production` — before deleting.
 6. **The friendly error timestamp** records "now" rather than when the error occurred
    (`flux.service.ts`).
+7. **The OAuth refresh holds a pooled connection across an external HTTP call.**
+   `refreshOAuthTokenUnderLock` (`worker/.../third-party-integration/oauth-token.repo.ts:76`) checks
+   out a client, opens a transaction, takes `pg_advisory_xact_lock`, and only then calls
+   `doRefresh` — the provider's own token endpoint. The connection, the transaction and the lock
+   are all held for the whole round trip. Every adapter bounds that call (Notion 15s, Slack 15s,
+   HubSpot 30s per request with a 30s retry budget), so this is **bounded, not unbounded** — but it
+   is three to four orders of magnitude longer than any other query the worker runs, and nothing in
+   the worker sets `statement_timeout` or `idle_in_transaction_session_timeout`, so the database
+   will not cut it short either. Twelve concurrent stale-token refreshes on one replica saturate
+   its whole pool for that window, and because the advisory lock is keyed by integration, a slow
+   provider also stalls every other replica refreshing the same integration. Found while validating
+   S2; it is a defect of the code being ported, not of S2's pool sizing.
 
-**Out.** Anything that changes execution semantics. This task is for defects whose fix is
+**Out.** Restructuring item 7's lock so the HTTP call happens outside the transaction. That is the
+right long-term shape, but it changes when a concurrent refresh is allowed to proceed — which is
+execution semantics, and belongs to the task that owns third-party integration. What belongs here is
+the behaviour-preserving half: set `statement_timeout` and `idle_in_transaction_session_timeout` on
+the worker's pool so a stuck connection is reclaimed rather than pinned.
+
+Anything else that changes execution semantics. This task is for defects whose fix is
 behaviour-preserving in the normal case; a fix that changes what a run produces belongs to the task
 that owns that behaviour.
 
@@ -50,6 +68,11 @@ that owns that behaviour.
   report the count. If none exist, say so — an unnecessary data migration is its own risk.
 - For the dead-code deletion: owner-anchored greps across `back`, `front`, `worker`, `mcp-server`
   **and** `origin/production`, not just the local checkout.
+- **For item 7, measure before setting the timeouts.** An `idle_in_transaction_session_timeout`
+  shorter than a real OAuth round trip would abort refreshes that work today — the false-refusal
+  failure. Measure the real distribution of `doRefresh` durations per adapter against stored
+  integrations before picking a value, and set it above the slowest observed round trip, not at a
+  round number.
 
 ## Done when
 
@@ -60,4 +83,13 @@ assumed, and the dead-code claim is proven across every repo before anything is 
 
 `back/src/app-api/flux/flux.service.ts` (`responses.length === 10` at six sites; the two consecutive `endNode` calls on `genericRunLogNode`; the friendly-error timestamp) ·
 `back/src/app-api/node-reference-substitution/node-reference-substitution.service.ts` (`processFlowWithSubstitution`) ·
-`back/.env.example` and every environment that carries the Google client secret
+`back/.env.example` and every environment that carries the Google client secret ·
+`worker/src/modules/nodes/third-party-integration/oauth-token.repo.ts` (`refreshOAuthTokenUnderLock` holds the connection across `doRefresh`) ·
+`worker/src/modules/database/database.service.ts` (no `statement_timeout` / `idle_in_transaction_session_timeout`)
+
+## Decision recorded (2026-10-23)
+
+**C3-a — resolved as B.** PR #1966 shipped only the forward fix: `previewResponses` drops one item
+per append once it holds ten (`>= 10`, back `flux.service.ts:3919` and `:4560`; worker
+`preview-responses.ts`). No backfill migration exists, and the count of stored arrays longer than
+ten was never recorded, so an existing oversized array stops growing but keeps its length.

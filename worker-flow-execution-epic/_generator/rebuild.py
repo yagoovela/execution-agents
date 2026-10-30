@@ -27,9 +27,10 @@ sys.path.insert(0, GEN)
 sys.path.insert(0, str(ROOT / '_assets'))
 BUILDS = ('build_w0.py', 'w1_build.py', 'w2_build.py', 'w3_build.py', 'w4_build.py', 'w5_build.py')
 
-# Measured 2026-10-29 by rebuilding every page and diffing it with the published one.
-# A1, A2, A5, S1, S7 and S8 would lose 140 to 470 lines; the rest 4 to 40.
-DRIFTED = {'A1', 'A2', 'A3', 'A5', 'A9', 'B5', 'C1', 'C3', 'D2', 'E1', 'S1', 'S7', 'S8'}
+# Measured 2026-10-30 by rebuilding every page and diffing it with the published one.
+# S1 and S7 carry hand edits to their wording (S1 rewritten in plain language, S7's PT text
+# corrected and its card count updated) that the content modules do not have.
+DRIFTED = {'S1', 'S7'}
 
 
 def main(argv):

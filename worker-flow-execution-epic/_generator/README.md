@@ -23,6 +23,7 @@ change then drifts away from the thing that produced it.
 | `impact.py` | Lists every file that restates a fact of one task: `python3 _generator/impact.py A11`. |
 | `rebuild.py` | Rebuilds the named task pages and publishes only those: `python3 _generator/rebuild.py A11`. |
 | `sync_status.py` | Writes a task page's state chip and status note from `STATUS.md`, without a rebuild. |
+| `owners.py`, `sync_owners.py` | Task owners, synced from ClickUp, and the script that writes them onto the board. |
 
 ## Rebuilding
 

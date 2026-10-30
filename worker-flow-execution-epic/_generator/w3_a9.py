@@ -106,8 +106,8 @@ TASK = {
             'Resolver e fixar o endereço em todo hop; recusar loopback, link-local, privado, unique-local e faixas reservadas; <code>EGRESS_POLICY_MODE</code> começa em <code>report</code>.'),
      'pros':[('A subset of what S6 asks for, with an <code>allow</code> hook for its allowlist','Um subconjunto do que a S6 pede, com um hook <code>allow</code> para a allowlist dela'),
              ('Dev: every stored callback and attachment URL resolves public — zero would-be refusals','Dev: toda URL de callback e de anexo guardada resolve para IP público — zero recusas')],
-     'cons':[('<code>enforce</code> waited for a week in <code>report</code>. The first-week review found 0 false refusals, so <code>EGRESS_POLICY_MODE=enforce</code> goes on with the prod deploy on 2026-10-19, inside A9',
-              'O <code>enforce</code> esperou uma semana em <code>report</code>. A revisão da primeira semana achou 0 recusas falsas, então o <code>EGRESS_POLICY_MODE=enforce</code> entra com o deploy de prod de 19/10/2026, dentro da A9')]},
+     'cons':[('<code>enforce</code> waited for a week in <code>report</code>. The first-week review found 0 false refusals, so <code>EGRESS_POLICY_MODE=enforce</code> went live on 2026-10-19, inside A9 (prod and dev; staging on its next deploy)',
+              'O <code>enforce</code> esperou uma semana em <code>report</code>. A revisão da primeira semana achou 0 recusas falsas, então o <code>EGRESS_POLICY_MODE=enforce</code> entrou em 19/10/2026, dentro da A9 (prod e dev; staging no próximo deploy)')]},
     {'ltr':'B','no':True,'name':('No guard until S6','Sem guarda até a S6'),
      'how':('Move the fetches as they are.','Mover os fetches como estão.'),
      'cons':[('Moves an unchecked fetch next to the DB credentials','Coloca um fetch sem checagem ao lado das credenciais do banco')]},
@@ -225,14 +225,24 @@ TASK = {
    '<li>The egress decision gets no separate task. A9 sets <code>EGRESS_POLICY_MODE=enforce</code> on <code>worker-task-definition-prod</code> (container <code>worker-container-prod</code>) with the next prod deploy, on Monday 2026-10-19. Until then, prod runs the default <code>report</code>.</li>'
    '<li>Before you dispatch the worker prod workflow, register an <code>enforce</code> revision of <code>worker-task-definition-prod</code>. The prod workflow reads the latest revision and swaps only the image.</li>'
    '<li>After the deploy, check that the service&#x27;s revision has <code>EGRESS_POLICY_MODE=enforce</code>, then watch the <code>egress_would_refuse</code> and refusal logs.</li>'
-   '<li>To roll back, register a <code>report</code> revision from the latest one and run <code>update-service</code> with it. Do not roll back to the pre-deploy revision: it carries the old image.</li></ul>',
+   '<li>To roll back, register a <code>report</code> revision from the latest one and run <code>update-service</code> with it. Do not roll back to the pre-deploy revision: it carries the old image.</li></ul>'
+   '<p><strong>Rollout (2026-10-19).</strong> <code>EGRESS_POLICY_MODE=enforce</code> is live in prod and dev. A dry run first showed that each new revision differs from the running one only in that variable, with the same image.</p><ul>'
+   '<li>prod: <code>worker-task-definition-prod:79</code>, running since 10:02 BRT, 0 failed tasks.</li>'
+   '<li>dev: <code>worker-task-definition-dev:217</code>. A dev deploy at 10:36 built 217 from 216 and kept the variable, which shows the deploy workflow carries it.</li>'
+   '<li>staging: <code>worker-task-definition-staging:81</code> registered; still runs 80 (<code>report</code>) until its next worker deploy.</li></ul>'
+   '<p>In the first 40 minutes of <code>enforce</code> in prod, the worker logged no delivery, egress or dedup line.</p>',
    '<p><strong>Observação.</strong> O <code>ENOTFOUND</code> de DNS continua com retry. Esta revisão registra isso e não muda a política de retry.</p>'
    '<p><strong>Decisões (16/10/2026).</strong></p><ul>'
    '<li>A consulta de tendência semanal (W6) não é rodada. A queda do W4 fica registrada como não verificada.</li>'
    '<li>A decisão de egress não ganha task separada. A A9 coloca <code>EGRESS_POLICY_MODE=enforce</code> no <code>worker-task-definition-prod</code> (container <code>worker-container-prod</code>) com o próximo deploy de prod, na segunda-feira 19/10/2026. Até lá, prod roda o padrão <code>report</code>.</li>'
    '<li>Antes de disparar o workflow de prod do worker, registre uma revisão <code>enforce</code> do <code>worker-task-definition-prod</code>. O workflow de prod lê a revisão mais recente e troca só a imagem.</li>'
    '<li>Depois do deploy, confira que a revisão do serviço tem <code>EGRESS_POLICY_MODE=enforce</code> e acompanhe os logs de <code>egress_would_refuse</code> e de recusa.</li>'
-   '<li>Para reverter, registre uma revisão <code>report</code> a partir da mais recente e rode <code>update-service</code> com ela. Não volte para a revisão de antes do deploy: ela tem a imagem antiga.</li></ul>')},
+   '<li>Para reverter, registre uma revisão <code>report</code> a partir da mais recente e rode <code>update-service</code> com ela. Não volte para a revisão de antes do deploy: ela tem a imagem antiga.</li></ul>'
+   '<p><strong>Rollout (19/10/2026).</strong> O <code>EGRESS_POLICY_MODE=enforce</code> está ligado em prod e dev. Antes, uma simulação mostrou que cada revisão nova difere da que roda só nessa variável, com a mesma imagem.</p><ul>'
+   '<li>prod: <code>worker-task-definition-prod:79</code>, rodando desde 10:02 (horário de Brasília), 0 tasks com falha.</li>'
+   '<li>dev: <code>worker-task-definition-dev:217</code>. Um deploy de dev às 10:36 criou a 217 a partir da 216 e manteve a variável, o que mostra que o workflow de deploy a carrega.</li>'
+   '<li>staging: <code>worker-task-definition-staging:81</code> registrada; ainda roda a 80 (<code>report</code>) até o próximo deploy do worker.</li></ul>'
+   '<p>Nos primeiros 40 minutos de <code>enforce</code> em prod, o worker não registrou nenhuma linha de entrega, egress ou dedup.</p>')},
  ],
  'verif':[
   (True,('Negative control — the retry itself','Controle negativo — o próprio retry'),

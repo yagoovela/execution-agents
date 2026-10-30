@@ -90,7 +90,7 @@ rule.
 | worker | `1741f79` | Syncs `NodeInputProjection.starterSourceId` from the back. |
 | worker | `3ae454c` | Reads only the seed rows it needs and leaves out edges that leave the starter. |
 
-`etc/check-no-dev-in-prod-pr.sh` passes on both branches against `origin/main`.
+`scripts/check-no-dev-in-prod-pr.sh` passes on both branches against `origin/main`.
 
 ## Results
 

@@ -27,6 +27,7 @@ A fact about a task is written once in a source and restated on several pages.
 | State, ClickUp link, status note | `worker-flow-execution-epic/STATUS.md` (mirror of Workflow) | the task page, the board, the timeline cards, the progress bars |
 | Short title for navigation | `_generator/TITLES_ALL.py` | prev/next links, board cards |
 | Wave and delivery order | `_generator/order.py` | prev/next links, wave sections |
+| Task owners | `_generator/owners.py` (from ClickUp assignees, read only) | the owner line on each board card |
 
 `_generator/impact.py` finds every restatement by scanning the pages, so you do not keep
 this map by hand.
@@ -79,7 +80,9 @@ Run every command from the repository root. Set `WORKFLOW` to your Workflow chec
 
      If `rebuild.py` refuses the code, its published page has content the content module
      lacks. Port that content into the module first, or patch the page by hand.
-7. Patch each file in the `patch by hand` group: board cards and counts in
+7. If an owner changed in ClickUp, update `_generator/owners.py` and run
+   `python3 worker-flow-execution-epic/_generator/sync_owners.py`. Then patch each file in the
+   `patch by hand` group: board cards and counts in
    `status-tarefas.html`, cards in `timeline/index.html`, bars in
    `progresso-refatoracao.html`, and any sentence that is no longer true.
 8. Run the checks. Both must pass, and `lang_scan.py` must not report more hits than

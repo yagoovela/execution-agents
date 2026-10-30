@@ -30,7 +30,9 @@ things, and the second does not exist for any other task in this epic:
    edges to the scheduler so it runs in the right order.
 3. Decide what the front's Run button does afterwards: route it through
    `ProcessService.response` (`POST /process/single-node`) like every migrated node, and delete
-   the direct provider call. **Keeping both paths is exactly how the four lists diverged.**
+   the direct provider call. **Keeping both paths is exactly how A1's dispatch lists diverged —
+   nine of them, re-validated 2026-09-21 (TASK-A1), not the four assumed when this line was
+   written.**
 
 **This changes behaviour for existing customers.** A scheduled flow containing one of these nodes
 starts producing fresh output where it produced stale output before. That is the fix — and it is a

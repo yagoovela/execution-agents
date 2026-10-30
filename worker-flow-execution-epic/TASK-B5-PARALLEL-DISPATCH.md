@@ -49,12 +49,21 @@ this task forces and must therefore make:
 - **Error attribution.** Fail-fast stops at the first error today; with a batch in flight several
   can fail at once. Decide which one names the run.
 
-**In.** Rollout by cohort, not by switch: internal flows, then a small customer cohort, then
-general — with the eligibility gate meaning most flows simply stay sequential until their nodes
+**In.** A staged rollout, not a single switch: internal flows first, then a small group of
+customers, then everyone — with the eligibility gate meaning most flows simply stay sequential until their nodes
 are covered.
 
 **Out.** Anything that widens eligibility by relaxing the gate. If a flow is not eligible, the
 answer is to migrate its remaining nodes, never to make the check lenient.
+
+## Decisions (2026-10-23)
+
+| Id | Question | State | Answer |
+|---|---|---|---|
+| B5-a | What turns parallelism on for a flow? | **Settled** | The eligibility gate plus a staged rollout: internal flows first, then a small group of customers, then everyone. The gate stays strict at every step; the global flag is the way back. |
+| B5-b | What does a cancelled run mean once several nodes run at once? | **Settled** | Keep today's behaviour (D20, D23). A node that has not started, or that can be interrupted, stops. An AI generation that is already running finishes, and the run stops right after it. The run reads as partial, with the per-node states the cancel footprint already shows. |
+| B5-c | Is graph order between two independent push nodes a contract? | **Open — direction set, needs discussion** | Order comes from the flow's dependencies. Nodes that are ready at the same time run in parallel, and only the concurrency queue delays them, so graph order between independent nodes is not a contract. Still to discuss: what a flow that relies on that order does (an explicit edge, or a per-flow opt-out), and how many production flows have two or more independent side-effect nodes in one ready set (PLAN §3.3.2). |
+| B5-d | When several siblings fail at once, which failure names the run? | **Agreed by engineering, pending product** | Store every simultaneous failure. The run is named by the failure the scheduler ordered first, so the summary is stable between runs. Product confirms what the run page shows. |
 
 ## Verification
 

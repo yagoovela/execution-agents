@@ -53,3 +53,11 @@ claim-check goes through the API.
 
 new `worker/src/modules/nodes/report-builder/` · `worker/src/modules/nodes/nodes.types.ts` ·
 `worker/src/modules/temporal/**` · `back/src/app-api/flux/flux.service.ts` (`reportBuilderNode()` + its dispatch case) · the A1 registry
+
+## Decision recorded (2026-10-23)
+
+**A4-a — resolved as A, verified in code.** On worker `main` `748d8dc9`, `reportBuilder` uploads
+through the back callback `/worker/generate-file` (`report-builder.service.ts:189`, back
+`worker.controller.ts:727`) and has no S3 client of its own. Other worker modules now hold S3
+clients (voice generator, A9 delivery, vector), so the worker as a whole does hold storage
+credentials; the `reportBuilder` node uses none of them.

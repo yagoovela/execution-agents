@@ -65,3 +65,11 @@ supported replica count is stated, and the proxy decision is recorded either way
 
 `worker/src/modules/database/database.service.ts` (`new Pool`) ·
 `worker/src/modules/temporal/worker.service.ts` (`maxConcurrentActivityTaskExecutions`, the task queue) · infra/compose · `env-vars-sync`
+
+## Decision recorded (2026-10-23)
+
+**S2-b — resolved as B for now.** No connection pooler exists in back, worker or the infra code:
+a search for PgBouncer, RDS Proxy and `aws_db_proxy` finds nothing. Each process keeps a fixed pool
+(back 30 through `TYPEORM_POOL_MAX`, worker 12), so the replica count stays bounded by
+`max_connections`. PgBouncer in transaction mode stays the recommendation and is not deployed.
+Not checked: the `TYPEORM_HOST` value in the ECS task definitions.

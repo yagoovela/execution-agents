@@ -194,8 +194,8 @@ open decisions close. Evidence: [`TASK-A7-OBJECT-CALLER-CURRENT-PROCESS.md`](./T
 ### Still needed before implementation
 
 1. Production counts: run `a7-q1` to `a7-q3` in DBeaver.
-2. Rewrite the ClickUp description. Its spec link points at `.specs/features/...`, which does not
-   exist on `main`.
-3. Re-estimate. The current 40 hours assume two callbacks only; the widened scope adds the
+2. ~~Rewrite the ClickUp description.~~ Done 2026-10-26: widened scope, decisions and the spec
+   link on `main`.
+3. ~~Re-estimate.~~ Done 2026-10-26: 96 hours in ClickUp, was 40. The widened scope adds the
    execution record, the implicit edges, the read switch with its shadow, and the registry-driven
    dispatch in both loops.

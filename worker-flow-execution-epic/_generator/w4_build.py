@@ -18,7 +18,7 @@ TASKS = [
  ('B3B', w4_b3b4.B3B, []),
  ('B4', w4_b3b4.B4, [w4_b3b4.B4_DEC]),
  ('E1', w4_e1e2.E1, []),
- ('E2', w4_e1e2.E2, [w4_e1e2.E2_DEC]),
+ ('E2', w4_e1e2.E2, [w4_e1e2.E2_DEC, w4_e1e2.E2_DEC_B, w4_e1e2.E2_DEC_C, w4_e1e2.E2_DEC_D]),
 ]
 
 def build(code, t, decs):

@@ -407,14 +407,14 @@ path reads credentials from env (`smtp-email.sender.ts`: `EMAIL_*`, one platform
 `EMAIL_HOST` and `EMAIL_SERVICE` both unset every SMTP email fails non-retryably as "The email could not
 be sent."). Gmail and Microsoft read no env credential: the worker asks the back for the user's OAuth
 token (`POST ${URL_MAIN_API}/worker/refresh-oauth-token`, `INTERNAL_API_KEY`), and the back reads the
-integration from the database. The 2026-09-29 check above is a snapshot; `etc/sync-worker-env-from-back.sh`
+integration from the database. The 2026-09-29 check above is a snapshot; `scripts/sync-worker-env-from-back.sh`
 makes it repeatable and applies the difference:
 
 ```bash
-etc/sync-worker-env-from-back.sh <dev|staging|prod>             # read-only: plan + would-be task definition, exit 2 on drift
-etc/sync-worker-env-from-back.sh dev --apply                    # register a new worker revision
-etc/sync-worker-env-from-back.sh dev --deploy                   # ...and point the worker service at it now
-CONFIRM_PROD=yes etc/sync-worker-env-from-back.sh prod --apply  # prod writes need the confirmation
+scripts/sync-worker-env-from-back.sh <dev|staging|prod>             # read-only: plan + would-be task definition, exit 2 on drift
+scripts/sync-worker-env-from-back.sh dev --apply                    # register a new worker revision
+scripts/sync-worker-env-from-back.sh dev --deploy                   # ...and point the worker service at it now
+CONFIRM_PROD=yes scripts/sync-worker-env-from-back.sh prod --apply  # prod writes need the confirmation
 ```
 
 - It compares `api-container-<env>` in `api-task-definition-<env>` with `worker-container-<env>` in
@@ -520,6 +520,18 @@ retry policy.
   - To roll back, register a `report` revision from the latest one and run `update-service` with it.
     Do not roll back to the pre-deploy revision: it carries the old image.
 
+**Rollout (2026-10-19).** `EGRESS_POLICY_MODE=enforce` is live in prod and dev. A dry run first
+showed that each new revision differs from the running one only in that variable, with the same
+image.
+
+| Environment | Revision | State |
+|---|---|---|
+| prod | `worker-task-definition-prod:79` | Running since 10:02 BRT, rollout completed, 0 failed tasks |
+| dev | `worker-task-definition-dev:217` | Running. A dev deploy at 10:36 built 217 from 216 and kept the variable, which shows the deploy workflow carries it |
+| staging | `worker-task-definition-staging:81` registered | Still runs 80 (`report`) until its next worker deploy |
+
+In the first 40 minutes of `enforce` in prod, the worker logged no delivery, egress or dedup line.
+
 ### Re-validating A9
 
 Everything needed to check this task again lives in this folder. Nothing depends on a local `etc/`.
@@ -531,7 +543,7 @@ URLs or recipients.
 
 **Running a query.**
 - **Dev** (anyone): run
-  `QUERY="$(cat <file>.sql)" ENV=dev node .workflow/skills/ec2-tunnel/templates/tunnel-and-query.mjs`
+  `QUERY="$(cat <file>.sql)" ENV=dev node .claude/skills/ec2-tunnel/templates/tunnel-and-query.mjs`
   from the workspace root.
 - **Prod**: a human with prod access runs it, read-only (the command in each file's header). Save
   the output over the `.prod.csv`, commit it, and update the date and the Prod column in the table
@@ -719,4 +731,4 @@ ClickUp: [A9](https://app.clickup.com/t/868m0vmux) and its subtasks A9.1–A9.6,
 `back/src/app-api/mail/` and `back/src/app-api/microsoft/` (read for parity, kept for the front's direct send and inbound mail; `mail.service.ts` `sendGmailEmail` changed by Addendum A) ·
 `worker/src/modules/delivery/` (new) · `worker/src/modules/egress/egress-policy.ts` (new) ·
 `worker/src/modules/temporal/` (`activities.service.ts`, `worker.service.ts`, `workflows/configs.ts`, `workflows/deliver-run-outputs.workflow.ts`, `workflows/index.ts`, `temporal.module.ts`) ·
-`worker/src/env.ts` · `.specs/.../TASK-S6-SSRF-POLICY.md`
+`worker/src/env.ts` · `.claude/tasks/worker-flow-execution-epic/TASK-S6-SSRF-POLICY.md`

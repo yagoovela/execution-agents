@@ -37,6 +37,5 @@ NO_PAGE = {
 
 # A task that has a page but no spec file, and why.
 NO_SPEC = {
- 'A1C': 'Decided inside A1 (voiceNode); the page is the record.',
  'E5': 'Not mirrored: the spec records an infrastructure audit that is not for a public repository.',
 }

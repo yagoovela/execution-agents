@@ -291,15 +291,28 @@ def render(T):
     code = T['code']
     plain = re.sub(r'<[^>]+>', '', T['title'][0])
     w('<title>%s — %s</title>\n' % (code, plain))
+    # The published site carries a shared header stylesheet and the doc-tab bar.
+    # They were restored by hand on the published pages (PR #13) after an earlier
+    # regeneration dropped them; emitting them here is what stops the next
+    # rebuild from dropping them again.
+    w('<link rel="stylesheet" href="../_assets/header.css">\n')
     w('<style>\n%s\n%s\n%s\n</style>\n' % (BASE, EXTRA_CSS, DECISION_CSS))
     w('<div class="container">\n')
 
-    w('<div class="top-nav">')
-    w('<a href="index.html" class="back-btn"><span>←</span> <span data-en="Timeline" data-pt="Timeline">Timeline</span></a>')
-    w('<div class="lang-sw" role="group" aria-label="Language">'
-      '<button type="button" data-lang="en" aria-pressed="true">EN-US</button>'
-      '<button type="button" data-lang="pt" aria-pressed="false">PT-BR</button></div>')
-    w('</div>\n')
+    w('<div class="doc-nav">\n')
+    w('  <nav class="doc-tabs" aria-label="Documentation sections">\n')
+    w('    <a href="../index.html" class="doc-tab"><span data-en="Current architecture" data-pt="Arquitetura atual">Current architecture</span></a>\n')
+    w('    <a href="../arquitetura-v2.html" class="doc-tab"><span data-en="v2 architecture" data-pt="Arquitetura v2">v2 architecture</span></a>\n')
+    w('    <a href="../arquitetura-v2-complemento.html" class="doc-tab"><span data-en="Plan as tasks" data-pt="Plano em tarefas">Plan as tasks</span></a>\n')
+    w('    <a href="../timeline/index.html" class="doc-tab is-active"><span data-en="Timeline" data-pt="Timeline">Timeline</span></a>\n')
+    w('    <a href="../progresso-refatoracao.html" class="doc-tab"><span data-en="Progress" data-pt="Progresso">Progress</span></a>\n')
+    w('  </nav>\n')
+    w('  <div class="lang-sw" role="group" aria-label="Language">\n')
+    w('    <button type="button" data-lang="en" aria-pressed="true">EN-US</button>\n')
+    w('    <button type="button" data-lang="pt" aria-pressed="false">PT-BR</button>\n')
+    w('  </div>\n')
+    w('</div>\n\n')
+    w('<div class="top-nav"><a href="index.html" class="back-btn"><span>←</span> <span data-en="Timeline" data-pt="Timeline">Timeline</span></a></div>\n')
 
     wv = T['wave']
     w('<div class="hero">')
