@@ -37,5 +37,4 @@ NO_PAGE = {
 
 # A task that has a page but no spec file, and why.
 NO_SPEC = {
- 'E5': 'Not mirrored: the spec records an infrastructure audit that is not for a public repository.',
 }

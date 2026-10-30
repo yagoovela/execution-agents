@@ -16,7 +16,7 @@ the worker also seed the target from there, so the back can stop projecting, cha
 receives:
 
 - **It breaks the anti-leak rule.** `createNodeExecution` states that a node's input must never come
-  from the live `flows_nodes` row (the Therabee URL revert, and a PHI leak between concurrent runs).
+  from the live `flows_nodes` row (a customer's URL revert, and a PHI leak between concurrent runs).
   The worker merges every success output into that row except `LIVE_WRITE_EXCLUDED_FIELDS`, so an
   `apiCaller`'s resolved `url`, `headers` and `password`, `variables` and `urlData` of another run can
   be there at dispatch time.

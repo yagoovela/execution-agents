@@ -15,6 +15,10 @@ Follow them in order. This skill adds only what an agent tends to get wrong.
 - Run `python3 worker-flow-execution-epic/_generator/impact.py <CODE>` for every task you
   change, and keep the output. It is the checklist for steps 5 to 7.
 
+- This repository is public. Mirror spec files only with `_generator/publish_sync.py` and
+  the private literal list in Workflow, never with `cp`. A file, passage or value that
+  must stay private gets a rule in that list, not an edit here.
+
 ## While you work
 
 - A state, note or ClickUp link change needs only `sync_status.py`. Do not rebuild a page
@@ -26,8 +30,11 @@ Follow them in order. This skill adds only what an agent tends to get wrong.
 
 ## Before you hand back
 
+- `publish_sync.py --check` passes, and you reran it with `--hashes` after the pages were
+  rebuilt if the literal list changed.
 - `reconcile_facts.py` and `reconcile_facts.py --since origin/main` both end with
-  "All cross-stated facts agree."
+  "All cross-stated facts agree." Its `public redactions` group prints where a private
+  value appears, never the value: look it up in the literal list.
 - `lang_scan.py` reports no more hits than `main`.
 - The PR links the Workflow PR, the code PRs and the ClickUp tasks, and the changelog
   entry carries the PR number.

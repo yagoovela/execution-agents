@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, _GEN)
 import tasklib, order
 from TITLES_ALL import TITLES
-import w4_b1b2, w4_b3b4, w4_e1e2
+import w4_b1b2, w4_b3b4, w4_e1e2, w4_e5
 
 DEC_LABEL = ('The decisions this task needs', 'As decisões que esta task precisa')
 
@@ -19,6 +19,7 @@ TASKS = [
  ('B4', w4_b3b4.B4, [w4_b3b4.B4_DEC]),
  ('E1', w4_e1e2.E1, []),
  ('E2', w4_e1e2.E2, [w4_e1e2.E2_DEC, w4_e1e2.E2_DEC_B, w4_e1e2.E2_DEC_C, w4_e1e2.E2_DEC_D]),
+ ('E5', w4_e5.E5, []),
 ]
 
 def build(code, t, decs):
