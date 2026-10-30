@@ -164,6 +164,7 @@ loop stays in place through this whole wave and is only deleted in Wave 6.
 | `A7` | `nodesBox`, with its ordering contract — needs B1 and the parallel model settled |
 | `B6` | Control flow and sub-flows as workflow constructs and child workflows; ships after B5 (D17), and proves that cancelling a parent stops its children — E2's clause, moved here because no child workflow exists before B6 |
 | `B7` | CSV batches as durable workflows — the largest multiplier of every ceiling. The batch screen is out (2026-09-02) |
+| `S6b` | **Added 2026-10-26.** Close the SSRF gaps the S6-a check found: authenticate and allowlist `/proxy`, one egress guard that pins the checked address, one deny-list, `POST /api_call` guarded. No dependency; `/proxy` first. |
 
 **Preconditions, all from earlier waves:** S1 (recursion ceiling — B6 turns sub-flows into child
 workflows), S2 (connections), S3 (spend and tenancy), E3 (notifications across replicas), plus
