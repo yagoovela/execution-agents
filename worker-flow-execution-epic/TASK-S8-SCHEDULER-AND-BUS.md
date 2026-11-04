@@ -100,6 +100,12 @@ And a fifth thing, which is why "the queue owns the execution" needs a decision 
 `create()` sets. Boot-registered schedules therefore notify nobody. The queue does not execute and
 does not reliably notify.
 
+**Corrected 2026-11-04.** Two things this part leaves open, now owned by
+[`S8b`](./TASK-S8B-SCHEDULE-ROLLOUT.md): the flag `repeatable_schedules` is seeded off and nothing
+records it being turned on in production, and a failed flag read falls back to the per-replica
+path. Part 1 also missed one cron: `negotiatedContractRenewal` (`user_product.controller.ts`) runs
+with no lock. Production runs two back tasks every day, so both are active.
+
 **Scope — `D26`, settled 2026-09-18: Bull repeatable jobs.** Bull 4.16.5 is already a dependency
 and `ApiV2Queue` / `ApiV2QueueProcessor` are already in production (`src/jobs/apiV2Job/`), with
 `ApiV2QueueModel.params` already carrying exactly the fields the callback passes today. The

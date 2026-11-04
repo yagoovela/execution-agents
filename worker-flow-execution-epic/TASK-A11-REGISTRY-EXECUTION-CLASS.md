@@ -270,7 +270,8 @@ provider stored as `Slack` skips the worker and works inline.
 
 Dev, from [`a11-q3-integration-providers.sql`](./a11-q3-integration-providers.sql): 37 nodes, 30
 routed. The 7 that fall inline are 6 with an empty provider and 1 with `google`, which has no
-adapter. All lowercase. None is in a flow with an `arrayNode`.
+adapter. All lowercase. None is in a flow with an `arrayNode`. Production shows the same shape; see
+**Production counts before the deploy**.
 
 **In.**
 
@@ -484,7 +485,11 @@ this list wins until that section is rewritten.
 8. **The apiV2 loop keeps its literal integration branch.** A registry-driven condition worked at
    run time, but `flux.service.worker-dispatch.spec.ts` finds each worker type's branch by its
    `node.type === '<type>'` literal (layer 7 of the node-type checklist). C2 deletes this loop.
-9. **Deploy order.** Deploy the worker before the back, and the front with the back. A back without
+9. **Runtime credential authorization moves to S9.** The worker resolves an `integrationId` without
+   checking that the executing user may use it, and only logs the mismatch. P7 closed the MCP write
+   side and deferred the runtime side. S9 (`868mpn1h3`, Wave 5, waiting on A11) owns it, including
+   the back's configuration routes.
+10. **Deploy order.** Deploy the worker before the back, and the front with the back. A back without
     the A11 worker would send `source` and `visual` types that the old worker does not skip. The
     front's chain-run lists must match the back's legacy endpoint.
 11. **Editor chain runs reach the next node.** "Run from start" and "Run from here" (node menu,
@@ -605,6 +610,33 @@ this list wins until that section is rewritten.
     of that type there. The new front only calls `/flux/execute-single-node`, which the back on
     `main` already serves, so it can ship first. A tab that still runs the old bundle after the
     back deploy gets a refusal on that chain step until it reloads.
+
+## Production counts before the deploy
+
+Run by the user on 2026-10-30, before the A11 deploy, from `a11-q2`, `a11-q3` and `a11-q4`. The
+CSVs are in `etc/2026-10-30/results/`. The same three queries run again after the deploy on
+2026-11-02 (`etc/2026-11-02/`), with `a11-q6` for the error rate.
+
+**Integration nodes (`a11-q3`).** 25 nodes. 23 are routed to the worker today: 17 `hubSpotCRM` and
+6 `thirdPartyIntegration` (`slack` 3, `notion` 2, `clickup` 1). Two fall inline today: 1 with an
+empty provider and 1 with `google`. A11 refuses both, and both already fail on `main`:
+`IntegrationsService.getAdapter` has no adapter for `google` or for an empty id, so `push` and
+`pull` throw `Unknown provider` (`back@e8781bd`, `integrations.service.ts:75-96`; the registered
+adapters are wordpress, slack, zapier, stripe, notion, hubspot, mcp, supabase, pinecone and
+clickup). Each refusal is a node that already failed, so A11 refuses nothing that works. Every
+provider is lowercase, so step 4 needs no case normalisation. 3 `hubSpotCRM` nodes sit in flows with
+an `arrayNode`; the loop body does not dispatch them, as on `main`, and A7 owns that.
+
+**Deprecated types on the live canvas (`a11-q2`).** `webNews` 132 nodes, `webMedia` 6,
+`webLocations` 5, `varInputForm` 4: 147 nodes. The editor hid them before A11 and shows a placeholder
+after it. C2 owns their removal.
+
+**Value sources (`a11-q2`, `a11-q4`).** Live nodes: `textBox` 34,813, `stickyNote` 28,739,
+`globalStarter` 16,286, `richTextBox` 8,843, `varInputNode` 7,326. Outbound edges: `textBox`
+42,307, `globalStarter` 18,093, `varInputNode` 10,656, `richTextBox` 5,927. Inbound edges, which
+make a node a pass-through: `richTextBox` 7,134 (6,841 from `commandTextNode`), `textBox` 4,727,
+`mediaBox` 23, `varInputNode` 30. Pass-through is the common case for `richTextBox`, as on dev,
+so the projection fix for a pass-through source matters before B4's flag goes on in production.
 
 ## Files
 

@@ -169,6 +169,21 @@ not zero, so the acceptance criterion holds as written, but the charge may be lo
 tokens spent. To confirm, cancel a reasoning model locally before its first text token and compare
 the charge with the provider's usage.
 
+### Production MCP check (2026-10-29)
+
+On back `api-task-definition-prod:831`, run `5b9e0c47` of the prod test agent `7acd1a00` (one
+`imageReaderNode`, `gpt-4o`) was started through the prod MCP and cancelled with `cancel_run` while
+the node was in flight. `cancel_run` returned `cancelled: true`, and `get_run_status` reports
+`cancelled` after 4.4 s, with 0 tokens and 0 cost.
+
+**Open points, not verified.**
+
+- The run charged 0 although the `gpt-4o` call was already running for about 4 s. E2's acceptance
+  covers text generations; whether a cancelled Image Reader call consumed provider tokens is not
+  measured.
+- `get_run_nodes` lists the in-flight node as `succeeded` with no output, although the run is
+  `cancelled`.
+
 ## Done when
 
 A cancelled generation that consumed tokens is never charged zero, whether the cancel arrives as a

@@ -274,6 +274,23 @@ The harness is `etc/b3b-equivalence/harness.ts` in the workspace. It runs the wo
   edge disconnected between runs. The worker fixture tests cover the first; the characterization
   snapshots cover each source/handle pair, because the worker runs the same ported function.
 
+### Measured in prod, 2026-10-29
+
+The shadow compares the worker's projection with the input the back sent, on every prod run while
+`worker_input_resolution` is off. Details and queries: [b3b-flag-rollout-runbook.md](b3b-flag-rollout-runbook.md).
+
+- From the 868mktvma fix (2026-10-26 14:00 UTC) to 2026-10-29 13:00 UTC: 8,812 comparisons, 8,811
+  matched, 0 shadow errors.
+- The one mismatch is a node with an execution edge to itself (`outputFlow -> input`). The back
+  feeds it its own stored output from an earlier run; the worker reads only outputs of the current
+  run, so the entry is missing. Of 32 such nodes in prod, this is the only one that ran in 30 days
+  and changes input.
+
+**Open decision: self-loop edges.** With the flag on, a node with an edge to itself no longer
+receives its own output from an earlier run. Either accept this, because that value leaks state
+between runs, or keep the back's behavior for self-loop edges in the worker. The decision is due
+before 2026-11-03.
+
 ## Done when
 
 On B3's flag, the worker builds every `*Data` entry from the database for flows without back-only

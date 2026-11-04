@@ -167,6 +167,10 @@ throttle before adding the ceilings replaces a slow system with an unstable one.
 | [`TASK-S6-SSRF-POLICY.md`](./TASK-S6-SSRF-POLICY.md) | Egress policy for user-controlled URLs, decided with the move | A6, A8 |
 | [`TASK-S7-ENTRY-POINT-CONTROLS.md`](./TASK-S7-ENTRY-POINT-CONTROLS.md) | Authenticate the webhook route; rate-limit every run-creating entry point | B5 — but part 1 ships immediately |
 | [`TASK-S8-SCHEDULER-AND-BUS.md`](./TASK-S8-SCHEDULER-AND-BUS.md) | One fire per schedule and per cron regardless of replica count; size Redis | running >1 backend replica, B5 |
+| [`TASK-S8B-SCHEDULE-ROLLOUT.md`](./TASK-S8B-SCHEDULE-ROLLOUT.md) | **Added 2026-11-04.** Turn `repeatable_schedules` on in production, fail closed when the flag cannot be read, and lock the one cron S8 missed | running >1 backend replica |
+| [`TASK-S10-MCP-OAUTH-SHARED-STATE.md`](./TASK-S10-MCP-OAUTH-SHARED-STATE.md) | **Added 2026-11-04.** Keep the MCP OAuth PKCE state in Redis so a callback works on any replica | running >1 backend replica |
+| [`TASK-S11-REPLICA-CAPACITY.md`](./TASK-S11-REPLICA-CAPACITY.md) | **Added 2026-11-04.** Fit the database connections and the boot migrations to the back's autoscaling ceiling, and record the ceiling | confirming the autoscaling ceiling |
+| [`TASK-S4B-SHARED-CHAIN-BUDGET.md`](./TASK-S4B-SHARED-CHAIN-BUDGET.md) | **Added 2026-11-04.** One chain budget across replicas, while `execution_budget` is on | running >1 backend replica, when the flag is on |
 
 ### Track A — coverage (G1)
 
@@ -222,6 +226,7 @@ the loop leaves the backend process**, and none belongs to any node's task.
 | [`TASK-E3-DISTRIBUTED-NOTIFICATIONS.md`](./TASK-E3-DISTRIBUTED-NOTIFICATIONS.md) | One publish path for run events, working across replicas | before B5 |
 | [`TASK-E4-TEMPORAL-SCHEDULES.md`](./TASK-E4-TEMPORAL-SCHEDULES.md) | Move user schedules onto Temporal Schedules, for pause, backfill and durability independent of Redis | **B4** — blocked until it ships |
 | [`TASK-E5-REDIS-POLICY-AND-SIZING.md`](./TASK-E5-REDIS-POLICY-AND-SIZING.md) | Stop Redis being allowed to evict the dedup keys, and record the post-B5 sizing answer | before B5 |
+| [`TASK-E3B-SINGLE-DELIVERY.md`](./TASK-E3B-SINGLE-DELIVERY.md) | **Added 2026-11-04.** Deliver each worker event to the browser once, however many back replicas run | running >1 backend replica |
 
 ### Track D — documentation (G4)
 
@@ -236,6 +241,7 @@ the loop leaves the backend process**, and none belongs to any node's task.
 S7 parts 1 + 3 (first of all)  ·  S4 · S5 · C3 (standalone, any time)
 S2 (before ANY worker scaling)    S6 (decided inside A6/A8; width per D25)
 S8 · S7 part 2 · E3 (before B5, and before a second backend replica)
+E3b · S8b · S10 · S11 · S4b (when `execution_budget` is on) ── before the back autoscales above one task (added 2026-11-04)
 S1 ──────────────────────────────────────────────── blocks B6
 S3 ──────────────────────────────────────────────── blocks B5, B7
 

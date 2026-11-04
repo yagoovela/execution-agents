@@ -7,6 +7,12 @@ TITLES.update({
  'A10': ('Route <code>clickup</code> through the worker', 'Rotear o <code>clickup</code> pelo worker'),
  'E5': ('Stop Redis evicting correctness state', 'Impedir o Redis de despejar estado de corretude'),
  'E4': ('Move user schedules onto Temporal Schedules', 'Mover os agendamentos do usuário para o Temporal Schedules'),
+ 'E3B': ('Deliver each worker event once, however many back replicas run', 'Entregar cada evento do worker uma vez, com quantas réplicas do back houver'),
+ 'S8B': ('Finish the schedule rollout and lock the last cron', 'Terminar o rollout dos agendamentos e travar o último cron'),
+ 'S10': ('Keep the MCP OAuth state where every back replica can read it', 'Guardar o estado do OAuth do MCP onde toda réplica do back consiga ler'),
+ 'S11': ("Size the database and the boot for the back's replica ceiling", 'Dimensionar o banco e o boot para o teto de réplicas do back'),
+ 'S4B': ('One chain budget across back replicas', 'Um orçamento de cadeia entre as réplicas do back'),
+ 'S9': ('Refuse a third-party credential the executing user cannot reach', 'Recusar uma credencial de terceiro que o usuário da execução não alcança'),
 })
 
 # A page title shorter than its spec title is accepted only when it is listed here, with

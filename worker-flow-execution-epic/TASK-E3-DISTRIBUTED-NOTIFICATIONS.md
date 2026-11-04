@@ -57,6 +57,14 @@ parallel dispatch.
 `back/src/app-api/flux/flux.service.ts` (`chatbotSocketByRun`) ·
 `worker/src/modules/notification/notification.service.ts`
 
+## Corrected 2026-11-04
+
+Delivery works across replicas, but it is not single. Every back replica receives each worker event
+through the Redis transport and re-emits it through the adapter, so the browser gets it once per
+replica. The verification above asked for no lost events and never for no duplicate events.
+Production autoscales the back to two tasks every day, so this is active, not latent. The fix is
+[`E3b`](./TASK-E3B-SINGLE-DELIVERY.md).
+
 ## Decision recorded (2026-10-23)
 
 **E3-a — resolved as A, verified in code.** Back `main` `a38fef57` installs the Socket.io Redis
