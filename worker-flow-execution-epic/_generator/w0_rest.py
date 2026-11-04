@@ -295,3 +295,6 @@ S5_DEC={
         '<p>Retomar a B pelos próprios méritos quando o fan-out da <code>B5</code> tornar o hop pela API caro. Até lá esta task já terá pago a autorização, e apagar um endpoint cuja regra está escrita é mais fácil que apagar um cuja regra nunca foi declarada.</p>'),
  'who':[('Engineering','Engenharia'),('Settled — Infra owns B if it returns','Decidida — Infra decide a B se ela voltar')],
 }
+
+S4['LEDE'] = (S4['LEDE'][0] + '<p><b>Corrected 2026-11-04.</b> The chain budget stayed in memory because production ran one back task. Production now runs two every day, so the chain count splits across replicas whenever <code>execution_budget</code> is on. The move to Redis is <a href="task-S4B.html">S4b</a>.</p>',
+              S4['LEDE'][1] + '<p><b>Corrigido em 04/11/2026.</b> O orçamento da cadeia ficou em memória porque a produção rodava uma task do back. Hoje ela roda duas todo dia, então a contagem da cadeia se divide entre as réplicas sempre que a <code>execution_budget</code> está ligada. A ida para o Redis é a <a href="task-S4B.html">S4b</a>.</p>')

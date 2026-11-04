@@ -6,6 +6,16 @@ renders this file, and each task page shows the latest entry that changed it.
 
 The log starts with PR #40. Earlier history is in `git log`.
 
+## 2026-11-04 · [#47](https://github.com/yagoovela/execution-agents/pull/47) · Publish the Wave 5 back-replica tasks, S9 and the 2026-11-03 release
+- Title (PT): Publicar as tasks de réplica do back da Wave 5, a S9 e o release de 03/11/2026
+- Tasks: S4, S2, S8, E3, B3B, E1, E2, S6B, E3B, S8B, S10, S11, S4B, A11, S9, A13, B7, E4
+- Pages: `progresso-refatoracao.html`, `status-tarefas.html`, `timeline/index.html`, `timeline/task-A11.html`, `timeline/task-A13.html`, `timeline/task-B7.html`, `timeline/task-E1.html`, `timeline/task-E3.html`, `timeline/task-E3B.html`, `timeline/task-E4.html`, `timeline/task-S10.html`, `timeline/task-S11.html`, `timeline/task-S2.html`, `timeline/task-S4.html`, `timeline/task-S4B.html`, `timeline/task-S6B.html`, `timeline/task-S8.html`, `timeline/task-S8B.html`, `timeline/task-S9.html`
+- No page change: B3B: the 2026-10-29 production measurement and the self-loop decision are added to the mirrored spec; the page summary still holds
+- No page change: E2: the 2026-10-29 production MCP cancel check is added to the mirrored spec; the page summary still holds
+- No page change: S5: only S4's lede changed in the shared module w0_rest.py
+- Commits:
+  - 3b27b91 docs(868mrv6cg): publish the Wave 5 back-replica tasks, S9 and the 2026-11-03 release
+
 ## 2026-10-30 · [#46](https://github.com/yagoovela/execution-agents/pull/46) · Publish the held-back specs with private values removed, and set E5 to planned
 - Title (PT): Publicar as specs retidas sem os valores privados, e marcar a E5 como planejada
 - Tasks: S4, S2, A8, E5, A11, A5B, B3B1
