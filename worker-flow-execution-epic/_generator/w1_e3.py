@@ -205,3 +205,6 @@ FILES = [
  ('worker/src/modules/notification/notification.service.ts', False),
  ('a shared run-status union', True),
 ]
+
+LEDE = (LEDE[0] + '<p><b>Corrected 2026-11-04.</b> Delivery works across replicas, but it is not single: every back replica receives each worker event and re-emits it through the adapter, so the browser gets it once per replica. Production runs two back tasks every day, so this is active. The fix is <a href="task-E3B.html">E3b</a>.</p>',
+        LEDE[1] + '<p><b>Corrigido em 04/11/2026.</b> A entrega funciona entre réplicas, mas não é única: toda réplica do back recebe cada evento do worker e o reenvia pelo adapter, então o navegador o recebe uma vez por réplica. A produção roda duas tasks do back todo dia, então isso está ativo. A correção é a <a href="task-E3B.html">E3b</a>.</p>')

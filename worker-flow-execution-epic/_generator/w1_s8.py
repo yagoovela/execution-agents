@@ -254,3 +254,6 @@ FILES = [
  ('back/src/app-api/feature-flags/ (the §3.2 flag — already in production)', False),
  ('docker/devdb/docker-compose.devdb.yaml + the two-replica override', True),
 ]
+
+LEDE = (LEDE[0] + '<p><b>Corrected 2026-11-04.</b> Two things stay open, now owned by <a href="task-S8B.html">S8b</a>: <code>repeatable_schedules</code> is seeded off and nothing records it being turned on in production, and a failed flag read falls back to the per-replica path. Part 1 also missed one cron, <code>negotiatedContractRenewal</code>, which runs with no lock.</p>',
+        LEDE[1] + '<p><b>Corrigido em 04/11/2026.</b> Duas coisas seguem abertas, agora com a <a href="task-S8B.html">S8b</a>: a <code>repeatable_schedules</code> é criada desligada e nada registra que ela foi ligada em produção, e uma falha ao ler a flag volta para o caminho por réplica. A parte 1 também deixou de fora um cron, o <code>negotiatedContractRenewal</code>, que roda sem lock.</p>')

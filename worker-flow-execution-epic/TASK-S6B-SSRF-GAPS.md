@@ -74,3 +74,31 @@ one guard that pins the checked address, one deny-list remains, and the sweep is
 `worker/src/modules/egress/egress-policy.ts` ·
 `front/src/components/ExpandImageModal/ExpandImageModal.tsx` ·
 `front/src/components/MaskImageEditModal/MaskImageEditModal.tsx`
+
+## Sweep (recorded 2026-10-29)
+
+Every outbound fetch of a user-supplied URL in `back` and `worker`:
+
+**Back (3):**
+- `back/src/main.ts` `/proxy` (was: Express middleware, no auth, no allowlist, silent `api-dev.fluxprompt.ai` fallback) → rewritten as `src/app-api/proxy/` NestJS module with `JwtAuthGuard` + `PROXY_ALLOWED_HOSTS` allowlist + `egressHttpConfig` (pin + redirect guard, defence in depth).
+- `back/src/app-api/api_call/api_call.service.ts` `executeApiCall` (was: plain axios) → guarded by `assertEgressAllowed` + `egressHttpConfig`, `maxRedirects: 0`, controller catches `isEgressRefusal(err)` and surfaces "This URL points to an address that is not allowed." via WS.
+- `back/src/app-api/downloader/downloader.service.ts` `downloadFile` → **deleted** (grep confirmed no callers; `DownloaderController` only uses `AwsService.getFile`).
+
+**Worker (5):**
+- `worker/src/modules/nodes/audio-transcriber/audio-transcriber.service.ts:156` `downloadAudio` → `SafeFetchService.getBuffer`.
+- `worker/src/modules/nodes/audio-transcriber/google-speech.ts:50` → `SafeFetchService.getBuffer`.
+- `worker/src/modules/nodes/image-reader/providers/google-docai-base.ts:45` `downloadDocument` → `SafeFetchService.getBuffer`; both `GoogleDocAiFormProvider` and `GoogleDocAiOcrProvider` now inject `SafeFetchService` and thread it through `processWithDocAi`.
+- `worker/src/modules/nodes/push-data/push-data.service.ts:438` `uploadMicrosoftRawFiles` → `SafeFetchService.getBuffer`.
+- `worker/src/modules/nodes/text-generator/multimodal-file-processor.ts` `detectMimeFromHead` / `downloadFile` → `SafeFetchService.head` / `SafeFetchService.getBuffer`. `fetchWithTimeout`, `USER_AGENT`, `HEAD_TIMEOUT_MS`, `DOWNLOAD_TIMEOUT_MS` removed; timeout now owned by SafeFetchService.
+
+**Deny-list consolidation:**
+- `worker/src/modules/safe-fetch/egress-policy.service.ts` (10 ranges) → **deleted** along with its spec.
+- `worker/src/modules/egress/egress-policy.ts` (17 ranges) → sole source. Byte-identical port at `back/src/common/egress/egress-policy.ts` (error types swapped: `UserConfigError`/`IntegrationError` → `BadRequestException`/`InternalServerErrorException`). Drift tested in both repos via `test/egress-policy-drift.spec.ts` with the same canonical constant block.
+
+**Safe-fetch rewrite (worker):**
+- `safe-dispatcher.ts` and `safe-axios.ts` now use `createSafeLookup` + `createRedirectGuard` from the A9 egress module. The TOCTOU gap (one address allowed → re-resolve by hostname at connect time) is closed by routing the connection through the pinning lookup; `SafeFetchService` public surface is preserved (`get`, `getBuffer`, `post`, `createAxios`, `getDispatcher`) and gains `head()`.
+
+**Negative control (safe-fetch.service.spec.ts):**
+- A test host that resolves to one public + one 127.0.0.1 is now refused. Removing the `createSafeLookup` hook makes the test fail.
+
+No other outbound fetch of a user-supplied URL remained unguarded as of this change.

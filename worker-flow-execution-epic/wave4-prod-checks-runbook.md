@@ -109,11 +109,39 @@ Run the checks in [b3b-flag-rollout-runbook.md](b3b-flag-rollout-runbook.md), Mo
 
 Do not turn on any flag on Monday.
 
-### Later: the run-log flags (not this week)
+### The run-log flags
 
 The rebuild debounce and the S3 reads before the lock ship in back #2052. To move run logs to events:
 
-1. Turn on `run_log_events_shadow`. Wait a few days.
-2. Turn on `run_log_from_events` only when the API logs show no `Run log shadow: ... differences` lines.
+1. Friday 2026-10-30, afternoon, after the `worker_input_resolution` trial checks: turn on `run_log_events_shadow`. It only writes `run_log_events` rows and S3 claim-check payloads, and logs `Run log shadow:` lines to CloudWatch `/ecs/api-task-definition-prod`.
+2. Monday 2026-11-02: turn on `run_log_from_events` only when CloudWatch has `Run log shadow:` lines since Friday, with 0 `differences` and 0 `Run events not stored`. With fewer than about 50 lines, wait one more day.
+3. After step 2: run the B1 controlled loop agent, then [b1-q2i-controlled-run.sql](b1-q2i-controlled-run.sql) from 2026-11-02, and open the run in the Logs page.
 
-Rollback: turn the flag off.
+Rollback: turn off only the flag that changed.
+
+### Friday 2026-10-30: the shadow found differences
+
+`run_log_events_shadow` went on at 16:21:52 UTC. The `Run log shadow:` lines reach CloudWatch. By 16:33 UTC, all 5 lines had differences, with 0 failed seqs and 0 `Run events not stored`. Step 2 does not pass. The comparator is `run-log-equivalence.ts`; the WARN line prints the first 10 paths and no values.
+
+What the back code shows (read at `main` on 2026-10-30):
+
+1. **`output.variables`, in every run.** After a worker node finishes, `processNodeViaTemporal` calls `addConnectToNodes`, whose `modifyData` sets `variables: []` on `scripting` and `mathFunction` nodes. The worker output has no `variables`. The legacy log has `[]` and the event log has nothing. Nothing the user needs is lost.
+2. **A failed worker node: `output` and `errorCategory`.** A failed worker node has no `outputData` in `node_executions`, and `RunEventError` carries only `userMessage` and `devMessage`. With `run_log_from_events` on, the Logs page loses the error category chip, the `category:` tag and the failed node's Result block. This blocks step 2.
+3. **`contentData.0.text`, in settings and output.** The legacy log snapshots the node before `fillRefArrayFields` fills it and keeps the output after `addConnectToNodes` rewrites it. The event log reads `node_executions`. The values are not logged, so which side is right is unknown.
+
+Smallest fixes: carry `category` and `field` on `RunEventError` and set them in `run-log-from-events.ts`; decide whether a failed node may show no Result block; add a comparator rule for `output.variables` when legacy is `[]`; log expected and actual values for `contentData` before deciding. The fix is [868mq75j6](https://app.clickup.com/t/868mq75j6), a follow-up of E1; step 2 waits on it.
+
+## Wednesday 2026-10-28: release without GitHub Actions (done)
+
+The organization's Actions minutes ran out on 2026-10-27, so the release shipped with the direct deploy script, one service at a time.
+
+1. Back `api-task-definition-prod:830` (`90b6cdd5`) at 12:54 UTC: #2063, #2065, #2067.
+2. Worker `worker-task-definition-prod:83` (`892ae3de`) at 13:03 UTC: #143, #147, #148, #149.
+3. Front `2e533dc6` at 13:05 UTC: #2244.
+4. Back `api-task-definition-prod:831` (`e8781bda`) at 13:57 UTC: #2066.
+
+Checks on 2026-10-29, all pass:
+
+- 868mmj7fj: 235 of 235 successful Image Reader runs after the 13:01 UTC cutoff charged at the multiplier (9). Before it, 15 of 15 charged nothing. `commandTextNode` charges stay at chance level for whole multiples of 9 (12.2%, chance is 11.1%), so the multiplier does not reach text nodes.
+- E2: an MCP cancel of a prod test run ends `cancelled` (see `TASK-E2-CANCELLATION.md`).
+- Back #2067 and worker #149 (Node.js and `libbrotli` patch) are in the running revisions.

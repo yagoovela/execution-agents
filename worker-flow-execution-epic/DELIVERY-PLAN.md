@@ -229,6 +229,13 @@ thrown error charges no tokens (D22). Users can cancel runs today through the ex
 | `A14` | **Added 2026-10-23, rescoped the same day.** Small Memory and chat flows on the workflow engine without moving a node: memory content derived from stored executions, persistence kept in the back |
 | `A6b` | **Added 2026-10-23.** Migrate or retire `webTrends` |
 | `S6b` | **Added 2026-10-26.** Close the SSRF gaps the S6-a check found: authenticate and allowlist `/proxy`, one egress guard that pins the checked address, one deny-list, `POST /api_call` guarded |
+| `S9` | **Added 2026-10-29.** Refuse a saved third-party credential the executing user cannot reach, or whose provider differs from the node's, in the worker resolver and in the back's configuration routes. Closes the finding P7 left open. After A11; ships only at zero would-be-refused nodes in production |
+| `E3b` | **Added 2026-11-04.** Each worker event reaches the browser once, with any number of back replicas. Today every replica relays it, so streamed chat text repeats once per replica |
+| `S8b` | **Added 2026-11-04.** Turn `repeatable_schedules` on in production and restart every back task; a failed flag read registers nothing; `negotiatedContractRenewal` runs under the cron lock |
+| `S10` | **Added 2026-11-04.** The MCP OAuth PKCE state moves to Redis, so a callback on another replica succeeds |
+| `S11` | **Added 2026-11-04.** The database connection budget and concurrent boot migrations checked against the back's autoscaling ceiling, and the ceiling recorded |
+| `S4b` | **Added 2026-11-04.** One chain budget across replicas — only while `execution_budget` is on in production; otherwise recorded and dropped |
+| — | **The back may autoscale above one task**, after E3b, S8b, S10 and S11 (and S4b when its condition holds). S11 records the ceiling |
 | `B5` | Batch dispatch, gated per flow on full migrated coverage — after every A-track task above |
 | `B6` | Control flow and sub-flows as workflow constructs and child workflows; ships after B5 (D17), and proves that cancelling a parent stops its children — E2's clause, moved here because no child workflow exists before B6. It also owns D23 — propagating a cancel to `fluxBox`, `libraryNode` and `arrayNode` — since 2026-10-26 |
 | `B7` | CSV batches as durable workflows — the largest multiplier of every ceiling. The batch screen is out (2026-09-02) |
@@ -236,8 +243,23 @@ thrown error charges no tokens (D22). Users can cancel runs today through the ex
 
 **Order inside the wave (2026-10-23).** A11 → A13 → B4 flag on in production → A7 → A14 → B5 →
 B6 and B7. A6b runs any time after A11, before B5 measures eligibility. S6b has no dependency and runs
-first, starting with `/proxy` (added 2026-10-26). E2 depends on nothing and blocks nothing (rescoped 2026-10-26). A7 can be built in parallel
-with A11 and A13, because it works with the flag off and on.
+first, starting with `/proxy` (added 2026-10-26). S9 runs any time after A11 and blocks nothing:
+neither the B4 flag nor B5 changes where a credential is resolved (added 2026-10-29). E2 depends on nothing and blocks nothing (rescoped 2026-10-26). A7 can be built in parallel
+with A11 and A13, because it works with the flag off and on. E3b, S8b, S10, S11 and S4b depend on nothing and block neither the B4 flag nor B5; they block the back running on more than one task, which production autoscaling already does, so they run first (added 2026-11-04).
+
+**Back autoscaling (added 2026-11-04).** Production autoscales the back on CPU (`api-autoscaling-prod`:
+target 55 %, minimum 1, maximum 3) and set the desired count to 2 every day from 2026-10-28 to
+2026-11-03. `E3`, `S4` and `S8` assumed one task. The replica audit of 2026-11-04 found what breaks
+with two: worker events repeat once per replica (`E3b`), user schedules fire and charge once per
+replica while `repeatable_schedules` is off (`S8b`), MCP OAuth callbacks fail on the other replica
+(`S10`), the chain budget splits (`S4b`), and nobody has sized connections or concurrent migrations
+for three tasks (`S11`). The worker needs nothing: it has no cron, no queue consumer and no boot side
+effect. Whether to hold the back at one task until these ship is the user's decision.
+The five add 26–87 h (E3b 8–18, S8b 6–15, S10 8–18, S11 4–16, S4b 0–20). At the calibration the
+timeline uses (focused hours at about 24 h a working day for the minimum, elapsed time at about
+12 h a working day for the maximum), the Wave 5 estimate moves from 21 / 31.5 / 42 to 22 / 35.5 / 49
+working days from 2026-10-27: code complete between 2026-11-27 and 2026-12-14 at best, and between
+2026-12-15 and 2027-01-07 at worst.
 
 **Open before this wave starts (2026-10-23).**
 
@@ -252,7 +274,7 @@ with A11 and A13, because it works with the flag off and on.
 5. ~~A7-D9 (protection on the internal callback) confirmed.~~ Settled 2026-10-23 (`TASK-A7`).
 6. ClickUp: ~~cards for A11, A13, A14 and A6b~~ created 2026-10-26 with estimates (A11 24 h, A13 32 h,
    A14 32 h, A6b 24 h), plus S6b. A7's description rewritten and re-estimated at 96 h on the
-   same day.
+   same day. S9's card created 2026-10-29 (16 h). Cards for E3b, S8b, S10, S11 and S4b created 2026-11-04 with the maximum of a three-point estimate (E3b 18 h, S8b 15 h, S10 18 h, S11 16 h, S4b 20 h).
 
 **Preconditions, all from earlier waves:** S1 (recursion ceiling — B6 turns sub-flows into child
 workflows), S2 (connections), S3 (spend and tenancy), E3 (notifications across replicas), plus

@@ -670,6 +670,11 @@ root. The worry was that it splits across API processes. Measured: **`desiredCou
 staging and prod alike**, so that split is latent, not active — and the ceilings demonstrably work
 today, which is what the three proofs above establish.
 
+**Corrected 2026-11-04.** The `desiredCount` premise no longer holds: production autoscales the back
+from one to three tasks on CPU and runs two every day since at least 2026-10-28. The split is
+active whenever `execution_budget` is on. The move to Redis is now
+[`S4b`](./TASK-S4B-SHARED-CHAIN-BUDGET.md).
+
 What does bite:
 
 1. **Deploys already create the multi-process condition, and the window is minutes long.** Measured,

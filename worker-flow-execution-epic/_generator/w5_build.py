@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, _GEN)
 import tasklib, order
 from TITLES_ALL import TITLES
-import w5_b5, w5_a7, w5_b6, w5_b7, w5_e4, w6_c1, w6_c2, w5_a11, w5_a13, w5_a14, w5_a6b, w5_s6b
+import w5_b5, w5_a7, w5_b6, w5_b7, w5_e4, w6_c1, w6_c2, w5_a11, w5_a13, w5_a14, w5_a6b, w5_s6b, w5_e3b, w5_s8b, w5_s10, w5_s11, w5_s4b, w5_s9
 
 
 def build(code, mod, vnum, glance_note=None, decisions=None, sec1=None, sec3=None):
@@ -60,6 +60,24 @@ SPECS = [
   ('What the task does, in three parts', 'O que a task faz, em três partes')),
  ('S6B', w5_s6b, '4', None,
   ('The four gaps, and what each becomes', 'As quatro brechas, e no que cada uma vira'),
+  ('What the task does, in three parts', 'O que a task faz, em três partes')),
+ ('E3B', w5_e3b, '4', None,
+  ('What the browser receives, by replica count', 'O que o navegador recebe, por número de réplicas'),
+  ('What the task does, in two parts', 'O que a task faz, em duas partes')),
+ ('S8B', w5_s8b, '4', None,
+  ('What runs once today, and what does not', 'O que roda uma vez hoje, e o que não roda'),
+  ('What the task does, in three parts', 'O que a task faz, em três partes')),
+ ('S10', w5_s10, '4', None,
+  ('Where the OAuth state lives', 'Onde o estado do OAuth fica'),
+  ('What the task does, in two parts', 'O que a task faz, em duas partes')),
+ ('S11', w5_s11, '4', None,
+  ('The three checks, and what each becomes', 'As três conferências, e no que cada uma vira'),
+  ('What the task does, in three parts', 'O que a task faz, em três partes')),
+ ('S4B', w5_s4b, '4', None,
+  ('How the chain is counted, by replica count', 'Como a cadeia é contada, por número de réplicas'),
+  ('What the task does, in two parts', 'O que a task faz, em duas partes')),
+ ('S9', w5_s9, '4', None,
+  ('The four paths, and what each becomes', 'Os quatro caminhos, e no que cada um vira'),
   ('What the task does, in three parts', 'O que a task faz, em três partes')),
  ('A6B', w5_a6b, '4', [w5_a6b.DEC_FATE],
   ('Why <code>webTrends</code> is still undecided', 'Por que o <code>webTrends</code> ainda está sem decisão'),
