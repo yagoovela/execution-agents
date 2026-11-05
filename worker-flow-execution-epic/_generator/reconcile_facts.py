@@ -474,7 +474,7 @@ if _impact is not None:
             for fact, why in (('state', 'its STATUS.md state'), ('title', 'its spec title')):
                 if fact not in need[code] or (fact == 'title' and waived):
                     continue
-                for f, d in _impact.impact(code_page).items():
+                for f, d in _impact.impact(code).items():
                     if d['kind'] != 'source' and fact in d['facts'] and f not in changed:
                         probs.append('%-5s <- %s changed since %s, but %s (which shows the %s) did not' % (code, why, ref, f, fact))
         if need and not any(f == 'CHANGELOG.md' for f in changed):
