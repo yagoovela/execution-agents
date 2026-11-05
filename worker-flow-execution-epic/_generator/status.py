@@ -19,7 +19,9 @@ LABELS = {
     'dropped': ('Dropped',     'Descartada',  'st-dropped'),
 }
 
-_ROW = re.compile(r'^\|\s*([A-Z]\d+[a-z]?)\s*\|\s*([a-z-]+)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|$', re.M)
+TASK_CODE = r'[A-Z]\d+[a-z]?(?:\.\d+)?'
+
+_ROW = re.compile(r'^\|\s*(' + TASK_CODE + r')\s*\|\s*([a-z-]+)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|$', re.M)
 
 def load():
     if not os.path.exists(_PATH):

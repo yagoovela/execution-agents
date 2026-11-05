@@ -178,13 +178,16 @@ stale = []
 for md in sorted(glob.glob(os.path.join(EPIC, 'TASK-*.md'))):
     code = os.path.basename(md).split('-')[1]
     try:
-        from TITLES_ALL import NO_PAGE as _NO_PAGE
+        from TITLES_ALL import NO_PAGE as _NO_PAGE, LOCAL_DECISIONS as _LOCAL_DEC
     except Exception:
-        _NO_PAGE = {}
-    code = _NO_PAGE.get(code.upper(), code)
-    page = os.path.join(TIMELINE, 'task-%s.html' % code) if TIMELINE else None
+        _NO_PAGE, _LOCAL_DEC = {}, {}
+    key = code.replace('.', '').upper()
+    code = _NO_PAGE.get(key, code)
+    page = os.path.join(TIMELINE, 'task-%s.html' % code.replace('.', '')) if TIMELINE else None
     if not page or not os.path.exists(page):
         stale.append((code, 'no published page'))
+        continue
+    if key in _LOCAL_DEC:
         continue
     in_md = set(re.findall(r'\bD(\d+)\b', io.open(md, encoding='utf-8').read()))
     in_pg = set(re.findall(r'\bD(\d+)\b', io.open(page, encoding='utf-8').read()))
@@ -439,7 +442,7 @@ if _impact is not None:
                     need[_impact.canon(b.split('-')[1])].add('title')
         old_rows = {}
         for line in _git('show', '%s:%s/STATUS.md' % (ref, epic_rel)).splitlines():
-            m = re.match(r'^\|\s*([A-Z]\d+[a-z]?(?:\.\d+)?)\s*\|\s*([a-z-]+)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|$', line)
+            m = re.match(r'^\|\s*(' + _st.TASK_CODE + r')\s*\|\s*([a-z-]+)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|$', line)
             if m:
                 old_rows[_impact.canon(m.group(1))] = (m.group(2), m.group(3), m.group(4))
         for code, row in _rows.items():
