@@ -70,6 +70,9 @@ and guards nothing; that is why an unmatched group is a failure, not a skip.
 - **A task grows or splits** — write the new task file, add it to `_generator/order.py` (wave and
   position), to `TITLES_ALL.py` (both languages), to `STATUS.md`, and to `DELIVERY-PLAN.md`'s wave.
   Its neighbours' prev/next fix themselves on rebuild.
+- **A subtask** — give it a dotted code (`B3.1`, `A11.2`), its own `TASK-<code>-*.md` file when it has a
+  spec, and its own `STATUS.md` row. `TASK_CODE` in `_generator/status.py` is the one pattern every
+  check uses for a task code; change it there, never in a single script.
 - **A task is dropped** — set `state: dropped` with a `note` saying why. Do not delete the page.
   The reasoning is the valuable part, and a dead link is worse than a page that says "we decided
   not to".

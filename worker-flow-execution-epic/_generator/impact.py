@@ -43,6 +43,9 @@ import re
 import runpy
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import status  # noqa: E402
+
 GEN = os.path.dirname(os.path.abspath(__file__))
 EPIC = os.path.dirname(GEN)
 ROOT = os.path.dirname(EPIC)
@@ -74,7 +77,7 @@ def strip_tags(s):
 def status_rows():
     out = {}
     for line in read(os.path.join(EPIC, 'STATUS.md')).splitlines():
-        m = re.match(r'^\|\s*([A-Z]\d+[a-z]?(?:\.\d+)?)\s*\|\s*([a-z-]+)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|$', line)
+        m = re.match(r'^\|\s*(' + status.TASK_CODE + r')\s*\|\s*([a-z-]+)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|$', line)
         if m:
             out[canon(m.group(1))] = {'code': m.group(1), 'state': m.group(2), 'ref': m.group(3), 'note': m.group(4)}
     return out

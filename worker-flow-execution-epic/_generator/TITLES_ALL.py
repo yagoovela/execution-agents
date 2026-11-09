@@ -39,6 +39,13 @@ NO_PAGE = {
  'B32': 'B3',
  'B33': 'B3',
  'B3B1': 'B3B',
+ 'A112': 'A11',
+}
+
+# A spec whose D<n> labels are its own decisions, not the epic's (PLAN.md section 7), and why.
+# The page freshness check does not ask the covering page to cite them.
+LOCAL_DECISIONS = {
+ 'A112': 'A11.2 numbers its own decisions D1 to D21; they are not the epic decisions of the same number',
 }
 
 # A task that has a page but no spec file, and why.

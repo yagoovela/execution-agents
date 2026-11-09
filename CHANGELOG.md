@@ -6,6 +6,13 @@ renders this file, and each task page shows the latest entry that changed it.
 
 The log starts with PR #40. Earlier history is in `git log`.
 
+## 2026-11-05 · [#48](https://github.com/yagoovela/execution-agents/pull/48) · Publish A11.2 and read dotted subtask codes
+- Title (PT): Publica a A11.2 e lê códigos de subtarefa com ponto
+- Tasks: A11, A112
+- Pages: `timeline/task-A11.html`
+- Commits:
+  - acf4fe4 docs(868mqc7w6): publish the A11.2 spec and read dotted subtask codes
+
 ## 2026-11-04 · [#47](https://github.com/yagoovela/execution-agents/pull/47) · Publish the Wave 5 back-replica tasks, S9 and the 2026-11-03 release
 - Title (PT): Publicar as tasks de réplica do back da Wave 5, a S9 e o release de 03/11/2026
 - Tasks: S4, S2, S8, E3, B3B, E1, E2, S6B, E3B, S8B, S10, S11, S4B, A11, S9, A13, B7, E4
