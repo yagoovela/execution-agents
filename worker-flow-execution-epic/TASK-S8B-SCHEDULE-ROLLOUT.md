@@ -142,6 +142,24 @@ more paths. Two are fixed in this task; the third goes to `E4`.
   and a retried create returns the existing row without registering it.
 - Not done: a source-scan spec that fails on an unlocked `@Cron`. Offered, not asked for.
 
+**Dev check (2026-11-11).** The six task commits were cherry-picked onto `develop` (`0463cf7b`), because
+`develop` lacks commits that are on `main`; `develop` then advanced to `338929fe` with another task's
+merge, which keeps the S8b files unchanged. Dev ran `api-task-definition-dev:2669` (image `338929fe`,
+`FLUX_MAX_CHAIN_NODE_EXECUTIONS` 200000) from 18:12 UTC. On the flow "Jev 1 - Boolean question"
+(no delivery), through the API:
+
+| Step | Expected | Observed (`flows_logs`, `run_type = 'cronjob'`) |
+|---|---|---|
+| Create, every 2 minutes | One run per tick | 18:14, 18:16, 18:18: one run each, all successful |
+| Update to every 3 minutes | The old interval stops | 18:21, 18:24, 18:27: one run each; none at 18:20, 18:22, 18:26 |
+| Delete | No more runs | 0 runs after 18:28:29 |
+
+The failure paths (a flag read that throws) cannot be produced on dev and are covered by the unit tests
+above. The registrar's Winston lines do not reach the dev CloudWatch group. The boot of `:2669` logged
+`TypeORMError: Driver not Connected` twice from `[Scheduler]` in the seeder process, which closes its
+connection after seeding and was still alive at the 18:10:00 minute tick; the two earlier boots did not
+cross a minute in that window. It is not caused by this task.
+
 ## Files
 
 `back/src/app-api/schedule/legacy-schedule-registrar.service.ts` ·

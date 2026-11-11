@@ -6,14 +6,16 @@ renders this file, and each task page shows the latest entry that changed it.
 
 The log starts with PR #40. Earlier history is in `git log`.
 
-## 2026-11-11 · [#49](https://github.com/yagoovela/execution-agents/pull/49) · Publish Wave 5 progress, B7b and E4b
-- Title (PT): Publicar o andamento da Wave 5, a B7b e a E4b
-- Tasks: S2, E3B, S8B, S10, S11, S4B, A13, B6, B7B, E4, E4B, A112
-- Pages: `progresso-refatoracao.html`, `status-tarefas.html`, `timeline/index.html`, `timeline/task-A13.html`, `timeline/task-B7B.html`, `timeline/task-E3B.html`, `timeline/task-E4B.html`, `timeline/task-S10.html`, `timeline/task-S11.html`, `timeline/task-S2.html`, `timeline/task-S4B.html`, `timeline/task-S8B.html`
+## 2026-11-11 · [#49](https://github.com/yagoovela/execution-agents/pull/49) · Publish Wave 5 progress, B7b, E4b, A9b and E5b
+- Title (PT): Publicar o andamento da Wave 5, a B7b, a E4b, a A9b e a E5b
+- Tasks: S2, E5, E3B, S8B, S10, S11, S4B, A13, B6, B7B, E4, E4B, A9B, E5B, A112
+- Pages: `progresso-refatoracao.html`, `status-tarefas.html`, `timeline/index.html`, `timeline/task-A13.html`, `timeline/task-A9B.html`, `timeline/task-B6.html`, `timeline/task-B7B.html`, `timeline/task-E3B.html`, `timeline/task-E4.html`, `timeline/task-E4B.html`, `timeline/task-E5.html`, `timeline/task-E5B.html`, `timeline/task-S10.html`, `timeline/task-S11.html`, `timeline/task-S2.html`, `timeline/task-S4B.html`, `timeline/task-S8B.html`
 - No page change: B6: the spec adds a fail-fast item from A13; the page summary still holds
 - No page change: E4: the spec adds the S8b rollout note; the page summary still holds
 - Commits:
   - ce23a64 docs(868mrv6cg): publish Wave 5 progress, B7b and E4b
+  - e6c15bd docs(868mrv6cg): add the changelog entry for the Wave 5 publish
+  - c4fa05d docs(868mn64j4): move the A13 note sentence into its English half
 
 ## 2026-11-05 · [#48](https://github.com/yagoovela/execution-agents/pull/48) · Publish A11.2 and read dotted subtask codes
 - Title (PT): Publica a A11.2 e lê códigos de subtarefa com ponto

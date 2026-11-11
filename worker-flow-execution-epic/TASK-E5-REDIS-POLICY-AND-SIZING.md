@@ -8,6 +8,11 @@ the pub/sub rate `B5` creates.
 because it is an infrastructure change with no code in it, and holding `S8` for it would have
 delayed the replica-safety fix for a defect that has never fired. **ClickUp:** 868m6ue54.
 
+**Closed on 2026-11-11.** `noeviction` is in effect on dev, staging and prod: all three replication
+groups read `enhancedai-valkey8-noeviction`, `in-sync`, on 2026-11-11 (read-only). The alarms moved to
+`E5b` in Wave 5 ([TASK-E5B-REDIS-ALARMS.md](TASK-E5B-REDIS-ALARMS.md)). The post-`B5` pub/sub
+re-measure is not carried forward.
+
 ## What was measured
 
 Read from the account read-only, on 2026-09-18 and again on 2026-10-02 (14-day windows, prod
@@ -154,8 +159,11 @@ decided with them.
 | dev | 2026-10-02 | `enhancedai-valkey8-noeviction` (created this day, `maxmemory-policy = noeviction`, `ChangeType: immediate`) | `in-sync` on all three nodes, no reboot | `noeviction` (`GET /internal/redis-monitor/ttl-audit`) | `evictedKeys` stayed at 312 after the switch |
 | staging | 2026-10-02 | `enhancedai-valkey8-noeviction` | `in-sync` on all three nodes, no reboot | `noeviction`, read by the route after deploy f7d983d7 | before the switch: 8 keys without TTL, flat for 14 days (`cw-ttl-check.sh`), 0 evictions |
 | prod | 2026-10-05 | `default.valkey8` (not switched yet) | — | `volatile-lru`, `evicted_keys: 0` (`run-ttl-audit.sh prod` after 41aa704) | baseline before the switch; key audit clean (all 144 no-TTL keys are Bull) |
+| prod | by 2026-11-11 | `enhancedai-valkey8-noeviction` | `in-sync` (`describe-cache-clusters`, read-only, 2026-11-11) | not read back from the server | switch date not recorded |
 
 ## Alarms (decided 2026-10-02, not applied yet)
+
+Moved to `E5b` on 2026-11-11. On that day the account still had no ElastiCache alarm.
 
 Audit of the account first: 50 CloudWatch alarms, 22 of them console-made with the name pattern
 `Enhancedai-<Topic>-<Resource>-<ENV>`, one email-only SNS topic per alarm family shared across

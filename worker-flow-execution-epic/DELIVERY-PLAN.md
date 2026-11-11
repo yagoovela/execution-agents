@@ -237,6 +237,8 @@ thrown error charges no tokens (D22). Users can cancel runs today through the ex
 | `S4b` | **Added 2026-11-04.** One chain budget across replicas — only while `execution_budget` is on in production; otherwise recorded and dropped |
 | `B7b` | **Added 2026-11-10.** Batch rows prepare `fluxObject` nodes like `apiV2` (chat memory), a retried prepare writes once, and API workflow runs keep their log steps in every run-log mode |
 | `E4b` | **Added 2026-11-10.** Scheduled runs on Temporal Schedules finish through the back (delivery and logs) with A13's batch finish; before `temporal_schedules` goes on in production |
+| `A9b` | **Added 2026-11-11.** A stalled async `apiV2` run reaches one outcome: one status and one delivery, whichever of the stall report and the live end comes first |
+| `E5b` | **Added 2026-11-11.** Alarms on Redis memory, evictions and keys without a TTL in every environment; `E5` closed with `noeviction` live everywhere |
 | — | **The back may autoscale above one task**, after E3b, S8b, S10 and S11 (and S4b when its condition holds). S11 records the ceiling |
 | `B5` | Batch dispatch, gated per flow on full migrated coverage — after every A-track task above |
 | `B6` | Control flow and sub-flows as workflow constructs and child workflows; ships after B5 (D17), and proves that cancelling a parent stops its children — E2's clause, moved here because no child workflow exists before B6. It also owns D23 — propagating a cancel to `fluxBox`, `libraryNode` and `arrayNode` — since 2026-10-26 |
@@ -276,7 +278,7 @@ working days from 2026-10-27: code complete between 2026-11-27 and 2026-12-14 at
 5. ~~A7-D9 (protection on the internal callback) confirmed.~~ Settled 2026-10-23 (`TASK-A7`).
 6. ClickUp: ~~cards for A11, A13, A14 and A6b~~ created 2026-10-26 with estimates (A11 24 h, A13 32 h,
    A14 32 h, A6b 24 h), plus S6b. A7's description rewritten and re-estimated at 96 h on the
-   same day. S9's card created 2026-10-29 (16 h). Cards for E3b, S8b, S10, S11 and S4b created 2026-11-04 with the maximum of a three-point estimate (E3b 18 h, S8b 15 h, S10 18 h, S11 16 h, S4b 20 h). Cards for B7b (16 h, 8/12/16) and E4b (8 h, 3/5/8) created 2026-11-10.
+   same day. S9's card created 2026-10-29 (16 h). Cards for E3b, S8b, S10, S11 and S4b created 2026-11-04 with the maximum of a three-point estimate (E3b 18 h, S8b 15 h, S10 18 h, S11 16 h, S4b 20 h). Cards for B7b (16 h, 8/12/16) and E4b (8 h, 3/5/8) created 2026-11-10. Card for A9b (14 h, 6/10/14) created 2026-11-11.
 
 **Preconditions, all from earlier waves:** S1 (recursion ceiling — B6 turns sub-flows into child
 workflows), S2 (connections), S3 (spend and tenancy), E3 (notifications across replicas), plus

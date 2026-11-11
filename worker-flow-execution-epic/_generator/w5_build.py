@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, _GEN)
 import tasklib, order
 from TITLES_ALL import TITLES
-import w5_b5, w5_a7, w5_b6, w5_b7, w5_e4, w6_c1, w6_c2, w5_a11, w5_a13, w5_a14, w5_a6b, w5_s6b, w5_e3b, w5_s8b, w5_s10, w5_s11, w5_s4b, w5_s9, w5_b7b, w5_e4b
+import w5_b5, w5_a7, w5_b6, w5_b7, w5_e4, w6_c1, w6_c2, w5_a11, w5_a13, w5_a14, w5_a6b, w5_s6b, w5_e3b, w5_s8b, w5_s10, w5_s11, w5_s4b, w5_s9, w5_b7b, w5_e4b, w5_a9b, w5_e5b
 
 
 def build(code, mod, vnum, glance_note=None, decisions=None, sec1=None, sec3=None):
@@ -93,6 +93,12 @@ SPECS = [
   ('What the task does, in three parts', 'O que a task faz, em três partes')),
  ('E4B', w5_e4b, '4', None,
   ('What a scheduled run does today, and after', 'O que um run agendado faz hoje, e depois'),
+  ('What the task does, in two parts', 'O que a task faz, em duas partes')),
+ ('A9B', w5_a9b, '4', None,
+  ('What a stalled run does today, and after', 'O que um run travado faz hoje, e depois'),
+  ('What the task does, in two parts', 'O que a task faz, em duas partes')),
+ ('E5B', w5_e5b, '4', None,
+  ('The three alarms, and what each watches', 'Os três alarmes, e o que cada um vigia'),
   ('What the task does, in two parts', 'O que a task faz, em duas partes')),
  ('E4', w5_e4, '4', [w5_e4.DEC_BACKFILL],
   ('What Bull repeatables give today, and what Temporal Schedules add', 'O que os repeatables do Bull dão hoje, e o que o Temporal Schedules acrescenta'),
