@@ -59,6 +59,17 @@ intermediate, `B4` is not done and this task is not ready.
 Temporal Schedule, never both, and the cutover is per-schedule and reversible. Under §3.2 this
 ships behind the same feature flag `S8` introduced, defaulting to the Bull path.
 
+**In — fail closed before the flag goes on (added 2026-11-11 from `S8b`).** The Temporal guard in
+`back/src/app-api/schedule/schedule.consumer.ts` (`triggerScheduledFlow`) reads `temporal_schedules`
+with the fail-open `FeatureFlagsService.isEnabled`, so a failed read lets a Bull repeatable fire next
+to the Temporal Schedule. Make it skip the fire when the read fails (`isEnabledOrThrow`, or
+`ScheduleRegistrarService.resolveScheduleMode()`), with a negative control, before
+`temporal_schedules` is turned on in production. `S8b` left it fail-open because, while the flag is
+off, failing closed only turns a flag-read blip into a skipped run. `S8b` already made the boot
+reconcile and schedule create and update fail closed through `resolveScheduleMode()`. When the
+cutover becomes per schedule, that method takes the schedule id: a new schedule has no id until it is
+saved, so create keeps the global answer.
+
 **In.** The zombie check `S8` preserved — stop, delete, soft-delete when the flow is gone — has to
 survive the move, as a schedule policy rather than as a callback body.
 

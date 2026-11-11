@@ -38,6 +38,16 @@ execution is an open-ended amount of further work. Cancelling one cancels its ch
 only reads and writes an object's session state, so cancelling it prevents no spend and leaves the
 object half-written.
 
+**In — fail fast on a type with no worker module (added 2026-11-10, from A13).** `processSingleNode`
+throws a plain `Error` for a type it has no activity for, so Temporal retries the workflow task
+forever and the child, `processFlow` and the batch or scheduled run that started it hang. Batch rows
+(B7) and Temporal-scheduled runs (E4) reach `processFlow` without the B4 gate, so a flow holding
+`arrayNode`, `conditionNode`, `fluxBox`, `libraryNode`, `nodesBox` (A7), `webTrends` (A6b) or
+`fluxObject` (A14) hangs there today. Throw a non-retryable `ApplicationFailure` naming the type,
+so the run fails at once with a message, and keep it until every type has a module. Negative
+control: a batch row with one of these types hangs on the current code and fails with the message
+after the change. About 1 h.
+
 **In — the run chain.** The child carries a `parentRunId` back to its caller, and the visited-flow
 set and depth counter travel with it (`TASK-S1`). Three things depend on that chain existing at this
 boundary and not only inside one process: the cycle refusal, the depth ceiling, and the spend
@@ -140,7 +150,8 @@ ORDER BY ne."createdAt";
 All four types run in the worker; a replay test passes; nested runs keep their logs, cancellation
 and billing — **cancelling a parent stops its child workflows, proven here because no child workflow
 exists before this task** (moved from E2); each loop iteration receives its own item on any
-wiring, without a Text Box; no executable node type remains inline.
+wiring, without a Text Box; no executable node type remains inline; a type without a worker module
+fails a run at once with a message instead of hanging it.
 
 ## Carried over from B3b (validate first)
 

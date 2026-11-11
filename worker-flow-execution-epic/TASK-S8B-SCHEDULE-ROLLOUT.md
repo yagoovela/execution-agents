@@ -70,6 +70,78 @@ table retires `repeatable_schedules`. Temporal Schedules stay `E4`.
 read registers nothing, `negotiatedContractRenewal` runs under the cron lock, and the dates are
 recorded here.
 
+## Result
+
+**Rollout (steps 1 to 4).** The user confirmed on 2026-11-05 that `repeatable_schedules` is on in
+production, since about 2026-09-29, a week after `S8` shipped. Every back task has restarted since
+then, at least with the 2026-11-03 and 2026-11-09 deploys, so steps 2 and 3 are already done. Step 4
+was measured on 2026-11-11 13:06 UTC with `868mrv6cm` query 6, which lists every flow and minute in
+`flows_logs` (`run_type = 'cronjob'`, last 30 days) with more runs than the schedules that existed
+for that flow at that minute: **0 rows**. The window covers the two back tasks that production runs
+every day since 2026-10-28. The query was checked on dev first: 0 rows in 30 days, 1 row for an
+injected duplicate run, and the real 2× to 4× double fires of March 2026 on 365 days. A minute whose
+schedule row was hard-deleted counts as unverifiable, not as a failure, and only ticks with two or
+more runs are listed. The boot-log check is replaced by this query: the legacy registrar logs nothing
+when it registers.
+
+**Fail closed and the last lock.** Back `fix/868mrv6cm` (`a8861164`, `a8810ed1`, `7974a82f`), no PR
+yet.
+
+- `FeatureFlagsService.isEnabledOrThrow` throws the read error that `isEnabled` turns into `false`,
+  and shares its cache. `read` stays fail-open: 31 callers depend on it, and for some of them
+  `false` is not the safe value (`superchat-access.service.ts` returns `!isEnabled(...)`).
+- `LegacyScheduleRegistrarService.onModuleInit` reads `temporal_schedules` and, through the new
+  `ScheduleRegistrarService.isRepeatableModeEnabledOrThrow`, `repeatable_schedules`. When either
+  read throws it registers nothing and logs `schedule_flag_read_failed`.
+- `handleNegotiatedContractRenewal` runs inside `CronLockService.runExclusively` with its own key,
+  `negotiatedContractRenewal`, so `productIntervalCheck` at the same midnight keeps its own lock.
+- Tests: 17 suites, 154 tests green, scoped to the touched folders. Each new test was seen to fail
+  with the fix removed: the boot falls back to `isEnabled` (2 tests red), the registrar method
+  swallows (1 red), the lock is removed (2 red), the lock shares the `handleCron` key (1 red),
+  `isEnabledOrThrow` swallows (1 red). The fake lock releases at the end of the transaction, like
+  `pg_try_advisory_xact_lock`, so the spec claims only "while one replica renews, the other skips".
+- Reviews on 2026-11-11: `/simplify` applied 7 cleanups (efficiency: none). `/code-review`: 10
+  findings, 3 fixed (the fake lock, the lock double's options, `HttpStatus`); 3 declined with
+  reasons (no retry when legacy is the real mode, which is the decision above and is not production's
+  mode; the lock's idle transaction, the same `S8` pattern as every cron; a boot-order gap that this
+  change did not add); 4 are out of scope and wait for the user's decision. `/security-review`: no
+  finding.
+
+**Widened on 2026-11-11 (the user's decision).** The reviews found the same fail-open read on three
+more paths. Two are fixed in this task; the third goes to `E4`.
+
+- `ScheduleRegistrarService.resolveScheduleMode()` is now the one place that decides `temporal`,
+  `repeatable` or `legacy`. It reads both flags with `isEnabledOrThrow`; when a read fails it logs
+  `schedule_flag_read_failed` and throws `ScheduleModeUnavailableError`. It replaces
+  `isRepeatableModeEnabled` and `isRepeatableModeEnabledOrThrow`, which have no callers left.
+- Schedule create and update (`schedule.controller.ts`) resolve the mode **before** they save, bill or
+  unregister anything. Before, `createWithBilling` and `updateWithBilling` ran first and a failed
+  read then registered an in-process cron next to the Bull repeatable. Now the user sees "Could not
+  read the schedule settings, so nothing was changed. Try again." and nothing changes. This is the
+  only new refusal, and it fires only when the flag read itself fails, so no stored data is refused.
+- Both boot paths call it. The Bull reconcile runs only in `repeatable` mode, the legacy registrar
+  only in `legacy` mode, and an unreadable mode runs neither; the next boot of any replica
+  reconciles, because `reconcile()` registers every missing schedule.
+- Left for `E4`: the Temporal guard in `schedule.consumer.ts` (`triggerScheduledFlow`) still reads
+  `temporal_schedules` with the fail-open `isEnabled`. While the flag is off in production (no
+  migration creates its row, so it reads as off), failing closed there would only turn a flag-read
+  blip into a skipped run. `E4` makes it fail closed before the flag goes on.
+- `pause`, `unpause` and `upcoming` decide through the same method, so a failed read tells the user
+  to try again instead of claiming the schedule is not on Temporal. The controller no longer reads
+  flags itself.
+- Tests: 17 suites, 164 tests green. New negative controls, each seen red: create reads the mode
+  after saving (1 red), update reads it after saving (1 red), `resolveScheduleMode` reads fail-open
+  (4 red), the temporal branch registers on Bull (2 red), `shouldUseTemporal` swallows the error (1
+  red).
+- Second `/code-review` (on the widened commit): 9 findings, 2 fixed (the pause path, the missing
+  temporal-branch test). Declined: the consumer (`E4`), no retry at boot (decided above), 400 rather
+  than 503 (the controller's existing `catch` sets the status for every error), two boot reads (the
+  second hits the flag cache), the generic log text. Offered as a follow-up, already on `main`
+  before this task: in create and update, a register or unregister call that throws after
+  `createWithBilling` or `updateWithBilling` leaves the row saved and billed but registered wrongly,
+  and a retried create returns the existing row without registering it.
+- Not done: a source-scan spec that fails on an unlocked `@Cron`. Offered, not asked for.
+
 ## Files
 
 `back/src/app-api/schedule/legacy-schedule-registrar.service.ts` ·

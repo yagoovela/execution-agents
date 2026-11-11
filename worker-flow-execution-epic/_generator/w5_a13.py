@@ -22,12 +22,10 @@ GLANCE = [
 LEDE = (
  '<p>Today the back builds the Data Output&#x27;s value from its producers, in memory, and that value is what the API reply, the chatbot answer and '
  '<code>A9</code>&#x27;s delivery read. The worker enum has <code>OUTPUT</code> with no activity, so <strong>a workflow run has no sink</strong>.</p>'
- '<p><code>A9</code> moved email and callback delivery into the worker and handed the rest to <code>B4</code>: <em>“when B4 lands, '
- '<code>deliverRunOutputs</code> becomes its last step”</em>. <strong><code>B4</code>&#x27;s spec never picked it up.</strong> This task owns that hand-off.</p>',
+ '<p>The design, decided on 2026-11-09 against the code: <strong>the worker writes the Data Output\'s row</strong> and the back\'s end-of-run code, which already builds the reply, the chatbot answer and the delivery after a workflow run, reads it unchanged (A13-D1). The first draft made <code>deliverRunOutputs</code> the workflow\'s last step; A13-D2 dropped it, because delivery needs the reply and the callback URL, which only the back has.</p>',
  '<p>Hoje o back monta o valor do Data Output a partir dos seus produtores, em memória, e é esse valor que a resposta de API, a resposta do chatbot e a '
  'entrega da <code>A9</code> leem. O enum do worker tem <code>OUTPUT</code> sem activity, então <strong>um run de workflow não tem destino final</strong>.</p>'
- '<p>A <code>A9</code> levou a entrega de email e de callback para o worker e passou o resto para a <code>B4</code>: <em>“quando a B4 chegar, o '
- '<code>deliverRunOutputs</code> vira o último passo dela”</em>. <strong>A spec da <code>B4</code> nunca assumiu isso.</strong> Esta task é dona dessa passagem.</p>')
+ '<p>O desenho, decidido em 09/11/2026 contra o código: <strong>o worker grava a linha do Data Output</strong> e o código de fim de run do back, que já monta a resposta, a resposta do chatbot e a entrega depois de um run de workflow, a lê sem mudança (A13-D1). O primeiro rascunho fazia do <code>deliverRunOutputs</code> o último passo do workflow; a A13-D2 o descartou, porque a entrega precisa da resposta e da URL de callback, que só o back tem.</p>')
 
 TABLE = dict(
  head=[('Who reads the Data Output','Quem lê o Data Output'),('On the back&#x27;s loop','No laço do back'),('Under the workflow, before A13','Sob o workflow, antes da A13'),('After A13','Depois da A13')],
@@ -47,42 +45,30 @@ TABLE = dict(
  ])
 
 PARTS = [
-{'n':'1','title':('Build the value from stored rows','Montar o valor a partir das linhas armazenadas'),
- 'loc':'worker node-activities.ts (OUTPUT)',
- 'purpose':('Build the Data Output&#x27;s value from its upstreams&#x27; <code>node_executions</code> rows, by reference, as <code>B3b</code> does for every other consumer.',
-            'Montar o valor do Data Output a partir das linhas de <code>node_executions</code> dos nós de origem, por referência, como a <code>B3b</code> faz para todo outro consumidor.'),
- 'body':('<p>The builder also <strong>records which executions it read</strong>, so a reply can be traced back to the rows that produced it.</p>',
-         '<p>O construtor também <strong>registra quais execuções leu</strong>, para que uma resposta possa ser rastreada até as linhas que a produziram.</p>'),
- 'ba':(('The back assembles the value from its producers in memory; a workflow run has no equivalent.',
-        'O back monta o valor a partir dos produtores em memória; um run de workflow não tem equivalente.'),
-       ('The value comes from stored executions, by reference, and the builder notes which ones it used.',
-        'O valor vem de execuções armazenadas, por referência, e o construtor anota quais usou.'))},
+{'n':'1','title':('The worker writes the Data Output row','O worker grava a linha do Data Output'),
+ 'loc':'worker node-activities.ts (outputObjectNode)',
+ 'purpose':('A new <code>outputObjectNode</code> activity runs through the <code>B3b</code> projection and writes the row the back&#x27;s loop writes (A13-D1).',
+            'Uma activity nova <code>outputObjectNode</code> roda pela projeção da <code>B3b</code> e grava a linha que o laço do back grava (A13-D1).'),
+ 'body':('<p>The row holds the <code>textData</code> array, and the three text joins stay in the back (A13-D4). The activity writes only its run row, never the live canvas row, so a projected value cannot reach the next run (A13-D5). The ids of the upstream executions it read go to <code>metadata.sourceExecIds</code>, recorded for every node the resolver reads (A13-D6).</p>',
+         '<p>A linha guarda o array <code>textData</code>, e os três joins de texto continuam no back (A13-D4). A activity grava só a linha do run, nunca a linha viva do canvas, então um valor projetado não chega ao próximo run (A13-D5). Os ids das execuções de origem que ela leu vão para <code>metadata.sourceExecIds</code>, registrado para todo nó que o resolver lê (A13-D6).</p>'),
+ 'ba':(('The workflow throws &quot;Node type outputObjectNode not supported&quot;.',
+        'O workflow lança &quot;Node type outputObjectNode not supported&quot;.'),
+       ('The workflow writes the row and the back&#x27;s end of run reads it.',
+        'O workflow grava a linha e o fim de run do back a lê.'))},
 
-{'n':'2','title':('Delivery as the workflow&#x27;s last step','A entrega como último passo do workflow'),
- 'loc':'worker process-flow.workflow.ts',
- 'purpose':('Make <code>deliverRunOutputs</code> the workflow&#x27;s last step, and keep the back&#x27;s loop calling the same code.',
-            'Fazer do <code>deliverRunOutputs</code> o último passo do workflow, e manter o laço do back chamando o mesmo código.'),
- 'body':('<p>A delivery has to fire <strong>once per run</strong> under the workflow, including after the last step is retried.</p>',
-         '<p>Uma entrega precisa disparar <strong>uma vez por run</strong> sob o workflow, inclusive depois de o último passo ser repetido.</p>'),
- 'ba':(('Only the back&#x27;s loop calls <code>deliverRunOutputs</code>.',
-        'Só o laço do back chama o <code>deliverRunOutputs</code>.'),
-       ('Both engines call the same code; the workflow calls it as its last step.',
-        'Os dois motores chamam o mesmo código; o workflow o chama como seu último passo.')),
- 'callouts':[('mig',('Out of scope','Fora de escopo'),
-   ('<p>Changing the reply shape, the delivery channels, or <code>A9</code>&#x27;s retry policies.</p>',
-    '<p>Mudar o formato da resposta, os canais de entrega, ou as políticas de retry da <code>A9</code>.</p>'))]},
+{'n':'2','title':('Delivery stays a workflow the back starts','A entrega continua um workflow que o back inicia'),
+ 'loc':'back flux.service.ts (settleRunOutputs)',
+ 'purpose':('Both engines reach the same end-of-run code; delivery is not the workflow&#x27;s last step (A13-D2).',
+            'Os dois motores chegam ao mesmo código de fim de run; a entrega não é o último passo do workflow (A13-D2).'),
+ 'body':('<p>Batch rows reach <code>processFlow</code> without that code, and since <code>B7</code> they stored only the workflow status. A13-D7 restores the earlier row: after each row the worker asks the back to run the shared end of run, writes the reply into the row and starts one delivery, callback only. Delivery for scheduled runs stays out of scope; <code>E4b</code> picks it up.</p>',
+         '<p>As linhas de lote chegam ao <code>processFlow</code> sem esse código, e desde a <code>B7</code> guardavam só o status do workflow. A A13-D7 restaura a linha anterior: depois de cada linha o worker pede ao back que rode o fim de run compartilhado, grava a resposta na linha e inicia uma entrega, só callback. A entrega dos runs agendados continua fora de escopo; a <code>E4b</code> assume.</p>')},
 
-{'n':'3','title':('Flip the registry entry','Virar a entrada no registro'),
+{'n':'3','title':('The gate accepts the sink','O gate aceita o sink'),
  'loc':('the A1 registry','o registro da A1'),
- 'purpose':('Flip <code>outputObjectNode</code>&#x27;s registry entry once both paths use the same builder.',
-            'Virar a entrada de <code>outputObjectNode</code> no registro quando os dois caminhos usarem o mesmo construtor.'),
- 'body':('<p>The order matters: the entry flips only after the back&#x27;s loop and the workflow share the builder, so <strong>no back-only code builds the Data Output value</strong>.</p>',
-         '<p>A ordem importa: a entrada só vira depois que o laço do back e o workflow compartilham o construtor, de modo que <strong>nenhum código exclusivo do back monta o valor do Data Output</strong>.</p>'),
- 'callouts':[('decide',('Added 2026-10-28','Adicionado em 2026-10-28'),
-   ('<p>A11 classes <code>outputObjectNode</code> as <code>execution: &#x27;sink&#x27;</code>. This task makes B4&#x27;s gate accept <code>sink</code> and turns '
-    'A11&#x27;s <code>it.failing</code> &quot;the gate accepts a flow that holds a <code>sink</code>&quot; into a plain test. The class stays <code>sink</code>.</p>',
-    '<p>A A11 dá ao <code>outputObjectNode</code> a classe <code>execution: &#x27;sink&#x27;</code>. Esta task faz o gate da B4 aceitar <code>sink</code> e transforma '
-    'o <code>it.failing</code> da A11 sobre o gate aceitar um fluxo com um <code>sink</code> num teste comum. A classe continua <code>sink</code>.</p>'))]},
+ 'purpose':('The class stays <code>sink</code> and B4&#x27;s gate accepts it (A13-D3).',
+            'A classe continua <code>sink</code> e o gate da B4 a aceita (A13-D3).'),
+ 'body':('<p>The registry entry loses <code>handoffOwner</code>, A11&#x27;s <code>it.failing</code> becomes a plain test and the contract JSON is regenerated. <code>prefetchSafe</code> stays <code>false</code>.</p>',
+         '<p>A entrada no registro perde o <code>handoffOwner</code>, o <code>it.failing</code> da A11 vira um teste comum e o JSON do contrato é regenerado. <code>prefetchSafe</code> continua <code>false</code>.</p>')},
 ]
 
 VERIF = [

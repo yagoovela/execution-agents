@@ -60,6 +60,8 @@ OWNERS = {
     'S11': ('868mrv6cx', (A,), 'assignees'),
     'S4B': ('868mrv6cz', (A,), 'assignees'),
     'S9': ('868mpn1h3', (A,), 'assignees'),
+    'B7B': ('868muzee4', (A,), 'assignees'),
+    'E4B': ('868muzf1f', (A,), 'assignees'),
     'A13': ('868mn64j4', AY, 'assignees'),
     'A7': ('868m0vmqu', AY, 'assignees'),
     'A14': ('868mn64jc', AY, 'assignees'),
