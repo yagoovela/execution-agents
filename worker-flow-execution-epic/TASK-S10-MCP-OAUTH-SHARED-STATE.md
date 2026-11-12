@@ -53,3 +53,41 @@ started it, and the state is single-use and expires as it does today.
 
 `back/src/app-api/mcp_call/mcp_oauth.service.ts` (`pkceStateStore`, `discoveryCache`,
 `registrationCache`) · the back's Redis client module
+
+## Outcome
+
+Back PR [#2104](https://github.com/enhancedai-com/Flux-Prompt/pull/2104), branch `fix/868mrv6cr`,
+merged to dev on 2026-11-10 (`c30da186`). It passed QA on dev the same day and waits for the production deploy.
+
+**Design.**
+
+- `McpOAuthStateStore` (`src/app-api/mcp_call/mcp-oauth-state.store.ts`) writes the state to
+  `mcp:oauth:state:<state>`, encrypted with `encryptCredentials`, with `SET PX
+  MCP_OAUTH_STATE_TTL_MS` (10 minutes, as before).
+- The callback reads it with `GETDEL`, so the state is single-use. Valkey is 8.0.1 in dev, staging
+  and prod, which supports `GETDEL`.
+- `discoveryCache` and `registrationCache` stay per process. The callback uses
+  `resolvedConfig.clientId` from the state, so a cache miss on another replica costs one request
+  and nothing else.
+- When Redis fails, the store logs it and the callback redirects with "The connection could not be
+  completed right now. Try connecting again." instead of a raw 500. A state that cannot be
+  decrypted is logged as `mcp_oauth_state_unreadable`.
+
+**Verification.**
+
+- Seven specs, each negative-controlled. The cross-replica spec uses a real Redis when
+  `REDIS_TEST_URL` is set and an in-memory shared double otherwise.
+- A local run with three back processes: start on A and callback on B succeeded, a replayed
+  callback was refused, and a replica on another Redis was refused.
+- On dev, two in-app OAuth connections to `https://mcp-dev.fluxprompt.ai/mcp` succeeded on 2026-11-10, one from a password account and one from an Apple account. Each wrote its `mcp_integrations` and `user_integrations` rows in the same second, and the dev logs show no state error.
+
+**Reviews.** `/simplify`, `/code-review` and `/security-review` ran on the branch; the security
+review had no findings. Follow-ups that were noted and left out of scope:
+
+- The MCP OAuth state is not bound to the browser session (pre-existing).
+- `OAuthStateService.consume` in the integrations module reads and then deletes, which allows a
+  replay race (pre-existing, other module).
+- The shared `REDIS_CLIENT` has `maxRetriesPerRequest: null`.
+- MCP access tokens are never refreshed; the user reconnects when the provider token expires.
+
+**Deploy.** Read the prerequisite in the PR body before each environment's deploy.

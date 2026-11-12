@@ -11,6 +11,10 @@ TITLES.update({
  'S8B': ('Finish the schedule rollout and lock the last cron', 'Terminar o rollout dos agendamentos e travar o último cron'),
  'S10': ('Keep the MCP OAuth state where every back replica can read it', 'Guardar o estado do OAuth do MCP onde toda réplica do back consiga ler'),
  'S11': ("Size the database and the boot for the back's replica ceiling", 'Dimensionar o banco e o boot para o teto de réplicas do back'),
+ 'B7B': ('Batch rows keep chat memory, a retried prepare writes once, and workflow runs keep their log steps', 'Linhas de lote mantêm a memória do chat, um prepare repetido grava uma vez, e runs de workflow mantêm os passos no log'),
+ 'E4B': ('Scheduled runs on Temporal Schedules finish through the back', 'Runs agendados no Temporal Schedules terminam pelo back'),
+ 'A9B': ('A stalled async API run reaches one outcome and delivers once', 'Um run de API assíncrono travado chega a um só resultado e entrega uma vez'),
+ 'E5B': ('Alert before Redis fills and when it evicts, in every environment', 'Alertar antes de o Redis encher e quando ele remove chaves, em todos os ambientes'),
  'S4B': ('One chain budget across back replicas', 'Um orçamento de cadeia entre as réplicas do back'),
  'S9': ('Refuse a third-party credential the executing user cannot reach', 'Recusar uma credencial de terceiro que o usuário da execução não alcança'),
 })
