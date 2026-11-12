@@ -253,4 +253,46 @@ Found, not fixed (outside A13): a chat-memory `fluxObject` runs without its hist
 because `prepare` skips the `fluxObject` preparation `apiV2` does; with `RUN_LOG_FROM_EVENTS` off an
 API workflow run's Logs entry has no node steps; `seedVarInputNodeExecutions` inserts new rows on a
 retried `prepare`. Scheduled runs started by E4's `runScheduledFlow` reach `processFlow` without the
-back's end of run, as batch rows did; open question for the user.
+back's end of run, as batch rows did; open question for the user. Both became Wave 5 tasks on 2026-11-10: B7b
+(868muzee4) and E4b (868muzf1f).
+
+## Dev tests (2026-11-10 and 2026-11-11)
+
+Back `develop` `08786409` and worker `develop` `80a6cbb`, with real runs on dev. The test flows are in
+the folder "a13-dev-qa" of a dev account. The flag `engine_in_workflow` was on only for each check,
+and was restored and verified each time.
+
+- Sync API: the replies are byte-identical between the loop and the workflow, with the timestamp
+  masked. Flow A: loop `bdbf614a` vs workflow `9570d31c` (HTTP 200). Failing formula: loop
+  `e42b1a39` vs workflow `ef184140` (HTTP 400).
+- Async API under the workflow: polling returns the real `{message, outputs}`, and the execution
+  status ends `completed`.
+- Parity over more flows: the chatbot answer (loop `ad348e90` vs workflow `5ed3296e`), a 300 KB
+  output stored as claim refs (`d0b1f401` vs `60a5bc44`), and a Data Output with no starter edge
+  (`4b1cdd64` vs `6d27782d`).
+- One delivery per run: 8 runs gave 8 delivery workflows, with one callback each and no email. A
+  Temporal reset of a finished batch re-ran `finishBatchRowRunActivity` for both rows and started
+  no new delivery and no duplicate log row.
+- Batch of 2 rows: each row stores its own output, delivers once, sends no email and has its
+  `flows_logs` record. `space_run_logs` was not verifiable, because the folder is not in a space.
+- Failing node: the same error on both engines. A failed batch names the first failing row's reason.
+- Not re-run on dev: the "before" half of the negative control, which needs a rollback. It was seen
+  locally on 2026-11-09.
+
+## The run log input keeps an explicit field list (2026-11-11)
+
+The chatbot and sync API run log now stores an explicit field list with the owner's id. Back `b653484a`, `05a8db4f`, `7b321c1d`; the tests were seen failing first, and the reviews found no HIGH or MEDIUM issue.
+
+## One delivery per API run: dropped (2026-11-11)
+
+A fixed delivery id per top-level API run was implemented (back `0e6cff99`) and then dropped, because
+no path reaches it. The async queue never retries a job (`attempts: 1`, `maxStalledCount: 0`), and the
+async path delivers through its own sink. The real double delivery is a stalled job that resumes:
+`failStalledRun` delivers the failure, then the live run delivers the real outputs. A fixed id would
+keep the failure and withhold the real outputs, so that case is now A9b (868mvdm50).
+
+## Merge readiness (2026-11-11)
+
+Back #2105 and worker #168 are out of draft. Merged with the current `main` in a scratch tree, the
+back has no conflict and passes 12 suites and 524 tests, and `tsc` is clean; the worker shares no
+file with the new `main` commits. Deploy the back first.
