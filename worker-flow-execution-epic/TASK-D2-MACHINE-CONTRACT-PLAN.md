@@ -496,7 +496,7 @@ Reachable from **both** entry paths (a full flow run and a single-node run) and 
 
 ### The rest of the migration
 
-1. **Spec.** Invoke the `tlc-spec-driven` skill to specify the migration feature under `.claude/tasks/worker-<node>-migration/`. The task breakdown must cover the eight items above (skipping one produces a node the worker "runs" doing nothing, or one gate refuses while the other accepts).
+1. **Spec.** Write the migration as an epic task in `.claude/tasks/worker-flow-execution-epic/`: a `TASK-<code>-<NAME>.md` in the shape of the other task specs (goal, dependencies, why, scope, verification, done when, files), its row in `STATUS.md` with an English and a Portuguese note separated by ` // `, and its line under its wave in `DELIVERY-PLAN.md`. The scope must cover the eight items above (skipping one produces a node the worker "runs" doing nothing, or one gate refuses while the other accepts).
 2. **Docs.** Author a Mintlify page under `docs/worker/` describing the node's functionality now that the worker owns it (what it does, its inputs/outputs, retry/timeout behavior, any new callbacks). Use the `mintlify-docs-writer` agent. Add en + pt-br per the docs repo convention.
 3. **Env vars.** If the migration adds any env var (worker or back), run the `env-vars-sync` skill.
 4. **Node schema.** If the node gains/needs an MCP entry, run `mcp-node-schema-sync` before touching `node-type-metadata.ts`.

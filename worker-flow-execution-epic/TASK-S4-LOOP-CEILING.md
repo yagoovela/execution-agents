@@ -168,12 +168,12 @@ answered after the release, and this is the list to work through — in order, p
    A row with `sample_size` 0 means prod holds no data for that metric: keep the floor and report
    the number as unverified rather than as measured. The query was validated against dev, where it
    reproduces the numbers below exactly; needs `SSH_HOST_PROD` / `DB_HOST_PROD` /
-   `PGPASSWORD_PROD` in `.env`, which were not configured when the task shipped. The ceilings were set from dev+staging, whose
+   `PGPASSWORD_PROD` in the workspace root `.env`, which were not configured when the task shipped. The ceilings were set from dev+staging, whose
    distributions are identical (`loopCount` p50 3 / max 20, `processorArray` p50 7 / p95 81 /
    max 963, node executions per run max 42) and therefore share an origin. Re-run the three queries
    against prod — `flows_nodes.data->>'loopCount'`, `jsonb_array_length(data->'processorArray')`,
    and executions per run — and raise a ceiling if prod holds anything above it. This needs
-   `SSH_HOST_PROD` / `DB_HOST_PROD` / `PGPASSWORD_PROD` in `.env`, which were not
+   `SSH_HOST_PROD` / `DB_HOST_PROD` / `PGPASSWORD_PROD` in the workspace root `.env`, which were not
    configured when the task shipped.
 
 **Two standing re-checks, not one-offs:**
