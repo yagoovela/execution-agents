@@ -6,6 +6,16 @@ renders this file, and each task page shows the latest entry that changed it.
 
 The log starts with PR #40. Earlier history is in `git log`.
 
+## 2026-11-13 · [#52](https://github.com/yagoovela/execution-agents/pull/52) · Record the A13 and S8b production checks and the .claude paths
+- Title (PT): Registrar as checagens de produção da A13 e da S8b e os caminhos .claude
+- Tasks: S4, D2, A5, S8B, A13
+- Pages: `timeline/task-A13.html`, `timeline/task-S8B.html`
+- No page change: A5: only the paths in the spec changed
+- No page change: D2: the spec step points at the epic task format; the page summary still holds
+- No page change: S4: only the .env wording in the spec changed
+- Commits:
+  - aaaeaab docs(868mn64j4): record the A13 and S8b production checks and the .claude paths
+
 ## 2026-11-13 · [#51](https://github.com/yagoovela/execution-agents/pull/51) · Publish the S4b production check and the E5b latency alarms
 - Title (PT): Publicar a checagem de produção da S4b e os alarmes de latência da E5b
 - Tasks: S4B, E5B

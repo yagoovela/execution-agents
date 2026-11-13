@@ -137,7 +137,7 @@ checked: `generateImage` exposes no timeout option, only `abortSignal`; fal docu
 timeout (the ~2-minute poll budget, 120×1 s, is this codebase's own local decision, not a provider
 default). Decision: measure real production durations before picking numbers, rather than guessing
 again. A read-only measurement kit was written to
-`.claude/tasks/worker-flow-execution-epic/scripts/a5-image-timeouts/`:
+`.specs/features/worker-flow-execution-epic/scripts/a5-image-timeouts/` (deleted from the tree on 2026-09-30; read it with `git show e918036:.specs/features/worker-flow-execution-epic/scripts/a5-image-timeouts/<file>`):
 `measure-image-generator-durations.mts` lists `processSingleNode` workflows via Temporal visibility
 and pairs `imageGeneratorActivity` events into a CSV; `image-generator-duration-summary.sql` joins to
 `node_executions` on `(execId, nodeId)` for per-`aiSystem`/model p50/p95/p99/max and timeout counts,
@@ -363,7 +363,7 @@ what determines behaviour; deleting the now-dead method follows the repo's own e
   `startToCloseTimeout`/`heartbeatTimeout` above the slowest observed real call, not at a round
   number — the same "measure before refusing" discipline C3 applies to worker OAuth timeouts.
   **Corrected 2026-09-24 — a read-only measurement kit now exists**
-  (`.claude/tasks/worker-flow-execution-epic/scripts/a5-image-timeouts/`) to capture this from
+  (`.specs/features/worker-flow-execution-epic/scripts/a5-image-timeouts/`, deleted on 2026-09-30, kept in commit `e918036`) to capture this from
   Temporal visibility plus `node_executions`; still open pending the user running it against prod.
   **Corrected 2026-09-25 — narrowed:** one read-only query (`image-generator-duration-check.sql`)
   validates the single ceiling; the Temporal kit is no longer required. Plus a test, seen red first,
@@ -530,7 +530,7 @@ threaded by `ai-provider/image/image-provider.service.ts`) ·
 `worker/src/modules/temporal/workflows/configs.ts` (`imageGeneratorActivity` — leftover 2) ·
 `back/src/app-api/executions_logs/execution_logs.service.ts` (`cancelNode` signal) ·
 `back/src/app-api/flux/flux.service.ts` (`imageGeneratorNode()` — dead, deliberately not deleted) ·
-`.claude/tasks/worker-flow-execution-epic/scripts/a5-image-timeouts/`
+`.specs/features/worker-flow-execution-epic/scripts/a5-image-timeouts/` (deleted on 2026-09-30, kept in commit `e918036`)
 (`image-generator-duration-check.sql` — leftover 2's one query, run on prod 2026-09-25;
 `measure-image-generator-durations.mts`, `image-generator-duration-summary.sql`, `README.md` — the
 original Temporal kit, kept, no longer required) ·
