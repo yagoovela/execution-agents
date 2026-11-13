@@ -54,6 +54,23 @@ PARTS = [
          '<p>Um erro do Redis não bloqueia runs: a checagem falha aberta e loga, como o rate limiter.</p>'),
  'ba':(('Each replica keeps its own count.','Cada réplica tem a sua contagem.'),
        ('Every replica adds to one count.','Toda réplica soma numa contagem só.'))},
+
+{'n':'3','title':('Production check, 2026-11-13','Checagem em produção, 13/11/2026'),
+ 'loc':'CloudWatch Logs',
+ 'purpose':('Confirm, after the 2026-11-12 deploy, that no chain hit its ceiling and that Redis errors blocked no run.',
+            'Confirmar, depois do deploy de 12/11/2026, que nenhuma cadeia bateu no teto e que erros do Redis não bloquearam nenhum run.'),
+ 'body':('<p>Zero chain ceiling stops, including the window on 2026-11-12 when production ran two back tasks (14:16 to 14:39 UTC). '
+         'There were 24 <code>Chain execution count unavailable</code> lines, all <code>Redis command timed out</code> at the daily peak. '
+         'Those timeouts predate S4b: the older chain-root lookup times out at the same moments, and the daily total did not rise after the deploy. '
+         'Each one failed open as designed: the replica counted its own share, retried the write, and blocked nothing. '
+         'Redis itself answers in under 2 ms at <code>p99</code>; the timeouts come from the back, and <code>E5b</code> now adds a Redis latency alarm.</p>',
+         '<p>Zero paradas no teto da cadeia, inclusive na janela de 12/11/2026 em que a produção rodou duas tasks do back (14:16 a 14:39 UTC). '
+         'Houve 24 linhas <code>Chain execution count unavailable</code>, todas <code>Redis command timed out</code> no pico diário. '
+         'Esses timeouts já existiam antes da S4b: a busca mais antiga da raiz da cadeia estoura no mesmo momento, e o total diário não subiu depois do deploy. '
+         'Cada um falhou aberto como previsto: a réplica contou a sua parte, tentou a escrita de novo e não bloqueou nada. '
+         'O próprio Redis responde em menos de 2 ms no <code>p99</code>; os timeouts vêm do back, e a <code>E5b</code> agora adiciona um alarme de latência do Redis.</p>'),
+ 'ba':(('Shipped, not yet checked in production.','Em produção, ainda sem checagem.'),
+       ('Checked: no chain stopped, no run blocked.','Checado: nenhuma cadeia parou, nenhum run bloqueado.'))},
 ]
 
 VERIF = [
