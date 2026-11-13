@@ -56,7 +56,7 @@ does not block runs. Or, with the flag off, the reading is recorded here and the
 
 **Flag reading.** `execution_budget` is on in production (read 2026-11-10). The task goes ahead.
 
-**Status.** In review: back [#2107](https://github.com/enhancedai-com/Flux-Prompt/pull/2107) (`feat/868mrv6cz`). Back only, with no env var, SSM or task definition change.
+**Status.** Shipped: back [#2107](https://github.com/enhancedai-com/Flux-Prompt/pull/2107) (`feat/868mrv6cz`, merged as `6a32f716`) went to production on 2026-11-12 in the back deploy `ba55e32f` (`api-task-definition-prod:850`, rollout completed 12:40 UTC). Back only, with no env var, SSM or task definition change. The production check is in [Production check (2026-11-13)](#production-check-2026-11-13).
 
 **Design.**
 
@@ -87,6 +87,30 @@ does not block runs. Or, with the flag off, the reading is recorded here and the
 - `chargeExecutions` was not made async in every caller. That would change the prefetch executor and add one Redis round trip per node.
 
 **Not in scope, found on the way.** Six `apiV2` fixture suites fail on `origin/main` with `Cannot read properties of undefined (reading 'track')`, because the fixture lacks `runMemoryTracker`.
+
+## Production check (2026-11-13)
+
+`etc/2026-11-13/1-868mrv6cz-prod-s4b-deploy-check.sh` (read-only: ECS, Application Auto Scaling and CloudWatch Logs) ran on 2026-11-13 at 14:15 UTC over the window from the deploy (2026-11-12 12:32 UTC).
+
+| Check | Result |
+|---|---|
+| Production image contains `6a32f716` | Yes, `:850` runs `ba55e32f` |
+| Two back tasks in the window | Yes, 2026-11-12 14:16:43 to 14:39:08 UTC |
+| Chain ceiling stops (`flux.budget.chain_executions`) | 0 |
+| Run ceiling stops (`flux.budget.run_executions`) | 0 |
+| `Chain execution count unavailable` | 24 |
+
+**Verdict: pass.** The script printed `LOOK` because of the 24 fallback lines. Each one is `Redis command timed out` (the 250 ms `REDIS_COMMAND_TIMEOUT_MS`), at the daily peak: 2026-11-12 14:0x to 14:2x UTC (15), 17:5x (1) and 2026-11-13 14:0x to 14:1x (8). Each is followed by the older `Chain root unresolved, billing the run as its own chain` with the same timeout, so S4b did not cause the timeouts. Redis timeouts between 13:30 and 15:00 UTC, before and after the deploy:
+
+| Day | `timed out` | `Chain root unresolved` | `count unavailable` |
+|---|---|---|---|
+| 2026-11-09 | 37 | 9 | 0 |
+| 2026-11-10 | 78 | 14 | 0 |
+| 2026-11-11 | 42 | 10 | 0 |
+| 2026-11-12 | 73 | 26 | 15 |
+| 2026-11-13 (to 14:20) | 43 | 9 | 8 |
+
+The total does not rise after the deploy. On a timeout the replica fails open as designed: it counts its own share, retries the write on the next charge or release, and takes the other replicas' share again on the first write Redis answers. No run was blocked or refused. While a replica is degraded a chain can pass its ceiling by the other replicas' share; with the largest chain at 99 charges against 200,000, that has no effect today. The peak timeouts predate S4b and are out of its scope. Redis itself stays under 2 ms p99 at the peak; the timeouts come from the back's event loop, in a daily burst at 14:05–14:20 UTC ([TASK-E5B-REDIS-ALARMS.md](TASK-E5B-REDIS-ALARMS.md), **Latency**). E5b ([868mvfwr4](https://app.clickup.com/t/9011479430/868mvfwr4)) now adds a server-side latency alarm; the back-side burst has no task yet.
 
 ## Files
 
