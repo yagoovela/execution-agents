@@ -160,6 +160,33 @@ above. The registrar's Winston lines do not reach the dev CloudWatch group. The 
 connection after seeding and was still alive at the 18:10:00 minute tick; the two earlier boots did not
 cross a minute in that window. It is not caused by this task.
 
+**Production (2026-11-12).** Back #2109 merged at 12:08 UTC and shipped in `api-task-definition-prod:850`
+(image `ba55e32f`), live at 12:40 UTC with 0 back error lines. The same API test ran on the agent
+"gemini" in the user's own workspace, whose model is outside the plan, so every run stops at the credit
+gate (no AI cost, no delivery):
+
+| Step | Observed (Logs, `trigger = scheduled`) |
+|---|---|
+| Create at 12:51:57, every 2 minutes | One run each at 12:52, 12:54, 12:56 |
+| Update at 12:57:44 to every 3 minutes | One run each at 13:00, 13:03, 13:06; none at 12:58, 13:02, 13:04 |
+| Delete at 13:07:26 | No run afterwards |
+
+The double-fire query (`868mrv6cm` query 3 of 2026-11-12, last 30 days, including this test schedule)
+returned 0 rows on 2026-11-12 and again on 2026-11-13. Datadog, read on 2026-11-13
+(`service:EnhancedAILogging env:production`):
+
+- `schedule_flag_read_failed`: 0 lines since 2026-11-12 12:35 UTC.
+- Each back task that booted since then (three: 11-12 12:38, 11-12 14:18, 11-13 14:29) logs
+  `(Schedule Registrar) Reconciled 53 active schedule(s); 0 registered in this pass.` twice, 9 to 15 s
+  apart, not once. Cause, corrected on 2026-11-17 in S8c: `dev.sh` runs `seed.js` after the app, and
+  `SeederModule` imports the whole `AppModule`, so the seed context runs `onModuleInit` a second time;
+  the second pass takes the `reconcileSchedules` lock after the first released it. The earlier guess
+  here, three modules providing the registrar, was wrong. It is harmless (the second pass registers 0),
+  but it misses the "one line per task" check. The user accepted "two lines per task, same N, no `schedule_flag_read_failed`" on 2026-11-13 to
+  close S8b; S8c ([868mw2u2t](https://app.clickup.com/t/868mw2u2t)) fixes the cause.
+- `negotiatedContractRenewal`, 2026-11-12 23:55 to 2026-11-13 00:15 UTC: 0 lines. One back task ran,
+  so no skip and no error is the expected result.
+
 ## Files
 
 `back/src/app-api/schedule/legacy-schedule-registrar.service.ts` ·
