@@ -6,6 +6,13 @@ renders this file, and each task page shows the latest entry that changed it.
 
 The log starts with PR #40. Earlier history is in `git log`.
 
+## 2026-11-18 · [#53](https://github.com/yagoovela/execution-agents/pull/53) · Publish the A9b and S8c release
+- Title (PT): Publica a entrega da A9b e da S8c
+- Tasks: B4, S8B, A9B, E5B, S8C, C1
+- Pages: `progresso-refatoracao.html`, `status-tarefas.html`, `timeline/index.html`, `timeline/task-A9B.html`, `timeline/task-B4.html`, `timeline/task-C1.html`, `timeline/task-E5B.html`, `timeline/task-S8B.html`, `timeline/task-S8C.html`
+- Commits:
+  - 10e4844 docs(868mvdm50): publish the A9b and S8c release
+
 ## 2026-11-13 · [#52](https://github.com/yagoovela/execution-agents/pull/52) · Record the A13 and S8b production checks and the .claude paths
 - Title (PT): Registrar as checagens de produção da A13 e da S8b e os caminhos .claude
 - Tasks: S4, D2, A5, S8B, A13
