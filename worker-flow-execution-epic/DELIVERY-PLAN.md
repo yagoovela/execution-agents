@@ -196,7 +196,7 @@ The backend loop stays in place through this whole wave and is only deleted in W
 
 **The flag stays off in production in this wave (2026-10-23).** It is off in dev too (corrected
 2026-10-26: `engine_in_workflow` has been `false` since its row was created on 2026-10-23). Turning it on in
-production moves to Wave 5, after A11 and A13, and only after the worker that registers
+production moves to Wave 5, after A11, A13 and A9b (added 2026-11-12), and only after the worker that registers
 `processFlow` is deployed: the back starts that workflow as soon as the flag is on, and a worker
 without it leaves every eligible run waiting.
 
@@ -224,7 +224,7 @@ thrown error charges no tokens (D22). Users can cancel runs today through the ex
 | `E2` | **Moved from Wave 4 on 2026-10-26; rescoped the same day.** Record the tokens of a cancel that arrives as a thrown error (D22), and measure the cancel latency. The per-node poller moved to C1 and D23 to B6. No dependency; blocks nothing |
 | `A11` | **Added 2026-10-23.** An execution class for every node type; every hand-kept type list derived; a drift spec. First, because the B4 gate and B5's measurement read it |
 | `A13` | **Added 2026-10-23.** The Data Output as the workflow's sink — a workflow run has no reply without it |
-| — | **Turn the B4 flag on in production**, after A11, A13 and the worker deploy that registers `processFlow` |
+| — | **Turn the B4 flag on in production**, after A11, A13, A9b (added 2026-11-12: without it a back deploy charges a B4 run in full and still reports `error`) and the worker deploy that registers `processFlow` |
 | `A7` | `nodesBox` with an execution record, a session lock and object ordering in the scheduler; **widened 2026-10-23** to make every `worker` type reachable from both back loops |
 | `A14` | **Added 2026-10-23, rescoped the same day.** Small Memory and chat flows on the workflow engine without moving a node: memory content derived from stored executions, persistence kept in the back |
 | `A6b` | **Added 2026-10-23.** Migrate or retire `webTrends` |
@@ -237,15 +237,16 @@ thrown error charges no tokens (D22). Users can cancel runs today through the ex
 | `S4b` | **Added 2026-11-04.** One chain budget across replicas — only while `execution_budget` is on in production; otherwise recorded and dropped |
 | `B7b` | **Added 2026-11-10.** Batch rows prepare `fluxObject` nodes like `apiV2` (chat memory), a retried prepare writes once, and API workflow runs keep their log steps in every run-log mode |
 | `E4b` | **Added 2026-11-10.** Scheduled runs on Temporal Schedules finish through the back (delivery and logs) with A13's batch finish; before `temporal_schedules` goes on in production |
-| `A9b` | **Added 2026-11-11.** A stalled async `apiV2` run reaches one outcome: one status and one delivery, whichever of the stall report and the live end comes first |
+| `A9b` | **Added 2026-11-11, re-scoped 2026-11-12, reviewed 2026-11-13.** A back deploy no longer kills async runs (graceful shutdown; any live back finishes a B4 run whose handler is gone), a run that loses its process ends with one status, one delivery and its recorded cost, and no run stays unfinished or keeps running past the run ceiling plus 30 min |
 | `E5b` | **Added 2026-11-11.** Alarms on Redis memory, evictions and keys without a TTL in every environment; `E5` closed with `noeviction` live everywhere |
+| `S8c` | **Added 2026-11-17, revised the same day.** The schedule reconcile runs once per back task: the database seed stops booting the whole `AppModule`, so it no longer runs the boot hooks, crons and queue consumers a second time. Found by S8b's production check; harmless today; coordinates with `A9b` on `dev.sh` |
 | — | **The back may autoscale above one task**, after E3b, S8b, S10 and S11 (and S4b when its condition holds). S11 records the ceiling |
 | `B5` | Batch dispatch, gated per flow on full migrated coverage — after every A-track task above |
 | `B6` | Control flow and sub-flows as workflow constructs and child workflows; ships after B5 (D17), and proves that cancelling a parent stops its children — E2's clause, moved here because no child workflow exists before B6. It also owns D23 — propagating a cancel to `fluxBox`, `libraryNode` and `arrayNode` — since 2026-10-26 |
 | `B7` | CSV batches as durable workflows — the largest multiplier of every ceiling. The batch screen is out (2026-09-02) |
 | `E4` | User schedules move onto Temporal Schedules — **blocked until B4 ships**, because a Temporal Schedule can only trigger a workflow and no whole-flow workflow exists before B4. S8 shipped the duplication fix on Bull repeatables (D26); this adds pause, backfill, last-run state and durability independent of Redis |
 
-**Order inside the wave (2026-10-23).** A11 → A13 → B4 flag on in production → A7 → A14 → B5 →
+**Order inside the wave (2026-10-23).** A11 → A13 → A9b → B4 flag on in production → A7 → A14 → B5 →
 B6 and B7. A6b runs any time after A11, before B5 measures eligibility. S6b has no dependency and runs
 first, starting with `/proxy` (added 2026-10-26). S9 runs any time after A11 and blocks nothing:
 neither the B4 flag nor B5 changes where a credential is resolved (added 2026-10-29). E2 depends on nothing and blocks nothing (rescoped 2026-10-26). A7 can be built in parallel
@@ -278,7 +279,7 @@ working days from 2026-10-27: code complete between 2026-11-27 and 2026-12-14 at
 5. ~~A7-D9 (protection on the internal callback) confirmed.~~ Settled 2026-10-23 (`TASK-A7`).
 6. ClickUp: ~~cards for A11, A13, A14 and A6b~~ created 2026-10-26 with estimates (A11 24 h, A13 32 h,
    A14 32 h, A6b 24 h), plus S6b. A7's description rewritten and re-estimated at 96 h on the
-   same day. S9's card created 2026-10-29 (16 h). Cards for E3b, S8b, S10, S11 and S4b created 2026-11-04 with the maximum of a three-point estimate (E3b 18 h, S8b 15 h, S10 18 h, S11 16 h, S4b 20 h). Cards for B7b (16 h, 8/12/16) and E4b (8 h, 3/5/8) created 2026-11-10. Card for A9b (14 h, 6/10/14) created 2026-11-11.
+   same day. S9's card created 2026-10-29 (16 h). Cards for E3b, S8b, S10, S11 and S4b created 2026-11-04 with the maximum of a three-point estimate (E3b 18 h, S8b 15 h, S10 18 h, S11 16 h, S4b 20 h). Cards for B7b (16 h, 8/12/16) and E4b (8 h, 3/5/8) created 2026-11-10. Card for A9b created 2026-11-11 (14 h, 6/10/14); after the re-scope and five EGM review rounds its estimate is 46.5/74.5/121 h (2026-11-13). It shipped on 2026-11-18 in under 30 h, and the card holds 30 h since that day.
 
 **Preconditions, all from earlier waves:** S1 (recursion ceiling — B6 turns sub-flows into child
 workflows), S2 (connections), S3 (spend and tenancy), E3 (notifications across replicas), plus
