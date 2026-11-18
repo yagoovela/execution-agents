@@ -14,7 +14,7 @@ TITLES.update({
  'B7B': ('Batch rows keep chat memory, a retried prepare writes once, and workflow runs keep their log steps', 'Linhas de lote mantêm a memória do chat, um prepare repetido grava uma vez, e runs de workflow mantêm os passos no log'),
  'E4B': ('Scheduled runs on Temporal Schedules finish through the back', 'Runs agendados no Temporal Schedules terminam pelo back'),
  'A9B': ('An async API run survives a back deploy, or ends with one outcome', 'Um run de API assíncrono sobrevive a um deploy do back, ou termina com um só resultado'),
- 'E5B': ('Alert before Redis fills and when it evicts, in every environment', 'Alertar antes de o Redis encher e quando ele remove chaves, em todos os ambientes'),
+ 'E5B': ('Alert before the prod Redis fills, gets slow or runs out of CPU', 'Alertar antes de o Redis de prod encher, ficar lento ou ficar sem CPU'),
  'S8C': ('Run the schedule reconcile once per back task', 'Rodar o reconcile dos agendamentos uma vez por task do back'),
  'S4B': ('One chain budget across back replicas', 'Um orçamento de cadeia entre as réplicas do back'),
  'S9': ('Refuse a third-party credential the executing user cannot reach', 'Recusar uma credencial de terceiro que o usuário da execução não alcança'),
