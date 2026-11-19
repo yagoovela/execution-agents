@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, _GEN)
 import tasklib, order
 from TITLES_ALL import TITLES
-import w5_b5, w5_a7, w5_b6, w5_b7, w5_e4, w6_c1, w6_c2, w5_a11, w5_a13, w5_a14, w5_a6b, w5_s6b, w5_e3b, w5_s8b, w5_s10, w5_s11, w5_s4b, w5_s9, w5_b7b, w5_e4b, w5_a9b, w5_e5b, w5_s8c
+import w5_b5, w5_a7, w5_b6, w5_b7, w5_e4, w6_c1, w6_c2, w5_a11, w5_a13, w5_a14, w5_a6b, w5_s6b, w5_e3b, w5_s8b, w5_s10, w5_s11, w5_s4b, w5_s9, w5_b7b, w5_e4b, w5_a9b, w5_e5b, w5_s8c, w5_a9c
 
 
 def build(code, mod, vnum, glance_note=None, decisions=None, sec1=None, sec3=None):
@@ -93,7 +93,7 @@ SPECS = [
   ('What the task does, in three parts', 'O que a task faz, em três partes')),
  ('E4B', w5_e4b, '4', None,
   ('What a scheduled run does today, and after', 'O que um run agendado faz hoje, e depois'),
-  ('What the task does, in two parts', 'O que a task faz, em duas partes')),
+  ('What the task does, in three parts', 'O que a task faz, em três partes')),
  ('A9B', w5_a9b, '4', w5_a9b.DECISIONS,
   ('What a back deploy does to a run in flight, before and after', 'O que um deploy do back faz com um run em andamento, antes e depois'),
   ('What the task does, in five parts', 'O que a task faz, em cinco partes')),
@@ -103,6 +103,9 @@ SPECS = [
  ('S8C', w5_s8c, '4', None,
   ('What the database seed starts at boot, before and after', 'O que o seed do banco sobe no boot, antes e depois'),
   ('What the task does, in two parts', 'O que a task faz, em duas partes')),
+ ('A9C', w5_a9c, '4', None,
+  ('What a worker deploy does to an activity in flight, before and after', 'O que um deploy do worker faz com uma activity em andamento, antes e depois'),
+  ('What the task does, in four parts', 'O que a task faz, em quatro partes')),
  ('E4', w5_e4, '4', [w5_e4.DEC_BACKFILL],
   ('What Bull repeatables give today, and what Temporal Schedules add', 'O que os repeatables do Bull dão hoje, e o que o Temporal Schedules acrescenta'),
   ('What the task does, in four parts', 'O que a task faz, em quatro partes')),

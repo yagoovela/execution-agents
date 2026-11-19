@@ -16,6 +16,7 @@ TITLES.update({
  'A9B': ('An async API run survives a back deploy, or ends with one outcome', 'Um run de API assíncrono sobrevive a um deploy do back, ou termina com um só resultado'),
  'E5B': ('Alert before the prod Redis fills, gets slow or runs out of CPU', 'Alertar antes de o Redis de prod encher, ficar lento ou ficar sem CPU'),
  'S8C': ('Run the schedule reconcile once per back task', 'Rodar o reconcile dos agendamentos uma vez por task do back'),
+ 'A9C': ('A worker that stops mid-activity does not fail the run', 'Um worker que para no meio de uma activity não derruba o run'),
  'S4B': ('One chain budget across back replicas', 'Um orçamento de cadeia entre as réplicas do back'),
  'S9': ('Refuse a third-party credential the executing user cannot reach', 'Recusar uma credencial de terceiro que o usuário da execução não alcança'),
 })

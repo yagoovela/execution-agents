@@ -85,8 +85,8 @@ VERIF = [
   ('The new task logs <code>AppApiModule dependencies initialized</code> once, where every earlier task that day logged it twice, and the seed took 1.1 s against 5 to 8 s. The <code>S8b</code> schedule test gave one run per tick on create and on update, and none after delete.',
    'A task nova loga <code>AppApiModule dependencies initialized</code> uma vez, onde toda task anterior daquele dia logava duas, e o seed levou 1,1 s contra 5 a 8 s. O teste de agendamento da <code>S8b</code> deu um run por disparo na criação e na edição, e nenhum depois de apagar.')),
  (True, ('Production (2026-11-18)','Produção (18/11/2026)'),
-  ('Both new back tasks log <code>AppApiModule dependencies initialized</code> once, and the seed takes about 3 s against p50 14 s and p90 37 s before, with no <code>seed failed</code>.',
-   'As duas tasks novas do back logam <code>AppApiModule dependencies initialized</code> uma vez, e o seed leva cerca de 3 s contra p50 14 s e p90 37 s antes, sem <code>seed failed</code>.')),
+  ('CloudWatch, read-only: both new back tasks log <code>AppApiModule dependencies initialized</code> once, and the seed took 3.05 s and 2.85 s against the 71-boot baseline of p50 14 s, p90 37 s and max 42 s, with no <code>seed failed</code>. The Datadog <code>Reconciled</code> count was not read.',
+   'CloudWatch, só leitura: as duas tasks novas do back logam <code>AppApiModule dependencies initialized</code> uma vez, e o seed levou 3,05 s e 2,85 s contra a base de 71 boots de p50 14 s, p90 37 s e máximo 42 s, sem <code>seed failed</code>. A contagem de <code>Reconciled</code> no Datadog não foi lida.')),
 ]
 
 DONE = ('The seed context has no schedule registrar, Bull processor or cron, each back task reconciles once, the seed applies pending migrations and writes the same rows, schedules work as before, and the production seed time is recorded.',
