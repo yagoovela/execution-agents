@@ -386,11 +386,13 @@ VERIF = [
   ('After B6 ships and B4 has soaked: classify every production flow as eligible or ineligible, name the type that disqualifies it, '
    'count the flows with a ready level wider than 1, and run the B5-c count before widening past internal companies. '
    'The count is an upper bound: on dev it never missed a flow that the scheduler flags (13 against 10 independent writer pairs among 2,432 worker flows). '
-   'The docs page for parallel dispatch (docs#66) merges in the same release.',
+   'The docs page for parallel dispatch (docs#66) merges in the same release. '
+   'Production count (2026-11-24): of 525 worker flows that ran in the last 30 days (24 companies), at most 13 have independent writer pairs (7 companies), 61 a failure risk (15 companies) and 4 a Small Memory on a cycle (3 companies).',
    'Depois que a B6 subir e a B4 rodar o período de observação: classificar todo fluxo de produção como elegível ou inelegível, nomear o tipo que o desqualifica, '
    'contar os fluxos com um nível pronto de largura maior que 1, e rodar a contagem da B5-c antes de passar das empresas internas. '
    'A contagem é um teto: em dev ela nunca deixou de fora um fluxo que o scheduler marca (13 contra 10 pares de escrita independentes em 2.432 fluxos do worker). '
-   'A página de docs do dispatch paralelo (docs#66) entra no mesmo release.')),
+   'A página de docs do dispatch paralelo (docs#66) entra no mesmo release. '
+   'Contagem em produção (24/11/2026): dos 525 fluxos do worker que rodaram nos últimos 30 dias (24 empresas), no máximo 13 têm pares de escrita independentes (7 empresas), 61 têm risco na falha (15 empresas) e 4 têm uma Small Memory em ciclo (3 empresas).')),
 ]
 
 DONE = ('Eligible flows of allowlisted companies run their ready nodes concurrently up to <code>maxInFlight</code>; everything else runs as today; '
