@@ -48,7 +48,7 @@ inherits; if it ends up bypassed, that part did not happen." It was bypassed. Re
 softened.
 
 **Corrected 2026-09-24 — leftover 1 resolved: Option A (extract and move), the user's decision. In
-progress on worker branch `feat/868m0vkt4` (worktree `/home/alexandre/enhanced-wt/868m0vkt4/worker`),
+progress on worker branch `feat/868m0vkt4` (a local worktree),
 committed and pushed as `413db60` — no PR yet, so say "in progress on `feat/868m0vkt4`," not
 "shipped" or "a PR is open."** Everything provider-specific moved out of
 `worker/src/modules/nodes/image-generator/providers/` (plus `ai-sdk-error-classifier` and

@@ -40,6 +40,24 @@ GROUPS = [
         (r'(\w+) crons with no leader election', 'PLAN.md'),
         (r'Leader election for the (\w+) crons', 'DELIVERY-PLAN.md'),
         (r'Part 1 — the (\w+) crons', 'TASK-S8-SCHEDULER-AND-BUS.md'),
+    ]),
+    # The Wave 5 estimate in working days. DELIVERY-PLAN is the source (mirrored from Workflow);
+    # the board chip and the timeline restate it. A new re-estimate adds a paragraph with its own
+    # date: move the DELIVERY-PLAN patterns to it, or the old paragraph reports the drift.
+    ('wave 5 estimate, minimum days', [
+        (r'Re-estimated on 2026-11-24\.\*\*[\s\S]*?estimate\s+moves from [\d.]+ / [\d.]+ / [\d.]+ to (\d+) / [\d.]+ / \d+', 'DELIVERY-PLAN.md'),
+        (r'<span class="num">Wave 5</span>[\s\S]{0,900}?pre-planning"><strong>(\d+)</strong>–<strong>\d+</strong>d', '../status-tarefas.html'),
+        (r'Wave 5 — Turn on parallelism</span>[\s\S]*?<span class="u" data-en="min"[^>]*>min</span> <b>(\d+)</b>', '../timeline/index.html'),
+    ]),
+    ('wave 5 estimate, maximum days', [
+        (r'Re-estimated on 2026-11-24\.\*\*[\s\S]*?estimate\s+moves from [\d.]+ / [\d.]+ / [\d.]+ to \d+ / [\d.]+ / (\d+)', 'DELIVERY-PLAN.md'),
+        (r'<span class="num">Wave 5</span>[\s\S]{0,900}?pre-planning"><strong>\d+</strong>–<strong>(\d+)</strong>d', '../status-tarefas.html'),
+        (r'Wave 5 — Turn on parallelism</span>[\s\S]*?<span class="u" data-en="max"[^>]*>max</span> <b>(\d+)</b>', '../timeline/index.html'),
+    ]),
+    ('A14 calibrated average hours', [
+        (r'validation \d+ / \d+ / \d+ h gives \*\*\d+ / (\d+) / \d+ h\*\*', 'TASK-A14-SMALL-MEMORY-AND-CHAT-STATE.md'),
+        (r'\d+ / (\d+) / \d+ h calibrated', 'STATUS.md'),
+        (r'ClickUp holds the calibrated\s+average, (\d+) h', 'TASK-A14-SMALL-MEMORY-AND-CHAT-STATE.md'),
     ]),]
 
 WORDNUM = {'one':1,'two':2,'three':3,'four':4,'five':5,'six':6,'seven':7,'eight':8,
