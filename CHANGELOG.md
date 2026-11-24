@@ -6,12 +6,14 @@ renders this file, and each task page shows the latest entry that changed it.
 
 The log starts with PR #40. Earlier history is in `git log`.
 
-## 2026-11-23 · [#57](https://github.com/yagoovela/execution-agents/pull/57) · Publish B5 in dev with its dev results
+## 2026-11-24 · [#57](https://github.com/yagoovela/execution-agents/pull/57) · Publish B5 in dev with its dev results
 - Title (PT): Publicar a B5 em dev com os resultados de dev
 - Tasks: B5, B6
 - Pages: `progresso-refatoracao.html`, `status-tarefas.html`, `timeline/index.html`, `timeline/task-B5.html`, `timeline/task-B6.html`, `worker-flow-execution-epic/delivery-waves.html`, `worker-flow-execution-epic/epic-handbook.html`
 - Commits:
   - d9e7adf docs(868m0vmkd): publish B5 in dev with its dev results
+  - 3a9f50f docs(868m0vmkd): add the changelog entry for PR #57
+  - 97a5f17 docs(868m0vmkd): publish B5 check 3 (schedule and batch) as passed
 
 ## 2026-11-19 · [#56](https://github.com/yagoovela/execution-agents/pull/56) · Publish A9c, B7b and E4b as shipped and B6 in dev
 - Title (PT): Publicar A9c, B7b e E4b como entregues e a B6 em dev
