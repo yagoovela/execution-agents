@@ -6,6 +6,13 @@ renders this file, and each task page shows the latest entry that changed it.
 
 The log starts with PR #40. Earlier history is in `git log`.
 
+## 2026-11-24 · [#58](https://github.com/yagoovela/execution-agents/pull/58) · Publish B4c, B4b and A14b, and A14 in progress
+- Title (PT): Publicar B4c, B4b e A14b, e a A14 em andamento
+- Tasks: B4, A14, A9C, B4C, B4B, A14B, C1
+- Pages: `progresso-refatoracao.html`, `status-tarefas.html`, `timeline/index.html`, `timeline/task-A14.html`, `timeline/task-A14B.html`, `timeline/task-A9C.html`, `timeline/task-B4.html`, `timeline/task-B4B.html`, `timeline/task-B4C.html`, `timeline/task-C1.html`
+- Commits:
+  - 7956115 docs(868mn64jc): publish B4c, B4b and A14b, and A14 in progress
+
 ## 2026-11-19 · [#56](https://github.com/yagoovela/execution-agents/pull/56) · Publish A9c, B7b and E4b as shipped and B6 in dev
 - Title (PT): Publicar A9c, B7b e E4b como entregues e a B6 em dev
 - Tasks: B6, B7B, E4B, S8C, A9C, C1

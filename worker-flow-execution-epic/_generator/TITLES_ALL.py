@@ -17,6 +17,9 @@ TITLES.update({
  'E5B': ('Alert before the prod Redis fills, gets slow or runs out of CPU', 'Alertar antes de o Redis de prod encher, ficar lento ou ficar sem CPU'),
  'S8C': ('Run the schedule reconcile once per back task', 'Rodar o reconcile dos agendamentos uma vez por task do back'),
  'A9C': ('A worker that stops mid-activity does not fail the run', 'Um worker que para no meio de uma activity não derruba o run'),
+ 'B4C': ('Placeholder substitution on the workflow path', 'Substituição de placeholders no caminho do workflow'),
+ 'B4B': ('Keep node data out of Temporal history (slim run seed)', 'Tirar os dados dos nós do histórico do Temporal (seed enxuto)'),
+ 'A14B': ('Store Small Memory entries as rows', 'Guardar as entradas da Small Memory como linhas'),
  'S4B': ('One chain budget across back replicas', 'Um orçamento de cadeia entre as réplicas do back'),
  'S9': ('Refuse a third-party credential the executing user cannot reach', 'Recusar uma credencial de terceiro que o usuário da execução não alcança'),
 })
@@ -52,6 +55,7 @@ NO_PAGE = {
 # The page freshness check does not ask the covering page to cite them.
 LOCAL_DECISIONS = {
  'A112': 'A11.2 numbers its own decisions D1 to D21; they are not the epic decisions of the same number',
+ 'A14': 'A14 numbers its own decisions A14-D1 to A14-D15 since its re-specification of 2026-11-23; it cites no epic decision',
 }
 
 # A task that has a page but no spec file, and why.
