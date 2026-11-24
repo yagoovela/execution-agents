@@ -41,6 +41,8 @@ The log starts with PR #40. Earlier history is in `git log`.
   - db7e6c5 docs(868m0vmkd): publish the new cancel reason record
   - ed06f80 docs(868m0vmkd): refresh the PR #57 changelog entry after merging #59
   - 76d5813 docs(868m0vmkd): publish the B5-c production count
+  - 8465f52 docs(868m0vmkd): refresh the PR #57 changelog entry for the production count
+  - f1a31c7 docs(868m0vmkd): publish R12 and the cancel reason on develop
 
 ## 2026-11-19 · [#56](https://github.com/yagoovela/execution-agents/pull/56) · Publish A9c, B7b and E4b as shipped and B6 in dev
 - Title (PT): Publicar A9c, B7b e E4b como entregues e a B6 em dev
