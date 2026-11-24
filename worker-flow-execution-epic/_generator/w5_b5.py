@@ -123,8 +123,10 @@ DEC_CANCEL = {
 DEC_ORDER = {
  'k':'decision','id':'B5-c','status':'open',
  'q':('Is graph order between two independent side-effect nodes a contract?','A ordem do grafo entre dois nós independentes com efeito colateral é um contrato?'),
- 'intro':('With parallel dispatch, two independent side-effect nodes no longer fire in graph order, and a failure no longer prevents an independent side effect that already started.',
-          'Com o dispatch paralelo, dois nós independentes com efeito colateral deixam de disparar na ordem do grafo, e uma falha deixa de impedir um efeito colateral independente que já começou.'),
+ 'intro':('With parallel dispatch, two independent side-effect nodes no longer fire in graph order, and a failure no longer prevents an independent side effect that already started. '
+          'A Data Output that ran in a failed run still sends its email and callback, so a failed parallel run can deliver outputs that a sequential run stopped before.',
+          'Com o dispatch paralelo, dois nós independentes com efeito colateral deixam de disparar na ordem do grafo, e uma falha deixa de impedir um efeito colateral independente que já começou. '
+          'Um Data Output que rodou num run com falha ainda envia o email e o callback, então um run paralelo com falha pode entregar saídas que um run sequencial teria parado antes.'),
  'opts':[
   {'ltr':'A','pick':True,'name':('Order comes from the dependencies','A ordem vem das dependências'),
    'how':('Before the rollout widens past internal companies, count the production flows with two or more independent side-effect nodes in one ready level; then prefer an explicit edge.',
@@ -382,9 +384,13 @@ VERIF = [
    'Um batch precisa de um nó Variable Input no fluxo, senão falha antes da primeira linha.')),
  (True, ('Production: measure before refusing','Produção: medir antes de recusar'),
   ('After B6 ships and B4 has soaked: classify every production flow as eligible or ineligible, name the type that disqualifies it, '
-   'count the flows with a ready level wider than 1, and run the B5-c count before widening past internal companies.',
+   'count the flows with a ready level wider than 1, and run the B5-c count before widening past internal companies. '
+   'The count is an upper bound: on dev it never missed a flow that the scheduler flags (13 against 10 independent writer pairs among 2,432 worker flows). '
+   'The docs page for parallel dispatch (docs#66) merges in the same release.',
    'Depois que a B6 subir e a B4 rodar o período de observação: classificar todo fluxo de produção como elegível ou inelegível, nomear o tipo que o desqualifica, '
-   'contar os fluxos com um nível pronto de largura maior que 1, e rodar a contagem da B5-c antes de passar das empresas internas.')),
+   'contar os fluxos com um nível pronto de largura maior que 1, e rodar a contagem da B5-c antes de passar das empresas internas. '
+   'A contagem é um teto: em dev ela nunca deixou de fora um fluxo que o scheduler marca (13 contra 10 pares de escrita independentes em 2.432 fluxos do worker). '
+   'A página de docs do dispatch paralelo (docs#66) entra no mesmo release.')),
 ]
 
 DONE = ('Eligible flows of allowlisted companies run their ready nodes concurrently up to <code>maxInFlight</code>; everything else runs as today; '
