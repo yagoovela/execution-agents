@@ -16,6 +16,8 @@ The log starts with PR #40. Earlier history is in `git log`.
   - 97a5f17 docs(868m0vmkd): publish B5 check 3 (schedule and batch) as passed
   - d1473c0 docs(868m0vmkd): refresh the PR #57 changelog entry for check 3
   - 1ab19ac docs(868m0vmkd): publish B5-R12 (Small Memory on a cycle stays sequential)
+  - aa183b2 docs(868m0vmkd): refresh the PR #57 changelog entry for B5-R12
+  - c8bfd35 docs(868m0vmkd): publish the B5-c Data Output effect and the count definition
 
 ## 2026-11-19 · [#56](https://github.com/yagoovela/execution-agents/pull/56) · Publish A9c, B7b and E4b as shipped and B6 in dev
 - Title (PT): Publicar A9c, B7b e E4b como entregues e a B6 em dev
