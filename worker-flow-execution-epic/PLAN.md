@@ -191,6 +191,7 @@ throttle before adding the ceilings replaces a slow system with an unstable one.
 | [`TASK-A11-REGISTRY-EXECUTION-CLASS.md`](./TASK-A11-REGISTRY-EXECUTION-CLASS.md) | **Added 2026-10-23.** Give every canvas and MCP node type an execution class (`worker`, `back`, `none`), derive every hand-kept type list from it, and fail a drift spec on any unclassified type | A1 |
 | [`TASK-A13-DATA-OUTPUT-SINK.md`](./TASK-A13-DATA-OUTPUT-SINK.md) | **Added 2026-10-23.** Build the Data Output value from upstream rows and make delivery the workflow's last step | A9, A11, B4 |
 | [`TASK-A14-SMALL-MEMORY-AND-CHAT-STATE.md`](./TASK-A14-SMALL-MEMORY-AND-CHAT-STATE.md) | **Added 2026-10-23, rescoped the same day.** Run Small Memory and chat flows on the workflow engine without moving a node: history in the run seed, memory content derived from stored executions, persistence kept in the back | B3b.1, B4, A7 (read rule) |
+| [`TASK-A14B-SMALL-MEMORY-ROWS.md`](./TASK-A14B-SMALL-MEMORY-ROWS.md) | **Added 2026-11-24.** Store a non-chat Small Memory's entries as rows, so writes append and reads load only what they need | A14 |
 | [`TASK-A6B-WEB-TRENDS.md`](./TASK-A6B-WEB-TRENDS.md) | **Added 2026-10-23.** Migrate or retire `webTrends`, which A6 shipped without | A1, A11 |
 
 ### Track B — the flow itself (G2)
@@ -205,6 +206,8 @@ throttle before adding the ceilings replaces a slow system with an unstable one.
 | [`TASK-B5-PARALLEL-DISPATCH.md`](./TASK-B5-PARALLEL-DISPATCH.md) | Turn on batch dispatch, gated per flow on full coverage | A-track complete (including A7, A11, A13, A14, A6b), B4, S2, S3, E3 |
 | [`TASK-B6-CONTROL-FLOW.md`](./TASK-B6-CONTROL-FLOW.md) | `conditionNode`, `arrayNode` as workflow control flow; `fluxBox`, `libraryNode` as child workflows | B4, S1; ships before B5 (D17, reversed 2026-11-19) |
 | [`TASK-B7-BATCH-WORKFLOW.md`](./TASK-B7-BATCH-WORKFLOW.md) | CSV batches as durable workflows instead of a detached loop in the API process | B4, S3 |
+| [`TASK-B4C-PLACEHOLDER-PARITY.md`](./TASK-B4C-PLACEHOLDER-PARITY.md) | **Added 2026-11-24, urgent.** Replace `{{...}}` placeholders on the workflow path as the legacy loop does; batch rows in production send the literal since B7 | B3, B4 |
+| [`TASK-B4B-SLIM-RUN-SEED.md`](./TASK-B4B-SLIM-RUN-SEED.md) | **Added 2026-11-24.** Keep node data out of Temporal history (slim run seed), so a flow past Temporal's 2 MB payload limit runs on the workflow engine | B4; ships after B6 and B5 |
 
 ### Track C — hygiene (G3)
 
@@ -261,6 +264,12 @@ Wave 5 additions (2026-10-23):
 A1 ── A11 ──┬── A13 (also A9, B4) ──┐
             ├── A6b                  ├── B4 flag on in production ── B5
             └── A7 ── A14 ───────────┘
+
+Wave 5 additions (2026-11-24, from the A14 edge-case investigation):
+B3, B4 ── B4c (urgent) ──────────────────┐
+B6, B5 ── B4b ───────────────────────────┴── B4 flag on in production
+                └── Wave 6 (C1, C2)
+A14 ── A14b
 
 E2 (moved 2026-10-26; no dependency, blocks nothing — the poller moved to C1, D23 to B6)
 ```

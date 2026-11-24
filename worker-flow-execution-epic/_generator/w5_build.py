@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, _GEN)
 import tasklib, order
 from TITLES_ALL import TITLES
-import w5_b5, w5_a7, w5_b6, w5_b7, w5_e4, w6_c1, w6_c2, w5_a11, w5_a13, w5_a14, w5_a6b, w5_s6b, w5_e3b, w5_s8b, w5_s10, w5_s11, w5_s4b, w5_s9, w5_b7b, w5_e4b, w5_a9b, w5_e5b, w5_s8c, w5_a9c
+import w5_b5, w5_a7, w5_b6, w5_b7, w5_e4, w6_c1, w6_c2, w5_a11, w5_a13, w5_a14, w5_a6b, w5_s6b, w5_e3b, w5_s8b, w5_s10, w5_s11, w5_s4b, w5_s9, w5_b7b, w5_e4b, w5_a9b, w5_e5b, w5_s8c, w5_a9c, w5_b4c, w5_b4b, w5_a14b
 
 
 def build(code, mod, vnum, glance_note=None, decisions=None, sec1=None, sec3=None):
@@ -105,6 +105,15 @@ SPECS = [
   ('What the task does, in two parts', 'O que a task faz, em duas partes')),
  ('A9C', w5_a9c, '4', None,
   ('What a worker deploy does to an activity in flight, before and after', 'O que um deploy do worker faz com uma activity em andamento, antes e depois'),
+  ('What the task does, in four parts', 'O que a task faz, em quatro partes')),
+ ('B4C', w5_b4c, '4', None,
+  ('What a placeholder becomes, by engine', 'No que um placeholder vira, por motor'),
+  ('What the task does, in three parts', 'O que a task faz, em três partes')),
+ ('B4B', w5_b4b, '4', None,
+  ('Where node data goes, before and after', 'Para onde vão os dados dos nós, antes e depois'),
+  ('What the task does, in four parts', 'O que a task faz, em quatro partes')),
+ ('A14B', w5_a14b, '4', None,
+  ('What each memory operation costs, before and after', 'Quanto custa cada operação da memória, antes e depois'),
   ('What the task does, in four parts', 'O que a task faz, em quatro partes')),
  ('E4', w5_e4, '4', [w5_e4.DEC_BACKFILL],
   ('What Bull repeatables give today, and what Temporal Schedules add', 'O que os repeatables do Bull dão hoje, e o que o Temporal Schedules acrescenta'),
