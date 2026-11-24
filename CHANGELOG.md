@@ -22,6 +22,24 @@ The log starts with PR #40. Earlier history is in `git log`.
 - Commits:
   - 7956115 docs(868mn64jc): publish B4c, B4b and A14b, and A14 in progress
 
+## 2026-11-24 · [#57](https://github.com/yagoovela/execution-agents/pull/57) · Publish B5 in dev with its dev results
+- Title (PT): Publicar a B5 em dev com os resultados de dev
+- Tasks: B5, B6
+- Pages: `progresso-refatoracao.html`, `status-tarefas.html`, `timeline/index.html`, `timeline/task-B5.html`, `timeline/task-B6.html`, `worker-flow-execution-epic/delivery-waves.html`, `worker-flow-execution-epic/epic-handbook.html`
+- Commits:
+  - d9e7adf docs(868m0vmkd): publish B5 in dev with its dev results
+  - 3a9f50f docs(868m0vmkd): add the changelog entry for PR #57
+  - 97a5f17 docs(868m0vmkd): publish B5 check 3 (schedule and batch) as passed
+  - d1473c0 docs(868m0vmkd): refresh the PR #57 changelog entry for check 3
+  - 1ab19ac docs(868m0vmkd): publish B5-R12 (Small Memory on a cycle stays sequential)
+  - aa183b2 docs(868m0vmkd): refresh the PR #57 changelog entry for B5-R12
+  - c8bfd35 docs(868m0vmkd): publish the B5-c Data Output effect and the count definition
+  - 01417c3 docs(868m0vmkd): refresh the PR #57 changelog entry for B5-c
+  - 6639020 docs(868m0vmkd): refresh the PR #57 changelog entry after merging main
+  - 4c5219a docs(868m0vmkd): publish the B5-c mechanism (execution edge)
+  - b250d6a docs(868m0vmkd): refresh the PR #57 changelog entry for the B5-c mechanism
+  - db7e6c5 docs(868m0vmkd): publish the new cancel reason record
+
 ## 2026-11-19 · [#56](https://github.com/yagoovela/execution-agents/pull/56) · Publish A9c, B7b and E4b as shipped and B6 in dev
 - Title (PT): Publicar A9c, B7b e E4b como entregues e a B6 em dev
 - Tasks: B6, B7B, E4B, S8C, A9C, C1

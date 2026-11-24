@@ -44,8 +44,8 @@ def build(code, mod, vnum, glance_note=None, decisions=None, sec1=None, sec3=Non
 
 SPECS = [
  ('B5', w5_b5, '4', w5_b5.DECISIONS if hasattr(w5_b5, 'DECISIONS') else None,
-  ('Why the gate is the correctness condition', 'Por que o gate é a condição de corretude'),
-  ('What the task does, in five parts', 'O que a task faz, em cinco partes')),
+  ('Which runs go parallel, and which stay as today', 'Quais runs ficam paralelos, e quais ficam como hoje'),
+  ('What the task does, in six parts', 'O que a task faz, em seis partes')),
  ('A11', w5_a11, '3', None,
   ('The six classes, and which types fall in each', 'As seis classes, e quais tipos caem em cada uma'),
   ('What the task does, in nine parts', 'O que a task faz, em nove partes')),

@@ -3,7 +3,7 @@
 **Goal:** `conditionNode` and `arrayNode` become workflow control flow; `fluxBox` and `libraryNode`
 become child workflows. The last four node types leave the back.
 
-**Depends on:** B4, S1. Development can overlap B5's, but it ships after B5 (D17).
+**Depends on:** B4, S1. **Ships before B5** since 2026-11-19 (D17 reversed): B5 is built on this task's `processFlow`.
 
 ## Why these four are not activities
 
