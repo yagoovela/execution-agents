@@ -369,9 +369,13 @@ VERIF = [
    'The reference customer chain is mostly width 1, so its end-to-end gain stays about 1.2-1.5x.',
    'Fan-out: p50 de 20,9 s desligada e 11,4 s ligada (1,84x). Formato de referência (2 gerações de texto ao lado de 4 chamadas de sub-flow): p50 de 71,5 s desligada e 37,7 s ligada (1,90x). '
    'A cadeia do cliente de referência tem quase sempre largura 1, então o ganho de ponta a ponta fica em cerca de 1,2-1,5x.')),
- (True, ('Dev: schedule and batch','Dev: schedule e batch'),
-  ('Not verified in dev: both starts need a dev user credential the session did not have. The code on <code>develop</code> is wired as B5-R7 says.',
-   'Não verificado em dev: os dois inícios precisam de uma credencial de usuário de dev que a sessão não tinha. O código no <code>develop</code> está ligado como a B5-R7 diz.')),
+ (True, ('Dev: schedule and batch (2026-11-24)','Dev: schedule e batch (24/11/2026)'),
+  ('Schedule: a Temporal schedule fired the fan-out twice (<code>runType</code> <code>cronjob</code>): concurrency 2 in both runs, 11.3 s and 12.2 s against 20.9 s sequential; the schedule was then deleted. '
+   'Batch: 3 rows of a fan-out in the allowlisted company: concurrency 1 inside every row, 22 to 23 s each, while the rows themselves ran at the same time. '
+   'A batch needs a Variable Input node in the flow, or it fails before the first row.',
+   'Schedule: um schedule do Temporal disparou o fan-out duas vezes (<code>runType</code> <code>cronjob</code>): concorrência 2 nos dois runs, 11,3 s e 12,2 s contra 20,9 s sequencial; depois o schedule foi apagado. '
+   'Batch: 3 linhas de um fan-out na empresa da allowlist: concorrência 1 dentro de cada linha, 22 a 23 s cada, enquanto as linhas em si rodaram ao mesmo tempo. '
+   'Um batch precisa de um nó Variable Input no fluxo, senão falha antes da primeira linha.')),
  (True, ('Production: measure before refusing','Produção: medir antes de recusar'),
   ('After B6 ships and B4 has soaked: classify every production flow as eligible or ineligible, name the type that disqualifies it, '
    'count the flows with a ready level wider than 1, and run the B5-c count before widening past internal companies.',
