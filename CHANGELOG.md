@@ -6,6 +6,13 @@ renders this file, and each task page shows the latest entry that changed it.
 
 The log starts with PR #40. Earlier history is in `git log`.
 
+## 2026-11-24 · [#58](https://github.com/yagoovela/execution-agents/pull/58) · Publish B4c, B4b and A14b, and A14 in progress
+- Title (PT): Publicar B4c, B4b e A14b, e a A14 em andamento
+- Tasks: B4, A14, A9C, B4C, B4B, A14B, C1
+- Pages: `progresso-refatoracao.html`, `status-tarefas.html`, `timeline/index.html`, `timeline/task-A14.html`, `timeline/task-A14B.html`, `timeline/task-A9C.html`, `timeline/task-B4.html`, `timeline/task-B4B.html`, `timeline/task-B4C.html`, `timeline/task-C1.html`
+- Commits:
+  - 7956115 docs(868mn64jc): publish B4c, B4b and A14b, and A14 in progress
+
 ## 2026-11-24 · [#57](https://github.com/yagoovela/execution-agents/pull/57) · Publish B5 in dev with its dev results
 - Title (PT): Publicar a B5 em dev com os resultados de dev
 - Tasks: B5, B6
@@ -18,13 +25,7 @@ The log starts with PR #40. Earlier history is in `git log`.
   - 1ab19ac docs(868m0vmkd): publish B5-R12 (Small Memory on a cycle stays sequential)
   - aa183b2 docs(868m0vmkd): refresh the PR #57 changelog entry for B5-R12
   - c8bfd35 docs(868m0vmkd): publish the B5-c Data Output effect and the count definition
-
-## 2026-11-24 · [#58](https://github.com/yagoovela/execution-agents/pull/58) · Publish B4c, B4b and A14b, and A14 in progress
-- Title (PT): Publicar B4c, B4b e A14b, e a A14 em andamento
-- Tasks: B4, A14, A9C, B4C, B4B, A14B, C1
-- Pages: `progresso-refatoracao.html`, `status-tarefas.html`, `timeline/index.html`, `timeline/task-A14.html`, `timeline/task-A14B.html`, `timeline/task-A9C.html`, `timeline/task-B4.html`, `timeline/task-B4B.html`, `timeline/task-B4C.html`, `timeline/task-C1.html`
-- Commits:
-  - 7956115 docs(868mn64jc): publish B4c, B4b and A14b, and A14 in progress
+  - 01417c3 docs(868m0vmkd): refresh the PR #57 changelog entry for B5-c
 
 ## 2026-11-19 · [#56](https://github.com/yagoovela/execution-agents/pull/56) · Publish A9c, B7b and E4b as shipped and B6 in dev
 - Title (PT): Publicar A9c, B7b e E4b como entregues e a B6 em dev
