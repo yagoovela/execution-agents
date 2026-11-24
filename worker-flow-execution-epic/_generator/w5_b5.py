@@ -134,9 +134,9 @@ DEC_ORDER = {
   {'ltr':'B','no':True,'tag':REJ,'name':('A side-effect-only dispatch lane','Uma fila de dispatch só para efeitos colaterais'),
    'how':('A second per-type classification before the count exists.','Uma segunda classificação por tipo antes de a contagem existir.')},
  ],
- 'note':(('Where it stands (2026-11-23)','Onde está (23/11/2026)'),
-         ('Open. The count runs in production before the rollout widens past internal companies (B5-R10).',
-          'Em aberto. A contagem roda em produção antes de o rollout passar das empresas internas (B5-R10).')),
+ 'note':(('Where it stands (2026-11-24)','Onde está (24/11/2026)'),
+         ('Mechanism settled: when two nodes depend on each other only through an external system, the flow author connects them with an execution edge, which the scheduler already orders on. No per-flow switch, target detection or side-effect lane is built. The count still runs in production before the rollout widens past internal companies (B5-R10).',
+          'Mecanismo decidido: quando dois nós dependem um do outro só por um sistema externo, quem monta o fluxo liga os dois com uma aresta de execução, que o scheduler já respeita. Não se constrói chave por fluxo, detecção de destino nem fila de efeitos colaterais. A contagem ainda roda em produção antes de o rollout passar das empresas internas (B5-R10).')),
 }
 
 DEC_FAIL = {
