@@ -263,6 +263,10 @@ PARTS = [
           'um nó do corpo nunca roda fora do loop (<code>isHeldByArray</code>), e dois arrays cujos corpos se sobrepõem rodam um depois do outro (B5-R3).'),
          ('<strong><code>conditionNode</code></strong>: a dead-branch target has the condition as a gating predecessor, so a dead branch is never dispatched.',
           '<strong><code>conditionNode</code></strong>: o alvo de um ramo morto tem a condição como predecessor que bloqueia, então um ramo morto nunca é despachado.'),
+         ('<strong><code>fluxObject</code> (Small Memory, A14)</strong> never runs; <code>processFlow</code> skips it like a <code>source</code> node, and its readers wait for its producers through ordinary edges. '
+          'A flow in which a non-chat Small Memory is fed across a back edge of a cycle runs sequentially, because a reader dispatched beside that producer would miss its entry (B5-R12).',
+          '<strong><code>fluxObject</code> (Small Memory, A14)</strong> nunca roda; o <code>processFlow</code> o pula como um nó <code>source</code>, e os leitores esperam os produtores por arestas comuns. '
+          'Um flow em que uma Small Memory que não é de chat é alimentada por uma aresta de retorno de um ciclo roda em sequência, porque um leitor despachado ao lado desse produtor perderia a entrada (B5-R12).'),
          ('<strong><code>fluxBox</code> / <code>libraryNode</code></strong>: each call has its own run id, seed and workflow id, runs with the parent&#x27;s <code>maxInFlight</code> and keeps its own S1 chain (B5-R4). '
           'A continue-as-new inside a sub-flow now resumes as a sub-flow, which fixes a B6 bug.',
           '<strong><code>fluxBox</code> / <code>libraryNode</code></strong>: cada chamada tem o próprio run id, seed e workflow id, roda com o <code>maxInFlight</code> do pai e mantém a própria cadeia da S1 (B5-R4). '

@@ -155,6 +155,7 @@ the hour-long runs, to confirm the speedup before the rollout.
 | B5-R9 | The run list returns every in-flight node, `stepInterruptible` is true only when every in-flight node can stop, and `settleAbandonedRuns` checks every in-flight workflow. |
 | B5-R10 | The rollout does not widen past internal companies until B5-c is settled and B5b ships. |
 | B5-R11 | B5 keeps no per-replica state: every limit and decision lives in workflow state, the run input or Redis, so it behaves the same with any number of worker and back replicas, and a worker scale-in during a parallel run drains instead of cancelling (`WorkerShutdown`, B5-R5). |
+| B5-R12 | A flow in which a non-chat Small Memory (`fluxObject`) is fed across a back edge of a cycle runs sequentially, because a reader dispatched beside that producer would miss its entry (A14-D3, added 2026-11-23). Count such flows in production before shipping. |
 
 ## Design
 
@@ -180,6 +181,7 @@ the hour-long runs, to confirm the speedup before the rollout.
   an inner array runs it inside its own loop, so nested reservation cannot deadlock.
 - **`conditionNode`.** A dead-branch target has the condition as a gating predecessor, so it cannot be
   in flight before the condition completes. Its `systemLimitExceeded` throw is a genuine failure.
+- **`fluxObject` (Small Memory, A14).** It never runs; `processFlow` skips it like a `source` node. Its readers depend on its producers through ordinary edges, so they wait for them. The exception is a producer fed across a back edge of a cycle: B5-R12 keeps that flow sequential.
 - **`fluxBox` / `libraryNode`.** Each call has its own `childRunId`, seed and workflow id. `childFlow`
   passes the same `maxInFlight`.
 
@@ -265,6 +267,7 @@ T2 to T8 are done on `feat/868m0vmkd`: worker `ba1a6af` (15 commits after the ba
   (`1795300000000-SeedParallelDispatchFlags`), and the run list. The run-list query measured at parity
   with the old one on a local 1-million-row copy (warm runs 656-1005 ms against 743-1072 ms); not
   measured on a production-sized copy.
+- **B5-R12 (2026-11-24).** Back `cf96a38` on `feat/868m0vmkd`: 10 tests in `engine-selector.small-memory.spec.ts` (both edge orders, chat exempt, no-cycle and no-memory cases, the decision wiring). Negative controls seen failing: an into-only rule (the memory→reader order fails), the rule unwired from the decision, and chat memory treated as non-chat (3 tests fail). Until A14 opens B4's gate for `fluxObject`, a flow with a Small Memory never reaches this rule. Not on `develop` yet.
 - **T8.** `/simplify` (16 fixes), `/code-review` (6 fixes, listed below), `/security-review` (no
   finding; the one candidate, stored XSS through the cancel reason on the staff run log page, was
   dropped: front `main` and `develop` sanitize that page since `2eab2787a`, and customer text already
@@ -285,6 +288,7 @@ Where the code departs from this spec, and why:
 | Allowlist target: the user's company | The company that owns the flow (`companyIdOfFlow`, folder space company, then the folder's company-user company), read from the seed query already made. | Code review: with the caller's selected company, a staff user on an internal company would turn on parallel dispatch for a customer's flow. A flow in a personal folder has no company and gets parallel dispatch only through a USER allowlist row. |
 | Run list: three arrays, single fields keep the first element | `FlowRunDto.inFlightSteps: { nodeId, execId, workflowId }[]` from one `json_agg`; `stepInterruptible` is derived from it; `settleAbandonedRuns` describes the run workflow once when the run has one. | Three separate aggregates rely on an order Postgres does not promise. `FlowRunDto` never had single fields; the front reads only `isStepInterruptible`. |
 | Two seed migrations | One migration seeds both flags. | Matches the Files table. |
+| B5-R12: a producer fed across a back edge | `hasSmallMemoryOnBackEdge` (`engine-selector.ts`) matches a back edge into **or out of** a non-chat memory; `resolveParallelDispatchArgs` returns no `maxInFlight` for such a flow, in the `apiV2` and schedule starts. Back edges come from `buildSchedulerState`: a dependency edge between two reachable nodes that is missing from `forwardDeps`. Chat memory (`data.chat === true`, as `flux.service.ts` reads it) is exempt. | Which edge of a cycle becomes the back edge depends on the DFS order of the edges, so a producer→memory-only rule missed the same cycle when the edges came in another order (tested both ways). A false match only costs speed: the flow runs sequentially. |
 
 Constraints found on the way:
 
