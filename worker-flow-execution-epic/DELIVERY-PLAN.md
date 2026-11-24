@@ -269,6 +269,13 @@ timeline uses (focused hours at about 24 h a working day for the minimum, elapse
 working days from 2026-10-27: code complete between 2026-11-27 and 2026-12-14 at best, and between
 2026-12-15 and 2027-01-07 at worst.
 
+**Re-estimated on 2026-11-24.** A14 was re-estimated from 32 h to 48–124 h (calibrated, average
+75 h), and B4c (12–24 h), B4b (20–28 h, with the fit to B5 and B6) and A14b (70–110 h) were added:
+118–254 h more (A14 +16 to +92, B4c 12–24, B4b 20–28, A14b 70–110). At the same calibration
+(118 h at 24 h a working day is 5 days; 254 h at 12 h a working day is 21 days), the Wave 5
+estimate moves from 22 / 35.5 / 49 to 27 / 48.5 / 70 working days from 2026-10-27: code complete
+between 2026-12-04 at best and 2027-02-05 at worst, around 2027-01-06 on average.
+
 **Open before this wave starts (2026-10-23).**
 
 1. Team alignment on this restructure, then merge the spec PR and run `SYNC-PLAN-2026-10-23.md`.

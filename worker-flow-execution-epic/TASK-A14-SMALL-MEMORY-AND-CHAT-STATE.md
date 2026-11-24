@@ -781,15 +781,25 @@ Phase 1 (back, parallel)        Phase 2 (back + worker)            Phase 3 (roll
 
 ### Estimate
 
-| Part | Tasks | Min | Avg | Max |
-|---|---|---|---|---|
-| Back code and tests | B1–B9 | 24 | 30 | 37 |
-| Worker code and tests | W1–W3 | 10 | 13 | 15 |
-| Reviews, local and dev validation, measurement | R1–R5 | 16 | 20 | 24 |
-| **Total, uncalibrated** | | **50** | **63** | **76** |
+| Part | Tasks | Kind | Min | Avg | Max |
+|---|---|---|---|---|---|
+| Back code and tests | B1–B9 | code | 24 | 30 | 37 |
+| Worker code and tests | W1–W3 | code | 10 | 13 | 15 |
+| Reviews, local and dev validation, measurement | R1–R5 | validation | 16 | 20 | 24 |
+| Fixes after R2 | B10–B12, W4, R2b | code | 8 | 10 | 12 |
+| A14-D10, A14-D11 and R2c | | code | 4 | 5 | 6 |
+| Edge-case investigation (2026-11-24) | | validation | 6 | 8 | 10 |
+| Fixes after the investigation | B13–B19 | code | 12 | 15 | 18 |
+| Second review gate | | validation | 2 | 3 | 4 |
+| **Total, uncalibrated** | | | **82** | **104** | **126** |
 
-Calibrated with the Wave 5 factors from B5 (code × 0.42 / 0.60 / 0.98, validation × 1.0): **30 / 46 /
-75 h**. The ClickUp estimate of 32 h matches the calibrated minimum.
+The first three rows are the estimate of 2026-11-23; the other five are the work added since. Code
+totals 58 / 73 / 88 h and validation 24 / 31 / 38 h.
+
+Calibrated with the Wave 5 factors from B5 (code × 0.42 / 0.60 / 0.98, validation × 1.0): code
+24.4 / 43.8 / 86.2 h plus validation 24 / 31 / 38 h gives **48 / 75 / 124 h** (it was 30 / 46 / 75 h
+before the added work). Re-estimated on 2026-11-24 after the added work: ClickUp holds the calibrated
+average, 75 h (it was 32 h).
 
 ### Diagram-definition cross-check
 
