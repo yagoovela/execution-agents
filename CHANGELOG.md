@@ -6,6 +6,15 @@ renders this file, and each task page shows the latest entry that changed it.
 
 The log starts with PR #40. Earlier history is in `git log`.
 
+## 2026-11-24 · [#59](https://github.com/yagoovela/execution-agents/pull/59) · Remove a local path from TASK-A5, and re-estimate A14 and wave 5
+- Title (PT): Remover um caminho local da TASK-A5, e reestimar a A14 e a onda 5
+- Tasks: A5, A14
+- Pages: `status-tarefas.html`, `timeline/index.html`, `timeline/task-A14.html`
+- No page change: A5: the path was only in the spec file; the task page never showed it
+- Commits:
+  - 9ba6bd8 docs(868mn64jc): remove a local worktree path from TASK-A5
+  - 6892429 docs(868mn64jc): re-estimate A14 and the Wave 5 total
+
 ## 2026-11-24 · [#58](https://github.com/yagoovela/execution-agents/pull/58) · Publish B4c, B4b and A14b, and A14 in progress
 - Title (PT): Publicar B4c, B4b e A14b, e a A14 em andamento
 - Tasks: B4, A14, A9C, B4C, B4B, A14B, C1
