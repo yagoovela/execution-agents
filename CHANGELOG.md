@@ -6,6 +6,17 @@ renders this file, and each task page shows the latest entry that changed it.
 
 The log starts with PR #40. Earlier history is in `git log`.
 
+## 2026-11-26 · [#60](https://github.com/yagoovela/execution-agents/pull/60) · Publish the A14 dev results and the production sizes
+- Title (PT): Publicar os resultados da A14 em dev e os tamanhos de produção
+- Tasks: A14, B4C, B4B, A14B
+- Pages: none
+- No page change: A14: dev results and production sizes are in the spec only; the page is rebuilt when A14 ships
+- No page change: A14B: production sizes and the query prerequisite are in the spec only
+- No page change: B4B: production seed sizes are in the spec only
+- No page change: B4C: the production batch control is in the spec only
+- Commits:
+  - 76e184a docs(868mn64jc): mirror the A14 dev results and the production sizes
+
 ## 2026-11-24 · [#59](https://github.com/yagoovela/execution-agents/pull/59) · Remove a local path from TASK-A5, and re-estimate A14 and wave 5
 - Title (PT): Remover um caminho local da TASK-A5, e reestimar a A14 e a onda 5
 - Tasks: A5, A14

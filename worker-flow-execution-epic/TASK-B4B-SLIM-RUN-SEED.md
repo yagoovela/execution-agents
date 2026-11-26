@@ -34,6 +34,8 @@ and the unfinished-run reaper is off in production, so a run alive past 7 h lose
       legacy loop.
 - [ ] A14's 1.5 MB seed-size guard is removed.
 - [ ] Seed rows cannot be purged while their run is still open, and `run_seeds` has a retention.
+- [ ] The scheduling skeleton is stored apart from node data, so A14's per-batch run-graph read
+      (14 ms for a compressible 1.5 MB seed, measured 2026-11-24) no longer detoasts node data.
 
 ## Out of scope
 
@@ -116,6 +118,20 @@ seed is purged after the retention period.
 Production queries, run by the user: `a14-q5` (per-flow seed size), `a14-q6` (largest node data by
 type), `a14-q7`/`q13` (`run_seeds` and `run_seed_nodes` sizes), `a14-q12` (longest workflow runs
 against the 7 h purge).
+
+**Production, 2026-11-24:** `run_seeds` has 0 rows and `run_seed_nodes` 9, so no production run has
+used the workflow engine and the run-duration check has no data yet. `flows_nodes` holds 7.5 GB of
+TOAST.
+
+**Production seed sizes, 2026-11-26** (`6-a14-sizes.sql`; node data text plus the edge fields the
+seed keeps, a slight underestimate): 16,394 live flows; p50 56 KB, p90 213 KB, p99 2.2 MB, max
+108 MB. 444 flows pass 1 MB, 286 pass 1.5 MB (A14-D12's guard) and 175 pass 2 MB; 44, 30 and 18 of
+them ran in the last 30 days. Inside the flows over 1 MB, 191 single nodes pass 1 MB and 85 pass
+2 MB. The top types by bytes are `commandTextNode` (382 MB in total, largest node 25.9 MB),
+`scripting` (196 MB, 18.7 MB), `textBox` (160 MB, 14.0 MB), `arrayNode` (111 MB, 54.9 MB) and
+`apiCaller` (81 MB, 9.7 MB). Because single nodes pass 2 MB, a slim skeleton alone is not enough:
+no activity input or result may carry a whole node's data (`openNodeExecutionActivity` takes
+`nodeData` today).
 
 ## Estimate
 

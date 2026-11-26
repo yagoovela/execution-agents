@@ -5,7 +5,8 @@ ClickUp: [1gahkf3byq8](https://app.clickup.com/t/1gahkf3byq8). **Drafted 2026-11
 A14-D15). Status: specified, approved by the user on 2026-11-24. This is an architecture change, not a
 refactor step: it changes how a node stores data, in back, front, worker and MCP.
 
-**Depends on:** A14 (on `main`). **Related:** B4b removes the Temporal ceiling for every flow; A14b
+**Depends on:** A14 (on `main`), and the production measurement in
+[Prerequisite: production measurement before starting](#prerequisite-production-measurement-before-starting). **Related:** B4b removes the Temporal ceiling for every flow; A14b
 removes the ceilings that remain for memory itself.
 
 ## Problem statement
@@ -115,11 +116,41 @@ written and peak RSS, against the blob baseline.
 | MEMR-08 | P1 editor and MCP: pages, clear, no echo | Pending |
 | MEMR-09 | P2 versions and duplicates | Pending |
 
-## Measurement before designing
+## Prerequisite: production measurement before starting
 
-Production queries, run by the user: `a14-q4` (memory size distribution), `a14-q8` (memory on
-history rows and copies per node), `a14-q9` (non-chat memories that also have chat rows), `a14-q10`
-(configuration distribution), `a14-q11` (longest single entry).
+Do not start the Design until the user has run these production queries and their results are
+recorded in this file. They were written and run on dev on 2026-11-24, and they live in this folder.
+Each is one read-only statement, safe for DBeaver; set `statement_timeout = '600s'` before the heavy
+ones.
+
+| File | Answers | Feeds | Dev result (2026-11-24) |
+|---|---|---|---|
+| [`a14-q8-memory-history-copies.sql`](./a14-q8-memory-history-copies.sql) (heavy) | Memory size on version history rows, and history copies per memory | A14b-D4: the cost of copying rows on publish and rollback | 48 rows, 16 memories, copies p50 2 and p99 10 |
+| [`a14-q9-stale-backfill-rows.sql`](./a14-q9-stale-backfill-rows.sql) | Non-chat memories that also have chat rows from the June backfills, and how many differ from the blob | MEMR-07 and the dual-read design | 8 of 144 have rows; 2 differ |
+| [`a14-q10-memory-config.sql`](./a14-q10-memory-config.sql) | Distribution of `chat`, `sessionEnabled`, `clearOnExecution` and `selectedType` | Which read modes and session paths to build first | 25 combinations; the most common is chat with "Load All Entries" (391) |
+| [`a14-q11-memory-entry-length.sql`](./a14-q11-memory-entry-length.sql) | Longest single entry, p50, p99, and counts over 2,700 bytes, 64 KB and 1 MB | The dedup hash index (A14b-D1) | p99 4.1 KB, max 3.06 MB; 130 over 2,700 bytes |
+
+**Memory sizes in production (2026-11-26, `6-a14-sizes.sql`)**, JSON text of the node data,
+which holds non-chat entries twice:
+
+| Measure | Non-chat | Chat |
+|---|---|---|
+| Live memory nodes | 556 | 2,191 |
+| Text p50 / p90 / p99 / max | 1.5 KB / 39 KB / 304 KB / 2.14 MB | 152 B / 7.6 KB / 352 KB / 13.7 MB |
+| Over 256 KB / 1 MB / 2 MB | 8 / 1 / 1 | 28 / 10 / 8 |
+| Entries p50 / p90 / p99 / max | 2 / 20 / 181 / 1,261 | 0 / 4 / 38 / 123 |
+| Sessions max; session entries p99 / max | 58; 13 / 1,261 | 924; 550 / 25,430 |
+
+Size the A14b-D2 byte cap from these values together with the worker RAM history below. The
+largest non-chat memory today is 2.14 MB of text, about 1,261 entries.
+
+**Worker RAM history (measured 2026-11-24, CloudWatch, read-only).** The production worker runs one
+Fargate task of 1 vCPU and 2,048 MB, with no autoscaling and no heap flag. Its memory rests at about
+532 MB and peaked at 1,560 MB (76%) on 2026-10-30; the weekly peak has been 1.46 to 1.56 GB since
+2026-10-26, against 0.4 to 0.7 GB before mid-October. No out-of-memory restart in 90 days. With 10
+concurrent activities, the headroom is about 100 to 120 MB per activity at an 85% ceiling. AWS does
+not show memory per activity; log `process.memoryUsage()` around each activity in `runNodeActivity`
+and the heap limit once at boot to get it.
 
 ## Estimate
 
