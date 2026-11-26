@@ -18,6 +18,7 @@ TITLES.update({
  'S8C': ('Run the schedule reconcile once per back task', 'Rodar o reconcile dos agendamentos uma vez por task do back'),
  'A9C': ('A worker that stops mid-activity does not fail the run', 'Um worker que para no meio de uma activity não derruba o run'),
  'B4C': ('Placeholder substitution on the workflow path', 'Substituição de placeholders no caminho do workflow'),
+ 'B4D': ('Source order parity on the workflow path', 'Paridade da ordem das fontes no caminho do workflow'),
  'B4B': ('Keep node data out of Temporal history (slim run seed)', 'Tirar os dados dos nós do histórico do Temporal (seed enxuto)'),
  'A14B': ('Store Small Memory entries as rows', 'Guardar as entradas da Small Memory como linhas'),
  'S4B': ('One chain budget across back replicas', 'Um orçamento de cadeia entre as réplicas do back'),
@@ -56,6 +57,7 @@ NO_PAGE = {
 LOCAL_DECISIONS = {
  'A112': 'A11.2 numbers its own decisions D1 to D21; they are not the epic decisions of the same number',
  'A14': 'A14 numbers its own decisions A14-D1 to A14-D15 since its re-specification of 2026-11-23; it cites no epic decision',
+ 'B4D': 'B4d numbers its own decisions B4d-D1 and B4d-D2; it cites no epic decision',
 }
 
 # A task that has a page but no spec file, and why.
