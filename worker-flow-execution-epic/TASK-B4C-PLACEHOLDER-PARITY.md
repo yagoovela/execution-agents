@@ -24,6 +24,13 @@ flag (`flux.controller.ts:~744` starts `processBatch`, which runs `executeChild(
 every batch row whose flow holds a placeholder sends the literal. API runs and Temporal schedules
 are not affected yet, because `engine_in_workflow` and `temporal_schedules` are off in production.
 
+**Measured in production on 2026-11-24 and 2026-11-26:** no batch file ran since 2026-11-03, and
+`run_seeds` is empty, so no customer received a literal placeholder. A control on 2026-11-26 shows
+that production batch traffic stopped earlier: `batch_processing_file` holds 7 rows and
+`batch_processing_file_input_output` 57,524, and the last update of either is 2025-02-05.
+The defect is latent: the next batch run, or turning on either flag, reaches it. B4c stays a gate
+for both flags.
+
 Measured with the same function and input (ported files on `origin/main`):
 
 | Reference | Legacy | Workflow |

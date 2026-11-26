@@ -178,6 +178,7 @@ back edge in a cycle (A14-D3).
 | A14-D13 | Which nodes the rebuild folds into a memory | Settled 2026-11-24: only nodes that are live in this run, computed by replaying the scheduler over the committed rows (success row → completed, error or cancelled row → dead, skipped type → completed, no row → pending). A node that finishes and is an ancestor of a source or producer in the memory's closure also triggers a rewrite. Run-start `varInputNode` entries stay unfiltered, as on the legacy loop | `planOrder`: it marks every reachable node completed, so a dead `textBox` or a memory chained from a dead memory is written to the canvas. `schedState.completed` from `settleSchedulerFromWorkflow` and the worker's `completedSourceIds`: neither holds the live sources |
 | A14-D14 | A failure inside the writer | Settled 2026-11-24: it fails the run-events ingest, so `emitRunEventActivity` retries; the writer is idempotent | Log and swallow (the R2 behaviour): the ingest returns 200, nothing retries, and the canvas stays stale until the next write |
 | A14-D15 | Repeated full-memory reads and writes per run | Settled 2026-11-24: load a memory only when the event batch affects it, skip the canvas write, the S3 re-upload and the row upsert when the content did not change, and prove with a measurement that peak memory does not grow | Keep the per-event full read: about 16 full-memory reads and 21 S3 uploads per run for a memory with 10 producers |
+| A14-D16 | A number or boolean fed into a Small Memory (for example a `scripting` `output` returning `1`) throws `entryContent?.includes is not a function` in the shared `modifyData` branch (`edge-projection.ts:1484` on `main`): legacy fails the run with nothing stored; the workflow retries the writer error for about 156 s, then fails. Found by the B5 dev check on 2026-11-26 (run `9c333a9d`) | Settled 2026-11-26 (A + B): store a number or boolean as `String(value)` in the shared branch, so legacy, the writer and the worker port all store `"1"`; `0`, `false` and `null` stay dropped as today. A programming error in the writer (`TypeError` and similar) is non-retryable, so the run fails at once; a transient error still retries (A14-D14) | Keep the crash on both engines and only fail fast; or open a separate bug task |
 | A14-D6 | Runs already stuck on the old `processFlow` path when the `patched('a14-state-skip')` guard ships | Terminate them, listed by an R5 query the user runs (settled 2026-11-23) | Leave them: they retry forever |
 
 ## Verification
@@ -492,6 +493,45 @@ comments), run first on dev. A14-R5 writes them:
    exactly with `buildSchedulerState` (`scheduler.ts`) on an export, before B5 decides B5-R12.
 3. **Stuck runs.** Workflow runs with a `fluxObject` that never finished on `main` (batch rows and
    schedules) are listed so the user can terminate them; the patch keeps them on the old path.
+
+**Production results (2026-11-24).** The user ran the consolidated light query
+(`5-a14-light.sql`, replacing `a14-q1`, `q2`, `q3`, `q7` and `q12`) on production:
+
+| Measure | Production |
+|---|---|
+| Live flows with a Small Memory | 2,672 (2,747 memory nodes): 2,172 chat only, 500 non-chat, 15 mixed |
+| Memory flows that also hold another back-only type | 477: `arrayNode` 351, `nodesBox` 127, `fluxBox` 84, `libraryNode` 5 |
+| Memory flows A14 opens to the workflow engine | 2,195, of which 134 non-chat |
+| B5-R12 back-edge upper bound | 66 of the 500 non-chat flows (437 have an `inputAdd` producer) |
+| Unfinished workflow runs with a memory (A14-D6) | 0, and 0 batch files in progress |
+| Live schedules on memory flows | 4; they run on the legacy path while `temporal_schedules` is off |
+| `run_seeds` rows | 0: `engine_in_workflow` and `temporal_schedules` are both off, and no batch ran since 2026-11-03, so no production run has used the workflow engine yet |
+| `flows_nodes` size | 7.5 GB of TOAST, 257k rows |
+
+A14-D6 needs no action: no run is stuck. The 66 flows go to the B5 session for the exact
+classification with `buildSchedulerState`.
+
+**Production sizes (2026-11-26).** The user ran `6-a14-sizes.sql` (replacing `a14-q4`, `q5` and
+`q6`) on production. Text is the JSON text size of the node data; percentiles are p50, p90 and p99.
+
+| Measure | Non-chat memory | Chat memory |
+|---|---|---|
+| Live memory nodes | 556 | 2,191 |
+| Text p50 / p90 / p99 | 1.5 KB / 39 KB / 304 KB | 152 B / 7.6 KB / 352 KB |
+| Text max | 2.14 MB | 13.7 MB |
+| Over 256 KB / 1 MB / 1.5 MB / 2 MB | 8 / 1 / 1 / 1 | 28 / 10 / 8 / 8 |
+| Entries p99 / max | 181 / 1,261 | 38 / 123 (session entries p99 550, max 25,430) |
+
+| Run seed per live flow | Production |
+|---|---|
+| Flows | 16,394 |
+| Seed p50 / p90 / p99 / max | 56 KB / 213 KB / 2.2 MB / 108 MB |
+| Over 1 MB / 1.5 MB / 2 MB | 444 / 286 / 175 |
+| Of those, ran in the last 30 days | 44 / 30 / 18 |
+
+With `engine_in_workflow` on, the A14-D12 guard keeps the 286 flows over 1.5 MB on the legacy loop,
+30 of them active in the last 30 days, and every flow whose memory alone passes 1.5 MB (one non-chat,
+eight chat). B4b must ship before Wave 6 removes that fallback.
 
 ### Spec deviations
 
@@ -1014,6 +1054,70 @@ Only storing entries as rows fixes that. It is recorded as a new Wave 5 task, wi
 | A14-B18 | Load a memory only for batches that affect it; skip unchanged re-uploads; measure peak memory | A14-D15 |
 | A14-B19 | Seed-size guard: a full run whose seed exceeds 1.5 MB runs on the legacy loop | A14-D12 |
 
+**B13–B19 results (2026-11-24).** Back `23a396b7` (B13–B18) and `01c2173a` (B19); worker `eedb24b`
+(sync) and `27a9aa0`.
+
+- B13: `smallMemoryLiveNodeIds` replays the scheduler over the run's committed outcomes
+  (`SMALL_MEMORY_RUN_OUTCOMES_SQL`; a failed row wins over a successful one) with `buildSchedulerState`,
+  `nextReady`, `markCompleted` and `markDead`. The back writer, `persistAtRunClose` and hydrate use it
+  through `loadSmallMemoryLiveness`; run-start `varInputNode` entries stay unfiltered.
+- B14: the writer rewrites a memory when the finished node turns a node of its closure live.
+- B15: close and unfed rows go only to memories whose closure holds a live node.
+- B16: the writer skips the canvas write, the upload and the row upsert when the stored
+  `metadata.contentMd5` equals the new digest; a chat memory's canvas is painted only when a direct
+  producer is live.
+- B17: `persistAfterEvents` no longer catches, so the ingest fails and the worker retries;
+  `persistAtRunClose` still logs.
+- B18: peak heap 16.3 MB before and 15.4 MB after for a 1.5 MB memory with 10 producers, retained
+  heap flat, 2.4 s to 2.0 s; a redelivery uploads nothing.
+- B19: `WORKFLOW_SEED_MAX_BYTES = 1_572_864` in `engine-selector.ts`; apiV2 falls back to
+  `legacy_loop` with `seedTooLarge` in the log. Measured: a 2.84 MB memory flow returns HTTP 200 and
+  appends its entry, where it returned HTTP 500 before.
+- Local stack, both engines: a text box after a failed node, a memory chained from a dead memory and
+  the f1, f2 and f11 to f15 regression flows give the same canvas content on both engines.
+
+Deviations: the back replay stops at the first unsettled node, because B4 breaks the run at a failure
+and a data edge from a dead node does not kill its target; the worker replays in continue mode,
+which is exact for a reader's closure. A memory fed by a live producer that a failed run never
+reached still gets a row; its canvas matches the legacy loop. B19 covers apiV2 only: batch rows and
+schedules have no legacy path, so a seed over 2 MB fails there until B4b (inferred from the code).
+
+**Second review gate (2026-11-24).** `/simplify` (back `b649b0c8`, worker sync `9c19595`), then
+`/code-review` at high effort found two defects, each fixed with a test seen failing first:
+
+1. Worker (`527c4b0`): liveness was built from `completedSourceIds`, which holds only the reader's
+   nearest completed ancestors, so a producer behind another node never turned live and the reader got
+   `"[]"`. The worker now replays the run's outcomes with the ported rule.
+2. Back (`92d12c5d`): one failing memory stopped every memory after it, and nothing retried them at
+   close. Each memory is now persisted on its own; at close each failure is logged with its
+   `memoryId`, and after an event batch the first failure is rethrown so the ingest retries.
+
+`/security-review` found nothing at confidence 8 or above.
+
+**Per-batch query cost (2026-11-24).** Measured with `EXPLAIN (ANALYZE, BUFFERS)` on a local copy:
+50k `run_seeds`, 1.5M `run_seed_nodes`, 1.5M `node_executions` (1.27 GB), runs of 30 nodes with seeds
+of 75 KB, 345 KB and 1.5 MB (plain and compressible text). No query scans sequentially, and no index
+was added.
+
+| Query at 1.5 MB, warm (plain / compressible) | Before | After |
+|---|---|---|
+| Run graph | 6.5–8.2 / 36–39 ms | 2.8 / 14.1 ms |
+| Batch with a successful `node_finished` | 11.5 / 49.7 ms | 6.2 / 29.9 ms |
+| One run of 30 nodes | 0.35 / 1.49 s | 0.19 / 0.90 s |
+
+The run graph used to detoast `run_seeds.payload` three times; it now expands it once with
+`jsonb_to_record`, keeping only the edges and the starter in payload order, and takes node ids and
+types from `run_seed_nodes` (back `dae1ba8a`, worker `e32e181`). A parity test against the old graph
+(seed written by `RunSeedService`, with a starter, a cycle, skipped types and shuffled node order)
+was seen failing with the edges reversed and with text boxes dropped. Reading the flow version edges
+instead was rejected: a flow without version control reads draft edges, which can change during the
+run, and edge order decides the back edge. Getting the graph under 5 ms for a compressible seed needs
+a per-snapshot cache or edges stored apart from node data; that belongs to B4b, which separates the
+scheduling skeleton from node data. The memory-node read now selects only the snapshot and memory ids
+(back `f35e592c`): 7.2–10.0 ms to 0.07–0.34 ms for a 1.8 MB memory, 103 to 8 buffers. No consumer
+used the chat flag it fetched; the writer takes it from the run nodes it already loads, and three
+existing chat tests went red when the writer lost the flag.
+
 **Follow-ups.**
 1. When A14 reaches production, update the workspace `CLAUDE.md` ("Adding or changing a node type",
    item 9): B4's gate then accepts `state`, and `fluxObject` no longer names an owner task.
@@ -1022,8 +1126,8 @@ Only storing entries as rows fixes that. It is recorded as a new Wave 5 task, wi
    recheck it.
 3. For B6: develop's `processFlow` array-body loop sends every body node to `processSingleNode`
    without the main loop's `isWorkflowSkippedNodeType` skip, so a `source`, `visual` or (after A14)
-   `state` node inside an `arrayNode` body fails with `NodeTypeNotSupported`. A14's develop push waits
-   for that fix; a summary for the B6 owner was written on 2026-11-24.
+   `state` node inside an `arrayNode` body fails with `NodeTypeNotSupported`. Fixed by worker
+   `7fcfcda` on develop before A14's develop push (see R3 below).
 4. B5-R12 is implemented on the B5 branch (back `cf96a38`, `hasSmallMemoryOnBackEdge`); its
    production count is the R5-2 query.
 5. For B6: when `conditionNode` moves to the worker, the A14-D13 replay must read the taken handle
@@ -1034,6 +1138,54 @@ Only storing entries as rows fixes that. It is recorded as a new Wave 5 task, wi
 negative control breaks the worker side instead of the ported file, which the drift check guards.
 MEM-04 is covered by the existing second-run test plus a projection-determinism test; a test where a
 new producer row lands between two attempts is left to R2.
+
+**R3 dev deploy (2026-11-24).** One develop push per repo for A14 and B5 together, worker first,
+after the B6 array-body skip (worker `7fcfcda`, merge `5b94055`) reached develop, which closes
+follow-up 3. Develop had drifted from `main`, so the task commits were cherry-picked onto it:
+worker `5b94055..62833466` (A14 picks, B5 `0640d98`, the ported sync) and back `7f5baa1a..d5eafa87`
+(A14 picks, `e1cc049e` adapting the writer to `writeRuntimeNodeData`, B5 `dd2b85e0`, the regenerated
+contract). On develop, apiV2 does not call `persistWorkflowSeed`, so the 1.5 MB seed guard sits in
+apiV2's engine decision instead. ECS dev: worker task definition 273 `COMPLETED` at 18:44 UTC, back
+2702 at 18:53 UTC. `engine_in_workflow` and `worker_edge_projection` were on in dev before and after.
+
+**R4 dev parity corpus (2026-11-26).** Eleven agents in dev, each run through MCP `run_agent` (a
+queued apiV2 job, the same B4 engine decision) with `engine_in_workflow` off and on: 38 runs, all
+finished, a `run_seeds` row on every workflow run and none on the legacy runs. Copies have every
+delivery off. Evidence: run list and outputs, kept outside this repository.
+
+| Copy | Covers | Result |
+|---|---|---|
+| F1 | Non-chat memory, LLM producer, not cleared | Match: each run appends only its producer's output; the stamp follows A14-D2 |
+| F2 | Chat over two turns, and a non-chat memory feeding a Data Output | Memory matches; the Data Output gets the memory with this run's producer last (A14-D7 holds); answer text differs, see finding 1 |
+| F4 | Non-chat memory on a back edge, Data Output | Reader input byte-identical; see finding 2 |
+| F5 | Chat, two turns, one session | Match: turn 2 answers from turn 1 on both engines |
+| F6 | Memory with no producer, and a chat memory | Match |
+| S1–S5 | Synthetic R2c flows: text boxes, chained memory, session-enabled non-chat, `varInputNode` producer, chat with producers | Match, byte-identical with stamps masked |
+| X1 | Probe with no memory | Proves finding 1 predates A14 |
+
+Synthetic flows replace stored ones because dev holds no session-enabled non-chat memory, no
+`varInputNode` producer and no chained memory (684 live memories, 670 eligible). On the workflow,
+every run has one memory row per memory, and its data equals the canvas (A14-D9).
+
+Findings, none in A14's code:
+
+1. **A Data Output with several sources orders its text differently.** The legacy loop appends each
+   source as it finishes (`publishInApiNodeOutput`, back develop `flux.service.ts:2787`, called at `:6210`
+   and `:6499`); the worker projection walks sources in stored edge order (`projectIntoNode`, worker
+   `project-node-input.ts:94-123`). X1 gives "first, second" off and "second, first" on. It predates
+   A14 and affects every workflow run whose target has several sources; A14 widens it by sending
+   memory flows such as F2 to the workflow, where the answer and the chat entry change. It gates
+   `engine_in_workflow` in production, like B4c, and has no task yet.
+2. **F4 fails on the legacy loop and completes on the workflow.** Legacy fails at a disabled Output
+   Controller ("Internal error", although its row succeeded); the workflow completes with an empty
+   output and an unchanged memory. A legacy defect; the stack is in Datadog only.
+3. **One or two extra Logs-page steps on the workflow.** In F1, F4 and S1–S4 the legacy loop never
+   visits the memory node and writes no row; the workflow writes one per memory, as A14-D9 and
+   A14-D11 decided.
+
+Not covered on dev: a batch file and a Temporal schedule (both need a login token; covered locally
+in R2, R2b and R2c), and a seed near 1.5 MB (no dev run since the deploy logged a seed above 26 KB;
+the only larger memory flow is 1.9 MB and too big to copy through MCP; B19's local evidence stands).
 
 ## Files
 
