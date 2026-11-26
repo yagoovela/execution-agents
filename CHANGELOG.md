@@ -6,6 +6,14 @@ renders this file, and each task page shows the latest entry that changed it.
 
 The log starts with PR #40. Earlier history is in `git log`.
 
+## 2026-11-26 · [#61](https://github.com/yagoovela/execution-agents/pull/61) · Publish B4d and the A14-D16 review gate
+- Title (PT): Publicar a B4d e o gate de revisão da A14-D16
+- Tasks: A14, B4C, B4D, B4B
+- Pages: `progresso-refatoracao.html`, `status-tarefas.html`, `timeline/index.html`, `timeline/task-B4B.html`, `timeline/task-B4C.html`, `timeline/task-B4D.html`
+- No page change: A14: the A14-D16 refinement, review gate and dev checks are in the spec only; the page is rebuilt when A14 ships
+- Commits:
+  - c35279c docs(1gahkf3c5xc): publish B4d and the A14-D16 review gate
+
 ## 2026-11-26 · [#60](https://github.com/yagoovela/execution-agents/pull/60) · Publish the A14 dev results and the production sizes
 - Title (PT): Publicar os resultados da A14 em dev e os tamanhos de produção
 - Tasks: A14, B4C, B4B, A14B
