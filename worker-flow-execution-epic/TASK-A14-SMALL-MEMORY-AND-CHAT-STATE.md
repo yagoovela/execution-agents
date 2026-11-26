@@ -178,7 +178,7 @@ back edge in a cycle (A14-D3).
 | A14-D13 | Which nodes the rebuild folds into a memory | Settled 2026-11-24: only nodes that are live in this run, computed by replaying the scheduler over the committed rows (success row → completed, error or cancelled row → dead, skipped type → completed, no row → pending). A node that finishes and is an ancestor of a source or producer in the memory's closure also triggers a rewrite. Run-start `varInputNode` entries stay unfiltered, as on the legacy loop | `planOrder`: it marks every reachable node completed, so a dead `textBox` or a memory chained from a dead memory is written to the canvas. `schedState.completed` from `settleSchedulerFromWorkflow` and the worker's `completedSourceIds`: neither holds the live sources |
 | A14-D14 | A failure inside the writer | Settled 2026-11-24: it fails the run-events ingest, so `emitRunEventActivity` retries; the writer is idempotent | Log and swallow (the R2 behaviour): the ingest returns 200, nothing retries, and the canvas stays stale until the next write |
 | A14-D15 | Repeated full-memory reads and writes per run | Settled 2026-11-24: load a memory only when the event batch affects it, skip the canvas write, the S3 re-upload and the row upsert when the content did not change, and prove with a measurement that peak memory does not grow | Keep the per-event full read: about 16 full-memory reads and 21 S3 uploads per run for a memory with 10 producers |
-| A14-D16 | A number or boolean fed into a Small Memory (for example a `scripting` `output` returning `1`) throws `entryContent?.includes is not a function` in the shared `modifyData` branch (`edge-projection.ts:1484` on `main`): legacy fails the run with nothing stored; the workflow retries the writer error for about 156 s, then fails. Found by the B5 dev check on 2026-11-26 (run `9c333a9d`) | Settled 2026-11-26 (A + B): store a number or boolean as `String(value)` in the shared branch, so legacy, the writer and the worker port all store `"1"`; `0`, `false` and `null` stay dropped as today. A programming error in the writer (`TypeError` and similar) is non-retryable, so the run fails at once; a transient error still retries (A14-D14) | Keep the crash on both engines and only fail fast; or open a separate bug task |
+| A14-D16 | A number or boolean fed into a Small Memory (for example a `scripting` `output` returning `1`) throws `entryContent?.includes is not a function` in the shared `modifyData` branch (`edge-projection.ts:1484` on `main`): legacy fails the run with nothing stored; the workflow retries the writer error for about 156 s, then fails. Found by the B5 dev check on 2026-11-26 (run `9c333a9d`) | Settled 2026-11-26 (A + B): store a number or boolean as `String(value)` and a plain object or array as compact JSON text in the shared branch, so legacy, the writer and the worker port store the same text; `0`, `false` and `null` stay dropped as today. A programming error thrown by the pure rebuild step is non-retryable (HTTP 422): the run fails at once with "Run failed because a Small Memory could not be updated.", the producer stays succeeded and no second `node_finished` is emitted; any error from I/O (DB, S3, claim check) still retries (A14-D14). Refined after the review gate on 2026-11-26 | Keep the crash on both engines and only fail fast; or open a separate bug task |
 | A14-D6 | Runs already stuck on the old `processFlow` path when the `patched('a14-state-skip')` guard ships | Terminate them, listed by an R5 query the user runs (settled 2026-11-23) | Leave them: they retry forever |
 
 ## Verification
@@ -1186,6 +1186,53 @@ Findings, none in A14's code:
 Not covered on dev: a batch file and a Temporal schedule (both need a login token; covered locally
 in R2, R2b and R2c), and a seed near 1.5 MB (no dev run since the deploy logged a seed above 26 KB;
 the only larger memory flow is 1.9 MB and too big to copy through MCP; B19's local evidence stands).
+
+
+**A14-D16 and its review gate (2026-11-26).** Found by the B5 dev check: a `scripting` `output` of
+`1` into a Small Memory threw `entryContent?.includes is not a function` in the shared `modifyData`
+branch, on the legacy loop as well (it failed fast with nothing stored; the workflow retried the
+writer error for about 156 s). Fixed on `feat/868mn64jc`, then refined by the review gate
+(`/simplify`, `/code-review` high, `/security-review`; no security finding):
+
+| Commit | Change |
+|---|---|
+| back `00cbb857`, worker `a832245` | A number or boolean is stored as `String(value)`; dedup compares the same text. Spec: legacy `addConnectToNodes` and `rebuildSmallMemory` give equal entries for number, boolean, zero, false, null, string and array (7 of 12 red before) |
+| back `fef2f476`, worker `2283172` | Writer refusal as HTTP 422; the worker maps 422 to `ApplicationFailure.nonRetryable` (`RunEventRefused`) |
+| back `96a116f7`, `f833fa4f`, worker `d62cbfe` | Gate: reuse `writerRan`, flatten the empty-entry check, log the refusal with status 422 |
+| back `86ae6549`, worker `4f8f5cc` | A plain object or array is stored as compact JSON text, as the front editor stores it |
+| back `1ac137e1` | 422 only for a programming error from the pure rebuild step (`SmallMemoryRebuildError`); a `TypeError` from the canvas save, the S3 upload, the edge read or a truncated claim-check body still retries; a transient error wins over a refusal |
+| worker `8e7d917`, back `65f59355` | A refused `node_finished` ends the run with a run-level error, without `markDead`, without a producer error and without a second `node_finished`, gated by `patched("a14-run-event-refused")`; the Logs rebuild folds the new sequence. Replay: the before and with histories recorded, and both fail with the gate removed |
+
+Develop: back `b71fa9ff` and `5180bc97`, worker `a5b8219` and `8cf0432`, cherry-picked onto
+develop's B5 restructure of `processFlow` (the refusal sits in `settleThrownNode`), replay 12 of 12.
+The sync also repaired a `PORTED_FROM.md` drift that another task left on develop.
+
+Dev checks (ECS back 2708 then 2710, worker 276 then 277), on copies with deliveries off,
+`engine_in_workflow` off and on:
+
+| Check | Result |
+|---|---|
+| Number and boolean (`scripting` `1`, `true`) | `"1"`, `"true"` on both engines; runs complete in about 3 s; no duplicate on repeat |
+| Object and array (`varInputNode` raw values; `scripting` objects arrive already stringified by the worker) | `{"total":3}`, `[1,2]`, `{"a":1,"b":2}`, `[3,4]` on both engines; `0` and `false` dropped; no duplicate on repeat; Data Output text equal with timestamps masked |
+| Regression S1 | Matches R4 |
+| CloudWatch, both groups | No `includes is not a function`, no refusal |
+
+Not forceable on dev: the rebuild refusal itself (covered by the integration spec, the workflow spec
+and the replay histories).
+
+**Follow-ups found on 2026-11-26.**
+6. On develop, a refused success event from an `arrayNode`, a loop-body node or a condition node is
+   emitted outside `settleThrownNode`, so it keeps the older behaviour (the run fails without the
+   run-level message). B6 and B5 own those paths.
+7. In B5's parallel mode, fail-fast cancels siblings with "Stopped because node X failed", naming the
+   producer although it succeeded.
+8. Dedup compares content only, so an assistant entry equal to a stored user entry is not added, on
+   both engines (legacy behaviour).
+9. With six sequential `scripting` nodes, the workflow took 6.4 to 6.8 s and the legacy loop 3.5 s
+   (about 0.35 s against 0.12 s between nodes): B4's per-node overhead, not A14's.
+10. Documentation that becomes wrong when A14 reaches `main`: draft docs PR #71 and Workflow PR #132,
+    to merge with the A14 production PR. The MCP schema and wording defects found by the same check
+    predate A14 and moved to [1gahkf3c60x](https://app.clickup.com/t/1gahkf3c60x).
 
 ## Files
 

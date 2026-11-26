@@ -267,6 +267,7 @@ A1 ── A11 ──┬── A13 (also A9, B4) ──┐
 
 Wave 5 additions (2026-11-24, from the A14 edge-case investigation):
 B3, B4 ── B4c (urgent) ──────────────────┐
+B3b, B4 ── B4d (2026-11-26) ─────────────┤
 B6, B5 ── B4b ───────────────────────────┴── B4 flag on in production
                 └── Wave 6 (C1, C2)
 A14 ── A14b
